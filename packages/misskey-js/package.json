@@ -31,6 +31,7 @@
 		"jest-fetch-mock": "3.0.3",
 		"jest-websocket-mock": "2.4.0",
 		"mock-socket": "9.2.1",
+		"openapi-typescript": "^6.4.0",
 		"tsd": "0.28.1",
 		"typescript": "5.1.6"
 	},
