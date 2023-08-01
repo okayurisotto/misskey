@@ -191,7 +191,6 @@
 		"@types/rename": "1.0.4",
 		"@types/sanitize-html": "2.9.0",
 		"@types/semver": "7.5.0",
-		"@types/sharp": "0.32.0",
 		"@types/sinonjs__fake-timers": "8.1.2",
 		"@types/tinycolor2": "1.4.3",
 		"@types/tmp": "0.2.3",
