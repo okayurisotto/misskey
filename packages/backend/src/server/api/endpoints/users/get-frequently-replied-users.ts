@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { Not, In, IsNull } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import { maximum } from '@/misc/prelude/array.js';
 import type { NotesRepository, UsersRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -89,7 +88,7 @@ export default class extends Endpoint<
 				select: ['userId'],
 			});
 
-			const repliedUsers: any = {};
+			const repliedUsers: Record<string, number> = {};
 
 			// Extract replies from recent notes
 			for (const userId of replyTargetNotes.map((x) => x.userId.toString())) {
@@ -101,7 +100,7 @@ export default class extends Endpoint<
 			}
 
 			// Calc peak
-			const peak = maximum(Object.values(repliedUsers));
+			const peak = Math.max(...Object.values(repliedUsers));
 
 			// Sort replies by frequency
 			const repliedUsersSorted = Object.keys(repliedUsers).sort(

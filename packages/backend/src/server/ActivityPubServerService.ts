@@ -14,7 +14,6 @@ import { QueueService } from '@/core/QueueService.js';
 import type { LocalUser, RemoteUser, User } from '@/models/entities/User.js';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
 import type { Following } from '@/models/entities/Following.js';
-import { countIf } from '@/misc/prelude/array.js';
 import type { Note } from '@/models/entities/Note.js';
 import { QueryService } from '@/core/QueryService.js';
 import { UtilityService } from '@/core/UtilityService.js';
@@ -353,7 +352,7 @@ export class ActivityPubServerService {
 
 		const page = request.query.page === 'true';
 
-		if (countIf(x => x != null, [sinceId, untilId]) > 1) {
+		if (sinceId != null && untilId != null) {
 			reply.code(400);
 			return;
 		}
