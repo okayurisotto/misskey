@@ -6,7 +6,7 @@ import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import type { PagesRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { PageSchema } from '@/models/zod/PageSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(PageSchema);
 export const meta = {
@@ -16,10 +16,10 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	userId: misskeyIdPattern,
+	userId: MisskeyIdSchema,
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

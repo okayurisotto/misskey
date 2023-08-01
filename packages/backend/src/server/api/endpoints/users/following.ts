@@ -12,7 +12,7 @@ import { FollowingEntityService } from '@/core/entities/FollowingEntityService.j
 import { UtilityService } from '@/core/UtilityService.js';
 import { DI } from '@/di-symbols.js';
 import { FollowingSchema } from '@/models/zod/FollowingSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(FollowingSchema);
@@ -35,14 +35,14 @@ export const meta = {
 	},
 } as const;
 
-const paramDefBase = z.object({
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+const paramDef_base = z.object({
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 	limit: z.number().int().min(1).max(100).default(10),
 });
 export const paramDef = z.union([
-	paramDefBase.merge(z.object({ userId: misskeyIdPattern })),
-	paramDefBase.merge(
+	paramDef_base.merge(z.object({ userId: MisskeyIdSchema })),
+	paramDef_base.merge(
 		z.object({
 			username: z.string(),
 			host: z

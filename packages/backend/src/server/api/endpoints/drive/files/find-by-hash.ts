@@ -5,7 +5,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
-import { md5Pattern } from '@/models/zod/misc.js';
+import { MD5Schema } from '@/models/zod/misc.js';
 
 const res = z.array(DriveFileSchema);
 export const meta = {
@@ -17,7 +17,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	md5: md5Pattern,
+	md5: MD5Schema,
 });
 
 @Injectable()

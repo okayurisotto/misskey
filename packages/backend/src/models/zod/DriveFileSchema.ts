@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { misskeyIdPattern, md5Pattern } from './misc.js';
+import { MisskeyIdSchema, MD5Schema } from './misc.js';
 import { DriveFolderSchema } from './DriveFolderSchema.js';
 import { UserLiteSchema } from './UserLiteSchema.js';
 
 export const DriveFileSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
 	name: z.string(),
 	type: z.string(),
-	md5: md5Pattern,
+	md5: MD5Schema,
 	size: z.number(),
 	isSensitive: z.boolean(),
 	blurhash: z.string().nullable(),
@@ -21,8 +21,8 @@ export const DriveFileSchema = z.object({
 	url: z.string().url().nullable(),
 	thumbnailUrl: z.string().url().nullable(),
 	comment: z.string().nullable(),
-	folderId: misskeyIdPattern.nullable(),
+	folderId: MisskeyIdSchema.nullable(),
 	folder: DriveFolderSchema.nullable().optional(),
-	userId: misskeyIdPattern.nullable(),
+	userId: MisskeyIdSchema.nullable(),
 	user: UserLiteSchema.nullable().optional(),
 });

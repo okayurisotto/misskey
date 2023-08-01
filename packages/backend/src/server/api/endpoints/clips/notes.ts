@@ -9,7 +9,7 @@ import type {
 import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { ApiError } from '../../error.js';
 
@@ -29,10 +29,10 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	clipId: misskeyIdPattern,
+	clipId: MisskeyIdSchema,
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

@@ -5,7 +5,7 @@ import type { UsersRepository } from '@/models/index.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -14,7 +14,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	userId: misskeyIdPattern,
+	userId: MisskeyIdSchema,
 });
 
 @Injectable()

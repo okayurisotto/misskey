@@ -5,7 +5,7 @@ import type { AppsRepository } from '@/models/index.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { AppSchema } from '@/models/zod/AppSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = AppSchema;
@@ -22,7 +22,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	appId: misskeyIdPattern,
+	appId: MisskeyIdSchema,
 });
 
 @Injectable()

@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 import { UserLiteSchema } from './UserLiteSchema.js';
 
 export const InviteCodeSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	code: z.string(),
 	expiresAt: z.string().datetime().nullable(),
 	createdAt: z.string().datetime(),

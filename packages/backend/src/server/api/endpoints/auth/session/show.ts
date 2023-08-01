@@ -4,12 +4,12 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AuthSessionsRepository } from '@/models/index.js';
 import { AuthSessionEntityService } from '@/core/entities/AuthSessionEntityService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { AppSchema } from '@/models/zod/AppSchema.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	app: AppSchema,
 	token: z.string(),
 });

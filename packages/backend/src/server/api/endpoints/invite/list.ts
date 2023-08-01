@@ -5,7 +5,7 @@ import type { RegistrationTicketsRepository } from '@/models/index.js';
 import { InviteCodeEntityService } from '@/core/entities/InviteCodeEntityService.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(z.unknown());
@@ -18,8 +18,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(30),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

@@ -5,7 +5,7 @@ import type { RolesRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
 import { ApiError } from '@/server/api/error.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -21,7 +21,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	roleId: misskeyIdPattern,
+	roleId: MisskeyIdSchema,
 });
 
 @Injectable()

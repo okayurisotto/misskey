@@ -9,7 +9,7 @@ import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = ChannelSchema;
@@ -38,12 +38,12 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	channelId: misskeyIdPattern,
+	channelId: MisskeyIdSchema,
 	name: z.string().min(1).max(128).optional(),
 	description: z.string().min(1).max(2048).nullable().optional(),
-	bannerId: misskeyIdPattern.nullable().optional(),
+	bannerId: MisskeyIdSchema.nullable().optional(),
 	isArchived: z.boolean().nullable().optional(),
-	pinnedNoteIds: z.array(misskeyIdPattern).optional(),
+	pinnedNoteIds: z.array(MisskeyIdSchema).optional(),
 	color: z.string().min(1).max(16).optional(),
 });
 

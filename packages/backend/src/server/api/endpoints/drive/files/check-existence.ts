@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { DriveFilesRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
-import { md5Pattern } from '@/models/zod/misc.js';
+import { MD5Schema } from '@/models/zod/misc.js';
 
 const res = z.boolean();
 export const meta = {
@@ -15,7 +15,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	md5: md5Pattern,
+	md5: MD5Schema,
 });
 
 @Injectable()

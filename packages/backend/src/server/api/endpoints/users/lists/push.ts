@@ -10,7 +10,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserListService } from '@/core/UserListService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -54,8 +54,8 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	listId: misskeyIdPattern,
-	userId: misskeyIdPattern,
+	listId: MisskeyIdSchema,
+	userId: MisskeyIdSchema,
 });
 
 @Injectable()

@@ -11,7 +11,7 @@ import { AntennaEntityService } from '@/core/entities/AntennaEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { AntennaSchema } from '@/models/zod/AntennaSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = AntennaSchema;
@@ -38,7 +38,7 @@ export const meta = {
 export const paramDef = z.object({
 	name: z.string().min(1).max(100),
 	src: z.enum(['home', 'all', 'users', 'list']),
-	userListId: misskeyIdPattern.nullable().optional(),
+	userListId: MisskeyIdSchema.nullable().optional(),
 	keywords: z.array(z.array(z.string())),
 	excludeKeywords: z.array(z.array(z.string())),
 	users: z.array(z.string()),

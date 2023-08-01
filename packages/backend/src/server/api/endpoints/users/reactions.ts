@@ -9,7 +9,7 @@ import { QueryService } from '@/core/QueryService.js';
 import { NoteReactionEntityService } from '@/core/entities/NoteReactionEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteReactionSchema);
@@ -28,10 +28,10 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	userId: misskeyIdPattern,
+	userId: MisskeyIdSchema,
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 	sinceDate: z.number().int().optional(),
 	untilDate: z.number().int().optional(),
 });

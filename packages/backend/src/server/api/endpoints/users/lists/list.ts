@@ -6,7 +6,7 @@ import { UserListEntityService } from '@/core/entities/UserListEntityService.js'
 import { ApiError } from '@/server/api/error.js';
 import { DI } from '@/di-symbols.js';
 import { UserListSchema } from '@/models/zod/UserListSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(UserListSchema);
 export const meta = {
@@ -35,7 +35,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	userId: misskeyIdPattern.optional(),
+	userId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

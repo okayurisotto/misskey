@@ -11,7 +11,7 @@ import { IdService } from '@/core/IdService.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = ChannelSchema;
@@ -37,7 +37,7 @@ export const meta = {
 export const paramDef = z.object({
 	name: z.string().min(1).max(128),
 	description: z.string().min(1).max(2048).nullable().optional(),
-	bannerId: misskeyIdPattern.optional(),
+	bannerId: MisskeyIdSchema.optional(),
 	color: z.string().min(1).max(16).optional(),
 });
 

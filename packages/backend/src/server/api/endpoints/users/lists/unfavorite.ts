@@ -7,7 +7,7 @@ import type {
 } from '@/models/index.js';
 import { ApiError } from '@/server/api/error.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	requireCredential: true,
@@ -26,7 +26,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	listId: misskeyIdPattern,
+	listId: MisskeyIdSchema,
 });
 
 @Injectable()

@@ -5,7 +5,7 @@ import type { SigninsRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { SigninEntityService } from '@/core/entities/SigninEntityService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.unknown();
 export const meta = {
@@ -16,8 +16,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

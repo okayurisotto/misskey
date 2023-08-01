@@ -6,7 +6,7 @@ import { DI } from '@/di-symbols.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.unknown(); // TODO
@@ -26,7 +26,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	name: z.string().regex(/^[a-zA-Z0-9_]+$/),
-	fileId: misskeyIdPattern,
+	fileId: MisskeyIdSchema,
 	category: z
 		.string()
 		.nullable()

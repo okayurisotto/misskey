@@ -8,7 +8,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { PageSchema } from '@/models/zod/PageSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = PageSchema;
@@ -43,7 +43,7 @@ export const paramDef = z.object({
 	content: z.array(z.record(z.string(), z.unknown())),
 	variables: z.array(z.record(z.string(), z.unknown())),
 	script: z.string(),
-	eyeCatchingImageId: misskeyIdPattern.nullable().optional(),
+	eyeCatchingImageId: MisskeyIdSchema.nullable().optional(),
 	font: z.enum(['serif', 'sans-serif']).default('sans-serif'),
 	alignCenter: z.boolean().default(false),
 	hideTitleWhenPinned: z.boolean().default(false),

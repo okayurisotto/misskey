@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueueService } from '@/core/QueueService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	secure: true,
@@ -11,7 +11,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	fileId: misskeyIdPattern,
+	fileId: MisskeyIdSchema,
 });
 
 @Injectable()

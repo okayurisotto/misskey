@@ -15,7 +15,7 @@ import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -59,7 +59,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	noteId: misskeyIdPattern,
+	noteId: MisskeyIdSchema,
 	choice: z.number().int(),
 });
 

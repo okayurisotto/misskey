@@ -5,12 +5,12 @@ import type { GalleryLikesRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { GalleryLikeEntityService } from '@/core/entities/GalleryLikeEntityService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 
 const res = z.array(
 	z.object({
-		id: misskeyIdPattern,
+		id: MisskeyIdSchema,
 		post: GalleryPostSchema,
 	}),
 );
@@ -23,8 +23,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

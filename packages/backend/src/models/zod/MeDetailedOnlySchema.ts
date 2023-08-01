@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 
 export const MeDetailedOnlySchema = z.object({
-	avatarId: misskeyIdPattern.nullable(),
-	bannerId: misskeyIdPattern.nullable(),
+	avatarId: MisskeyIdSchema.nullable(),
+	bannerId: MisskeyIdSchema.nullable(),
 	injectFeaturedNote: z.boolean().nullable(),
 	receiveAnnouncementEmail: z.boolean().nullable(),
 	alwaysMarkNsfw: z.boolean().nullable(),

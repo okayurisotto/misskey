@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 
 export const UserLiteSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	name: z.string().nullable(),
 	username: z.string(),
 	host: z.string().nullable(),

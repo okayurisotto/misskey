@@ -6,7 +6,7 @@ import type { DriveFoldersRepository } from '@/models/index.js';
 import { DriveFolderEntityService } from '@/core/entities/DriveFolderEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(DriveFolderSchema);
 export const meta = {
@@ -18,7 +18,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	name: z.string(),
-	parentId: misskeyIdPattern.nullable().default(null),
+	parentId: MisskeyIdSchema.nullable().default(null),
 });
 
 @Injectable()

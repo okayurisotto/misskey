@@ -6,7 +6,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteReactionEntityService } from '@/core/entities/NoteReactionEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import type { FindOptionsWhere } from 'typeorm';
 
 const res = z.array(NoteReactionSchema);
@@ -26,12 +26,12 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	noteId: misskeyIdPattern,
+	noteId: MisskeyIdSchema,
 	type: z.string().nullable().optional(),
 	limit: z.number().int().min(1).max(100).default(10),
 	offset: z.number().int().default(0),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

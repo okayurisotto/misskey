@@ -1,14 +1,14 @@
 import { z } from 'zod';
 import { defineOpenApiSpec } from 'zod2spec';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 
 const DriveFolderSchemaBase = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
 	name: z.string(),
 	foldersCount: z.number().optional(),
 	filesCount: z.number().optional(),
-	parentId: misskeyIdPattern.nullable(),
+	parentId: MisskeyIdSchema.nullable(),
 	// parent: DriveFolderSchema.nullable().optional(),
 });
 

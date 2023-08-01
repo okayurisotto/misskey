@@ -4,7 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AccessTokensRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	requireCredential: true,
@@ -12,7 +12,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	tokenId: misskeyIdPattern,
+	tokenId: MisskeyIdSchema,
 });
 
 @Injectable()

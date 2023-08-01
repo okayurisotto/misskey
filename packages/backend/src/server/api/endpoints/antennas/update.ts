@@ -9,7 +9,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { AntennaEntityService } from '@/core/entities/AntennaEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { AntennaSchema } from '@/models/zod/AntennaSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = AntennaSchema;
@@ -34,10 +34,10 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	antennaId: misskeyIdPattern,
+	antennaId: MisskeyIdSchema,
 	name: z.string().min(1).max(100),
 	src: z.enum(['home', 'all', 'users', 'list']),
-	userListId: misskeyIdPattern.nullable().optional(),
+	userListId: MisskeyIdSchema.nullable().optional(),
 	keywords: z.array(z.array(z.string())),
 	excludeKeywords: z.array(z.array(z.string())),
 	users: z.array(z.string()),

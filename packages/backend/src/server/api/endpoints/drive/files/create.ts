@@ -10,7 +10,7 @@ import { MetaService } from '@/core/MetaService.js';
 import { DriveService } from '@/core/DriveService.js';
 import { DI } from '@/di-symbols.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 const res = DriveFileSchema;
@@ -48,7 +48,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	folderId: misskeyIdPattern.nullable().default(null),
+	folderId: MisskeyIdSchema.nullable().default(null),
 	name: z.string().nullable().default(null),
 	comment: z.string().max(DB_MAX_IMAGE_COMMENT_LENGTH).nullable().default(null),
 	isSensitive: z.boolean().default(false),

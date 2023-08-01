@@ -6,7 +6,7 @@ import type {
 	ChannelsRepository,
 } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -24,7 +24,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	channelId: misskeyIdPattern,
+	channelId: MisskeyIdSchema,
 });
 
 @Injectable()

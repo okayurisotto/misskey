@@ -9,7 +9,7 @@ import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -17,7 +17,7 @@ export const meta = {
 	res,
 } as const;
 
-const paramDefBase = z.object({
+const paramDef_base = z.object({
 	reply: z.boolean().nullable().default(null),
 	renote: z.boolean().nullable().default(null),
 	withFiles: z
@@ -25,17 +25,17 @@ const paramDefBase = z.object({
 		.default(false)
 		.describe('Only show notes that have attached files.'),
 	poll: z.boolean().nullable().default(null),
-	sinceId: misskeyIdPattern,
-	untilId: misskeyIdPattern,
+	sinceId: MisskeyIdSchema,
+	untilId: MisskeyIdSchema,
 	limit: z.number().int().min(1).max(100).default(10),
 });
 export const paramDef = z.union([
-	paramDefBase.merge(
+	paramDef_base.merge(
 		z.object({
 			tag: z.string().min(1),
 		}),
 	),
-	paramDefBase.merge(
+	paramDef_base.merge(
 		z.object({
 			query: z
 				.array(z.array(z.string().min(1)).min(1))

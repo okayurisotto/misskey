@@ -5,7 +5,7 @@ import type { GalleryPostsRepository } from '@/models/index.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 const res = GalleryPostSchema;
@@ -23,7 +23,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	postId: misskeyIdPattern,
+	postId: MisskeyIdSchema,
 });
 
 @Injectable()

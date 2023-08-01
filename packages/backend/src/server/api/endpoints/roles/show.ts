@@ -4,7 +4,7 @@ import type { RolesRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.unknown();
@@ -22,7 +22,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	roleId: misskeyIdPattern,
+	roleId: MisskeyIdSchema,
 });
 
 @Injectable()

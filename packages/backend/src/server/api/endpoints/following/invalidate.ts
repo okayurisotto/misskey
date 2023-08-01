@@ -8,7 +8,7 @@ import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = UserLiteSchema;
@@ -41,7 +41,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	userId: misskeyIdPattern,
+	userId: MisskeyIdSchema,
 });
 
 @Injectable()

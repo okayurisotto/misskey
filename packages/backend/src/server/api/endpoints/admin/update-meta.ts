@@ -6,7 +6,7 @@ import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 import { MetaService } from '@/core/MetaService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -57,7 +57,7 @@ export const paramDef = z.object({
 		.optional(),
 	setSensitiveFlagAutomatically: z.boolean().optional(),
 	enableSensitiveMediaDetectionForVideos: z.boolean().optional(),
-	proxyAccountId: misskeyIdPattern.nullable().optional(),
+	proxyAccountId: MisskeyIdSchema.nullable().optional(),
 	maintainerName: z.string().nullable().optional(),
 	maintainerEmail: z.string().nullable().optional(),
 	langs: z.array(z.string()).optional(),

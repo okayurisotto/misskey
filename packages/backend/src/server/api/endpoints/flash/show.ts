@@ -5,7 +5,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { FlashSchema } from '@/models/zod/FlashSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = FlashSchema;
@@ -23,7 +23,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	flashId: misskeyIdPattern,
+	flashId: MisskeyIdSchema,
 });
 
 @Injectable()

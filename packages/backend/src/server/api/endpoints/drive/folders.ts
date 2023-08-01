@@ -6,7 +6,7 @@ import { QueryService } from '@/core/QueryService.js';
 import { DriveFolderEntityService } from '@/core/entities/DriveFolderEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(DriveFolderSchema);
 export const meta = {
@@ -18,9 +18,9 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
-	folderId: misskeyIdPattern.nullable().default(null),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
+	folderId: MisskeyIdSchema.nullable().default(null),
 });
 
 @Injectable()

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.unknown();
 export const meta = {
@@ -16,7 +16,7 @@ export const paramDef = z.object({
 	string: z.string().optional(),
 	default: z.string().default('hello'),
 	nullableDefault: z.string().nullable().default('hello'),
-	id: misskeyIdPattern.optional(),
+	id: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

@@ -33,7 +33,7 @@ import {
 	DescriptionSchema,
 	LocationSchema,
 	NameSchema,
-	misskeyIdPattern,
+	MisskeyIdSchema,
 	uniqueItems,
 } from '@/models/zod/misc.js';
 import { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
@@ -114,8 +114,8 @@ export const paramDef = z.object({
 		.enum([...Object.keys(langmap)])
 		.nullable()
 		.optional(),
-	avatarId: misskeyIdPattern.nullable().optional(),
-	bannerId: misskeyIdPattern.nullable().optional(),
+	avatarId: MisskeyIdSchema.nullable().optional(),
+	bannerId: MisskeyIdSchema.nullable().optional(),
 	fields: z
 		.array(
 			z.object({
@@ -141,7 +141,7 @@ export const paramDef = z.object({
 	alwaysMarkNsfw: z.boolean().optional(),
 	autoSensitive: z.boolean().optional(),
 	ffVisibility: z.enum(['public', 'followers', 'private']).optional(),
-	pinnedPageId: misskeyIdPattern.nullable().optional(),
+	pinnedPageId: MisskeyIdSchema.nullable().optional(),
 	mutedWords: z.array(z.unknown()).optional(),
 	mutedInstances: z.array(z.string()).optional(),
 	mutingNotificationTypes: z.array(z.enum(notificationTypes)).optional(),

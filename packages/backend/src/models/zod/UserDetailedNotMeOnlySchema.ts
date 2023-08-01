@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 import { PageSchema } from './PageSchema.js';
 import { NoteSchema } from './NoteSchema.js';
 
@@ -7,7 +7,7 @@ export const UserDetailedNotMeOnlySchema = z.object({
 	url: z.string().url().nullable(),
 	uri: z.string().url().nullable(),
 	movedToUri: z.string().url().nullable(),
-	alsoKnownAs: z.array(misskeyIdPattern).nullable(),
+	alsoKnownAs: z.array(MisskeyIdSchema).nullable(),
 	createdAt: z.string().datetime(),
 	updatedAt: z.string().datetime().nullable(),
 	lastFetchedAt: z.string().datetime().nullable(),
@@ -24,7 +24,7 @@ export const UserDetailedNotMeOnlySchema = z.object({
 	followersCount: z.number(),
 	followingCount: z.number(),
 	notesCount: z.number(),
-	pinnedNoteIds: z.array(misskeyIdPattern),
+	pinnedNoteIds: z.array(MisskeyIdSchema),
 	pinnedNotes: z.array(NoteSchema),
 	pinnedPageId: z.string().nullable(),
 	pinnedPage: PageSchema.nullable(),

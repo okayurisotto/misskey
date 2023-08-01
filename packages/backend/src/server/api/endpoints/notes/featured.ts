@@ -6,7 +6,7 @@ import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -20,7 +20,7 @@ export const meta = {
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
 	offset: z.number().int().default(0),
-	channelId: misskeyIdPattern.optional(),
+	channelId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

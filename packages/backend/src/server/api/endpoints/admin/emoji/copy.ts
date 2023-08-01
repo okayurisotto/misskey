@@ -9,11 +9,11 @@ import { DI } from '@/di-symbols.js';
 import { DriveService } from '@/core/DriveService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 });
 export const meta = {
 	tags: ['admin'],
@@ -33,7 +33,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	emojiId: misskeyIdPattern,
+	emojiId: MisskeyIdSchema,
 });
 
 // TODO: ロジックをサービスに切り出す

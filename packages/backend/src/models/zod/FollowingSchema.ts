@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 import { UserDetailedSchema } from './UserDetailedSchema.js';
 
 export const FollowingSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
-	followeeId: misskeyIdPattern,
+	followeeId: MisskeyIdSchema,
 	followee: UserDetailedSchema.optional(),
-	followerId: misskeyIdPattern,
+	followerId: MisskeyIdSchema,
 	follower: UserDetailedSchema.optional(),
 });

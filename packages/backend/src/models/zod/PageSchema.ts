@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 import { UserLiteSchema } from './UserLiteSchema.js';
 
 export const PageSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
 	updatedAt: z.string().datetime(),
 	title: z.string(),
@@ -11,6 +11,6 @@ export const PageSchema = z.object({
 	summary: z.string().nullable(),
 	content: z.array(z.unknown()),
 	variables: z.array(z.unknown()),
-	userId: misskeyIdPattern,
+	userId: MisskeyIdSchema,
 	user: UserLiteSchema,
 });

@@ -10,7 +10,7 @@ import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
-import { misskeyIdPattern, uniqueItems } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 
 const res = GalleryPostSchema;
 export const meta = {
@@ -27,10 +27,10 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	postId: misskeyIdPattern,
+	postId: MisskeyIdSchema,
 	title: z.string().min(1),
 	description: z.string().nullable().optional(),
-	fileIds: uniqueItems(z.array(misskeyIdPattern).min(1).max(32)),
+	fileIds: uniqueItems(z.array(MisskeyIdSchema).min(1).max(32)),
 	isSensitive: z.boolean().default(false),
 });
 

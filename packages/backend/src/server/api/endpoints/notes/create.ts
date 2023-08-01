@@ -19,7 +19,7 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
 import { DI } from '@/di-symbols.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { misskeyIdPattern, uniqueItems } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.object({ createdNote: NoteSchema });
@@ -77,18 +77,18 @@ export const meta = {
 	},
 } as const;
 
-const paramDeffileIds = uniqueItems(z.array(misskeyIdPattern).min(1).max(16));
-const paramDefmediaIds = uniqueItems(z.array(misskeyIdPattern).min(1).max(16));
-const paramDefpoll = z.object({
+const paramDef_fileIds = uniqueItems(z.array(MisskeyIdSchema).min(1).max(16));
+const paramDef_mediaIds = uniqueItems(z.array(MisskeyIdSchema).min(1).max(16));
+const paramDef_poll = z.object({
 	choices: uniqueItems(z.array(z.string().min(1).max(50)).min(2).max(10)),
 	expiredAfter: z.number().int().min(1).nullable().optional(),
 	expiresAt: z.number().int().nullable().optional(),
 	multiple: z.boolean().optional(),
 });
-const paramDefrenoteId = misskeyIdPattern;
-const paramDeftext = z.string().min(1).max(MAX_NOTE_TEXT_LENGTH);
-const paramDefBase = z.object({
-	channelId: misskeyIdPattern.nullable().optional(),
+const paramDef_renoteId = MisskeyIdSchema;
+const paramDef_text = z.string().min(1).max(MAX_NOTE_TEXT_LENGTH);
+const paramDef_base = z.object({
+	channelId: MisskeyIdSchema.nullable().optional(),
 	cw: z.string().max(100).nullable().optional(),
 	localOnly: z.boolean().default(false),
 	noExtractEmojis: z.boolean().default(false),
@@ -103,25 +103,25 @@ const paramDefBase = z.object({
 		])
 		.nullable()
 		.default(null),
-	replyId: misskeyIdPattern.nullable().optional(),
+	replyId: MisskeyIdSchema.nullable().optional(),
 	visibility: z
 		.enum(['followers', 'home', 'public', 'specified'])
 		.default('public'),
-	visibleUserIds: uniqueItems(z.array(misskeyIdPattern)).optional(),
+	visibleUserIds: uniqueItems(z.array(MisskeyIdSchema)).optional(),
 	...{
-		fileIds: paramDeffileIds.optional(),
-		mediaIds: paramDefmediaIds.optional(),
-		poll: paramDefpoll.nullable().optional(),
-		renoteId: paramDefrenoteId.nullable().optional(),
-		text: paramDeftext.optional(),
+		fileIds: paramDef_fileIds.optional(),
+		mediaIds: paramDef_mediaIds.optional(),
+		poll: paramDef_poll.nullable().optional(),
+		renoteId: paramDef_renoteId.nullable().optional(),
+		text: paramDef_text.optional(),
 	},
 });
 export const paramDef = z.union([
-	paramDefBase.extend({ fileIds: paramDeffileIds }),
-	paramDefBase.extend({ mediaIds: paramDefmediaIds }),
-	paramDefBase.extend({ poll: paramDefpoll }),
-	paramDefBase.extend({ renoteId: paramDefrenoteId }),
-	paramDefBase.extend({ text: paramDeftext }),
+	paramDef_base.extend({ fileIds: paramDef_fileIds }),
+	paramDef_base.extend({ mediaIds: paramDef_mediaIds }),
+	paramDef_base.extend({ poll: paramDef_poll }),
+	paramDef_base.extend({ renoteId: paramDef_renoteId }),
+	paramDef_base.extend({ text: paramDef_text }),
 ]);
 
 @Injectable()

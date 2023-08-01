@@ -6,7 +6,7 @@ import { QueryService } from '@/core/QueryService.js';
 import { MutingEntityService } from '@/core/entities/MutingEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { MutingSchema } from '@/models/zod/MutingSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(MutingSchema);
 export const meta = {
@@ -18,8 +18,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(30),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

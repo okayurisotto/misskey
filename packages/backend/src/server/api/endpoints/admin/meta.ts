@@ -5,7 +5,7 @@ import { MetaService } from '@/core/MetaService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.object({
 	cacheRemoteFiles: z.boolean(),
@@ -40,7 +40,7 @@ const res = z.object({
 	sensitiveMediaDetectionSensitivity: z.string().optional(),
 	setSensitiveFlagAutomatically: z.boolean().optional(),
 	enableSensitiveMediaDetectionForVideos: z.boolean().optional(),
-	proxyAccountId: misskeyIdPattern.nullable().optional(),
+	proxyAccountId: MisskeyIdSchema.nullable().optional(),
 	summalyProxy: z.string().nullable().optional(),
 	email: z.string().nullable().optional(),
 	smtpSecure: z.boolean().optional(),

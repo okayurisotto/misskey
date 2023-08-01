@@ -18,13 +18,13 @@ export const meta = {
 	res,
 } as const;
 
-const paramDefBase = z.object({
+const paramDef_base = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
 	detail: z.boolean().default(true),
 });
 export const paramDef = z.union([
-	paramDefBase.merge(z.object({ username: z.string().nullable() })),
-	paramDefBase.merge(z.object({ host: z.string().nullable() })),
+	paramDef_base.merge(z.object({ username: z.string().nullable() })),
+	paramDef_base.merge(z.object({ host: z.string().nullable() })),
 ]);
 
 @Injectable()

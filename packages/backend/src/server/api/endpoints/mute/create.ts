@@ -6,7 +6,7 @@ import type { MutingsRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserMutingService } from '@/core/UserMutingService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -38,7 +38,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	userId: misskeyIdPattern,
+	userId: MisskeyIdSchema,
 	expiresAt: z
 		.number()
 		.int()

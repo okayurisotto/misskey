@@ -4,10 +4,10 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AnnouncementsRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
 	updatedAt: z.string().datetime().nullable(),
 	title: z.string(),

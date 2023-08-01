@@ -6,7 +6,7 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = NoteSchema;
@@ -23,7 +23,7 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = z.object({ noteId: misskeyIdPattern });
+export const paramDef = z.object({ noteId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

@@ -6,7 +6,7 @@ import type {
 } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -29,7 +29,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	clipId: misskeyIdPattern,
+	clipId: MisskeyIdSchema,
 });
 
 @Injectable()

@@ -5,7 +5,7 @@ import type { RolesRepository, UsersRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { ApiError } from '@/server/api/error.js';
 import { RoleService } from '@/core/RoleService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -31,8 +31,8 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	roleId: misskeyIdPattern,
-	userId: misskeyIdPattern,
+	roleId: MisskeyIdSchema,
+	userId: MisskeyIdSchema,
 	expiresAt: z.number().int().nullable().optional(),
 });
 

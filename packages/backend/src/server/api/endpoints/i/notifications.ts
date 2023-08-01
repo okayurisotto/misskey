@@ -19,7 +19,7 @@ import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { Notification } from '@/models/entities/Notification.js';
 import { NotificationSchema } from '@/models/zod/NotificationSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(NotificationSchema);
 export const meta = {
@@ -35,8 +35,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 	markAsRead: z.boolean().default(true),
 	includeTypes: z
 		.array(z.enum([...notificationTypes, ...obsoleteNotificationTypes]))

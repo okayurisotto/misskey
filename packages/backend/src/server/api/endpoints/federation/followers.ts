@@ -6,7 +6,7 @@ import { QueryService } from '@/core/QueryService.js';
 import { FollowingEntityService } from '@/core/entities/FollowingEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { FollowingSchema } from '@/models/zod/FollowingSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(FollowingSchema);
 export const meta = {
@@ -17,8 +17,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	host: z.string(),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 	limit: z.number().int().min(1).max(100).default(10),
 });
 

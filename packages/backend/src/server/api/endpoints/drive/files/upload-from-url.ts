@@ -7,7 +7,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { DriveService } from '@/core/DriveService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['drive'],
@@ -24,7 +24,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	url: z.string(),
-	folderId: misskeyIdPattern.nullable().default(null),
+	folderId: MisskeyIdSchema.nullable().default(null),
 	isSensitive: z.boolean().default(false),
 	comment: z.string().max(512).nullable().default(null),
 	marker: z.string().nullable().default(null),

@@ -7,7 +7,7 @@ import type {
 } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.object({
 	isFavorited: z.boolean(),
@@ -20,7 +20,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	noteId: misskeyIdPattern,
+	noteId: MisskeyIdSchema,
 });
 
 @Injectable()

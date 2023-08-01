@@ -4,10 +4,10 @@ import type { UsersRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const resBase = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	isFollowing: z.boolean(),
 	hasPendingFollowRequestFromYou: z.boolean(),
 	hasPendingFollowRequestToYou: z.boolean(),
@@ -27,7 +27,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	userId: z.union([misskeyIdPattern, z.array(misskeyIdPattern)]),
+	userId: z.union([MisskeyIdSchema, z.array(MisskeyIdSchema)]),
 });
 
 @Injectable()

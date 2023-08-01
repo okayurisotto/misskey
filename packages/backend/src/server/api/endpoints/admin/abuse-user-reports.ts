@@ -5,18 +5,18 @@ import type { AbuseUserReportsRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { AbuseUserReportEntityService } from '@/core/entities/AbuseUserReportEntityService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';
 
 const res = z.array(
 	z.object({
-		id: misskeyIdPattern,
+		id: MisskeyIdSchema,
 		createdAt: z.string().datetime(),
 		comment: z.string(),
 		resolved: z.boolean(),
-		reporterId: misskeyIdPattern,
-		targetUserId: misskeyIdPattern,
-		assigneeId: misskeyIdPattern.nullable(),
+		reporterId: MisskeyIdSchema,
+		targetUserId: MisskeyIdSchema,
+		assigneeId: MisskeyIdSchema.nullable(),
 		reporter: UserSchema,
 		targetUser: UserSchema,
 		assignee: UserSchema.nullable().optional(),
@@ -33,8 +33,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 	state: z.string().nullable().default(null),
 	reporterOrigin: z
 		.enum(['combined', 'local', 'remote'])

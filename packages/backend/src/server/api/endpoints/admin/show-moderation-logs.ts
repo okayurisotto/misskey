@@ -5,16 +5,16 @@ import type { ModerationLogsRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { ModerationLogEntityService } from '@/core/entities/ModerationLogEntityService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 
 const res = z.array(
 	z.object({
-		id: misskeyIdPattern,
+		id: MisskeyIdSchema,
 		createdAt: z.string().datetime(),
 		type: z.string(),
 		info: z.unknown(),
-		userId: misskeyIdPattern,
+		userId: MisskeyIdSchema,
 		user: UserDetailedSchema,
 	}),
 );
@@ -27,8 +27,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

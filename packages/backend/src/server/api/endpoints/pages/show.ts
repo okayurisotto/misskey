@@ -7,7 +7,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { PageSchema } from '@/models/zod/PageSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = PageSchema;
@@ -26,7 +26,7 @@ export const meta = {
 
 export const paramDef = z.union([
 	z.object({
-		pageId: misskeyIdPattern,
+		pageId: MisskeyIdSchema,
 	}),
 	z.object({
 		name: z.string(),

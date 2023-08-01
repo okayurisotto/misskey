@@ -1,28 +1,28 @@
 import { z } from 'zod';
 import { defineOpenApiSpec } from 'zod2spec';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 import { UserLiteSchema } from './UserLiteSchema.js';
 import { DriveFileSchema } from './DriveFileSchema.js';
 
 const NoteSchemaBase = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
 	deletedAt: z.string().datetime().nullable().optional(),
 	text: z.string().nullable(),
 	cw: z.string().nullable().optional(),
-	userId: misskeyIdPattern,
+	userId: MisskeyIdSchema,
 	user: UserLiteSchema,
-	replyId: misskeyIdPattern.nullable().optional(),
-	renoteId: misskeyIdPattern.nullable().optional(),
+	replyId: MisskeyIdSchema.nullable().optional(),
+	renoteId: MisskeyIdSchema.nullable().optional(),
 	isHidden: z.boolean().optional(),
 	visibility: z.string(),
-	mentions: z.array(misskeyIdPattern).optional(),
-	visibleUserIds: z.array(misskeyIdPattern).optional(),
-	fileIds: z.array(misskeyIdPattern).optional(),
+	mentions: z.array(MisskeyIdSchema).optional(),
+	visibleUserIds: z.array(MisskeyIdSchema).optional(),
+	fileIds: z.array(MisskeyIdSchema).optional(),
 	files: z.array(DriveFileSchema).optional(),
 	tags: z.array(z.string()).optional(),
 	poll: z.unknown().nullable().optional(),
-	channelId: misskeyIdPattern.nullable().optional(),
+	channelId: MisskeyIdSchema.nullable().optional(),
 	channel: z
 		.object({ id: z.string(), name: z.string().nullable() })
 		.nullable()

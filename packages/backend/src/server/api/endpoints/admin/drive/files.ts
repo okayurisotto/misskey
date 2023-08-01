@@ -5,7 +5,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 
 const res = z.array(DriveFileSchema);
@@ -18,9 +18,9 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
-	userId: misskeyIdPattern.nullable().optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
+	userId: MisskeyIdSchema.nullable().optional(),
 	type: z
 		.string()
 		.regex(/^[a-zA-Z0-9\/\-*]+$/)

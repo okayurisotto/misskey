@@ -4,18 +4,18 @@ import type { DriveFilesRepository, UsersRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
-import { md5Pattern, misskeyIdPattern } from '@/models/zod/misc.js';
+import { MD5Schema, MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
-	userId: misskeyIdPattern.nullable(),
+	userId: MisskeyIdSchema.nullable(),
 	userHost: z
 		.string()
 		.nullable()
 		.describe('The local host is represented with `null`.'),
-	md5: md5Pattern,
+	md5: MD5Schema,
 	name: z.string(),
 	type: z.string(),
 	size: z.number(),
@@ -31,7 +31,7 @@ const res = z.object({
 	webpublicAccessKey: z.string().nullable(),
 	uri: z.string().nullable(),
 	src: z.string().nullable(),
-	folderId: misskeyIdPattern.nullable(),
+	folderId: MisskeyIdSchema.nullable(),
 	isSensitive: z.boolean(),
 	isLink: z.boolean(),
 });
@@ -50,7 +50,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.union([
-	z.object({ fileId: misskeyIdPattern }),
+	z.object({ fileId: MisskeyIdSchema }),
 	z.object({ url: z.string() }),
 ]);
 

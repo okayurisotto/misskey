@@ -7,7 +7,7 @@ import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(ClipSchema);
@@ -25,7 +25,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	noteId: misskeyIdPattern,
+	noteId: MisskeyIdSchema,
 });
 
 @Injectable()

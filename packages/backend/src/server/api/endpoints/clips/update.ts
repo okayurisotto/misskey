@@ -6,7 +6,7 @@ import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { ApiError } from '../../error.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = ClipSchema;
 export const meta = {
@@ -25,7 +25,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	clipId: misskeyIdPattern,
+	clipId: MisskeyIdSchema,
 	name: z.string().min(1).max(100),
 	isPublic: z.boolean().optional(),
 	description: z.string().min(1).max(2048).nullable().optional(),

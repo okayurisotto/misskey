@@ -9,7 +9,7 @@ import { InstanceActorService } from '@/core/InstanceActorService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -18,7 +18,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	reportId: misskeyIdPattern,
+	reportId: MisskeyIdSchema,
 	forward: z.boolean().default(false),
 });
 

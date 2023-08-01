@@ -3,7 +3,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { FlashsRepository, FlashLikesRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -27,7 +27,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	flashId: misskeyIdPattern,
+	flashId: MisskeyIdSchema,
 });
 
 @Injectable()

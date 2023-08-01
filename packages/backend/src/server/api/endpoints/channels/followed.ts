@@ -6,7 +6,7 @@ import { QueryService } from '@/core/QueryService.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(ChannelSchema);
 export const meta = {
@@ -17,8 +17,8 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 	limit: z.number().int().min(1).max(100).default(5),
 });
 

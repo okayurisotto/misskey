@@ -1,15 +1,15 @@
 import { z } from 'zod';
 import { notificationTypes } from '@/types.js';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 import { UserLiteSchema } from './UserLiteSchema.js';
 import { NoteSchema } from './NoteSchema.js';
 
 export const NotificationSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
 	type: z.enum(notificationTypes),
 	user: UserLiteSchema.nullable().optional(),
-	userId: misskeyIdPattern.nullable().optional(),
+	userId: MisskeyIdSchema.nullable().optional(),
 	note: NoteSchema.nullable().optional(),
 	reaction: z.string().nullable().optional(),
 	choice: z.number().nullable().optional(),

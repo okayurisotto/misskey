@@ -8,11 +8,11 @@ import type { Announcement } from '@/models/entities/Announcement.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.array(
 	z.object({
-		id: misskeyIdPattern,
+		id: MisskeyIdSchema,
 		createdAt: z.string().datetime(),
 		updatedAt: z.string().datetime().nullable(),
 		text: z.string(),
@@ -30,8 +30,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

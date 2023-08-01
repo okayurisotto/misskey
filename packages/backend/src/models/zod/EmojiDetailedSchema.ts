@@ -1,9 +1,9 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 
 export const EmojiDetailedSchema = z.object({
-	id: misskeyIdPattern,
-	aliases: z.array(misskeyIdPattern),
+	id: MisskeyIdSchema,
+	aliases: z.array(MisskeyIdSchema),
 	name: z.string(),
 	category: z.string().nullable(),
 	host: z.string().nullable(),
@@ -11,5 +11,5 @@ export const EmojiDetailedSchema = z.object({
 	license: z.string().nullable(),
 	isSensitive: z.boolean(),
 	localOnly: z.boolean(),
-	roleIdsThatCanBeUsedThisEmojiAsReaction: z.array(misskeyIdPattern),
+	roleIdsThatCanBeUsedThisEmojiAsReaction: z.array(MisskeyIdSchema),
 });

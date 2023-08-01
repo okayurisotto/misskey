@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import PerUserReactionsChart from '@/core/chart/charts/per-user-reactions.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = z.object({
 	local: z.object({ count: z.array(z.number()) }),
@@ -19,7 +19,7 @@ export const paramDef = z.object({
 	span: z.enum(['day', 'hour']),
 	limit: z.number().int().min(1).max(500).default(30),
 	offset: z.number().int().nullable().default(null),
-	userId: misskeyIdPattern,
+	userId: MisskeyIdSchema,
 });
 
 @Injectable()

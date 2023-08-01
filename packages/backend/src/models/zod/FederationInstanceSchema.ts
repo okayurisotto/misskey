@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 
 export const FederationInstanceSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	firstRetrievedAt: z.string().datetime(),
 	host: z.string(),
 	usersCount: z.number(),

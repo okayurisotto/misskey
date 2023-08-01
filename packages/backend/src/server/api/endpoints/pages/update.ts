@@ -6,7 +6,7 @@ import type { PagesRepository, DriveFilesRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 import { ApiError } from '../../error.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['pages'],
@@ -42,14 +42,14 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	pageId: misskeyIdPattern,
+	pageId: MisskeyIdSchema,
 	title: z.string(),
 	name: z.string().min(1),
 	summary: z.string().nullable().optional(),
 	content: z.array(z.record(z.string(), z.unknown())),
 	variables: z.array(z.record(z.string(), z.unknown())),
 	script: z.string(),
-	eyeCatchingImageId: misskeyIdPattern.nullable().optional(),
+	eyeCatchingImageId: MisskeyIdSchema.nullable().optional(),
 	font: z.enum(['serif', 'sans-serif']).default('sans-serif').optional(),
 	alignCenter: z.boolean().optional(),
 	hideTitleWhenPinned: z.boolean().optional(),

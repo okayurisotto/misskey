@@ -6,12 +6,12 @@ import type { Emoji } from '@/models/entities/Emoji.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 //import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
 
 const res = z.array(
 	z.object({
-		id: misskeyIdPattern,
+		id: MisskeyIdSchema,
 		aliases: z.array(z.string()),
 		name: z.string(),
 		category: z.string().nullable(),
@@ -34,8 +34,8 @@ export const meta = {
 export const paramDef = z.object({
 	query: z.string().nullable().default(null),
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 });
 
 @Injectable()

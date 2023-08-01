@@ -7,7 +7,7 @@ import type {
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserListEntityService } from '@/core/entities/UserListEntityService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { UserListSchema } from '@/models/zod/UserListSchema.js';
 import { ApiError } from '../../../error.js';
 
@@ -28,7 +28,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	listId: misskeyIdPattern,
+	listId: MisskeyIdSchema,
 	forPublic: z.boolean().default(false),
 });
 

@@ -5,12 +5,12 @@ import { QueryService } from '@/core/QueryService.js';
 import type { FollowRequestsRepository } from '@/models/index.js';
 import { FollowRequestEntityService } from '@/core/entities/FollowRequestEntityService.js';
 import { DI } from '@/di-symbols.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 
 const res = z.array(
 	z.object({
-		id: misskeyIdPattern,
+		id: MisskeyIdSchema,
 		follower: UserLiteSchema,
 		followee: UserLiteSchema,
 	}),
@@ -23,8 +23,8 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 	limit: z.number().int().min(1).max(100).default(10),
 });
 

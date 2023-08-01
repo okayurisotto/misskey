@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 
 export const AntennaSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
 	name: z.string(),
 	keywords: z.array(z.array(z.string())),
 	excludeKeywords: z.array(z.array(z.string())),
 	src: z.enum(['home', 'all', 'users', 'list']),
-	userListId: misskeyIdPattern.nullable(),
+	userListId: MisskeyIdSchema.nullable(),
 	users: z.array(z.string()),
 	caseSensitive: z.boolean(),
 	notify: z.boolean(),

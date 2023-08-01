@@ -13,7 +13,7 @@ import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -31,10 +31,10 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	channelId: misskeyIdPattern,
+	channelId: MisskeyIdSchema,
 	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 	sinceDate: z.number().int().optional(),
 	untilDate: z.number().int().optional(),
 });

@@ -10,7 +10,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 const res = DriveFileSchema;
@@ -50,8 +50,8 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	fileId: misskeyIdPattern,
-	folderId: misskeyIdPattern.nullable().optional(),
+	fileId: MisskeyIdSchema,
+	folderId: MisskeyIdSchema.nullable().optional(),
 	name: z.string().optional(),
 	isSensitive: z.boolean().optional(),
 	comment: z.string().max(512).nullable().optional(),

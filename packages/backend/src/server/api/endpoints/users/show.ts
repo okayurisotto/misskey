@@ -9,7 +9,7 @@ import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { DI } from '@/di-symbols.js';
 import PerUserPvChart from '@/core/chart/charts/per-user-pv.js';
 import { RoleService } from '@/core/RoleService.js';
-import { misskeyIdPattern, uniqueItems } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { ApiError } from '../../error.js';
 import { ApiLoggerService } from '../../ApiLoggerService.js';
@@ -37,7 +37,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDefBase = {
+const paramDef_base = {
 	host: z
 		.string()
 		.nullable()
@@ -45,17 +45,17 @@ const paramDefBase = {
 		.describe('The local host is represented with `null`.'),
 };
 export const paramDef = z.union([
-	z.object(paramDefBase).merge(
+	z.object(paramDef_base).merge(
 		z.object({
-			userId: misskeyIdPattern,
+			userId: MisskeyIdSchema,
 		}),
 	),
-	z.object(paramDefBase).merge(
+	z.object(paramDef_base).merge(
 		z.object({
-			userIds: uniqueItems(z.array(misskeyIdPattern)),
+			userIds: uniqueItems(z.array(MisskeyIdSchema)),
 		}),
 	),
-	z.object(paramDefBase).merge(
+	z.object(paramDef_base).merge(
 		z.object({
 			username: z.string(),
 		}),

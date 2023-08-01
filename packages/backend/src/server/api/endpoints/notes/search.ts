@@ -8,7 +8,7 @@ import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -27,16 +27,16 @@ export const meta = {
 
 export const paramDef = z.object({
 	query: z.string(),
-	sinceId: misskeyIdPattern.optional(),
-	untilId: misskeyIdPattern.optional(),
+	sinceId: MisskeyIdSchema.optional(),
+	untilId: MisskeyIdSchema.optional(),
 	limit: z.number().int().min(1).max(100).default(10),
 	offset: z.number().int().default(0),
 	host: z
 		.string()
 		.optional()
 		.describe('The local host is represented with `.`.'),
-	userId: misskeyIdPattern.nullable().default(null),
-	channelId: misskeyIdPattern.nullable().default(null),
+	userId: MisskeyIdSchema.nullable().default(null),
+	channelId: MisskeyIdSchema.nullable().default(null),
 });
 
 // TODO: ロジックをサービスに切り出す

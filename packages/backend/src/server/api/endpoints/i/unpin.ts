@@ -4,7 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { NotePiningService } from '@/core/NotePiningService.js';
 import { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = MeDetailedSchema;
@@ -23,7 +23,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	noteId: misskeyIdPattern,
+	noteId: MisskeyIdSchema,
 });
 
 @Injectable()

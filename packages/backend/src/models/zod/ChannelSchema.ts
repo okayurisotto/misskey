@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 
 export const ChannelSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
 	lastNotedAt: z.string().datetime().nullable(),
 	name: z.string(),
@@ -13,7 +13,7 @@ export const ChannelSchema = z.object({
 	usersCount: z.number(),
 	isFollowing: z.boolean().optional(),
 	isFavorited: z.boolean().optional(),
-	userId: misskeyIdPattern.nullable(),
-	pinnedNoteIds: z.array(misskeyIdPattern),
+	userId: MisskeyIdSchema.nullable(),
+	pinnedNoteIds: z.array(MisskeyIdSchema),
 	color: z.string(),
 });

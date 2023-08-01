@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -11,7 +11,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	ids: z.array(misskeyIdPattern),
+	ids: z.array(MisskeyIdSchema),
 	category: z
 		.string()
 		.nullable()

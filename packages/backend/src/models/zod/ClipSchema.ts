@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { misskeyIdPattern } from './misc.js';
+import { MisskeyIdSchema } from './misc.js';
 import { UserLiteSchema } from './UserLiteSchema.js';
 
 export const ClipSchema = z.object({
-	id: misskeyIdPattern,
+	id: MisskeyIdSchema,
 	createdAt: z.string().datetime(),
 	lastClippedAt: z.string().datetime().nullable(),
-	userId: misskeyIdPattern,
+	userId: MisskeyIdSchema,
 	user: UserLiteSchema,
 	name: z.string(),
 	description: z.string().nullable(),

@@ -15,7 +15,7 @@ import { ApiError } from '@/server/api/error.js';
 import { RoleService } from '@/core/RoleService.js';
 import { UserListService } from '@/core/UserListService.js';
 import { UserListSchema } from '@/models/zod/UserListSchema.js';
-import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const res = UserListSchema;
 export const meta = {
@@ -59,7 +59,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	name: z.string().min(1).max(100),
-	listId: misskeyIdPattern,
+	listId: MisskeyIdSchema,
 });
 
 @Injectable()

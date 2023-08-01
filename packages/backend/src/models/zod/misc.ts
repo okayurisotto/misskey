@@ -9,9 +9,9 @@ export const uniqueItems = <T extends z.ZodArray<z.ZodType>>(
 	return schema.refine(isUnique, { message: 'Array has duplicate items.' });
 };
 
-export const misskeyIdPattern = z.string().regex(/^[a-zA-Z0-9]+$/);
+export const MisskeyIdSchema = z.string().regex(/^[a-zA-Z0-9]+$/);
 
-export const md5Pattern = z.string().regex(/[A-Fa-f\d]{32}/);
+export const MD5Schema = z.string().regex(/[A-Fa-f\d]{32}/);
 
 export const LocalUsernameSchema = z.string().regex(/^\w{1,20}$/);
 
