@@ -1,15 +1,22 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AuthSessionsRepository } from '@/models/index.js';
 import { AuthSessionEntityService } from '@/core/entities/AuthSessionEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { AppSchema } from '@/models/zod/AppSchema.js';
 import { ApiError } from '../../../error.js';
 
+const res = z.object({
+	id: misskeyIdPattern,
+	app: AppSchema,
+	token: z.string(),
+});
 export const meta = {
 	tags: ['auth'],
-
 	requireCredential: false,
-
 	errors: {
 		noSuchSession: {
 			message: 'No such session.',
@@ -17,47 +24,28 @@ export const meta = {
 			id: 'bd72c97d-eba7-4adb-a467-f171b8847250',
 		},
 	},
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			id: {
-				type: 'string',
-				optional: false, nullable: false,
-				format: 'id',
-			},
-			app: {
-				type: 'object',
-				optional: false, nullable: false,
-				ref: 'App',
-			},
-			token: {
-				type: 'string',
-				optional: false, nullable: false,
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		token: { type: 'string' },
-	},
-	required: ['token'],
-} as const;
+const paramDef_ = z.object({
+	token: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.authSessionsRepository)
 		private authSessionsRepository: AuthSessionsRepository,
 
 		private authSessionEntityService: AuthSessionEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Lookup session
 			const session = await this.authSessionsRepository.findOneBy({
 				token: ps.token,
@@ -67,7 +55,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				throw new ApiError(meta.errors.noSuchSession);
 			}
 
-			return await this.authSessionEntityService.pack(session, me);
+			return (await this.authSessionEntityService.pack(
+				session,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

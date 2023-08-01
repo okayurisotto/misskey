@@ -1,29 +1,36 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import bcrypt from 'bcryptjs';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { UserProfilesRepository, UserSecurityKeysRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	UserProfilesRepository,
+	UserSecurityKeysRepository,
+} from '@/models/index.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
 
+const res = z.unknown();
 export const meta = {
 	requireCredential: true,
-
 	secure: true,
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		password: { type: 'string' },
-		credentialId: { type: 'string' },
-	},
-	required: ['password', 'credentialId'],
-} as const;
+const paramDef_ = z.object({
+	password: z.string(),
+	credentialId: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.userSecurityKeysRepository)
 		private userSecurityKeysRepository: UserSecurityKeysRepository,
@@ -34,8 +41,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private userEntityService: UserEntityService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: me.id });
+		super(meta, paramDef_, async (ps, me) => {
+			const profile = await this.userProfilesRepository.findOneByOrFail({
+				userId: me.id,
+			});
 
 			// Compare password
 			const same = await bcrypt.compare(ps.password, profile.password!);
@@ -69,12 +78,16 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			// Publish meUpdated event
-			this.globalEventService.publishMainStream(me.id, 'meUpdated', await this.userEntityService.pack(me.id, me, {
-				detail: true,
-				includeSecrets: true,
-			}));
+			this.globalEventService.publishMainStream(
+				me.id,
+				'meUpdated',
+				await this.userEntityService.pack(me.id, me, {
+					detail: true,
+					includeSecrets: true,
+				}),
+			);
 
-			return {};
+			return {} satisfies z.infer<typeof res>;
 		});
 	}
 }

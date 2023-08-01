@@ -1,80 +1,55 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { EmojisRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.array(
+	z.object({
+		id: misskeyIdPattern,
+		aliases: z.array(z.string()),
+		name: z.string(),
+		category: z.string().nullable(),
+		host: z
+			.string()
+			.nullable()
+			.describe('The local host is represented with `null`.'),
+		url: z.string(),
+	}),
+);
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			properties: {
-				id: {
-					type: 'string',
-					optional: false, nullable: false,
-					format: 'id',
-				},
-				aliases: {
-					type: 'array',
-					optional: false, nullable: false,
-					items: {
-						type: 'string',
-						optional: false, nullable: false,
-					},
-				},
-				name: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-				category: {
-					type: 'string',
-					optional: false, nullable: true,
-				},
-				host: {
-					type: 'string',
-					optional: false, nullable: true,
-					description: 'The local host is represented with `null`.',
-				},
-				url: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		query: { type: 'string', nullable: true, default: null },
-		host: {
-			type: 'string',
-			nullable: true,
-			default: null,
-			description: 'Use `null` to represent the local host.',
-		},
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	query: z.string().nullable().default(null),
+	host: z
+		.string()
+		.nullable()
+		.default(null)
+		.describe('The local host is represented with `null`.'),
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
 // eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.emojisRepository)
 		private emojisRepository: EmojisRepository,
@@ -83,25 +58,35 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private queryService: QueryService,
 		private emojiEntityService: EmojiEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const q = this.queryService.makePaginationQuery(this.emojisRepository.createQueryBuilder('emoji'), ps.sinceId, ps.untilId);
+		super(meta, paramDef_, async (ps, me) => {
+			const q = this.queryService.makePaginationQuery(
+				this.emojisRepository.createQueryBuilder('emoji'),
+				ps.sinceId,
+				ps.untilId,
+			);
 
 			if (ps.host == null) {
 				q.andWhere('emoji.host IS NOT NULL');
 			} else {
-				q.andWhere('emoji.host = :host', { host: this.utilityService.toPuny(ps.host) });
+				q.andWhere('emoji.host = :host', {
+					host: this.utilityService.toPuny(ps.host),
+				});
 			}
 
 			if (ps.query) {
-				q.andWhere('emoji.name like :query', { query: '%' + sqlLikeEscape(ps.query) + '%' });
+				q.andWhere('emoji.name like :query', {
+					query: '%' + sqlLikeEscape(ps.query) + '%',
+				});
 			}
 
 			const emojis = await q
 				.orderBy('emoji.id', 'DESC')
-				.limit(ps.limit)
+				.limit(ps.limit ?? 10)
 				.getMany();
 
-			return this.emojiEntityService.packDetailedMany(emojis);
+			return (await this.emojiEntityService.packDetailedMany(
+				emojis,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

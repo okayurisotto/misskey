@@ -1,8 +1,14 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import ms from 'ms';
 import { IsNull } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import type { PasswordResetRequestsRepository, UserProfilesRepository, UsersRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import type {
+	PasswordResetRequestsRepository,
+	UserProfilesRepository,
+	UsersRepository,
+} from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
@@ -11,33 +17,28 @@ import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
 
 export const meta = {
 	tags: ['reset password'],
-
 	requireCredential: false,
-
 	description: 'Request a users password to be reset.',
-
 	limit: {
 		duration: ms('1hour'),
 		max: 3,
 	},
-
-	errors: {
-
-	},
+	errors: {},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		username: { type: 'string' },
-		email: { type: 'string' },
-	},
-	required: ['username', 'email'],
-} as const;
+const paramDef_ = z.object({
+	username: z.string(),
+	email: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
@@ -54,7 +55,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private idService: IdService,
 		private emailService: EmailService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const user = await this.usersRepository.findOneBy({
 				usernameLower: ps.username.toLowerCase(),
 				host: IsNull(),
@@ -65,7 +66,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				return;
 			}
 
-			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: user.id });
+			const profile = await this.userProfilesRepository.findOneByOrFail({
+				userId: user.id,
+			});
 
 			// 合致するメアドが登録されていなかったら無視
 			if (profile.email !== ps.email) {
@@ -88,9 +91,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			const link = `${this.config.url}/reset-password/${token}`;
 
-			this.emailService.sendEmail(ps.email, 'Password reset requested',
+			this.emailService.sendEmail(
+				ps.email,
+				'Password reset requested',
 				`To reset password, please click this link:<br><a href="${link}">${link}</a>`,
-				`To reset password, please click this link: ${link}`);
+				`To reset password, please click this link: ${link}`,
+			);
 		});
 	}
 }

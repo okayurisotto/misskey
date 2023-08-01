@@ -1,41 +1,36 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { PagesRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { PageSchema } from '@/models/zod/PageSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.array(PageSchema);
 export const meta = {
 	tags: ['account', 'pages'],
-
 	requireCredential: true,
-
 	kind: 'read:pages',
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Page',
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.pagesRepository)
 		private pagesRepository: PagesRepository,
@@ -43,15 +38,20 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private pageEntityService: PageEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(this.pagesRepository.createQueryBuilder('page'), ps.sinceId, ps.untilId)
+		super(meta, paramDef_, async (ps, me) => {
+			const query = this.queryService
+				.makePaginationQuery(
+					this.pagesRepository.createQueryBuilder('page'),
+					ps.sinceId,
+					ps.untilId,
+				)
 				.andWhere('page.userId = :meId', { meId: me.id });
 
-			const pages = await query
-				.limit(ps.limit)
-				.getMany();
+			const pages = await query.limit(ps.limit).getMany();
 
-			return await this.pageEntityService.packMany(pages);
+			return (await this.pageEntityService.packMany(pages)) satisfies z.infer<
+				typeof res
+			>;
 		});
 	}
 }

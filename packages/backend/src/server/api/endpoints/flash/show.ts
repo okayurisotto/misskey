@@ -1,21 +1,19 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UsersRepository, FlashsRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { FlashSchema } from '@/models/zod/FlashSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = FlashSchema;
 export const meta = {
 	tags: ['flashs'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'Flash',
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchFlash: {
 			message: 'No such flash.',
@@ -25,17 +23,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		flashId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['flashId'],
-} as const;
+const paramDef_ = z.object({
+	flashId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
@@ -45,14 +44,16 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private flashEntityService: FlashEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const flash = await this.flashsRepository.findOneBy({ id: ps.flashId });
 
 			if (flash == null) {
 				throw new ApiError(meta.errors.noSuchFlash);
 			}
 
-			return await this.flashEntityService.pack(flash, me);
+			return (await this.flashEntityService.pack(flash, me)) satisfies z.infer<
+				typeof res
+			>;
 		});
 	}
 }

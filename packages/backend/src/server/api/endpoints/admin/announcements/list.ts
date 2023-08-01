@@ -1,73 +1,48 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import type { AnnouncementsRepository, AnnouncementReadsRepository } from '@/models/index.js';
+import type {
+	AnnouncementsRepository,
+	AnnouncementReadsRepository,
+} from '@/models/index.js';
 import type { Announcement } from '@/models/entities/Announcement.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.array(
+	z.object({
+		id: misskeyIdPattern,
+		createdAt: z.string().datetime(),
+		updatedAt: z.string().datetime().nullable(),
+		text: z.string(),
+		title: z.string(),
+		imageUrl: z.string().nullable(),
+		reads: z.number(),
+	}),
+);
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireModerator: true,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			properties: {
-				id: {
-					type: 'string',
-					optional: false, nullable: false,
-					format: 'id',
-					example: 'xxxxxxxxxx',
-				},
-				createdAt: {
-					type: 'string',
-					optional: false, nullable: false,
-					format: 'date-time',
-				},
-				updatedAt: {
-					type: 'string',
-					optional: false, nullable: true,
-					format: 'date-time',
-				},
-				text: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-				title: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-				imageUrl: {
-					type: 'string',
-					optional: false, nullable: true,
-				},
-				reads: {
-					type: 'number',
-					optional: false, nullable: false,
-				},
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.announcementsRepository)
 		private announcementsRepository: AnnouncementsRepository,
@@ -77,20 +52,27 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(this.announcementsRepository.createQueryBuilder('announcement'), ps.sinceId, ps.untilId);
+		super(meta, paramDef_, async (ps, me) => {
+			const query = this.queryService.makePaginationQuery(
+				this.announcementsRepository.createQueryBuilder('announcement'),
+				ps.sinceId,
+				ps.untilId,
+			);
 
-			const announcements = await query.limit(ps.limit).getMany();
+			const announcements = await query.limit(ps.limit ?? 10).getMany();
 
 			const reads = new Map<Announcement, number>();
 
 			for (const announcement of announcements) {
-				reads.set(announcement, await this.announcementReadsRepository.countBy({
-					announcementId: announcement.id,
-				}));
+				reads.set(
+					announcement,
+					await this.announcementReadsRepository.countBy({
+						announcementId: announcement.id,
+					}),
+				);
 			}
 
-			return announcements.map(announcement => ({
+			return announcements.map((announcement) => ({
 				id: announcement.id,
 				createdAt: announcement.createdAt.toISOString(),
 				updatedAt: announcement.updatedAt?.toISOString() ?? null,
@@ -98,7 +80,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				text: announcement.text,
 				imageUrl: announcement.imageUrl,
 				reads: reads.get(announcement)!,
-			}));
+			})) satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -1,33 +1,22 @@
 import { randomUUID } from 'node:crypto';
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AppsRepository, AuthSessionsRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { ApiError } from '../../../error.js';
 
+const res = z.object({
+	token: z.string(),
+	url: z.string(),
+});
 export const meta = {
 	tags: ['auth'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			token: {
-				type: 'string',
-				optional: false, nullable: false,
-			},
-			url: {
-				type: 'string',
-				optional: false, nullable: false,
-				format: 'url',
-			},
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchApp: {
 			message: 'No such app.',
@@ -37,17 +26,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		appSecret: { type: 'string' },
-	},
-	required: ['appSecret'],
-} as const;
+const paramDef_ = z.object({
+	appSecret: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
@@ -60,7 +50,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private idService: IdService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Lookup app
 			const app = await this.appsRepository.findOneBy({
 				secret: ps.appSecret,
@@ -74,17 +64,21 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			const token = randomUUID();
 
 			// Create session token document
-			const doc = await this.authSessionsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				appId: app.id,
-				token: token,
-			}).then(x => this.authSessionsRepository.findOneByOrFail(x.identifiers[0]));
+			const doc = await this.authSessionsRepository
+				.insert({
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					appId: app.id,
+					token: token,
+				})
+				.then((x) =>
+					this.authSessionsRepository.findOneByOrFail(x.identifiers[0]),
+				);
 
 			return {
 				token: doc.token,
 				url: `${this.config.authUrl}/${doc.token}`,
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

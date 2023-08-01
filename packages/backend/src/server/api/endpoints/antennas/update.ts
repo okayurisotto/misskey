@@ -1,72 +1,61 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { AntennasRepository, UserListsRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	AntennasRepository,
+	UserListsRepository,
+} from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { AntennaEntityService } from '@/core/entities/AntennaEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { AntennaSchema } from '@/models/zod/AntennaSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = AntennaSchema;
 export const meta = {
 	tags: ['antennas'],
-
 	requireCredential: true,
-
 	prohibitMoved: true,
-
 	kind: 'write:account',
-
 	errors: {
 		noSuchAntenna: {
 			message: 'No such antenna.',
 			code: 'NO_SUCH_ANTENNA',
 			id: '10c673ac-8852-48eb-aa1f-f5b67f069290',
 		},
-
 		noSuchUserList: {
 			message: 'No such user list.',
 			code: 'NO_SUCH_USER_LIST',
 			id: '1c6b35c9-943e-48c2-81e4-2844989407f7',
 		},
 	},
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'Antenna',
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		antennaId: { type: 'string', format: 'misskey:id' },
-		name: { type: 'string', minLength: 1, maxLength: 100 },
-		src: { type: 'string', enum: ['home', 'all', 'users', 'list'] },
-		userListId: { type: 'string', format: 'misskey:id', nullable: true },
-		keywords: { type: 'array', items: {
-			type: 'array', items: {
-				type: 'string',
-			},
-		} },
-		excludeKeywords: { type: 'array', items: {
-			type: 'array', items: {
-				type: 'string',
-			},
-		} },
-		users: { type: 'array', items: {
-			type: 'string',
-		} },
-		caseSensitive: { type: 'boolean' },
-		withReplies: { type: 'boolean' },
-		withFile: { type: 'boolean' },
-		notify: { type: 'boolean' },
-	},
-	required: ['antennaId', 'name', 'src', 'keywords', 'excludeKeywords', 'users', 'caseSensitive', 'withReplies', 'withFile', 'notify'],
-} as const;
+const paramDef_ = z.object({
+	antennaId: misskeyIdPattern,
+	name: z.string().min(1).max(100),
+	src: z.enum(['home', 'all', 'users', 'list']),
+	userListId: misskeyIdPattern.nullable().optional(),
+	keywords: z.array(z.array(z.string())),
+	excludeKeywords: z.array(z.array(z.string())),
+	users: z.array(z.string()),
+	caseSensitive: z.boolean(),
+	withReplies: z.boolean(),
+	withFile: z.boolean(),
+	notify: z.boolean(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.antennasRepository)
 		private antennasRepository: AntennasRepository,
@@ -77,7 +66,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private antennaEntityService: AntennaEntityService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Fetch the antenna
 			const antenna = await this.antennasRepository.findOneBy({
 				id: ps.antennaId,
@@ -116,9 +105,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				lastUsedAt: new Date(),
 			});
 
-			this.globalEventService.publishInternalEvent('antennaUpdated', await this.antennasRepository.findOneByOrFail({ id: antenna.id }));
+			this.globalEventService.publishInternalEvent(
+				'antennaUpdated',
+				await this.antennasRepository.findOneByOrFail({ id: antenna.id }),
+			);
 
-			return await this.antennaEntityService.pack(antenna.id);
+			return (await this.antennaEntityService.pack(
+				antenna.id,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -1,57 +1,42 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import type { FollowRequestsRepository } from '@/models/index.js';
 import { FollowRequestEntityService } from '@/core/entities/FollowRequestEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 
+const res = z.array(
+	z.object({
+		id: misskeyIdPattern,
+		follower: UserLiteSchema,
+		followee: UserLiteSchema,
+	}),
+);
 export const meta = {
 	tags: ['following', 'account'],
-
 	requireCredential: true,
-
 	kind: 'read:following',
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			properties: {
-				id: {
-					type: 'string',
-					optional: false, nullable: false,
-					format: 'id',
-				},
-				follower: {
-					type: 'object',
-					optional: false, nullable: false,
-					ref: 'UserLite',
-				},
-				followee: {
-					type: 'object',
-					optional: false, nullable: false,
-					ref: 'UserLite',
-				},
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+	limit: z.number().int().min(1).max(100).default(10),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.followRequestsRepository)
 		private followRequestsRepository: FollowRequestsRepository,
@@ -59,15 +44,20 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private followRequestEntityService: FollowRequestEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(this.followRequestsRepository.createQueryBuilder('request'), ps.sinceId, ps.untilId)
+		super(meta, paramDef_, async (ps, me) => {
+			const query = this.queryService
+				.makePaginationQuery(
+					this.followRequestsRepository.createQueryBuilder('request'),
+					ps.sinceId,
+					ps.untilId,
+				)
 				.andWhere('request.followeeId = :meId', { meId: me.id });
 
-			const requests = await query
-				.limit(ps.limit)
-				.getMany();
+			const requests = await query.limit(ps.limit).getMany();
 
-			return await Promise.all(requests.map(req => this.followRequestEntityService.pack(req)));
+			return (await Promise.all(
+				requests.map((req) => this.followRequestEntityService.pack(req)),
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

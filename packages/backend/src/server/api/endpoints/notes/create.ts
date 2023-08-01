@@ -1,87 +1,75 @@
 import ms from 'ms';
 import { In } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
+import z from 'zod';
+import { extendApi, generateSchema } from '@anatine/zod-openapi';
 import type { User } from '@/models/entities/User.js';
-import type { UsersRepository, NotesRepository, BlockingsRepository, DriveFilesRepository, ChannelsRepository } from '@/models/index.js';
+import type {
+	UsersRepository,
+	NotesRepository,
+	BlockingsRepository,
+	DriveFilesRepository,
+	ChannelsRepository,
+	Note,
+} from '@/models/index.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
-import type { Note } from '@/models/entities/Note.js';
 import type { Channel } from '@/models/entities/Channel.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
 import { DI } from '@/di-symbols.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { misskeyIdPattern, uniqueItems } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.object({ createdNote: NoteSchema });
 export const meta = {
 	tags: ['notes'],
-
 	requireCredential: true,
-
 	prohibitMoved: true,
-
 	limit: {
 		duration: ms('1hour'),
 		max: 300,
 	},
-
 	kind: 'write:notes',
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			createdNote: {
-				type: 'object',
-				optional: false, nullable: false,
-				ref: 'Note',
-			},
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchRenoteTarget: {
 			message: 'No such renote target.',
 			code: 'NO_SUCH_RENOTE_TARGET',
 			id: 'b5c90186-4ab0-49c8-9bba-a1f76c282ba4',
 		},
-
 		cannotReRenote: {
 			message: 'You can not Renote a pure Renote.',
 			code: 'CANNOT_RENOTE_TO_A_PURE_RENOTE',
 			id: 'fd4cc33e-2a37-48dd-99cc-9b806eb2031a',
 		},
-
 		noSuchReplyTarget: {
 			message: 'No such reply target.',
 			code: 'NO_SUCH_REPLY_TARGET',
 			id: '749ee0f6-d3da-459a-bf02-282e2da4292c',
 		},
-
 		cannotReplyToPureRenote: {
 			message: 'You can not reply to a pure Renote.',
 			code: 'CANNOT_REPLY_TO_A_PURE_RENOTE',
 			id: '3ac74a84-8fd5-4bb0-870f-01804f82ce15',
 		},
-
 		cannotCreateAlreadyExpiredPoll: {
 			message: 'Poll is already expired.',
 			code: 'CANNOT_CREATE_ALREADY_EXPIRED_POLL',
 			id: '04da457d-b083-4055-9082-955525eda5a5',
 		},
-
 		noSuchChannel: {
 			message: 'No such channel.',
 			code: 'NO_SUCH_CHANNEL',
 			id: 'b1653923-5453-4edc-b786-7c4f39bb0bbb',
 		},
-
 		youHaveBeenBlocked: {
 			message: 'You have been blocked by this user.',
 			code: 'YOU_HAVE_BEEN_BLOCKED',
 			id: 'b390d7e1-8a5e-46ed-b625-06271cafd3d3',
 		},
-
 		noSuchFile: {
 			message: 'Some files are not found.',
 			code: 'NO_SUCH_FILE',
@@ -90,76 +78,65 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		visibility: { type: 'string', enum: ['public', 'home', 'followers', 'specified'], default: 'public' },
-		visibleUserIds: { type: 'array', uniqueItems: true, items: {
-			type: 'string', format: 'misskey:id',
-		} },
-		cw: { type: 'string', nullable: true, maxLength: 100 },
-		localOnly: { type: 'boolean', default: false },
-		reactionAcceptance: { type: 'string', nullable: true, enum: [null, 'likeOnly', 'likeOnlyForRemote', 'nonSensitiveOnly', 'nonSensitiveOnlyForLocalLikeOnlyForRemote'], default: null },
-		noExtractMentions: { type: 'boolean', default: false },
-		noExtractHashtags: { type: 'boolean', default: false },
-		noExtractEmojis: { type: 'boolean', default: false },
-		replyId: { type: 'string', format: 'misskey:id', nullable: true },
-		renoteId: { type: 'string', format: 'misskey:id', nullable: true },
-		channelId: { type: 'string', format: 'misskey:id', nullable: true },
-
-		// anyOf内にバリデーションを書いても最初の一つしかチェックされない
-		// See https://github.com/misskey-dev/misskey/pull/10082
-		text: {
-			type: 'string',
-			minLength: 1,
-			maxLength: MAX_NOTE_TEXT_LENGTH,
-			nullable: false,
-		},
-		fileIds: {
-			type: 'array',
-			uniqueItems: true,
-			minItems: 1,
-			maxItems: 16,
-			items: { type: 'string', format: 'misskey:id' },
-		},
-		mediaIds: {
-			type: 'array',
-			uniqueItems: true,
-			minItems: 1,
-			maxItems: 16,
-			items: { type: 'string', format: 'misskey:id' },
-		},
-		poll: {
-			type: 'object',
-			nullable: true,
-			properties: {
-				choices: {
-					type: 'array',
-					uniqueItems: true,
-					minItems: 2,
-					maxItems: 10,
-					items: { type: 'string', minLength: 1, maxLength: 50 },
-				},
-				multiple: { type: 'boolean' },
-				expiresAt: { type: 'integer', nullable: true },
-				expiredAfter: { type: 'integer', nullable: true, minimum: 1 },
-			},
-			required: ['choices'],
-		},
+const paramDef_fileIds = extendApi(z.array(misskeyIdPattern).min(1).max(16), {
+	uniqueItems: true,
+});
+const paramDef_mediaIds = extendApi(z.array(misskeyIdPattern).min(1).max(16), {
+	uniqueItems: true,
+});
+const paramDef_poll = z.object({
+	choices: uniqueItems(z.array(z.string().min(1).max(50)).min(2).max(10)),
+	expiredAfter: z.number().int().min(1).nullable().optional(),
+	expiresAt: z.number().int().nullable().optional(),
+	multiple: z.boolean().optional(),
+});
+const paramDef_renoteId = misskeyIdPattern;
+const paramDef_text = z.string().min(1).max(MAX_NOTE_TEXT_LENGTH);
+const paramDefBase = z.object({
+	channelId: misskeyIdPattern.nullable().optional(),
+	cw: z.string().max(100).nullable().optional(),
+	localOnly: z.boolean().default(false),
+	noExtractEmojis: z.boolean().default(false),
+	noExtractHashtags: z.boolean().default(false),
+	noExtractMentions: z.boolean().default(false),
+	reactionAcceptance: z
+		.enum([
+			'likeOnly',
+			'likeOnlyForRemote',
+			'nonSensitiveOnly',
+			'nonSensitiveOnlyForLocalLikeOnlyForRemote',
+		])
+		.nullable()
+		.default(null),
+	replyId: misskeyIdPattern.nullable().optional(),
+	visibility: z
+		.enum(['followers', 'home', 'public', 'specified'])
+		.default('public'),
+	visibleUserIds: uniqueItems(z.array(misskeyIdPattern)).optional(),
+	...{
+		fileIds: uniqueItems(paramDef_fileIds).optional(),
+		mediaIds: uniqueItems(paramDef_mediaIds).optional(),
+		poll: paramDef_poll.nullable().optional(),
+		renoteId: paramDef_renoteId.nullable().optional(),
+		text: paramDef_text.optional(),
 	},
-	// (re)note with text, files and poll are optional
-	anyOf: [
-		{ required: ['text'] },
-		{ required: ['renoteId'] },
-		{ required: ['fileIds'] },
-		{ required: ['mediaIds'] },
-		{ required: ['poll'] },
-	],
-} as const;
+});
+const paramDef_ = z.union([
+	paramDefBase.extend({ fileIds: paramDef_fileIds }),
+	paramDefBase.extend({ mediaIds: paramDef_mediaIds }),
+	paramDefBase.extend({ poll: paramDef_poll }),
+	paramDefBase.extend({ renoteId: paramDef_renoteId }),
+	paramDefBase.extend({ text: paramDef_text }),
+]);
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
@@ -179,7 +156,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private noteEntityService: NoteEntityService,
 		private noteCreateService: NoteCreateService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			let visibleUsers: User[] = [];
 			if (ps.visibleUserIds) {
 				visibleUsers = await this.usersRepository.findBy({
@@ -188,9 +165,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			let files: DriveFile[] = [];
-			const fileIds = ps.fileIds != null ? ps.fileIds : ps.mediaIds != null ? ps.mediaIds : null;
+			const fileIds =
+				ps.fileIds != null
+					? ps.fileIds
+					: ps.mediaIds != null
+					? ps.mediaIds
+					: null;
 			if (fileIds != null) {
-				files = await this.driveFilesRepository.createQueryBuilder('file')
+				files = await this.driveFilesRepository
+					.createQueryBuilder('file')
 					.where('file.userId = :userId AND file.id IN (:...fileIds)', {
 						userId: me.id,
 						fileIds,
@@ -211,7 +194,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 				if (renote == null) {
 					throw new ApiError(meta.errors.noSuchRenoteTarget);
-				} else if (renote.renoteId && !renote.text && !renote.fileIds && !renote.hasPoll) {
+				} else if (
+					renote.renoteId &&
+					!renote.text &&
+					!renote.fileIds &&
+					!renote.hasPoll
+				) {
 					throw new ApiError(meta.errors.cannotReRenote);
 				}
 
@@ -236,7 +224,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 				if (reply == null) {
 					throw new ApiError(meta.errors.noSuchReplyTarget);
-				} else if (reply.renoteId && !reply.text && !reply.fileIds && !reply.hasPoll) {
+				} else if (
+					reply.renoteId &&
+					!reply.text &&
+					!reply.fileIds &&
+					!reply.hasPoll
+				) {
 					throw new ApiError(meta.errors.cannotReplyToPureRenote);
 				}
 
@@ -266,7 +259,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			let channel: Channel | null = null;
 			if (ps.channelId != null) {
-				channel = await this.channelsRepository.findOneBy({ id: ps.channelId, isArchived: false });
+				channel = await this.channelsRepository.findOneBy({
+					id: ps.channelId,
+					isArchived: false,
+				});
 
 				if (channel == null) {
 					throw new ApiError(meta.errors.noSuchChannel);
@@ -277,11 +273,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			const note = await this.noteCreateService.create(me, {
 				createdAt: new Date(),
 				files: files,
-				poll: ps.poll ? {
-					choices: ps.poll.choices,
-					multiple: ps.poll.multiple ?? false,
-					expiresAt: ps.poll.expiresAt ? new Date(ps.poll.expiresAt) : null,
-				} : undefined,
+				poll: ps.poll
+					? {
+							choices: ps.poll.choices,
+							multiple: ps.poll.multiple ?? false,
+							expiresAt: ps.poll.expiresAt ? new Date(ps.poll.expiresAt) : null,
+					  }
+					: undefined,
 				text: ps.text ?? undefined,
 				reply,
 				renote,
@@ -298,7 +296,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			return {
 				createdNote: await this.noteEntityService.pack(note, me),
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

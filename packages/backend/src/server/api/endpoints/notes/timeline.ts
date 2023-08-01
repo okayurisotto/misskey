@@ -1,49 +1,45 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { NotesRepository, FollowingsRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
-
 	requireCredential: true,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Note',
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-		sinceDate: { type: 'integer' },
-		untilDate: { type: 'integer' },
-		includeMyRenotes: { type: 'boolean', default: true },
-		includeRenotedMyNotes: { type: 'boolean', default: true },
-		includeLocalRenotes: { type: 'boolean', default: true },
-		withFiles: { type: 'boolean', default: false },
-		withReplies: { type: 'boolean', default: false },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+	sinceDate: z.number().int().optional(),
+	untilDate: z.number().int().optional(),
+	includeMyRenotes: z.boolean().default(true),
+	includeRenotedMyNotes: z.boolean().default(true),
+	includeLocalRenotes: z.boolean().default(true),
+	withFiles: z.boolean().default(false),
+	withReplies: z.boolean().default(false),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
@@ -56,16 +52,27 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private activeUsersChart: ActiveUsersChart,
 		private idService: IdService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const followees = await this.followingsRepository.createQueryBuilder('following')
+		super(meta, paramDef_, async (ps, me) => {
+			const followees = await this.followingsRepository
+				.createQueryBuilder('following')
 				.select('following.followeeId')
 				.where('following.followerId = :followerId', { followerId: me.id })
 				.getMany();
 
 			//#region Construct query
-			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'),
-				ps.sinceId, ps.untilId, ps.sinceDate, ps.untilDate)
-				.andWhere('note.id > :minId', { minId: this.idService.genId(new Date(Date.now() - (1000 * 60 * 60 * 24 * 10))) }) // 10日前まで
+			const query = this.queryService
+				.makePaginationQuery(
+					this.notesRepository.createQueryBuilder('note'),
+					ps.sinceId,
+					ps.untilId,
+					ps.sinceDate,
+					ps.untilDate,
+				)
+				.andWhere('note.id > :minId', {
+					minId: this.idService.genId(
+						new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
+					),
+				}) // 10日前まで
 				.innerJoinAndSelect('note.user', 'user')
 				.leftJoinAndSelect('note.reply', 'reply')
 				.leftJoinAndSelect('note.renote', 'renote')
@@ -73,9 +80,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				.leftJoinAndSelect('renote.user', 'renoteUser');
 
 			if (followees.length > 0) {
-				const meOrFolloweeIds = [me.id, ...followees.map(f => f.followeeId)];
+				const meOrFolloweeIds = [me.id, ...followees.map((f) => f.followeeId)];
 
-				query.andWhere('note.userId IN (:...meOrFolloweeIds)', { meOrFolloweeIds: meOrFolloweeIds });
+				query.andWhere('note.userId IN (:...meOrFolloweeIds)', {
+					meOrFolloweeIds: meOrFolloweeIds,
+				});
 			} else {
 				query.andWhere('note.userId = :meId', { meId: me.id });
 			}
@@ -89,37 +98,49 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			this.queryService.generateMutedUserRenotesQueryForNotes(query, me);
 
 			if (ps.includeMyRenotes === false) {
-				query.andWhere(new Brackets(qb => {
-					qb.orWhere('note.userId != :meId', { meId: me.id });
-					qb.orWhere('note.renoteId IS NULL');
-					qb.orWhere('note.text IS NOT NULL');
-					qb.orWhere('note.fileIds != \'{}\'');
-					qb.orWhere('0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)');
-				}));
+				query.andWhere(
+					new Brackets((qb) => {
+						qb.orWhere('note.userId != :meId', { meId: me.id });
+						qb.orWhere('note.renoteId IS NULL');
+						qb.orWhere('note.text IS NOT NULL');
+						qb.orWhere("note.fileIds != '{}'");
+						qb.orWhere(
+							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
+						);
+					}),
+				);
 			}
 
 			if (ps.includeRenotedMyNotes === false) {
-				query.andWhere(new Brackets(qb => {
-					qb.orWhere('note.renoteUserId != :meId', { meId: me.id });
-					qb.orWhere('note.renoteId IS NULL');
-					qb.orWhere('note.text IS NOT NULL');
-					qb.orWhere('note.fileIds != \'{}\'');
-					qb.orWhere('0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)');
-				}));
+				query.andWhere(
+					new Brackets((qb) => {
+						qb.orWhere('note.renoteUserId != :meId', { meId: me.id });
+						qb.orWhere('note.renoteId IS NULL');
+						qb.orWhere('note.text IS NOT NULL');
+						qb.orWhere("note.fileIds != '{}'");
+						qb.orWhere(
+							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
+						);
+					}),
+				);
 			}
 
 			if (ps.includeLocalRenotes === false) {
-				query.andWhere(new Brackets(qb => {
-					qb.orWhere('note.renoteUserHost IS NOT NULL');
-					qb.orWhere('note.renoteId IS NULL');
-					qb.orWhere('note.text IS NOT NULL');
-					qb.orWhere('note.fileIds != \'{}\'');
-					qb.orWhere('0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)');
-				}));
+				query.andWhere(
+					new Brackets((qb) => {
+						qb.orWhere('note.renoteUserHost IS NOT NULL');
+						qb.orWhere('note.renoteId IS NULL');
+						qb.orWhere('note.text IS NOT NULL');
+						qb.orWhere("note.fileIds != '{}'");
+						qb.orWhere(
+							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
+						);
+					}),
+				);
 			}
 
 			if (ps.withFiles) {
-				query.andWhere('note.fileIds != \'{}\'');
+				query.andWhere("note.fileIds != '{}'");
 			}
 			//#endregion
 
@@ -129,7 +150,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				this.activeUsersChart.read(me);
 			});
 
-			return await this.noteEntityService.packMany(timeline, me);
+			return (await this.noteEntityService.packMany(
+				timeline,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

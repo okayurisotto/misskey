@@ -1,29 +1,33 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import bcrypt from 'bcryptjs';
 import * as OTPAuth from 'otpauth';
 import * as QRCode from 'qrcode';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UserProfilesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 
+const res = z.unknown();
 export const meta = {
 	requireCredential: true,
-
 	secure: true,
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		password: { type: 'string' },
-	},
-	required: ['password'],
-} as const;
+const paramDef_ = z.object({
+	password: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
@@ -31,8 +35,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		@Inject(DI.userProfilesRepository)
 		private userProfilesRepository: UserProfilesRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: me.id });
+		super(meta, paramDef_, async (ps, me) => {
+			const profile = await this.userProfilesRepository.findOneByOrFail({
+				userId: me.id,
+			});
 
 			// Compare password
 			const same = await bcrypt.compare(ps.password, profile.password!);
@@ -64,7 +70,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				secret: secret.base32,
 				label: me.username,
 				issuer: this.config.host,
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

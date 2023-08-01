@@ -1,21 +1,23 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { NotesRepository, AntennasRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { DI } from '@/di-symbols.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { IdService } from '@/core/IdService.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['antennas', 'account', 'notes'],
-
 	requireCredential: true,
-
 	kind: 'read:account',
-
 	errors: {
 		noSuchAntenna: {
 			message: 'No such antenna.',
@@ -23,34 +25,26 @@ export const meta = {
 			id: '850926e0-fd3b-49b6-b69a-b28a5dbd82fe',
 		},
 	},
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Note',
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		antennaId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-		sinceDate: { type: 'integer' },
-		untilDate: { type: 'integer' },
-	},
-	required: ['antennaId'],
-} as const;
+const paramDef_ = z.object({
+	antennaId: misskeyIdPattern,
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+	sinceDate: z.number().int().optional(),
+	untilDate: z.number().int().optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
@@ -66,7 +60,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private queryService: QueryService,
 		private noteReadService: NoteReadService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const antenna = await this.antennasRepository.findOneBy({
 				id: ps.antennaId,
 				userId: me.id,
@@ -84,21 +78,30 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			const limit = ps.limit + (ps.untilId ? 1 : 0) + (ps.sinceId ? 1 : 0); // untilIdに指定したものも含まれるため+1
 			const noteIdsRes = await this.redisClient.xrevrange(
 				`antennaTimeline:${antenna.id}`,
-				ps.untilId ? this.idService.parse(ps.untilId).date.getTime() : ps.untilDate ?? '+',
-				ps.sinceId ? this.idService.parse(ps.sinceId).date.getTime() : ps.sinceDate ?? '-',
-				'COUNT', limit);
+				ps.untilId
+					? this.idService.parse(ps.untilId).date.getTime()
+					: ps.untilDate ?? '+',
+				ps.sinceId
+					? this.idService.parse(ps.sinceId).date.getTime()
+					: ps.sinceDate ?? '-',
+				'COUNT',
+				limit,
+			);
 
 			if (noteIdsRes.length === 0) {
 				return [];
 			}
 
-			const noteIds = noteIdsRes.map(x => x[1][1]).filter(x => x !== ps.untilId && x !== ps.sinceId);
+			const noteIds = noteIdsRes
+				.map((x) => x[1][1])
+				.filter((x) => x !== ps.untilId && x !== ps.sinceId);
 
 			if (noteIds.length === 0) {
 				return [];
 			}
 
-			const query = this.notesRepository.createQueryBuilder('note')
+			const query = this.notesRepository
+				.createQueryBuilder('note')
 				.where('note.id IN (:...noteIds)', { noteIds: noteIds })
 				.innerJoinAndSelect('note.user', 'user')
 				.leftJoinAndSelect('note.reply', 'reply')
@@ -111,13 +114,16 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			this.queryService.generateBlockedUserQuery(query, me);
 
 			const notes = await query.getMany();
-			notes.sort((a, b) => a.id > b.id ? -1 : 1);
+			notes.sort((a, b) => (a.id > b.id ? -1 : 1));
 
 			if (notes.length > 0) {
 				this.noteReadService.read(me.id, notes);
 			}
 
-			return await this.noteEntityService.packMany(notes, me);
+			return (await this.noteEntityService.packMany(
+				notes,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

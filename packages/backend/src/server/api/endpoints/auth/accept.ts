@@ -1,7 +1,13 @@
 import * as crypto from 'node:crypto';
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { AuthSessionsRepository, AppsRepository, AccessTokensRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	AuthSessionsRepository,
+	AppsRepository,
+	AccessTokensRepository,
+} from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { DI } from '@/di-symbols.js';
@@ -9,11 +15,8 @@ import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['auth'],
-
 	requireCredential: true,
-
 	secure: true,
-
 	errors: {
 		noSuchSession: {
 			message: 'No such session.',
@@ -23,17 +26,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		token: { type: 'string' },
-	},
-	required: ['token'],
-} as const;
+const paramDef_ = z.object({
+	token: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.appsRepository)
 		private appsRepository: AppsRepository,
@@ -46,10 +50,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private idService: IdService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Fetch token
-			const session = await this.authSessionsRepository
-				.findOneBy({ token: ps.token });
+			const session = await this.authSessionsRepository.findOneBy({
+				token: ps.token,
+			});
 
 			if (session == null) {
 				throw new ApiError(meta.errors.noSuchSession);
@@ -66,7 +71,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			});
 
 			if (!exist) {
-				const app = await this.appsRepository.findOneByOrFail({ id: session.appId });
+				const app = await this.appsRepository.findOneByOrFail({
+					id: session.appId,
+				});
 
 				// Generate Hash
 				const sha256 = crypto.createHash('sha256');

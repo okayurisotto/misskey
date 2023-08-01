@@ -1,19 +1,20 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { ClipsRepository } from '@/models/index.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { ApiError } from '../../error.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = ClipSchema;
 export const meta = {
 	tags: ['clips'],
-
 	requireCredential: true,
-
 	prohibitMoved: true,
-
 	kind: 'write:account',
-
 	errors: {
 		noSuchClip: {
 			message: 'No such clip.',
@@ -21,35 +22,31 @@ export const meta = {
 			id: 'b4d92d70-b216-46fa-9a3f-a8c811699257',
 		},
 	},
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'Clip',
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		clipId: { type: 'string', format: 'misskey:id' },
-		name: { type: 'string', minLength: 1, maxLength: 100 },
-		isPublic: { type: 'boolean' },
-		description: { type: 'string', nullable: true, minLength: 1, maxLength: 2048 },
-	},
-	required: ['clipId', 'name'],
-} as const;
+const paramDef_ = z.object({
+	clipId: misskeyIdPattern,
+	name: z.string().min(1).max(100),
+	isPublic: z.boolean().optional(),
+	description: z.string().min(1).max(2048).nullable().optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.clipsRepository)
 		private clipsRepository: ClipsRepository,
 
 		private clipEntityService: ClipEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Fetch the clip
 			const clip = await this.clipsRepository.findOneBy({
 				id: ps.clipId,
@@ -66,7 +63,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				isPublic: ps.isPublic,
 			});
 
-			return await this.clipEntityService.pack(clip.id, me);
+			return (await this.clipEntityService.pack(clip.id, me)) satisfies z.infer<
+				typeof res
+			>;
 		});
 	}
 }

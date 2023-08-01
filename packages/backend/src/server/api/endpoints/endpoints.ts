@@ -1,41 +1,29 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import endpoints from '../endpoints.js';
 
+const res = z.array(z.string());
 export const meta = {
 	requireCredential: false,
-
 	tags: ['meta'],
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'string',
-			optional: false, nullable: false,
-		},
-		example: [
-			'admin/abuse-user-reports',
-			'admin/accounts/create',
-			'admin/announcements/create',
-			'...',
-		],
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {},
-	required: [],
-} as const;
+const paramDef_ = z.object({});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor(
-	) {
-		super(meta, paramDef, async () => {
-			return endpoints.map(x => x.name);
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
+	constructor() {
+		super(meta, paramDef_, async () => {
+			return endpoints.map((x) => x.name) satisfies z.infer<typeof res>;
 		});
 	}
 }

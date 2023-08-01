@@ -1,74 +1,52 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { EmojisRepository } from '@/models/index.js';
 import type { Emoji } from '@/models/entities/Emoji.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 //import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
 
+const res = z.array(
+	z.object({
+		id: misskeyIdPattern,
+		aliases: z.array(z.string()),
+		name: z.string(),
+		category: z.string().nullable(),
+		host: z
+			.string()
+			.nullable()
+			.describe(
+				'The local host is represented with `null`. The field exists for compatibility with other API endpoints that return files.',
+			),
+		url: z.string(),
+	}),
+);
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			properties: {
-				id: {
-					type: 'string',
-					optional: false, nullable: false,
-					format: 'id',
-				},
-				aliases: {
-					type: 'array',
-					optional: false, nullable: false,
-					items: {
-						type: 'string',
-						optional: false, nullable: false,
-					},
-				},
-				name: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-				category: {
-					type: 'string',
-					optional: false, nullable: true,
-				},
-				host: {
-					type: 'string',
-					optional: false, nullable: true,
-					description: 'The local host is represented with `null`. The field exists for compatibility with other API endpoints that return files.',
-				},
-				url: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		query: { type: 'string', nullable: true, default: null },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	query: z.string().nullable().default(null),
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.emojisRepository)
 		private emojisRepository: EmojisRepository,
@@ -76,8 +54,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private emojiEntityService: EmojiEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const q = this.queryService.makePaginationQuery(this.emojisRepository.createQueryBuilder('emoji'), ps.sinceId, ps.untilId)
+		super(meta, paramDef_, async (ps, me) => {
+			const q = this.queryService
+				.makePaginationQuery(
+					this.emojisRepository.createQueryBuilder('emoji'),
+					ps.sinceId,
+					ps.untilId,
+				)
 				.andWhere('emoji.host IS NULL');
 
 			let emojis: Emoji[];
@@ -90,21 +73,25 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				const queryarry = ps.query.match(/\:([a-z0-9_]*)\:/g);
 
 				if (queryarry) {
-					emojis = emojis.filter(emoji =>
+					emojis = emojis.filter((emoji) =>
 						queryarry.includes(`:${emoji.name}:`),
 					);
 				} else {
-					emojis = emojis.filter(emoji =>
-						emoji.name.includes(ps.query!) ||
-						emoji.aliases.some(a => a.includes(ps.query!)) ||
-						emoji.category?.includes(ps.query!));
+					emojis = emojis.filter(
+						(emoji) =>
+							emoji.name.includes(ps.query!) ||
+							emoji.aliases.some((a) => a.includes(ps.query!)) ||
+							emoji.category?.includes(ps.query!),
+					);
 				}
 				emojis.splice(ps.limit + 1);
 			} else {
 				emojis = await q.limit(ps.limit).getMany();
 			}
 
-			return this.emojiEntityService.packDetailedMany(emojis);
+			return (await this.emojiEntityService.packDetailedMany(
+				emojis,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

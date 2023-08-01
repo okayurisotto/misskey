@@ -1,95 +1,61 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AbuseUserReportsRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { AbuseUserReportEntityService } from '@/core/entities/AbuseUserReportEntityService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { UserSchema } from '@/models/zod/UserSchema.js';
 
+const res = z.array(
+	z.object({
+		id: misskeyIdPattern,
+		createdAt: z.string().datetime(),
+		comment: z.string(),
+		resolved: z.boolean(),
+		reporterId: misskeyIdPattern,
+		targetUserId: misskeyIdPattern,
+		assigneeId: misskeyIdPattern.nullable(),
+		reporter: UserSchema,
+		targetUser: UserSchema,
+		assignee: UserSchema.nullable().optional(),
+	}),
+);
 export const meta = {
 	tags: ['admin'],
 
 	requireCredential: true,
 	requireModerator: true,
 
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			properties: {
-				id: {
-					type: 'string',
-					nullable: false, optional: false,
-					format: 'id',
-					example: 'xxxxxxxxxx',
-				},
-				createdAt: {
-					type: 'string',
-					nullable: false, optional: false,
-					format: 'date-time',
-				},
-				comment: {
-					type: 'string',
-					nullable: false, optional: false,
-				},
-				resolved: {
-					type: 'boolean',
-					nullable: false, optional: false,
-					example: false,
-				},
-				reporterId: {
-					type: 'string',
-					nullable: false, optional: false,
-					format: 'id',
-				},
-				targetUserId: {
-					type: 'string',
-					nullable: false, optional: false,
-					format: 'id',
-				},
-				assigneeId: {
-					type: 'string',
-					nullable: true, optional: false,
-					format: 'id',
-				},
-				reporter: {
-					type: 'object',
-					nullable: false, optional: false,
-					ref: 'User',
-				},
-				targetUser: {
-					type: 'object',
-					nullable: false, optional: false,
-					ref: 'User',
-				},
-				assignee: {
-					type: 'object',
-					nullable: true, optional: true,
-					ref: 'User',
-				},
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-		state: { type: 'string', nullable: true, default: null },
-		reporterOrigin: { type: 'string', enum: ['combined', 'local', 'remote'], default: 'combined' },
-		targetUserOrigin: { type: 'string', enum: ['combined', 'local', 'remote'], default: 'combined' },
-		forwarded: { type: 'boolean', default: false },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+	state: z.string().nullable().default(null),
+	reporterOrigin: z
+		.enum(['combined', 'local', 'remote'])
+		.default('combined')
+		.optional(),
+	targetUserOrigin: z
+		.enum(['combined', 'local', 'remote'])
+		.default('combined')
+		.optional(),
+	forwarded: z.boolean().default(false),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.abuseUserReportsRepository)
 		private abuseUserReportsRepository: AbuseUserReportsRepository,
@@ -97,27 +63,45 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private abuseUserReportEntityService: AbuseUserReportEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(this.abuseUserReportsRepository.createQueryBuilder('report'), ps.sinceId, ps.untilId);
+		super(meta, paramDef_, async (ps, me) => {
+			const query = this.queryService.makePaginationQuery(
+				this.abuseUserReportsRepository.createQueryBuilder('report'),
+				ps.sinceId,
+				ps.untilId,
+			);
 
 			switch (ps.state) {
-				case 'resolved': query.andWhere('report.resolved = TRUE'); break;
-				case 'unresolved': query.andWhere('report.resolved = FALSE'); break;
+				case 'resolved':
+					query.andWhere('report.resolved = TRUE');
+					break;
+				case 'unresolved':
+					query.andWhere('report.resolved = FALSE');
+					break;
 			}
 
 			switch (ps.reporterOrigin) {
-				case 'local': query.andWhere('report.reporterHost IS NULL'); break;
-				case 'remote': query.andWhere('report.reporterHost IS NOT NULL'); break;
+				case 'local':
+					query.andWhere('report.reporterHost IS NULL');
+					break;
+				case 'remote':
+					query.andWhere('report.reporterHost IS NOT NULL');
+					break;
 			}
 
 			switch (ps.targetUserOrigin) {
-				case 'local': query.andWhere('report.targetUserHost IS NULL'); break;
-				case 'remote': query.andWhere('report.targetUserHost IS NOT NULL'); break;
+				case 'local':
+					query.andWhere('report.targetUserHost IS NULL');
+					break;
+				case 'remote':
+					query.andWhere('report.targetUserHost IS NOT NULL');
+					break;
 			}
 
 			const reports = await query.limit(ps.limit).getMany();
 
-			return await this.abuseUserReportEntityService.packMany(reports);
+			return (await this.abuseUserReportEntityService.packMany(
+				reports,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

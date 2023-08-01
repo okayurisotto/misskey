@@ -1,45 +1,37 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { UsersRepository, AppsRepository, AccessTokensRepository, AuthSessionsRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	UsersRepository,
+	AppsRepository,
+	AccessTokensRepository,
+	AuthSessionsRepository,
+} from '@/models/index.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { ApiError } from '../../../error.js';
 
+const res = z.object({
+	accessToken: z.string(),
+	user: UserDetailedNotMeSchema,
+});
 export const meta = {
 	tags: ['auth'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			accessToken: {
-				type: 'string',
-				optional: false, nullable: false,
-			},
-
-			user: {
-				type: 'object',
-				optional: false, nullable: false,
-				ref: 'UserDetailedNotMe',
-			},
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchApp: {
 			message: 'No such app.',
 			code: 'NO_SUCH_APP',
 			id: 'fcab192a-2c5a-43b7-8ad8-9b7054d8d40d',
 		},
-
 		noSuchSession: {
 			message: 'No such session.',
 			code: 'NO_SUCH_SESSION',
 			id: '5b5a1503-8bc8-4bd0-8054-dc189e8cdcb3',
 		},
-
 		pendingSession: {
 			message: 'This session is not completed yet.',
 			code: 'PENDING_SESSION',
@@ -48,18 +40,19 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		appSecret: { type: 'string' },
-		token: { type: 'string' },
-	},
-	required: ['appSecret', 'token'],
-} as const;
+const paramDef_ = z.object({
+	appSecret: z.string(),
+	token: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
@@ -75,7 +68,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private userEntityService: UserEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Lookup app
 			const app = await this.appsRepository.findOneBy({
 				secret: ps.appSecret,
@@ -113,7 +106,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				user: await this.userEntityService.pack(session.userId, null, {
 					detail: true,
 				}),
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

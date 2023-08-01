@@ -1,47 +1,38 @@
 import { Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import z from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MetaService } from '@/core/MetaService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { RoleService } from '@/core/RoleService.js';
 
+const res = z.object({
+	capacity: z.number(),
+	usage: z.number(),
+});
 export const meta = {
 	tags: ['drive', 'account'],
-
 	requireCredential: true,
-
 	kind: 'read:drive',
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			capacity: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-			usage: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {},
-	required: [],
-} as const;
+const paramDef_ = z.unknown();
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		private metaService: MetaService,
 		private driveFileEntityService: DriveFileEntityService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const instance = await this.metaService.fetch(true);
 
 			// Calculate drive usage
@@ -52,7 +43,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			return {
 				capacity: 1024 * 1024 * policies.driveCapacityMb,
 				usage: usage,
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

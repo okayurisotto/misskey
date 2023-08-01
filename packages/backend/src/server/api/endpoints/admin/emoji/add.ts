@@ -1,18 +1,21 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { DriveFilesRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
+const res = z.unknown(); // TODO
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-
+	res: generateSchema(res),
 	errors: {
 		noSuchFile: {
 			message: 'No such file.',
@@ -22,34 +25,31 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		name: { type: 'string', pattern: '^[a-zA-Z0-9_]+$' },
-		fileId: { type: 'string', format: 'misskey:id' },
-		category: {
-			type: 'string',
-			nullable: true,
-			description: 'Use `null` to reset the category.',
-		},
-		aliases: { type: 'array', items: {
-			type: 'string',
-		} },
-		license: { type: 'string', nullable: true },
-		isSensitive: { type: 'boolean' },
-		localOnly: { type: 'boolean' },
-		roleIdsThatCanBeUsedThisEmojiAsReaction: { type: 'array', items: {
-			type: 'string',
-		} },
-	},
-	required: ['name', 'fileId'],
-} as const;
+const paramDef_ = z.object({
+	name: z.string().regex(/^[a-zA-Z0-9_]+$/),
+	fileId: misskeyIdPattern,
+	category: z
+		.string()
+		.nullable()
+		.optional()
+		.describe('Use `null` to reset the category.'),
+	aliases: z.array(z.string()).optional(),
+	license: z.string().nullable().optional(),
+	isSensitive: z.boolean().optional(),
+	localOnly: z.boolean().optional(),
+	roleIdsThatCanBeUsedThisEmojiAsReaction: z.array(z.string()).optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
 // TODO: ロジックをサービスに切り出す
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.driveFilesRepository)
 		private driveFilesRepository: DriveFilesRepository,
@@ -59,8 +59,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private emojiEntityService: EmojiEntityService,
 		private moderationLogService: ModerationLogService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const driveFile = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
+		super(meta, paramDef_, async (ps, me) => {
+			const driveFile = await this.driveFilesRepository.findOneBy({
+				id: ps.fileId,
+			});
 			if (driveFile == null) throw new ApiError(meta.errors.noSuchFile);
 
 			const emoji = await this.customEmojiService.add({
@@ -72,14 +74,17 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				license: ps.license ?? null,
 				isSensitive: ps.isSensitive ?? false,
 				localOnly: ps.localOnly ?? false,
-				roleIdsThatCanBeUsedThisEmojiAsReaction: ps.roleIdsThatCanBeUsedThisEmojiAsReaction ?? [],
+				roleIdsThatCanBeUsedThisEmojiAsReaction:
+					ps.roleIdsThatCanBeUsedThisEmojiAsReaction ?? [],
 			});
 
 			this.moderationLogService.insertModerationLog(me, 'addEmoji', {
 				emojiId: emoji.id,
 			});
 
-			return this.emojiEntityService.packDetailed(emoji);
+			return this.emojiEntityService.packDetailed(emoji) satisfies z.infer<
+				typeof res
+			>;
 		});
 	}
 }

@@ -1,15 +1,17 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { PagesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../error.js';
 
 export const meta = {
 	requireCredential: true,
 	secure: true,
-
 	errors: {
 		noSuchPage: {
 			message: 'No such page.',
@@ -19,19 +21,20 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		pageId: { type: 'string', format: 'misskey:id' },
-		event: { type: 'string' },
-		var: {},
-	},
-	required: ['pageId', 'event'],
-} as const;
+const paramDef_ = z.object({
+	pageId: misskeyIdPattern,
+	event: z.string(),
+	var: z.unknown().optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.pagesRepository)
 		private pagesRepository: PagesRepository,
@@ -39,7 +42,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private userEntityService: UserEntityService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const page = await this.pagesRepository.findOneBy({ id: ps.pageId });
 			if (page == null) {
 				throw new ApiError(meta.errors.noSuchPage);
@@ -50,9 +53,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				event: ps.event,
 				var: ps.var,
 				userId: me.id,
-				user: await this.userEntityService.pack(me.id, { id: page.userId }, {
-					detail: true,
-				}),
+				user: await this.userEntityService.pack(
+					me.id,
+					{ id: page.userId },
+					{ detail: true },
+				),
 			});
 		});
 	}

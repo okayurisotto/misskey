@@ -1,40 +1,37 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository, NoteThreadMutingsRepository, NoteFavoritesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import type {
+	NotesRepository,
+	NoteThreadMutingsRepository,
+	NoteFavoritesRepository,
+} from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.object({
+	isFavorited: z.boolean(),
+	isMutedThread: z.boolean(),
+});
 export const meta = {
 	tags: ['notes'],
-
 	requireCredential: true,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			isFavorited: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			isMutedThread: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		noteId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['noteId'],
-} as const;
+const paramDef_ = z.object({
+	noteId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
@@ -45,8 +42,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		@Inject(DI.noteFavoritesRepository)
 		private noteFavoritesRepository: NoteFavoritesRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const note = await this.notesRepository.findOneByOrFail({ id: ps.noteId });
+		super(meta, paramDef_, async (ps, me) => {
+			const note = await this.notesRepository.findOneByOrFail({
+				id: ps.noteId,
+			});
 
 			const [favorite, threadMuting] = await Promise.all([
 				this.noteFavoritesRepository.count({
@@ -68,7 +67,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			return {
 				isFavorited: favorite !== 0,
 				isMutedThread: threadMuting !== 0,
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

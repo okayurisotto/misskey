@@ -1,5 +1,7 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { InstancesRepository } from '@/models/index.js';
 import { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
 import { UtilityService } from '@/core/UtilityService.js';
@@ -12,17 +14,18 @@ export const meta = {
 	requireModerator: true,
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		host: { type: 'string' },
-	},
-	required: ['host'],
-} as const;
+const paramDef_ = z.object({
+	host: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.instancesRepository)
 		private instancesRepository: InstancesRepository,
@@ -30,8 +33,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private utilityService: UtilityService,
 		private fetchInstanceMetadataService: FetchInstanceMetadataService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const instance = await this.instancesRepository.findOneBy({ host: this.utilityService.toPuny(ps.host) });
+		super(meta, paramDef_, async (ps, me) => {
+			const instance = await this.instancesRepository.findOneBy({
+				host: this.utilityService.toPuny(ps.host),
+			});
 
 			if (instance == null) {
 				throw new Error('instance not found');

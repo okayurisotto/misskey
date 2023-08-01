@@ -1,74 +1,71 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import type { DriveFilesRepository, DriveFoldersRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import type {
+	DriveFilesRepository,
+	DriveFoldersRepository,
+} from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
+import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
+const res = DriveFileSchema;
 export const meta = {
 	tags: ['drive'],
-
 	requireCredential: true,
-
 	kind: 'write:drive',
-
 	description: 'Update the properties of a drive file.',
-
 	errors: {
 		invalidFileName: {
 			message: 'Invalid file name.',
 			code: 'INVALID_FILE_NAME',
 			id: '395e7156-f9f0-475e-af89-53c3c23080c2',
 		},
-
 		noSuchFile: {
 			message: 'No such file.',
 			code: 'NO_SUCH_FILE',
 			id: 'e7778c7e-3af9-49cd-9690-6dbc3e6c972d',
 		},
-
 		accessDenied: {
 			message: 'Access denied.',
 			code: 'ACCESS_DENIED',
 			id: '01a53b27-82fc-445b-a0c1-b558465a8ed2',
 		},
-
 		noSuchFolder: {
 			message: 'No such folder.',
 			code: 'NO_SUCH_FOLDER',
 			id: 'ea8fb7a5-af77-4a08-b608-c0218176cd73',
 		},
-
 		restrictedByRole: {
 			message: 'This feature is restricted by your role.',
 			code: 'RESTRICTED_BY_ROLE',
 			id: '7f59dccb-f465-75ab-5cf4-3ce44e3282f7',
 		},
 	},
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'DriveFile',
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		fileId: { type: 'string', format: 'misskey:id' },
-		folderId: { type: 'string', format: 'misskey:id', nullable: true },
-		name: { type: 'string' },
-		isSensitive: { type: 'boolean' },
-		comment: { type: 'string', nullable: true, maxLength: 512 },
-	},
-	required: ['fileId'],
-} as const;
+const paramDef_ = z.object({
+	fileId: misskeyIdPattern,
+	folderId: misskeyIdPattern.nullable().optional(),
+	name: z.string().optional(),
+	isSensitive: z.boolean().optional(),
+	comment: z.string().max(512).nullable().optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.driveFilesRepository)
 		private driveFilesRepository: DriveFilesRepository,
@@ -80,14 +77,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private roleService: RoleService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
-			const alwaysMarkNsfw = (await this.roleService.getUserPolicies(me.id)).alwaysMarkNsfw;
+			const alwaysMarkNsfw = (await this.roleService.getUserPolicies(me.id))
+				.alwaysMarkNsfw;
 			if (file == null) {
 				throw new ApiError(meta.errors.noSuchFile);
 			}
 
-			if (!await this.roleService.isModerator(me) && (file.userId !== me.id)) {
+			if (!(await this.roleService.isModerator(me)) && file.userId !== me.id) {
 				throw new ApiError(meta.errors.accessDenied);
 			}
 
@@ -98,7 +96,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			if (ps.comment !== undefined) file.comment = ps.comment;
 
-			if (ps.isSensitive !== undefined && ps.isSensitive !== file.isSensitive && alwaysMarkNsfw && !ps.isSensitive) {
+			if (
+				ps.isSensitive !== undefined &&
+				ps.isSensitive !== file.isSensitive &&
+				alwaysMarkNsfw &&
+				!ps.isSensitive
+			) {
 				throw new ApiError(meta.errors.restrictedByRole);
 			}
 
@@ -128,12 +131,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				isSensitive: file.isSensitive,
 			});
 
-			const fileObj = await this.driveFileEntityService.pack(file, { self: true });
+			const fileObj = await this.driveFileEntityService.pack(file, {
+				self: true,
+			});
 
 			// Publish fileUpdated event
 			this.globalEventService.publishDriveStream(me.id, 'fileUpdated', fileObj);
 
-			return fileObj;
+			return fileObj satisfies z.infer<typeof res>;
 		});
 	}
 }

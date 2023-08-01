@@ -1,8 +1,14 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { UserListFavoritesRepository, UserListsRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	UserListFavoritesRepository,
+	UserListsRepository,
+} from '@/models/index.js';
 import { ApiError } from '@/server/api/error.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
 export const meta = {
 	requireCredential: true,
@@ -12,7 +18,6 @@ export const meta = {
 			code: 'NO_SUCH_USER_LIST',
 			id: 'baedb33e-76b8-4b0c-86a8-9375c0a7b94b',
 		},
-
 		notFavorited: {
 			message: 'You have not favorited the list.',
 			code: 'ALREADY_FAVORITED',
@@ -21,24 +26,26 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		listId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['listId'],
-} as const;
+const paramDef_ = z.object({
+	listId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-@Injectable() // eslint-disable-next-line import/no-default-export
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor (
+@Injectable()
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
+	constructor(
 		@Inject(DI.userListsRepository)
 		private userListsRepository: UserListsRepository,
 
 		@Inject(DI.userListFavoritesRepository)
 		private userListFavoritesRepository: UserListFavoritesRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const userListExist = await this.userListsRepository.exist({
 				where: {
 					id: ps.listId,

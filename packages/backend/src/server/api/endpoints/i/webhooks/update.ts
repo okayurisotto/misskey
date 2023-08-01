@@ -1,18 +1,18 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { WebhooksRepository } from '@/models/index.js';
 import { webhookEventTypes } from '@/models/entities/Webhook.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['webhooks'],
-
 	requireCredential: true,
-
 	kind: 'write:account',
-
 	errors: {
 		noSuchWebhook: {
 			message: 'No such webhook.',
@@ -20,36 +20,34 @@ export const meta = {
 			id: 'fb0fea69-da18-45b1-828d-bd4fd1612518',
 		},
 	},
-
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		webhookId: { type: 'string', format: 'misskey:id' },
-		name: { type: 'string', minLength: 1, maxLength: 100 },
-		url: { type: 'string', minLength: 1, maxLength: 1024 },
-		secret: { type: 'string', minLength: 1, maxLength: 1024 },
-		on: { type: 'array', items: {
-			type: 'string', enum: webhookEventTypes,
-		} },
-		active: { type: 'boolean' },
-	},
-	required: ['webhookId', 'name', 'url', 'secret', 'on', 'active'],
-} as const;
+const paramDef_ = z.object({
+	webhookId: misskeyIdPattern,
+	name: z.string().min(1).max(100),
+	url: z.string().min(1).max(1024),
+	secret: z.string().min(1).max(1024),
+	on: z.array(z.enum(webhookEventTypes)),
+	active: z.boolean(),
+});
+export const paramDef = generateSchema(paramDef_);
 
 // TODO: ロジックをサービスに切り出す
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.webhooksRepository)
 		private webhooksRepository: WebhooksRepository,
 
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const webhook = await this.webhooksRepository.findOneBy({
 				id: ps.webhookId,
 				userId: me.id,

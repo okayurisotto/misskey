@@ -1,60 +1,42 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import type { InstancesRepository, NoteReactionsRepository, NotesRepository, UsersRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import type {
+	InstancesRepository,
+	NoteReactionsRepository,
+	NotesRepository,
+	UsersRepository,
+} from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 import NotesChart from '@/core/chart/charts/notes.js';
 import UsersChart from '@/core/chart/charts/users.js';
 
+const res = z.object({
+	notesCount: z.number(),
+	originalNotesCount: z.number(),
+	usersCount: z.number(),
+	originalUsersCount: z.number(),
+	instances: z.number(),
+	driveUsageLocal: z.number(),
+	driveUsageRemote: z.number(),
+});
 export const meta = {
 	requireCredential: false,
-
 	tags: ['meta'],
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			notesCount: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-			originalNotesCount: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-			usersCount: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-			originalUsersCount: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-			instances: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-			driveUsageLocal: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-			driveUsageRemote: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {},
-	required: [],
-} as const;
+const paramDef_ = z.object({});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
@@ -71,7 +53,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private notesChart: NotesChart,
 		private usersChart: UsersChart,
 	) {
-		super(meta, paramDef, async () => {
+		super(meta, paramDef_, async () => {
 			const notesChart = await this.notesChart.getChart('hour', 1, null);
 			const notesCount = notesChart.local.total[0] + notesChart.remote.total[0];
 			const originalNotesCount = notesChart.local.total[0];
@@ -100,7 +82,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				instances,
 				driveUsageLocal: 0,
 				driveUsageRemote: 0,
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

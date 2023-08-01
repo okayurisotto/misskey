@@ -1,21 +1,19 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { ChannelsRepository } from '@/models/index.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = ChannelSchema;
 export const meta = {
 	tags: ['channels'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'Channel',
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchChannel: {
 			message: 'No such channel.',
@@ -25,24 +23,25 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		channelId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['channelId'],
-} as const;
+const paramDef_ = z.object({
+	channelId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.channelsRepository)
 		private channelsRepository: ChannelsRepository,
 
 		private channelEntityService: ChannelEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const channel = await this.channelsRepository.findOneBy({
 				id: ps.channelId,
 			});
@@ -51,7 +50,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			return await this.channelEntityService.pack(channel, me, true);
+			return (await this.channelEntityService.pack(
+				channel,
+				me,
+				true,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

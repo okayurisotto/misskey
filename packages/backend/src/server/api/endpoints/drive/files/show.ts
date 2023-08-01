@@ -1,34 +1,29 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import type { DriveFilesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
+import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
+const res = DriveFileSchema;
 export const meta = {
 	tags: ['drive'],
-
 	requireCredential: true,
-
 	kind: 'read:drive',
-
 	description: 'Show the properties of a drive file.',
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'DriveFile',
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchFile: {
 			message: 'No such file.',
 			code: 'NO_SUCH_FILE',
 			id: '067bc436-2718-4795-b0fb-ecbe43949e31',
 		},
-
 		accessDenied: {
 			message: 'Access denied.',
 			code: 'ACCESS_DENIED',
@@ -37,21 +32,19 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		fileId: { type: 'string', format: 'misskey:id' },
-		url: { type: 'string' },
-	},
-	anyOf: [
-		{ required: ['fileId'] },
-		{ required: ['url'] },
-	],
-} as const;
+const paramDef_ = z.union([
+	z.object({ fileId: misskeyIdPattern }),
+	z.object({ url: z.string() }),
+]);
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.driveFilesRepository)
 		private driveFilesRepository: DriveFilesRepository,
@@ -59,20 +52,24 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private driveFileEntityService: DriveFileEntityService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			let file: DriveFile | null = null;
 
-			if (ps.fileId) {
+			if ('fileId' in ps) {
 				file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
 			} else if (ps.url) {
 				file = await this.driveFilesRepository.findOne({
-					where: [{
-						url: ps.url,
-					}, {
-						webpublicUrl: ps.url,
-					}, {
-						thumbnailUrl: ps.url,
-					}],
+					where: [
+						{
+							url: ps.url,
+						},
+						{
+							webpublicUrl: ps.url,
+						},
+						{
+							thumbnailUrl: ps.url,
+						},
+					],
 				});
 			}
 
@@ -80,15 +77,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				throw new ApiError(meta.errors.noSuchFile);
 			}
 
-			if (!await this.roleService.isModerator(me) && (file.userId !== me.id)) {
+			if (!(await this.roleService.isModerator(me)) && file.userId !== me.id) {
 				throw new ApiError(meta.errors.accessDenied);
 			}
 
-			return await this.driveFileEntityService.pack(file, {
+			return (await this.driveFileEntityService.pack(file, {
 				detail: true,
 				withUser: true,
 				self: true,
-			});
+			})) satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -1,24 +1,28 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import type { UserListsRepository, UserListJoiningsRepository, BlockingsRepository } from '@/models/index.js';
+import type {
+	UserListsRepository,
+	UserListJoiningsRepository,
+	BlockingsRepository,
+} from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import type { UserList } from '@/models/entities/UserList.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserListEntityService } from '@/core/entities/UserListEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { ApiError } from '@/server/api/error.js';
 import { RoleService } from '@/core/RoleService.js';
 import { UserListService } from '@/core/UserListService.js';
+import { UserListSchema } from '@/models/zod/UserListSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = UserListSchema;
 export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'UserList',
-	},
-
+	res: generateSchema(res),
 	errors: {
 		tooManyUserLists: {
 			message: 'You cannot create user list any more.',
@@ -35,19 +39,17 @@ export const meta = {
 			code: 'NO_SUCH_USER',
 			id: '13c457db-a8cb-4d88-b70a-211ceeeabb5f',
 		},
-
 		alreadyAdded: {
 			message: 'That user has already been added to that list.',
 			code: 'ALREADY_ADDED',
 			id: 'c3ad6fdb-692b-47ee-a455-7bd12c7af615',
 		},
-
 		youHaveBeenBlocked: {
-			message: 'You cannot push this user because you have been blocked by this user.',
+			message:
+				'You cannot push this user because you have been blocked by this user.',
 			code: 'YOU_HAVE_BEEN_BLOCKED',
 			id: 'a2497f2a-2389-439c-8626-5298540530f4',
 		},
-
 		tooManyUsers: {
 			message: 'You can not push users any more.',
 			code: 'TOO_MANY_USERS',
@@ -56,17 +58,19 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		name: { type: 'string', minLength: 1, maxLength: 100 },
-		listId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['name', 'listId'],
-} as const;
+const paramDef_ = z.object({
+	name: z.string().min(1).max(100),
+	listId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.userListsRepository)
 		private userListsRepository: UserListsRepository,
@@ -83,7 +87,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private getterService: GetterService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const listExist = await this.userListsRepository.exist({
 				where: {
 					id: ps.listId,
@@ -94,26 +98,38 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			const currentCount = await this.userListsRepository.countBy({
 				userId: me.id,
 			});
-			if (currentCount > (await this.roleService.getUserPolicies(me.id)).userListLimit) {
+			if (
+				currentCount >
+				(await this.roleService.getUserPolicies(me.id)).userListLimit
+			) {
 				throw new ApiError(meta.errors.tooManyUserLists);
 			}
 
-			const userList = await this.userListsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				userId: me.id,
-				name: ps.name,
-			} as UserList).then(x => this.userListsRepository.findOneByOrFail(x.identifiers[0]));
+			const userList = await this.userListsRepository
+				.insert({
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					userId: me.id,
+					name: ps.name,
+				} as UserList)
+				.then((x) =>
+					this.userListsRepository.findOneByOrFail(x.identifiers[0]),
+				);
 
-			const users = (await this.userListJoiningsRepository.findBy({
-				userListId: ps.listId,
-			})).map(x => x.userId);
+			const users = (
+				await this.userListJoiningsRepository.findBy({
+					userListId: ps.listId,
+				})
+			).map((x) => x.userId);
 
 			for (const user of users) {
-				const currentUser = await this.getterService.getUser(user).catch(err => {
-					if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') throw new ApiError(meta.errors.noSuchUser);
-					throw err;
-				});
+				const currentUser = await this.getterService
+					.getUser(user)
+					.catch((err) => {
+						if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff')
+							throw new ApiError(meta.errors.noSuchUser);
+						throw err;
+					});
 
 				if (currentUser.id !== me.id) {
 					const blockExist = await this.blockingsRepository.exist({
@@ -147,8 +163,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 					throw err;
 				}
 			}
-			return await this.userListEntityService.pack(userList);
+			return (await this.userListEntityService.pack(
+				userList,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }
-

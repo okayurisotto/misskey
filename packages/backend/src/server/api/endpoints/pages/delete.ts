@@ -1,23 +1,22 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { PagesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['pages'],
-
 	requireCredential: true,
-
 	kind: 'write:pages',
-
 	errors: {
 		noSuchPage: {
 			message: 'No such page.',
 			code: 'NO_SUCH_PAGE',
 			id: 'eb0c6e1d-d519-4764-9486-52a7e1c6392a',
 		},
-
 		accessDenied: {
 			message: 'Access denied.',
 			code: 'ACCESS_DENIED',
@@ -26,22 +25,23 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		pageId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['pageId'],
-} as const;
+const paramDef_ = z.object({
+	pageId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.pagesRepository)
 		private pagesRepository: PagesRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const page = await this.pagesRepository.findOneBy({ id: ps.pageId });
 			if (page == null) {
 				throw new ApiError(meta.errors.noSuchPage);

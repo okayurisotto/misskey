@@ -1,23 +1,23 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { PromoNotesRepository } from '@/models/index.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireModerator: true,
-
 	errors: {
 		noSuchNote: {
 			message: 'No such note.',
 			code: 'NO_SUCH_NOTE',
 			id: 'ee449fbe-af2a-453b-9cae-cf2fe7c895fc',
 		},
-
 		alreadyPromoted: {
 			message: 'The note has already promoted.',
 			code: 'ALREADY_PROMOTED',
@@ -26,31 +26,36 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		noteId: { type: 'string', format: 'misskey:id' },
-		expiresAt: { type: 'integer' },
-	},
-	required: ['noteId', 'expiresAt'],
-} as const;
+const paramDef_ = z.object({
+	noteId: misskeyIdPattern,
+	expiresAt: z.number().int(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.promoNotesRepository)
 		private promoNotesRepository: PromoNotesRepository,
 
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const note = await this.getterService.getNote(ps.noteId).catch(e => {
-				if (e.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
+		super(meta, paramDef_, async (ps, me) => {
+			const note = await this.getterService.getNote(ps.noteId).catch((e) => {
+				if (e.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
+					throw new ApiError(meta.errors.noSuchNote);
+				}
 				throw e;
 			});
 
-			const exist = await this.promoNotesRepository.exist({ where: { noteId: note.id } });
+			const exist = await this.promoNotesRepository.exist({
+				where: { noteId: note.id },
+			});
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyPromoted);

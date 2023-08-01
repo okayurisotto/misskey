@@ -1,31 +1,29 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { RenoteMutingsRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['account'],
-
 	requireCredential: true,
-
 	kind: 'write:mutes',
-
 	errors: {
 		noSuchUser: {
 			message: 'No such user.',
 			code: 'NO_SUCH_USER',
 			id: '9b6728cf-638c-4aa1-bedb-e07d8101474d',
 		},
-
 		muteeIsYourself: {
 			message: 'Mutee is yourself.',
 			code: 'MUTEE_IS_YOURSELF',
 			id: '619b1314-0850-4597-a242-e245f3da42af',
 		},
-
 		notMuting: {
 			message: 'You are not muting that user.',
 			code: 'NOT_MUTING',
@@ -34,17 +32,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		userId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['userId'],
-} as const;
+const paramDef_ = z.object({
+	userId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.renoteMutingsRepository)
 		private renoteMutingsRepository: RenoteMutingsRepository,
@@ -52,7 +51,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private globalEventService: GlobalEventService,
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const muter = me;
 
 			// Check if the mutee is yourself
@@ -61,8 +60,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			// Get mutee
-			const mutee = await this.getterService.getUser(ps.userId).catch(err => {
-				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') throw new ApiError(meta.errors.noSuchUser);
+			const mutee = await this.getterService.getUser(ps.userId).catch((err) => {
+				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
+					throw new ApiError(meta.errors.noSuchUser);
+				}
 				throw err;
 			});
 

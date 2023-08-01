@@ -1,41 +1,37 @@
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
+import z from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import type { NotesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Note',
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		noteId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['noteId'],
-} as const;
+const paramDef_ = z.object({
+	noteId: misskeyIdPattern,
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
@@ -43,19 +39,30 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private noteEntityService: NoteEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
-				.andWhere(new Brackets(qb => { qb
-					.where('note.replyId = :noteId', { noteId: ps.noteId })
-					.orWhere(new Brackets(qb => { qb
-						.where('note.renoteId = :noteId', { noteId: ps.noteId })
-						.andWhere(new Brackets(qb => { qb
-							.where('note.text IS NOT NULL')
-							.orWhere('note.fileIds != \'{}\'')
-							.orWhere('note.hasPoll = TRUE');
-						}));
-					}));
-				}))
+		super(meta, paramDef_, async (ps, me) => {
+			const query = this.queryService
+				.makePaginationQuery(
+					this.notesRepository.createQueryBuilder('note'),
+					ps.sinceId,
+					ps.untilId,
+				)
+				.andWhere(
+					new Brackets((qb) => {
+						qb.where('note.replyId = :noteId', { noteId: ps.noteId }).orWhere(
+							new Brackets((qb) => {
+								qb.where('note.renoteId = :noteId', {
+									noteId: ps.noteId,
+								}).andWhere(
+									new Brackets((qb) => {
+										qb.where('note.text IS NOT NULL')
+											.orWhere("note.fileIds != '{}'")
+											.orWhere('note.hasPoll = TRUE');
+									}),
+								);
+							}),
+						);
+					}),
+				)
 				.innerJoinAndSelect('note.user', 'user')
 				.leftJoinAndSelect('note.reply', 'reply')
 				.leftJoinAndSelect('note.renote', 'renote')
@@ -70,7 +77,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			const notes = await query.limit(ps.limit).getMany();
 
-			return await this.noteEntityService.packMany(notes, me);
+			return (await this.noteEntityService.packMany(
+				notes,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -1,16 +1,16 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { GalleryPostsRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['gallery'],
-
 	requireCredential: true,
-
 	kind: 'write:gallery',
-
 	errors: {
 		noSuchPost: {
 			message: 'No such post.',
@@ -20,22 +20,23 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		postId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['postId'],
-} as const;
+const paramDef_ = z.object({
+	postId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.galleryPostsRepository)
 		private galleryPostsRepository: GalleryPostsRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const post = await this.galleryPostsRepository.findOneBy({
 				id: ps.postId,
 				userId: me.id,

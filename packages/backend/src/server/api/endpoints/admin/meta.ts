@@ -1,303 +1,99 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MetaService } from '@/core/MetaService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.object({
+	cacheRemoteFiles: z.boolean(),
+	cacheRemoteSensitiveFiles: z.boolean(),
+	emailRequiredForSignup: z.boolean(),
+	enableHcaptcha: z.boolean(),
+	hcaptchaSiteKey: z.string().nullable(),
+	enableRecaptcha: z.boolean(),
+	recaptchaSiteKey: z.string().nullable(),
+	enableTurnstile: z.boolean(),
+	turnstileSiteKey: z.string().nullable(),
+	swPublickey: z.string().nullable(),
+	mascotImageUrl: z.string().default('/assets/ai.png').nullable(),
+	bannerUrl: z.string().nullable(),
+	serverErrorImageUrl: z.string().nullable(),
+	infoImageUrl: z.string().nullable(),
+	notFoundImageUrl: z.string().nullable(),
+	iconUrl: z.string().nullable(),
+	enableEmail: z.boolean(),
+	enableServiceWorker: z.boolean(),
+	translatorAvailable: z.boolean(),
+	userStarForReactionFallback: z.boolean().optional(),
+	pinnedUsers: z.array(z.string()).optional(),
+	hiddenTags: z.array(z.string()).optional(),
+	blockedHosts: z.array(z.string()).optional(),
+	sensitiveWords: z.array(z.string()).optional(),
+	preservedUsernames: z.array(z.string()),
+	hcaptchaSecretKey: z.string().nullable().optional(),
+	recaptchaSecretKey: z.string().nullable().optional(),
+	turnstileSecretKey: z.string().nullable().optional(),
+	sensitiveMediaDetection: z.string().optional(),
+	sensitiveMediaDetectionSensitivity: z.string().optional(),
+	setSensitiveFlagAutomatically: z.boolean().optional(),
+	enableSensitiveMediaDetectionForVideos: z.boolean().optional(),
+	proxyAccountId: misskeyIdPattern.nullable().optional(),
+	summalyProxy: z.string().nullable().optional(),
+	email: z.string().nullable().optional(),
+	smtpSecure: z.boolean().optional(),
+	smtpHost: z.string().nullable().optional(),
+	smtpPort: z.number().nullable().optional(),
+	smtpUser: z.string().nullable().optional(),
+	smtpPass: z.string().nullable().optional(),
+	swPrivateKey: z.string().nullable().optional(),
+	useObjectStorage: z.boolean().optional(),
+	objectStorageBaseUrl: z.string().nullable().optional(),
+	objectStorageBucket: z.string().nullable().optional(),
+	objectStoragePrefix: z.string().nullable().optional(),
+	objectStorageEndpoint: z.string().nullable().optional(),
+	objectStorageRegion: z.string().nullable().optional(),
+	objectStoragePort: z.number().nullable().optional(),
+	objectStorageAccessKey: z.string().nullable().optional(),
+	objectStorageSecretKey: z.string().nullable().optional(),
+	objectStorageUseSSL: z.boolean().optional(),
+	objectStorageUseProxy: z.boolean().optional(),
+	objectStorageSetPublicRead: z.boolean().optional(),
+	enableIpLogging: z.boolean().optional(),
+	enableActiveEmailValidation: z.boolean().optional(),
+	enableChartsForRemoteUser: z.boolean(),
+	enableChartsForFederatedInstances: z.boolean(),
+	enableServerMachineStats: z.boolean(),
+	enableIdenticonGeneration: z.boolean(),
+	policies: z.unknown(),
+});
 export const meta = {
 	tags: ['meta'],
-
 	requireCredential: true,
 	requireAdmin: true,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			cacheRemoteFiles: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			cacheRemoteSensitiveFiles: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			emailRequiredForSignup: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			enableHcaptcha: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			hcaptchaSiteKey: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-			enableRecaptcha: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			recaptchaSiteKey: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-			enableTurnstile: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			turnstileSiteKey: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-			swPublickey: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-			mascotImageUrl: {
-				type: 'string',
-				optional: false, nullable: true,
-				default: '/assets/ai.png',
-			},
-			bannerUrl: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-			serverErrorImageUrl: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-			infoImageUrl: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-			notFoundImageUrl: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-			iconUrl: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-			enableEmail: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			enableServiceWorker: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			translatorAvailable: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			userStarForReactionFallback: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			pinnedUsers: {
-				type: 'array',
-				optional: true, nullable: false,
-				items: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-			},
-			hiddenTags: {
-				type: 'array',
-				optional: true, nullable: false,
-				items: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-			},
-			blockedHosts: {
-				type: 'array',
-				optional: true, nullable: false,
-				items: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-			},
-			sensitiveWords: {
-				type: 'array',
-				optional: true, nullable: false,
-				items: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-			},
-			preservedUsernames: {
-				type: 'array',
-				optional: false, nullable: false,
-				items: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-			},
-			hcaptchaSecretKey: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			recaptchaSecretKey: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			turnstileSecretKey: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			sensitiveMediaDetection: {
-				type: 'string',
-				optional: true, nullable: false,
-			},
-			sensitiveMediaDetectionSensitivity: {
-				type: 'string',
-				optional: true, nullable: false,
-			},
-			setSensitiveFlagAutomatically: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			enableSensitiveMediaDetectionForVideos: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			proxyAccountId: {
-				type: 'string',
-				optional: true, nullable: true,
-				format: 'id',
-			},
-			summaryProxy: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			email: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			smtpSecure: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			smtpHost: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			smtpPort: {
-				type: 'number',
-				optional: true, nullable: true,
-			},
-			smtpUser: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			smtpPass: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			swPrivateKey: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			useObjectStorage: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			objectStorageBaseUrl: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			objectStorageBucket: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			objectStoragePrefix: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			objectStorageEndpoint: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			objectStorageRegion: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			objectStoragePort: {
-				type: 'number',
-				optional: true, nullable: true,
-			},
-			objectStorageAccessKey: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			objectStorageSecretKey: {
-				type: 'string',
-				optional: true, nullable: true,
-			},
-			objectStorageUseSSL: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			objectStorageUseProxy: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			objectStorageSetPublicRead: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			enableIpLogging: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			enableActiveEmailValidation: {
-				type: 'boolean',
-				optional: true, nullable: false,
-			},
-			enableChartsForRemoteUser: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			enableChartsForFederatedInstances: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			enableServerMachineStats: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			enableIdenticonGeneration: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			policies: {
-				type: 'object',
-				optional: false, nullable: false,
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-	},
-	required: [],
-} as const;
+const paramDef_ = z.unknown();
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
 
 		private metaService: MetaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const instance = await this.metaService.fetch(true);
 
 			return {
@@ -345,9 +141,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				recaptchaSecretKey: instance.recaptchaSecretKey,
 				turnstileSecretKey: instance.turnstileSecretKey,
 				sensitiveMediaDetection: instance.sensitiveMediaDetection,
-				sensitiveMediaDetectionSensitivity: instance.sensitiveMediaDetectionSensitivity,
+				sensitiveMediaDetectionSensitivity:
+					instance.sensitiveMediaDetectionSensitivity,
 				setSensitiveFlagAutomatically: instance.setSensitiveFlagAutomatically,
-				enableSensitiveMediaDetectionForVideos: instance.enableSensitiveMediaDetectionForVideos,
+				enableSensitiveMediaDetectionForVideos:
+					instance.enableSensitiveMediaDetectionForVideos,
 				proxyAccountId: instance.proxyAccountId,
 				summalyProxy: instance.summalyProxy,
 				email: instance.email,
@@ -375,11 +173,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				enableIpLogging: instance.enableIpLogging,
 				enableActiveEmailValidation: instance.enableActiveEmailValidation,
 				enableChartsForRemoteUser: instance.enableChartsForRemoteUser,
-				enableChartsForFederatedInstances: instance.enableChartsForFederatedInstances,
+				enableChartsForFederatedInstances:
+					instance.enableChartsForFederatedInstances,
 				enableServerMachineStats: instance.enableServerMachineStats,
 				enableIdenticonGeneration: instance.enableIdenticonGeneration,
 				policies: { ...DEFAULT_POLICIES, ...instance.policies },
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -1,18 +1,25 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueueService } from '@/core/QueueService.js';
-import type { AntennasRepository, DriveFilesRepository, UsersRepository, Antenna as _Antenna } from '@/models/index.js';
+import type {
+	AntennasRepository,
+	DriveFilesRepository,
+	UsersRepository,
+	Antenna as _Antenna,
+} from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { DownloadService } from '@/core/DownloadService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
 	secure: true,
 	requireCredential: true,
 	prohibitMoved: true,
-
 	limit: {
 		duration: ms('1hour'),
 		max: 1,
@@ -41,17 +48,19 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		fileId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['fileId'],
-} as const;
+const paramDef_ = z.object({
+	fileId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-@Injectable() // eslint-disable-next-line import/no-default-export
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor (
+@Injectable()
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
+	constructor(
 		@Inject(DI.driveFilesRepository)
 		private driveFilesRepository: DriveFilesRepository,
 
@@ -65,15 +74,23 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private queueService: QueueService,
 		private downloadService: DownloadService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const userExist = await this.usersRepository.exist({ where: { id: me.id } });
+		super(meta, paramDef_, async (ps, me) => {
+			const userExist = await this.usersRepository.exist({
+				where: { id: me.id },
+			});
 			if (!userExist) throw new ApiError(meta.errors.noSuchUser);
 			const file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
 			if (file === null) throw new ApiError(meta.errors.noSuchFile);
 			if (file.size === 0) throw new ApiError(meta.errors.emptyFile);
-			const antennas: (_Antenna & { userListAccts: string[] | null })[] = JSON.parse(await this.downloadService.downloadTextFile(file.url));
-			const currentAntennasCount = await this.antennasRepository.countBy({ userId: me.id });
-			if (currentAntennasCount + antennas.length > (await this.roleService.getUserPolicies(me.id)).antennaLimit) {
+			const antennas: (_Antenna & { userListAccts: string[] | null })[] =
+				JSON.parse(await this.downloadService.downloadTextFile(file.url));
+			const currentAntennasCount = await this.antennasRepository.countBy({
+				userId: me.id,
+			});
+			if (
+				currentAntennasCount + antennas.length >
+				(await this.roleService.getUserPolicies(me.id)).antennaLimit
+			) {
 				throw new ApiError(meta.errors.tooManyAntennas);
 			}
 			this.queueService.createImportAntennasJob(me, antennas);

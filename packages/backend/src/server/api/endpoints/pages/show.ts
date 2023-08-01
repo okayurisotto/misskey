@@ -1,23 +1,21 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { IsNull } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UsersRepository, PagesRepository } from '@/models/index.js';
 import type { Page } from '@/models/entities/Page.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { PageSchema } from '@/models/zod/PageSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = PageSchema;
 export const meta = {
 	tags: ['pages'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'Page',
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchPage: {
 			message: 'No such page.',
@@ -27,22 +25,24 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		pageId: { type: 'string', format: 'misskey:id' },
-		name: { type: 'string' },
-		username: { type: 'string' },
-	},
-	anyOf: [
-		{ required: ['pageId'] },
-		{ required: ['name', 'username'] },
-	],
-} as const;
+const paramDef_ = z.union([
+	z.object({
+		pageId: misskeyIdPattern,
+	}),
+	z.object({
+		name: z.string(),
+		username: z.string(),
+	}),
+]);
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
@@ -52,10 +52,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private pageEntityService: PageEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			let page: Page | null = null;
 
-			if (ps.pageId) {
+			if ('pageId' in ps) {
 				page = await this.pagesRepository.findOneBy({ id: ps.pageId });
 			} else if (ps.name && ps.username) {
 				const author = await this.usersRepository.findOneBy({
@@ -74,7 +74,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				throw new ApiError(meta.errors.noSuchPage);
 			}
 
-			return await this.pageEntityService.pack(page, me);
+			return (await this.pageEntityService.pack(page, me)) satisfies z.infer<
+				typeof res
+			>;
 		});
 	}
 }

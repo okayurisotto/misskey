@@ -1,17 +1,22 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Brackets } from 'typeorm';
-import type { RoleAssignmentsRepository, RolesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import type {
+	RoleAssignmentsRepository,
+	RolesRepository,
+} from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.unknown();
 export const meta = {
 	tags: ['role', 'users'],
-
 	requireCredential: false,
-
 	errors: {
 		noSuchRole: {
 			message: 'No such role.',
@@ -19,22 +24,24 @@ export const meta = {
 			id: '30aaaee3-4792-48dc-ab0d-cf501a575ac5',
 		},
 	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		roleId: { type: 'string', format: 'misskey:id' },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-	},
-	required: ['roleId'],
-} as const;
+const paramDef_ = z.object({
+	roleId: misskeyIdPattern,
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+	limit: z.number().int().min(1).max(100).default(10),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.rolesRepository)
 		private rolesRepository: RolesRepository,
@@ -45,7 +52,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private queryService: QueryService,
 		private userEntityService: UserEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const role = await this.rolesRepository.findOneBy({
 				id: ps.roleId,
 				isPublic: true,
@@ -56,22 +63,33 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				throw new ApiError(meta.errors.noSuchRole);
 			}
 
-			const query = this.queryService.makePaginationQuery(this.roleAssignmentsRepository.createQueryBuilder('assign'), ps.sinceId, ps.untilId)
+			const query = this.queryService
+				.makePaginationQuery(
+					this.roleAssignmentsRepository.createQueryBuilder('assign'),
+					ps.sinceId,
+					ps.untilId,
+				)
 				.andWhere('assign.roleId = :roleId', { roleId: role.id })
-				.andWhere(new Brackets(qb => { qb
-					.where('assign.expiresAt IS NULL')
-					.orWhere('assign.expiresAt > :now', { now: new Date() });
-				}))
+				.andWhere(
+					new Brackets((qb) => {
+						qb.where('assign.expiresAt IS NULL').orWhere(
+							'assign.expiresAt > :now',
+							{ now: new Date() },
+						);
+					}),
+				)
 				.innerJoinAndSelect('assign.user', 'user');
 
-			const assigns = await query
-				.limit(ps.limit)
-				.getMany();
+			const assigns = await query.limit(ps.limit).getMany();
 
-			return await Promise.all(assigns.map(async assign => ({
-				id: assign.id,
-				user: await this.userEntityService.pack(assign.user!, me, { detail: true }),
-			})));
+			return await Promise.all(
+				assigns.map(async (assign) => ({
+					id: assign.id,
+					user: await this.userEntityService.pack(assign.user!, me, {
+						detail: true,
+					}),
+				})),
+			) satisfies z.infer<typeof res>;
 		});
 	}
 }

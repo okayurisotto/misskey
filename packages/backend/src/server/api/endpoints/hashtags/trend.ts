@@ -1,6 +1,8 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { NotesRepository } from '@/models/index.js';
 import type { Note } from '@/models/entities/Note.js';
 import { safeForSql } from '@/misc/safe-for-sql.js';
@@ -22,70 +24,57 @@ const rangeA = 1000 * 60 * 60; // 60分
 
 const max = 5;
 
+const res = z.array(
+	z.object({
+		tag: z.string(),
+		chart: z.array(z.number()),
+		usersCount: z.number(),
+	}),
+);
 export const meta = {
 	tags: ['hashtags'],
-
 	requireCredential: false,
 	allowGet: true,
 	cacheSec: 60 * 1,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			properties: {
-				tag: {
-					type: 'string',
-					optional: false, nullable: false,
-				},
-				chart: {
-					type: 'array',
-					optional: false, nullable: false,
-					items: {
-						type: 'number',
-						optional: false, nullable: false,
-					},
-				},
-				usersCount: {
-					type: 'number',
-					optional: false, nullable: false,
-				},
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {},
-	required: [],
-} as const;
+const paramDef_ = z.object({});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
 
 		private metaService: MetaService,
 	) {
-		super(meta, paramDef, async () => {
+		super(meta, paramDef_, async () => {
 			const instance = await this.metaService.fetch(true);
-			const hiddenTags = instance.hiddenTags.map(t => normalizeForSearch(t));
+			const hiddenTags = instance.hiddenTags.map((t) => normalizeForSearch(t));
 
 			const now = new Date(); // 5分単位で丸めた現在日時
 			now.setMinutes(Math.round(now.getMinutes() / 5) * 5, 0, 0);
 
-			const tagNotes = await this.notesRepository.createQueryBuilder('note')
-				.where('note.createdAt > :date', { date: new Date(now.getTime() - rangeA) })
-				.andWhere(new Brackets(qb => { qb
-					.where('note.visibility = \'public\'')
-					.orWhere('note.visibility = \'home\'');
-				}))
-				.andWhere('note.tags != \'{}\'')
+			const tagNotes = await this.notesRepository
+				.createQueryBuilder('note')
+				.where('note.createdAt > :date', {
+					date: new Date(now.getTime() - rangeA),
+				})
+				.andWhere(
+					new Brackets((qb) => {
+						qb.where("note.visibility = 'public'").orWhere(
+							"note.visibility = 'home'",
+						);
+					}),
+				)
+				.andWhere("note.tags != '{}'")
 				.select(['note.tags', 'note.userId'])
 				.cache(60000) // 1 min
 				.getMany();
@@ -95,15 +84,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			const tags: {
-		name: string;
-		users: Note['userId'][];
-	}[] = [];
+				name: string;
+				users: Note['userId'][];
+			}[] = [];
 
 			for (const note of tagNotes) {
 				for (const tag of note.tags) {
 					if (hiddenTags.includes(tag)) continue;
 
-					const x = tags.find(x => x.name === tag);
+					const x = tags.find((x) => x.name === tag);
 					if (x) {
 						if (!x.users.includes(note.userId)) {
 							x.users.push(note.userId);
@@ -120,7 +109,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			// タグを人気順に並べ替え
 			const hots = tags
 				.sort((a, b) => b.users.length - a.users.length)
-				.map(tag => tag.name)
+				.map((tag) => tag.name)
 				.slice(0, max);
 
 			//#region 2(または3)で話題と判定されたタグそれぞれについて過去の投稿数グラフを取得する
@@ -132,36 +121,58 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			const interval = 1000 * 60 * 10;
 
 			for (let i = 0; i < range; i++) {
-				countPromises.push(Promise.all(hots.map(tag => this.notesRepository.createQueryBuilder('note')
-					.select('count(distinct note.userId)')
-					.where(`'{"${safeForSql(tag) ? tag : 'aichan_kawaii'}"}' <@ note.tags`)
-					.andWhere('note.createdAt < :lt', { lt: new Date(now.getTime() - (interval * i)) })
-					.andWhere('note.createdAt > :gt', { gt: new Date(now.getTime() - (interval * (i + 1))) })
-					.cache(60000) // 1 min
-					.getRawOne()
-					.then(x => parseInt(x.count, 10)),
-				)));
+				countPromises.push(
+					Promise.all(
+						hots.map((tag) =>
+							this.notesRepository
+								.createQueryBuilder('note')
+								.select('count(distinct note.userId)')
+								.where(
+									`'{"${
+										safeForSql(tag) ? tag : 'aichan_kawaii'
+									}"}' <@ note.tags`,
+								)
+								.andWhere('note.createdAt < :lt', {
+									lt: new Date(now.getTime() - interval * i),
+								})
+								.andWhere('note.createdAt > :gt', {
+									gt: new Date(now.getTime() - interval * (i + 1)),
+								})
+								.cache(60000) // 1 min
+								.getRawOne()
+								.then((x) => parseInt(x.count, 10)),
+						),
+					),
+				);
 			}
 
 			const countsLog = await Promise.all(countPromises);
 			//#endregion
 
-			const totalCounts = await Promise.all(hots.map(tag => this.notesRepository.createQueryBuilder('note')
-				.select('count(distinct note.userId)')
-				.where(`'{"${safeForSql(tag) ? tag : 'aichan_kawaii'}"}' <@ note.tags`)
-				.andWhere('note.createdAt > :gt', { gt: new Date(now.getTime() - rangeA) })
-				.cache(60000 * 60) // 60 min
-				.getRawOne()
-				.then(x => parseInt(x.count, 10)),
-			));
+			const totalCounts = await Promise.all(
+				hots.map((tag) =>
+					this.notesRepository
+						.createQueryBuilder('note')
+						.select('count(distinct note.userId)')
+						.where(
+							`'{"${safeForSql(tag) ? tag : 'aichan_kawaii'}"}' <@ note.tags`,
+						)
+						.andWhere('note.createdAt > :gt', {
+							gt: new Date(now.getTime() - rangeA),
+						})
+						.cache(60000 * 60) // 60 min
+						.getRawOne()
+						.then((x) => parseInt(x.count, 10)),
+				),
+			);
 
 			const stats = hots.map((tag, i) => ({
 				tag,
-				chart: countsLog.map(counts => counts[i]),
+				chart: countsLog.map((counts) => counts[i]),
 				usersCount: totalCounts[i],
 			}));
 
-			return stats;
+			return stats satisfies z.infer<typeof res>;
 		});
 	}
 }

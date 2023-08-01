@@ -1,42 +1,39 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { NotesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Note',
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		local: { type: 'boolean', default: false },
-		reply: { type: 'boolean' },
-		renote: { type: 'boolean' },
-		withFiles: { type: 'boolean' },
-		poll: { type: 'boolean' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	local: z.boolean().default(false),
+	reply: z.boolean().optional(),
+	renote: z.boolean().optional(),
+	withFiles: z.boolean().optional(),
+	poll: z.boolean().optional(),
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
@@ -44,9 +41,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private noteEntityService: NoteEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
-				.andWhere('note.visibility = \'public\'')
+		super(meta, paramDef_, async (ps, me) => {
+			const query = this.queryService
+				.makePaginationQuery(
+					this.notesRepository.createQueryBuilder('note'),
+					ps.sinceId,
+					ps.untilId,
+				)
+				.andWhere("note.visibility = 'public'")
 				.andWhere('note.localOnly = FALSE')
 				.innerJoinAndSelect('note.user', 'user')
 				.leftJoinAndSelect('note.reply', 'reply')
@@ -59,19 +61,27 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			if (ps.reply !== undefined) {
-				query.andWhere(ps.reply ? 'note.replyId IS NOT NULL' : 'note.replyId IS NULL');
+				query.andWhere(
+					ps.reply ? 'note.replyId IS NOT NULL' : 'note.replyId IS NULL',
+				);
 			}
 
 			if (ps.renote !== undefined) {
-				query.andWhere(ps.renote ? 'note.renoteId IS NOT NULL' : 'note.renoteId IS NULL');
+				query.andWhere(
+					ps.renote ? 'note.renoteId IS NOT NULL' : 'note.renoteId IS NULL',
+				);
 			}
 
 			if (ps.withFiles !== undefined) {
-				query.andWhere(ps.withFiles ? 'note.fileIds != \'{}\'' : 'note.fileIds = \'{}\'');
+				query.andWhere(
+					ps.withFiles ? "note.fileIds != '{}'" : "note.fileIds = '{}'",
+				);
 			}
 
 			if (ps.poll !== undefined) {
-				query.andWhere(ps.poll ? 'note.hasPoll = TRUE' : 'note.hasPoll = FALSE');
+				query.andWhere(
+					ps.poll ? 'note.hasPoll = TRUE' : 'note.hasPoll = FALSE',
+				);
 			}
 
 			// TODO
@@ -81,7 +91,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			const notes = await query.limit(ps.limit).getMany();
 
-			return await this.noteEntityService.packMany(notes);
+			return (await this.noteEntityService.packMany(notes)) satisfies z.infer<
+				typeof res
+			>;
 		});
 	}
 }

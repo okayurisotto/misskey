@@ -1,40 +1,29 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Not, In, IsNull } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import { maximum } from '@/misc/prelude/array.js';
 import type { NotesRepository, UsersRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
+import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.array(
+	z.object({
+		user: UserDetailedSchema,
+		weight: z.number(),
+	}),
+);
 export const meta = {
 	tags: ['users'],
-
 	requireCredential: false,
-
-	description: 'Get a list of other users that the specified user frequently replies to.',
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			properties: {
-				user: {
-					type: 'object',
-					optional: false, nullable: false,
-					ref: 'UserDetailed',
-				},
-				weight: {
-					type: 'number',
-					optional: false, nullable: false,
-				},
-			},
-		},
-	},
-
+	description:
+		'Get a list of other users that the specified user frequently replies to.',
+	res: generateSchema(res),
 	errors: {
 		noSuchUser: {
 			message: 'No such user.',
@@ -44,18 +33,19 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		userId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-	},
-	required: ['userId'],
-} as const;
+const paramDef_ = z.object({
+	userId: misskeyIdPattern,
+	limit: z.number().int().min(1).max(100).default(10),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
@@ -66,10 +56,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private userEntityService: UserEntityService,
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Lookup user
-			const user = await this.getterService.getUser(ps.userId).catch(err => {
-				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') throw new ApiError(meta.errors.noSuchUser);
+			const user = await this.getterService.getUser(ps.userId).catch((err) => {
+				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
+					throw new ApiError(meta.errors.noSuchUser);
+				}
 				throw err;
 			});
 
@@ -94,7 +86,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			// TODO ミュートを考慮
 			const replyTargetNotes = await this.notesRepository.find({
 				where: {
-					id: In(recentNotes.map(p => p.replyId)),
+					id: In(recentNotes.map((p) => p.replyId)),
 				},
 				select: ['userId'],
 			});
@@ -102,7 +94,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			const repliedUsers: any = {};
 
 			// Extract replies from recent notes
-			for (const userId of replyTargetNotes.map(x => x.userId.toString())) {
+			for (const userId of replyTargetNotes.map((x) => x.userId.toString())) {
 				if (repliedUsers[userId]) {
 					repliedUsers[userId]++;
 				} else {
@@ -114,18 +106,22 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			const peak = maximum(Object.values(repliedUsers));
 
 			// Sort replies by frequency
-			const repliedUsersSorted = Object.keys(repliedUsers).sort((a, b) => repliedUsers[b] - repliedUsers[a]);
+			const repliedUsersSorted = Object.keys(repliedUsers).sort(
+				(a, b) => repliedUsers[b] - repliedUsers[a],
+			);
 
 			// Extract top replied users
 			const topRepliedUsers = repliedUsersSorted.slice(0, ps.limit);
 
 			// Make replies object (includes weights)
-			const repliesObj = await Promise.all(topRepliedUsers.map(async (user) => ({
-				user: await this.userEntityService.pack(user, me, { detail: true }),
-				weight: repliedUsers[user] / peak,
-			})));
+			const repliesObj = await Promise.all(
+				topRepliedUsers.map(async (user) => ({
+					user: await this.userEntityService.pack(user, me, { detail: true }),
+					weight: repliedUsers[user] / peak,
+				})),
+			);
 
-			return repliesObj;
+			return repliesObj satisfies z.infer<typeof res>;
 		});
 	}
 }

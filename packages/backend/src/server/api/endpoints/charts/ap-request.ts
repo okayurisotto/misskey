@@ -1,36 +1,42 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
-import { getJsonSchema } from '@/core/chart/core.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import ApRequestChart from '@/core/chart/charts/ap-request.js';
-import { schema } from '@/core/chart/charts/entities/ap-request.js';
 
+const res = z.object({
+	deliverFailed: z.array(z.number()),
+	deliverSucceeded: z.array(z.number()),
+	inboxReceived: z.array(z.number()),
+});
 export const meta = {
 	tags: ['charts'],
-
-	res: getJsonSchema(schema),
-
+	res: generateSchema(res),
 	allowGet: true,
 	cacheSec: 60 * 60,
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		span: { type: 'string', enum: ['day', 'hour'] },
-		limit: { type: 'integer', minimum: 1, maximum: 500, default: 30 },
-		offset: { type: 'integer', nullable: true, default: null },
-	},
-	required: ['span'],
-} as const;
+const paramDef_ = z.object({
+	span: z.enum(['day', 'hour']),
+	limit: z.number().int().min(1).max(500).default(30),
+	offset: z.number().int().nullable().default(null),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor(
-		private apRequestChart: ApRequestChart,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			return await this.apRequestChart.getChart(ps.span, ps.limit, ps.offset ? new Date(ps.offset) : null);
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
+	constructor(private apRequestChart: ApRequestChart) {
+		super(meta, paramDef_, async (ps, me) => {
+			return await this.apRequestChart.getChart(
+				ps.span,
+				ps.limit,
+				ps.offset ? new Date(ps.offset) : null,
+			) satisfies z.infer<typeof res>;
 		});
 	}
 }

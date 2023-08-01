@@ -1,33 +1,31 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
 import type { NoteFavoritesRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { DI } from '@/di-symbols.js';
 import { AchievementService } from '@/core/AchievementService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['notes', 'favorites'],
-
 	requireCredential: true,
 	prohibitMoved: true,
-
 	kind: 'write:favorites',
-
 	limit: {
 		duration: ms('1hour'),
 		max: 20,
 	},
-
 	errors: {
 		noSuchNote: {
 			message: 'No such note.',
 			code: 'NO_SUCH_NOTE',
 			id: '6dd26674-e060-4816-909a-45ba3f4da458',
 		},
-
 		alreadyFavorited: {
 			message: 'The note has already been marked as a favorite.',
 			code: 'ALREADY_FAVORITED',
@@ -36,17 +34,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		noteId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['noteId'],
-} as const;
+const paramDef_ = z.object({
+	noteId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.noteFavoritesRepository)
 		private noteFavoritesRepository: NoteFavoritesRepository,
@@ -55,10 +54,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private getterService: GetterService,
 		private achievementService: AchievementService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Get favoritee
-			const note = await this.getterService.getNote(ps.noteId).catch(err => {
-				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
+			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
+				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
+					throw new ApiError(meta.errors.noSuchNote);
+				}
 				throw err;
 			});
 

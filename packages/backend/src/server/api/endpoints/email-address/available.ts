@@ -1,44 +1,36 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { EmailService } from '@/core/EmailService.js';
 
+const res = z.object({
+	available: z.boolean(),
+	reason: z.string().nullable(),
+});
 export const meta = {
 	tags: ['users'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			available: {
-				type: 'boolean',
-				optional: false, nullable: false,
-			},
-			reason: {
-				type: 'string',
-				optional: false, nullable: true,
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		emailAddress: { type: 'string' },
-	},
-	required: ['emailAddress'],
-} as const;
+const paramDef_ = z.object({
+	emailAddress: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor(
-		private emailService: EmailService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			return await this.emailService.validateEmailForAccount(ps.emailAddress);
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
+	constructor(private emailService: EmailService) {
+		super(meta, paramDef_, async (ps, me) => {
+			return (await this.emailService.validateEmailForAccount(
+				ps.emailAddress,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

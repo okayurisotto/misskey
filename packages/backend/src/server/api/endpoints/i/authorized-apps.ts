@@ -1,36 +1,40 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { IsNull, Not } from 'typeorm';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AccessTokensRepository } from '@/models/index.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
 import { DI } from '@/di-symbols.js';
 
+const res = z.unknown();
 export const meta = {
 	requireCredential: true,
-
 	secure: true,
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		offset: { type: 'integer', default: 0 },
-		sort: { type: 'string', enum: ['desc', 'asc'], default: 'desc' },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	limit: z.number().int().min(1).max(100).default(10),
+	offset: z.number().int().default(0),
+	sort: z.enum(['desc', 'asc']).default('desc'),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.accessTokensRepository)
 		private accessTokensRepository: AccessTokensRepository,
 
 		private appEntityService: AppEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Get tokens
 			const tokens = await this.accessTokensRepository.find({
 				where: {
@@ -44,9 +48,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				},
 			});
 
-			return await Promise.all(tokens.map(token => this.appEntityService.pack(token.appId!, me, {
-				detail: true,
-			})));
+			return await Promise.all(
+				tokens.map((token) =>
+					this.appEntityService.pack(token.appId!, me, {
+						detail: true,
+					}),
+				),
+			) satisfies z.infer<typeof res>;
 		});
 	}
 }

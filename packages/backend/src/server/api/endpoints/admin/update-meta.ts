@@ -1,113 +1,114 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import type { Meta } from '@/models/entities/Meta.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 import { MetaService } from '@/core/MetaService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireAdmin: true,
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		disableRegistration: { type: 'boolean', nullable: true },
-		pinnedUsers: { type: 'array', nullable: true, items: {
-			type: 'string',
-		} },
-		hiddenTags: { type: 'array', nullable: true, items: {
-			type: 'string',
-		} },
-		blockedHosts: { type: 'array', nullable: true, items: {
-			type: 'string',
-		} },
-		sensitiveWords: { type: 'array', nullable: true, items: {
-			type: 'string',
-		} },
-		themeColor: { type: 'string', nullable: true, pattern: '^#[0-9a-fA-F]{6}$' },
-		mascotImageUrl: { type: 'string', nullable: true },
-		bannerUrl: { type: 'string', nullable: true },
-		serverErrorImageUrl: { type: 'string', nullable: true },
-		infoImageUrl: { type: 'string', nullable: true },
-		notFoundImageUrl: { type: 'string', nullable: true },
-		iconUrl: { type: 'string', nullable: true },
-		backgroundImageUrl: { type: 'string', nullable: true },
-		logoImageUrl: { type: 'string', nullable: true },
-		name: { type: 'string', nullable: true },
-		description: { type: 'string', nullable: true },
-		defaultLightTheme: { type: 'string', nullable: true },
-		defaultDarkTheme: { type: 'string', nullable: true },
-		cacheRemoteFiles: { type: 'boolean' },
-		cacheRemoteSensitiveFiles: { type: 'boolean' },
-		emailRequiredForSignup: { type: 'boolean' },
-		enableHcaptcha: { type: 'boolean' },
-		hcaptchaSiteKey: { type: 'string', nullable: true },
-		hcaptchaSecretKey: { type: 'string', nullable: true },
-		enableRecaptcha: { type: 'boolean' },
-		recaptchaSiteKey: { type: 'string', nullable: true },
-		recaptchaSecretKey: { type: 'string', nullable: true },
-		enableTurnstile: { type: 'boolean' },
-		turnstileSiteKey: { type: 'string', nullable: true },
-		turnstileSecretKey: { type: 'string', nullable: true },
-		sensitiveMediaDetection: { type: 'string', enum: ['none', 'all', 'local', 'remote'] },
-		sensitiveMediaDetectionSensitivity: { type: 'string', enum: ['medium', 'low', 'high', 'veryLow', 'veryHigh'] },
-		setSensitiveFlagAutomatically: { type: 'boolean' },
-		enableSensitiveMediaDetectionForVideos: { type: 'boolean' },
-		proxyAccountId: { type: 'string', format: 'misskey:id', nullable: true },
-		maintainerName: { type: 'string', nullable: true },
-		maintainerEmail: { type: 'string', nullable: true },
-		langs: { type: 'array', items: {
-			type: 'string',
-		} },
-		summalyProxy: { type: 'string', nullable: true },
-		deeplAuthKey: { type: 'string', nullable: true },
-		deeplIsPro: { type: 'boolean' },
-		enableEmail: { type: 'boolean' },
-		email: { type: 'string', nullable: true },
-		smtpSecure: { type: 'boolean' },
-		smtpHost: { type: 'string', nullable: true },
-		smtpPort: { type: 'integer', nullable: true },
-		smtpUser: { type: 'string', nullable: true },
-		smtpPass: { type: 'string', nullable: true },
-		enableServiceWorker: { type: 'boolean' },
-		swPublicKey: { type: 'string', nullable: true },
-		swPrivateKey: { type: 'string', nullable: true },
-		tosUrl: { type: 'string', nullable: true },
-		repositoryUrl: { type: 'string' },
-		feedbackUrl: { type: 'string' },
-		useObjectStorage: { type: 'boolean' },
-		objectStorageBaseUrl: { type: 'string', nullable: true },
-		objectStorageBucket: { type: 'string', nullable: true },
-		objectStoragePrefix: { type: 'string', nullable: true },
-		objectStorageEndpoint: { type: 'string', nullable: true },
-		objectStorageRegion: { type: 'string', nullable: true },
-		objectStoragePort: { type: 'integer', nullable: true },
-		objectStorageAccessKey: { type: 'string', nullable: true },
-		objectStorageSecretKey: { type: 'string', nullable: true },
-		objectStorageUseSSL: { type: 'boolean' },
-		objectStorageUseProxy: { type: 'boolean' },
-		objectStorageSetPublicRead: { type: 'boolean' },
-		objectStorageS3ForcePathStyle: { type: 'boolean' },
-		enableIpLogging: { type: 'boolean' },
-		enableActiveEmailValidation: { type: 'boolean' },
-		enableChartsForRemoteUser: { type: 'boolean' },
-		enableChartsForFederatedInstances: { type: 'boolean' },
-		enableServerMachineStats: { type: 'boolean' },
-		enableIdenticonGeneration: { type: 'boolean' },
-		serverRules: { type: 'array', items: { type: 'string' } },
-		preservedUsernames: { type: 'array', items: { type: 'string' } },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	disableRegistration: z.boolean().nullable().optional(),
+	pinnedUsers: z.array(z.string()).nullable().optional(),
+	hiddenTags: z.array(z.string()).nullable().optional(),
+	blockedHosts: z.array(z.string()).nullable().optional(),
+	sensitiveWords: z.array(z.string()).nullable().optional(),
+	themeColor: z
+		.string()
+		.regex(/^#[0-9a-fA-F]{6}$/)
+		.nullable()
+		.optional(),
+	mascotImageUrl: z.string().nullable().optional(),
+	bannerUrl: z.string().nullable().optional(),
+	serverErrorImageUrl: z.string().nullable().optional(),
+	infoImageUrl: z.string().nullable().optional(),
+	notFoundImageUrl: z.string().nullable().optional(),
+	iconUrl: z.string().nullable().optional(),
+	backgroundImageUrl: z.string().nullable().optional(),
+	logoImageUrl: z.string().nullable().optional(),
+	name: z.string().nullable().optional(),
+	description: z.string().nullable().optional(),
+	defaultLightTheme: z.string().nullable().optional(),
+	defaultDarkTheme: z.string().nullable().optional(),
+	cacheRemoteFiles: z.boolean().optional(),
+	cacheRemoteSensitiveFiles: z.boolean().optional(),
+	emailRequiredForSignup: z.boolean().optional(),
+	enableHcaptcha: z.boolean().optional(),
+	hcaptchaSiteKey: z.string().nullable().optional(),
+	hcaptchaSecretKey: z.string().nullable().optional(),
+	enableRecaptcha: z.boolean().optional(),
+	recaptchaSiteKey: z.string().nullable().optional(),
+	recaptchaSecretKey: z.string().nullable().optional(),
+	enableTurnstile: z.boolean().optional(),
+	turnstileSiteKey: z.string().nullable().optional(),
+	turnstileSecretKey: z.string().nullable().optional(),
+	sensitiveMediaDetection: z
+		.enum(['none', 'all', 'local', 'remote'])
+		.optional(),
+	sensitiveMediaDetectionSensitivity: z
+		.enum(['medium', 'low', 'high', 'veryLow', 'veryHigh'])
+		.optional(),
+	setSensitiveFlagAutomatically: z.boolean().optional(),
+	enableSensitiveMediaDetectionForVideos: z.boolean().optional(),
+	proxyAccountId: misskeyIdPattern.nullable().optional(),
+	maintainerName: z.string().nullable().optional(),
+	maintainerEmail: z.string().nullable().optional(),
+	langs: z.array(z.string()).optional(),
+	summalyProxy: z.string().nullable().optional(),
+	deeplAuthKey: z.string().nullable().optional(),
+	deeplIsPro: z.boolean().optional(),
+	enableEmail: z.boolean().optional(),
+	email: z.string().nullable().optional(),
+	smtpSecure: z.boolean().optional(),
+	smtpHost: z.string().nullable().optional(),
+	smtpPort: z.number().int().nullable().optional(),
+	smtpUser: z.string().nullable().optional(),
+	smtpPass: z.string().nullable().optional(),
+	enableServiceWorker: z.boolean().optional(),
+	swPublicKey: z.string().nullable().optional(),
+	swPrivateKey: z.string().nullable().optional(),
+	tosUrl: z.string().nullable().optional(),
+	repositoryUrl: z.string().optional(),
+	feedbackUrl: z.string().optional(),
+	useObjectStorage: z.boolean().optional(),
+	objectStorageBaseUrl: z.string().nullable().optional(),
+	objectStorageBucket: z.string().nullable().optional(),
+	objectStoragePrefix: z.string().nullable().optional(),
+	objectStorageEndpoint: z.string().nullable().optional(),
+	objectStorageRegion: z.string().nullable().optional(),
+	objectStoragePort: z.number().int().nullable().optional(),
+	objectStorageAccessKey: z.string().nullable().optional(),
+	objectStorageSecretKey: z.string().nullable().optional(),
+	objectStorageUseSSL: z.boolean().optional(),
+	objectStorageUseProxy: z.boolean().optional(),
+	objectStorageSetPublicRead: z.boolean().optional(),
+	objectStorageS3ForcePathStyle: z.boolean().optional(),
+	enableIpLogging: z.boolean().optional(),
+	enableActiveEmailValidation: z.boolean().optional(),
+	enableChartsForRemoteUser: z.boolean().optional(),
+	enableChartsForFederatedInstances: z.boolean().optional(),
+	enableServerMachineStats: z.boolean().optional(),
+	enableIdenticonGeneration: z.boolean().optional(),
+	serverRules: z.array(z.string()).optional(),
+	preservedUsernames: z.array(z.string()).optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.db)
 		private db: DataSource,
@@ -115,7 +116,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private metaService: MetaService,
 		private moderationLogService: ModerationLogService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const set = {} as Partial<Meta>;
 
 			if (typeof ps.disableRegistration === 'boolean') {
@@ -131,7 +132,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			if (Array.isArray(ps.blockedHosts)) {
-				set.blockedHosts = ps.blockedHosts.filter(Boolean).map(x => x.toLowerCase());
+				set.blockedHosts = ps.blockedHosts
+					.filter(Boolean)
+					.map((x) => x.toLowerCase());
 			}
 
 			if (Array.isArray(ps.sensitiveWords)) {
@@ -243,7 +246,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			if (ps.sensitiveMediaDetectionSensitivity !== undefined) {
-				set.sensitiveMediaDetectionSensitivity = ps.sensitiveMediaDetectionSensitivity;
+				set.sensitiveMediaDetectionSensitivity =
+					ps.sensitiveMediaDetectionSensitivity;
 			}
 
 			if (ps.setSensitiveFlagAutomatically !== undefined) {
@@ -251,7 +255,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			if (ps.enableSensitiveMediaDetectionForVideos !== undefined) {
-				set.enableSensitiveMediaDetectionForVideos = ps.enableSensitiveMediaDetectionForVideos;
+				set.enableSensitiveMediaDetectionForVideos =
+					ps.enableSensitiveMediaDetectionForVideos;
 			}
 
 			if (ps.proxyAccountId !== undefined) {
@@ -403,7 +408,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			if (ps.enableChartsForFederatedInstances !== undefined) {
-				set.enableChartsForFederatedInstances = ps.enableChartsForFederatedInstances;
+				set.enableChartsForFederatedInstances =
+					ps.enableChartsForFederatedInstances;
 			}
 
 			if (ps.enableServerMachineStats !== undefined) {

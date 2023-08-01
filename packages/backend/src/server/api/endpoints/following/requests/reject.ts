@@ -1,16 +1,16 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['following', 'account'],
-
 	requireCredential: true,
-
 	kind: 'write:following',
-
 	errors: {
 		noSuchUser: {
 			message: 'No such user.',
@@ -20,27 +20,32 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		userId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['userId'],
-} as const;
+const paramDef_ = z.object({
+	userId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		private getterService: GetterService,
 		private userFollowingService: UserFollowingService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Fetch follower
-			const follower = await this.getterService.getUser(ps.userId).catch(err => {
-				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') throw new ApiError(meta.errors.noSuchUser);
-				throw err;
-			});
+			const follower = await this.getterService
+				.getUser(ps.userId)
+				.catch((err) => {
+					if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
+						throw new ApiError(meta.errors.noSuchUser);
+					}
+					throw err;
+				});
 
 			await this.userFollowingService.rejectFollowRequest(me, follower);
 

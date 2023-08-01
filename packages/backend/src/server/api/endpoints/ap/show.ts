@@ -1,11 +1,12 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { UsersRepository, NotesRepository } from '@/models/index.js';
 import type { Note } from '@/models/entities/Note.js';
 import type { LocalUser, User } from '@/models/entities/User.js';
 import { isActor, isPost, getApId } from '@/core/activitypub/type.js';
-import type { SchemaType } from '@/misc/json-schema.js';
 import { ApResolverService } from '@/core/activitypub/ApResolverService.js';
 import { ApDbResolverService } from '@/core/activitypub/ApDbResolverService.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -16,18 +17,23 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
+import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { ApiError } from '../../error.js';
 
+const res = z
+	.union([
+		z.object({ type: z.enum(['User']), object: UserDetailedNotMeSchema }),
+		z.object({ type: z.enum(['Note']), object: NoteSchema }),
+	])
+	.nullable();
 export const meta = {
 	tags: ['federation'],
-
 	requireCredential: true,
-
 	limit: {
 		duration: ms('1hour'),
 		max: 30,
 	},
-
 	errors: {
 		noSuchObject: {
 			message: 'No such object.',
@@ -35,55 +41,21 @@ export const meta = {
 			id: 'dc94d745-1262-4e63-a17d-fecaa57efc82',
 		},
 	},
-
-	res: {
-		optional: false, nullable: false,
-		oneOf: [
-			{
-				type: 'object',
-				properties: {
-					type: {
-						type: 'string',
-						optional: false, nullable: false,
-						enum: ['User'],
-					},
-					object: {
-						type: 'object',
-						optional: false, nullable: false,
-						ref: 'UserDetailedNotMe',
-					},
-				},
-			},
-			{
-				type: 'object',
-				properties: {
-					type: {
-						type: 'string',
-						optional: false, nullable: false,
-						enum: ['Note'],
-					},
-					object: {
-						type: 'object',
-						optional: false, nullable: false,
-						ref: 'Note',
-					},
-				},
-			},
-		],
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		uri: { type: 'string' },
-	},
-	required: ['uri'],
-} as const;
+const paramDef_ = z.object({
+	uri: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
@@ -100,7 +72,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private apPersonService: ApPersonService,
 		private apNoteService: ApNoteService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const object = await this.fetchAny(ps.uri, me);
 			if (object) {
 				return object;
@@ -114,40 +86,64 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 	 * URIからUserかNoteを解決する
 	 */
 	@bindThis
-	private async fetchAny(uri: string, me: LocalUser | null | undefined): Promise<SchemaType<typeof meta['res']> | null> {
-	// ブロックしてたら中断
+	private async fetchAny(
+		uri: string,
+		me: LocalUser | null | undefined,
+	): Promise<z.infer<typeof res> | null> {
+		// ブロックしてたら中断
 		const fetchedMeta = await this.metaService.fetch();
-		if (this.utilityService.isBlockedHost(fetchedMeta.blockedHosts, this.utilityService.extractDbHost(uri))) return null;
+		if (
+			this.utilityService.isBlockedHost(
+				fetchedMeta.blockedHosts,
+				this.utilityService.extractDbHost(uri),
+			)
+		) {
+			return null;
+		}
 
-		let local = await this.mergePack(me, ...await Promise.all([
-			this.apDbResolverService.getUserFromApId(uri),
-			this.apDbResolverService.getNoteFromApId(uri),
-		]));
+		let local = await this.mergePack(
+			me,
+			...(await Promise.all([
+				this.apDbResolverService.getUserFromApId(uri),
+				this.apDbResolverService.getNoteFromApId(uri),
+			])),
+		);
 		if (local != null) return local;
 
 		// リモートから一旦オブジェクトフェッチ
 		const resolver = this.apResolverService.createResolver();
-		const object = await resolver.resolve(uri) as any;
+		const object = (await resolver.resolve(uri)) as any;
 
 		// /@user のような正規id以外で取得できるURIが指定されていた場合、ここで初めて正規URIが確定する
 		// これはDBに存在する可能性があるため再度DB検索
 		if (uri !== object.id) {
-			local = await this.mergePack(me, ...await Promise.all([
-				this.apDbResolverService.getUserFromApId(object.id),
-				this.apDbResolverService.getNoteFromApId(object.id),
-			]));
+			local = await this.mergePack(
+				me,
+				...(await Promise.all([
+					this.apDbResolverService.getUserFromApId(object.id),
+					this.apDbResolverService.getNoteFromApId(object.id),
+				])),
+			);
 			if (local != null) return local;
 		}
 
 		return await this.mergePack(
 			me,
-			isActor(object) ? await this.apPersonService.createPerson(getApId(object)) : null,
-			isPost(object) ? await this.apNoteService.createNote(getApId(object), undefined, true) : null,
+			isActor(object)
+				? await this.apPersonService.createPerson(getApId(object))
+				: null,
+			isPost(object)
+				? await this.apNoteService.createNote(getApId(object), undefined, true)
+				: null,
 		);
 	}
 
 	@bindThis
-	private async mergePack(me: LocalUser | null | undefined, user: User | null | undefined, note: Note | null | undefined): Promise<SchemaType<typeof meta.res> | null> {
+	private async mergePack(
+		me: LocalUser | null | undefined,
+		user: User | null | undefined,
+		note: Note | null | undefined,
+	): Promise<z.infer<typeof res> | null> {
 		if (user != null) {
 			return {
 				type: 'User',
@@ -155,7 +151,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			};
 		} else if (note != null) {
 			try {
-				const object = await this.noteEntityService.pack(note, me, { detail: true });
+				const object = await this.noteEntityService.pack(note, me, {
+					detail: true,
+				});
 
 				return {
 					type: 'Note',
@@ -166,6 +164,6 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 		}
 
-		return null;
+		return null satisfies z.infer<typeof res>;
 	}
 }

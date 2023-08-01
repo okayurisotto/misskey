@@ -1,16 +1,17 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { RolesRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
 import { ApiError } from '@/server/api/error.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
-
 	requireCredential: true,
 	requireAdmin: true,
-
 	errors: {
 		noSuchRole: {
 			message: 'No such role.',
@@ -20,56 +21,42 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		roleId: { type: 'string', format: 'misskey:id' },
-		name: { type: 'string' },
-		description: { type: 'string' },
-		color: { type: 'string', nullable: true },
-		iconUrl: { type: 'string', nullable: true },
-		target: { type: 'string', enum: ['manual', 'conditional'] },
-		condFormula: { type: 'object' },
-		isPublic: { type: 'boolean' },
-		isModerator: { type: 'boolean' },
-		isAdministrator: { type: 'boolean' },
-		isExplorable: { type: 'boolean' },
-		asBadge: { type: 'boolean' },
-		canEditMembersByModerator: { type: 'boolean' },
-		displayOrder: { type: 'number' },
-		policies: {
-			type: 'object',
-		},
-	},
-	required: [
-		'roleId',
-		'name',
-		'description',
-		'color',
-		'iconUrl',
-		'target',
-		'condFormula',
-		'isPublic',
-		'isModerator',
-		'isAdministrator',
-		'asBadge',
-		'canEditMembersByModerator',
-		'displayOrder',
-		'policies',
-	],
-} as const;
+const paramDef_ = z.object({
+	roleId: misskeyIdPattern,
+	name: z.string(),
+	description: z.string(),
+	color: z.string().nullable(),
+	iconUrl: z.string().nullable(),
+	target: z.enum(['manual', 'conditional']),
+	condFormula: z.unknown(),
+	isPublic: z.boolean(),
+	isModerator: z.boolean(),
+	isAdministrator: z.boolean(),
+	isExplorable: z.boolean().optional(),
+	asBadge: z.boolean(),
+	canEditMembersByModerator: z.boolean(),
+	displayOrder: z.number(),
+	policies: z.unknown(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.rolesRepository)
 		private rolesRepository: RolesRepository,
 
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps) => {
-			const roleExist = await this.rolesRepository.exist({ where: { id: ps.roleId } });
+		super(meta, paramDef_, async (ps) => {
+			const roleExist = await this.rolesRepository.exist({
+				where: { id: ps.roleId },
+			});
 			if (!roleExist) {
 				throw new ApiError(meta.errors.noSuchRole);
 			}
@@ -92,7 +79,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				displayOrder: ps.displayOrder,
 				policies: ps.policies,
 			});
-			const updated = await this.rolesRepository.findOneByOrFail({ id: ps.roleId });
+			const updated = await this.rolesRepository.findOneByOrFail({
+				id: ps.roleId,
+			});
 			this.globalEventService.publishInternalEvent('roleUpdated', updated);
 		});
 	}

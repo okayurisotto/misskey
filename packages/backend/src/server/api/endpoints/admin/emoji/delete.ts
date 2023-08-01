@@ -1,13 +1,14 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-
 	errors: {
 		noSuchEmoji: {
 			message: 'No such emoji.',
@@ -17,21 +18,20 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		id: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['id'],
-} as const;
+const paramDef_ = z.object({
+	id: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor(
-		private customEmojiService: CustomEmojiService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
+	constructor(private customEmojiService: CustomEmojiService) {
+		super(meta, paramDef_, async (ps, me) => {
 			await this.customEmojiService.delete(ps.id);
 		});
 	}

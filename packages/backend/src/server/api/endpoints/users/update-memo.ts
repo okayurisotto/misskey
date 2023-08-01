@@ -1,18 +1,18 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import type { UserMemoRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['account'],
-
 	requireCredential: true,
-
 	kind: 'write:account',
-
 	errors: {
 		noSuchUser: {
 			message: 'No such user.',
@@ -22,34 +22,40 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		userId: { type: 'string', format: 'misskey:id' },
-		memo: {
-			type: 'string',
-			nullable: true,
-			description: 'A personal memo for the target user. If null or empty, delete the memo.',
-		},
-	},
-	required: ['userId', 'memo'],
-} as const;
+const paramDef_ = z.object({
+	userId: misskeyIdPattern,
+	memo: z
+		.string()
+		.nullable()
+		.describe(
+			'A personal memo for the target user. If null or empty, delete the memo.',
+		),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.userMemosRepository)
 		private userMemosRepository: UserMemoRepository,
 		private getterService: GetterService,
 		private idService: IdService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Get target
-			const target = await this.getterService.getUser(ps.userId).catch(err => {
-				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') throw new ApiError(meta.errors.noSuchUser);
-				throw err;
-			});
+			const target = await this.getterService
+				.getUser(ps.userId)
+				.catch((err) => {
+					if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
+						throw new ApiError(meta.errors.noSuchUser);
+					}
+					throw err;
+				});
 
 			// 引数がnullか空文字であれば、パーソナルメモを削除する
 			if (ps.memo === '' || ps.memo == null) {

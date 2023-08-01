@@ -1,38 +1,46 @@
 import { promisify } from 'node:util';
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import bcrypt from 'bcryptjs';
 import cbor from 'cbor';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { TwoFactorAuthenticationService } from '@/core/TwoFactorAuthenticationService.js';
-import type { AttestationChallengesRepository, UserProfilesRepository, UserSecurityKeysRepository } from '@/models/index.js';
+import type {
+	AttestationChallengesRepository,
+	UserProfilesRepository,
+	UserSecurityKeysRepository,
+} from '@/models/index.js';
 
 const cborDecodeFirst = promisify(cbor.decodeFirst) as any;
 
+const res = z.unknown();
 export const meta = {
 	requireCredential: true,
-
 	secure: true,
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		clientDataJSON: { type: 'string' },
-		attestationObject: { type: 'string' },
-		password: { type: 'string' },
-		challengeId: { type: 'string' },
-		name: { type: 'string', minLength: 1, maxLength: 30 },
-	},
-	required: ['clientDataJSON', 'attestationObject', 'password', 'challengeId', 'name'],
-} as const;
+const paramDef_ = z.object({
+	clientDataJSON: z.string(),
+	attestationObject: z.string(),
+	password: z.string(),
+	challengeId: z.string(),
+	name: z.string().min(1).max(30),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
@@ -50,10 +58,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private globalEventService: GlobalEventService,
 		private twoFactorAuthenticationService: TwoFactorAuthenticationService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const rpIdHashReal = this.twoFactorAuthenticationService.hash(Buffer.from(this.config.hostname, 'utf-8'));
+		super(meta, paramDef_, async (ps, me) => {
+			const rpIdHashReal = this.twoFactorAuthenticationService.hash(
+				Buffer.from(this.config.hostname, 'utf-8'),
+			);
 
-			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: me.id });
+			const profile = await this.userProfilesRepository.findOneByOrFail({
+				userId: me.id,
+			});
 
 			// Compare password
 			const same = await bcrypt.compare(ps.password, profile.password!);
@@ -75,7 +87,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				throw new Error('origin mismatch');
 			}
 
-			const clientDataJSONHash = this.twoFactorAuthenticationService.hash(Buffer.from(ps.clientDataJSON, 'utf-8'));
+			const clientDataJSONHash = this.twoFactorAuthenticationService.hash(
+				Buffer.from(ps.clientDataJSON, 'utf-8'),
+			);
 
 			const attestation = await cborDecodeFirst(ps.attestationObject);
 
@@ -103,7 +117,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			const procedures = this.twoFactorAuthenticationService.getProcedures();
 
 			if (!(procedures as any)[attestation.fmt]) {
-				throw new Error(`unsupported fmt: ${attestation.fmt}. Supported ones: ${Object.keys(procedures)}`);
+				throw new Error(
+					`unsupported fmt: ${attestation.fmt}. Supported ones: ${Object.keys(
+						procedures,
+					)}`,
+				);
 			}
 
 			const verificationData = (procedures as any)[attestation.fmt].verify({
@@ -116,12 +134,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			});
 			if (!verificationData.valid) throw new Error('signature invalid');
 
-			const attestationChallenge = await this.attestationChallengesRepository.findOneBy({
-				userId: me.id,
-				id: ps.challengeId,
-				registrationChallenge: true,
-				challenge: this.twoFactorAuthenticationService.hash(clientData.challenge).toString('hex'),
-			});
+			const attestationChallenge =
+				await this.attestationChallengesRepository.findOneBy({
+					userId: me.id,
+					id: ps.challengeId,
+					registrationChallenge: true,
+					challenge: this.twoFactorAuthenticationService
+						.hash(clientData.challenge)
+						.toString('hex'),
+				});
 
 			if (!attestationChallenge) {
 				throw new Error('non-existent challenge');
@@ -135,7 +156,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			// Expired challenge (> 5min old)
 			if (
 				new Date().getTime() - attestationChallenge.createdAt.getTime() >=
-		5 * 60 * 1000
+				5 * 60 * 1000
 			) {
 				throw new Error('expired challenge');
 			}
@@ -151,15 +172,19 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			});
 
 			// Publish meUpdated event
-			this.globalEventService.publishMainStream(me.id, 'meUpdated', await this.userEntityService.pack(me.id, me, {
-				detail: true,
-				includeSecrets: true,
-			}));
+			this.globalEventService.publishMainStream(
+				me.id,
+				'meUpdated',
+				await this.userEntityService.pack(me.id, me, {
+					detail: true,
+					includeSecrets: true,
+				}),
+			);
 
 			return {
 				id: credentialIdString,
 				name: ps.name,
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

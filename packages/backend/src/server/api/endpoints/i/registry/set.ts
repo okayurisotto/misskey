@@ -1,5 +1,7 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { RegistryItemsRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -7,25 +9,26 @@ import { DI } from '@/di-symbols.js';
 
 export const meta = {
 	requireCredential: true,
-
 	secure: true,
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		key: { type: 'string', minLength: 1 },
-		value: {},
-		scope: { type: 'array', default: [], items: {
-			type: 'string', pattern: /^[a-zA-Z0-9_]+$/.toString().slice(1, -1),
-		} },
-	},
-	required: ['key', 'value'],
-} as const;
+const paramDef_ = z.object({
+	key: z.string().min(1),
+	value: z.unknown(),
+	scope: z
+		.array(z.string().regex(/^[a-zA-Z0-9_]+$/))
+		.default([])
+		.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.registryItemsRepository)
 		private registryItemsRepository: RegistryItemsRepository,
@@ -33,8 +36,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private idService: IdService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.registryItemsRepository.createQueryBuilder('item')
+		super(meta, paramDef_, async (ps, me) => {
+			const query = this.registryItemsRepository
+				.createQueryBuilder('item')
 				.where('item.domain IS NULL')
 				.andWhere('item.userId = :userId', { userId: me.id })
 				.andWhere('item.key = :key', { key: ps.key })

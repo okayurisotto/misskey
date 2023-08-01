@@ -1,29 +1,21 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { NotesRepository, DriveFilesRepository } from '@/models/index.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { ApiError } from '../../../error.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['drive', 'notes'],
-
 	requireCredential: true,
-
 	kind: 'read:drive',
-
 	description: 'Find the notes to which the given file is attached.',
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Note',
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchFile: {
 			message: 'No such file.',
@@ -33,17 +25,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		fileId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['fileId'],
-} as const;
+const paramDef_ = z.object({
+	fileId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.driveFilesRepository)
 		private driveFilesRepository: DriveFilesRepository,
@@ -53,7 +46,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private noteEntityService: NoteEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Fetch file
 			const file = await this.driveFilesRepository.findOneBy({
 				id: ps.fileId,
@@ -64,13 +57,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				throw new ApiError(meta.errors.noSuchFile);
 			}
 
-			const notes = await this.notesRepository.createQueryBuilder('note')
+			const notes = await this.notesRepository
+				.createQueryBuilder('note')
 				.where(':file = ANY(note.fileIds)', { file: file.id })
 				.getMany();
 
-			return await this.noteEntityService.packMany(notes, me, {
+			return (await this.noteEntityService.packMany(notes, me, {
 				detail: true,
-			});
+			})) satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -1,19 +1,22 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import type { AnnouncementReadsRepository, AnnouncementsRepository } from '@/models/index.js';
+import type {
+	AnnouncementReadsRepository,
+	AnnouncementsRepository,
+} from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['account'],
-
 	requireCredential: true,
-
 	kind: 'write:account',
-
 	errors: {
 		noSuchAnnouncement: {
 			message: 'No such announcement.',
@@ -23,17 +26,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		announcementId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['announcementId'],
-} as const;
+const paramDef_ = z.object({
+	announcementId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.announcementsRepository)
 		private announcementsRepository: AnnouncementsRepository,
@@ -45,9 +49,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private idService: IdService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Check if announcement exists
-			const announcementExist = await this.announcementsRepository.exist({ where: { id: ps.announcementId } });
+			const announcementExist = await this.announcementsRepository.exist({
+				where: { id: ps.announcementId },
+			});
 
 			if (!announcementExist) {
 				throw new ApiError(meta.errors.noSuchAnnouncement);
@@ -73,8 +79,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				userId: me.id,
 			});
 
-			if (!await this.userEntityService.getHasUnreadAnnouncement(me.id)) {
-				this.globalEventService.publishMainStream(me.id, 'readAllAnnouncements');
+			if (!(await this.userEntityService.getHasUnreadAnnouncement(me.id))) {
+				this.globalEventService.publishMainStream(
+					me.id,
+					'readAllAnnouncements',
+				);
 			}
 		});
 	}

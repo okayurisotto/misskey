@@ -1,36 +1,51 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
-import { getJsonSchema } from '@/core/chart/core.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import DriveChart from '@/core/chart/charts/drive.js';
-import { schema } from '@/core/chart/charts/entities/drive.js';
 
+const res = z.object({
+	local: z.object({
+		incCount: z.array(z.number()).optional(),
+		incSize: z.array(z.number()).optional(),
+		decCount: z.array(z.number()).optional(),
+		decSize: z.array(z.number()).optional(),
+	}),
+	remote: z.object({
+		incCount: z.array(z.number()).optional(),
+		incSize: z.array(z.number()).optional(),
+		decCount: z.array(z.number()).optional(),
+		decSize: z.array(z.number()).optional(),
+	}),
+});
 export const meta = {
 	tags: ['charts', 'drive'],
-
-	res: getJsonSchema(schema),
-
+	res: generateSchema(res),
 	allowGet: true,
 	cacheSec: 60 * 60,
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		span: { type: 'string', enum: ['day', 'hour'] },
-		limit: { type: 'integer', minimum: 1, maximum: 500, default: 30 },
-		offset: { type: 'integer', nullable: true, default: null },
-	},
-	required: ['span'],
-} as const;
+const paramDef_ = z.object({
+	span: z.enum(['day', 'hour']),
+	limit: z.number().int().min(1).max(500).default(30),
+	offset: z.number().int().nullable().default(null),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor(
-		private driveChart: DriveChart,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			return await this.driveChart.getChart(ps.span, ps.limit, ps.offset ? new Date(ps.offset) : null);
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
+	constructor(private driveChart: DriveChart) {
+		super(meta, paramDef_, async (ps, me) => {
+			return await this.driveChart.getChart(
+				ps.span,
+				ps.limit,
+				ps.offset ? new Date(ps.offset) : null,
+			) satisfies z.infer<typeof res>;
 		});
 	}
 }

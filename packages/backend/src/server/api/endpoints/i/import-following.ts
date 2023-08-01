@@ -1,10 +1,13 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueueService } from '@/core/QueueService.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';
 import type { DriveFilesRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -15,26 +18,22 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 1,
 	},
-
 	errors: {
 		noSuchFile: {
 			message: 'No such file.',
 			code: 'NO_SUCH_FILE',
 			id: 'b98644cf-a5ac-4277-a502-0b8054a709a3',
 		},
-
 		unexpectedFileType: {
 			message: 'We need csv file.',
 			code: 'UNEXPECTED_FILE_TYPE',
 			id: '660f3599-bce0-4f95-9dde-311fd841c183',
 		},
-
 		tooBigFile: {
 			message: 'That file is too big.',
 			code: 'TOO_BIG_FILE',
 			id: 'dee9d4ed-ad07-43ed-8b34-b2856398bc60',
 		},
-
 		emptyFile: {
 			message: 'That file is empty.',
 			code: 'EMPTY_FILE',
@@ -43,17 +42,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		fileId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['fileId'],
-} as const;
+const paramDef_ = z.object({
+	fileId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.driveFilesRepository)
 		private driveFilesRepository: DriveFilesRepository,
@@ -61,7 +61,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private queueService: QueueService,
 		private accountMoveService: AccountMoveService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
 
 			if (file == null) throw new ApiError(meta.errors.noSuchFile);
@@ -70,10 +70,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			const checkMoving = await this.accountMoveService.validateAlsoKnownAs(
 				me,
-				(old, src) => !!src.movedAt && src.movedAt.getTime() + 1000 * 60 * 60 * 2 > (new Date()).getTime(),
+				(old, src) =>
+					!!src.movedAt &&
+					src.movedAt.getTime() + 1000 * 60 * 60 * 2 > new Date().getTime(),
 				true,
 			);
-			if (checkMoving ? file.size > 32 * 1024 * 1024 : file.size > 64 * 1024) throw new ApiError(meta.errors.tooBigFile);
+			if (checkMoving ? file.size > 32 * 1024 * 1024 : file.size > 64 * 1024) {
+				throw new ApiError(meta.errors.tooBigFile);
+			}
 
 			this.queueService.createImportFollowingJob(me, file.id);
 		});

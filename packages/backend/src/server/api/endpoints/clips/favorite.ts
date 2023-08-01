@@ -1,26 +1,27 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import type { ClipsRepository, ClipFavoritesRepository } from '@/models/index.js';
+import type {
+	ClipsRepository,
+	ClipFavoritesRepository,
+} from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['clip'],
-
 	requireCredential: true,
-
 	prohibitMoved: true,
-
 	kind: 'write:clip-favorite',
-
 	errors: {
 		noSuchClip: {
 			message: 'No such clip.',
 			code: 'NO_SUCH_CLIP',
 			id: '4c2aaeae-80d8-4250-9606-26cb1fdb77a5',
 		},
-
 		alreadyFavorited: {
 			message: 'The clip has already been favorited.',
 			code: 'ALREADY_FAVORITED',
@@ -29,17 +30,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		clipId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['clipId'],
-} as const;
+const paramDef_ = z.object({
+	clipId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.clipsRepository)
 		private clipsRepository: ClipsRepository,
@@ -49,12 +51,12 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private idService: IdService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const clip = await this.clipsRepository.findOneBy({ id: ps.clipId });
 			if (clip == null) {
 				throw new ApiError(meta.errors.noSuchClip);
 			}
-			if ((clip.userId !== me.id) && !clip.isPublic) {
+			if (clip.userId !== me.id && !clip.isPublic) {
 				throw new ApiError(meta.errors.noSuchClip);
 			}
 

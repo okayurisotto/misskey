@@ -1,14 +1,16 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { RegistryItemsRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { ApiError } from '../../../error.js';
 
+const res = z.unknown();
 export const meta = {
 	requireCredential: true,
-
 	secure: true,
-
+	res: generateSchema(res),
 	errors: {
 		noSuchKey: {
 			message: 'No such key.',
@@ -18,26 +20,29 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		key: { type: 'string' },
-		scope: { type: 'array', default: [], items: {
-			type: 'string', pattern: /^[a-zA-Z0-9_]+$/.toString().slice(1, -1),
-		} },
-	},
-	required: ['key'],
-} as const;
+const paramDef_ = z.object({
+	key: z.string(),
+	scope: z
+		.array(z.string().regex(/^[a-zA-Z0-9_]+$/))
+		.default([])
+		.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.registryItemsRepository)
 		private registryItemsRepository: RegistryItemsRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.registryItemsRepository.createQueryBuilder('item')
+		super(meta, paramDef_, async (ps, me) => {
+			const query = this.registryItemsRepository
+				.createQueryBuilder('item')
 				.where('item.domain IS NULL')
 				.andWhere('item.userId = :userId', { userId: me.id })
 				.andWhere('item.key = :key', { key: ps.key })
@@ -52,7 +57,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			return {
 				updatedAt: item.updatedAt,
 				value: item.value,
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

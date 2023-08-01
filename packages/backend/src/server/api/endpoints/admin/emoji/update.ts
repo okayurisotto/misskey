@@ -1,16 +1,17 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import type { DriveFilesRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-
 	errors: {
 		noSuchEmoji: {
 			message: 'No such emoji.',
@@ -30,44 +31,43 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		id: { type: 'string', format: 'misskey:id' },
-		name: { type: 'string', pattern: '^[a-zA-Z0-9_]+$' },
-		fileId: { type: 'string', format: 'misskey:id' },
-		category: {
-			type: 'string',
-			nullable: true,
-			description: 'Use `null` to reset the category.',
-		},
-		aliases: { type: 'array', items: {
-			type: 'string',
-		} },
-		license: { type: 'string', nullable: true },
-		isSensitive: { type: 'boolean' },
-		localOnly: { type: 'boolean' },
-		roleIdsThatCanBeUsedThisEmojiAsReaction: { type: 'array', items: {
-			type: 'string',
-		} },
-	},
-	required: ['id', 'name', 'aliases'],
-} as const;
+const paramDef_ = z.object({
+	id: misskeyIdPattern,
+	name: z.string().regex(/^[a-zA-Z0-9_]+$/),
+	fileId: misskeyIdPattern.optional(),
+	category: z
+		.string()
+		.nullable()
+		.optional()
+		.describe('Use `null` to reset the category.'),
+	aliases: z.array(z.string()),
+	license: z.string().nullable().optional(),
+	isSensitive: z.boolean().optional(),
+	localOnly: z.boolean().optional(),
+	roleIdsThatCanBeUsedThisEmojiAsReaction: z.array(z.string()).optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.driveFilesRepository)
 		private driveFilesRepository: DriveFilesRepository,
 
 		private customEmojiService: CustomEmojiService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			let driveFile;
 
 			if (ps.fileId) {
-				driveFile = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
+				driveFile = await this.driveFilesRepository.findOneBy({
+					id: ps.fileId,
+				});
 				if (driveFile == null) throw new ApiError(meta.errors.noSuchFile);
 			}
 
@@ -79,7 +79,8 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				license: ps.license ?? null,
 				isSensitive: ps.isSensitive,
 				localOnly: ps.localOnly,
-				roleIdsThatCanBeUsedThisEmojiAsReaction: ps.roleIdsThatCanBeUsedThisEmojiAsReaction,
+				roleIdsThatCanBeUsedThisEmojiAsReaction:
+					ps.roleIdsThatCanBeUsedThisEmojiAsReaction,
 			});
 		});
 	}

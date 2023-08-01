@@ -1,6 +1,8 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { IsNull, Not } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { UsersRepository, FollowingsRepository } from '@/models/index.js';
 import type { User } from '@/models/entities/User.js';
 import type { RelationshipJobData } from '@/queue/types.js';
@@ -10,25 +12,26 @@ import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { QueueService } from '@/core/QueueService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireModerator: true,
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		userId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['userId'],
-} as const;
+const paramDef_ = z.object({
+	userId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
@@ -41,7 +44,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private moderationLogService: ModerationLogService,
 		private queueService: QueueService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const user = await this.usersRepository.findOneBy({ id: ps.userId });
 
 			if (user == null) {
@@ -60,15 +63,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				targetId: user.id,
 			});
 
-			(async () => {
-				await this.userSuspendService.doPostSuspend(user).catch(e => {});
-				await this.unFollowAll(user).catch(e => {});
+			(async (): Promise<void> => {
+				await this.userSuspendService.doPostSuspend(user).catch((e) => {});
+				await this.unFollowAll(user).catch((e) => {});
 			})();
 		});
 	}
 
 	@bindThis
-	private async unFollowAll(follower: User) {
+	private async unFollowAll(follower: User): Promise<void> {
 		const followings = await this.followingsRepository.find({
 			where: {
 				followerId: follower.id,

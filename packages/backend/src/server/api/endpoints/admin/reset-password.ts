@@ -1,41 +1,38 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { UsersRepository, UserProfilesRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	UsersRepository,
+	UserProfilesRepository,
+} from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.object({
+	password: z.string().min(8).max(8),
+});
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireModerator: true,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			password: {
-				type: 'string',
-				optional: false, nullable: false,
-				minLength: 8,
-				maxLength: 8,
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		userId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['userId'],
-} as const;
+const paramDef_ = z.object({
+	userId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
@@ -43,7 +40,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		@Inject(DI.userProfilesRepository)
 		private userProfilesRepository: UserProfilesRepository,
 	) {
-		super(meta, paramDef, async (ps) => {
+		super(meta, paramDef_, async (ps) => {
 			const user = await this.usersRepository.findOneBy({ id: ps.userId });
 
 			if (user == null) {
@@ -59,15 +56,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			// Generate hash of password
 			const hash = bcrypt.hashSync(passwd);
 
-			await this.userProfilesRepository.update({
-				userId: user.id,
-			}, {
-				password: hash,
-			});
+			await this.userProfilesRepository.update(
+				{ userId: user.id },
+				{ password: hash },
+			);
 
 			return {
 				password: passwd,
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -1,10 +1,12 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
 
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ApiError } from '@/server/api/error.js';
 
 import { LocalUser, RemoteUser } from '@/models/entities/User.js';
@@ -18,9 +20,9 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 
 import * as Acct from '@/misc/acct.js';
 
+const res = z.unknown();
 export const meta = {
 	tags: ['users'],
-
 	secure: true,
 	requireCredential: true,
 	prohibitMoved: true,
@@ -28,16 +30,16 @@ export const meta = {
 		duration: ms('1day'),
 		max: 5,
 	},
-
+	res: generateSchema(res),
 	errors: {
 		destinationAccountForbids: {
 			message:
-				'Destination account doesn\'t have proper \'Known As\' alias, or has already moved.',
+				"Destination account doesn't have proper 'Known As' alias, or has already moved.",
 			code: 'DESTINATION_ACCOUNT_FORBIDS',
 			id: 'b5c90186-4ab0-49c8-9bba-a1f766282ba4',
 		},
 		rootForbidden: {
-			message: 'The root can\'t migrate.',
+			message: "The root can't migrate.",
 			code: 'NOT_ROOT_FORBIDDEN',
 			id: '4362e8dc-731f-4ad8-a694-be2a88922a24',
 		},
@@ -64,17 +66,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		moveToAccount: { type: 'string' },
-	},
-	required: ['moveToAccount'],
-} as const;
+const paramDef_ = z.object({
+	moveToAccount: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
@@ -86,7 +89,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private apPersonService: ApPersonService,
 		private userEntityService: UserEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// check parameter
 			if (!ps.moveToAccount) throw new ApiError(meta.errors.noSuchUser);
 			// abort if user is the root
@@ -97,11 +100,17 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			// parse user's input into the destination account
 			const { username, host } = Acct.parse(ps.moveToAccount);
 			// retrieve the destination account
-			let moveTo = await this.remoteUserResolveService.resolveUser(username, host).catch((e) => {
-				this.apiLoggerService.logger.warn(`failed to resolve remote user: ${e}`);
-				throw new ApiError(meta.errors.noSuchUser);
-			});
-			const destination = await this.getterService.getUser(moveTo.id) as LocalUser | RemoteUser;
+			let moveTo = await this.remoteUserResolveService
+				.resolveUser(username, host)
+				.catch((e) => {
+					this.apiLoggerService.logger.warn(
+						`failed to resolve remote user: ${e}`,
+					);
+					throw new ApiError(meta.errors.noSuchUser);
+				});
+			const destination = (await this.getterService.getUser(moveTo.id)) as
+				| LocalUser
+				| RemoteUser;
 			const newUri = this.userEntityService.getUserUri(destination);
 
 			// update local db
@@ -122,9 +131,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			// abort if unintended
-			if (!allowed || moveTo.movedToUri) throw new ApiError(meta.errors.destinationAccountForbids);
+			if (!allowed || moveTo.movedToUri) {
+				throw new ApiError(meta.errors.destinationAccountForbids);
+			}
 
-			return await this.accountMoveService.moveFromLocal(me, moveTo);
+			return await this.accountMoveService.moveFromLocal(me, moveTo) satisfies z.infer<typeof res>;
 		});
 	}
 }

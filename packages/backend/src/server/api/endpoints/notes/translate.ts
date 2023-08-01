@@ -1,25 +1,23 @@
 import { URLSearchParams } from 'node:url';
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { NotesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { GetterService } from '@/server/api/GetterService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.unknown();
 export const meta = {
 	tags: ['notes'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchNote: {
 			message: 'No such note.',
@@ -29,18 +27,19 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		noteId: { type: 'string', format: 'misskey:id' },
-		targetLang: { type: 'string' },
-	},
-	required: ['noteId', 'targetLang'],
-} as const;
+const paramDef_ = z.object({
+	noteId: misskeyIdPattern,
+	targetLang: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
@@ -53,13 +52,17 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private metaService: MetaService,
 		private httpRequestService: HttpRequestService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const note = await this.getterService.getNote(ps.noteId).catch(err => {
-				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
+		super(meta, paramDef_, async (ps, me) => {
+			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
+				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
+					throw new ApiError(meta.errors.noSuchNote);
+				}
 				throw err;
 			});
 
-			if (!(await this.noteEntityService.isVisibleForMe(note, me ? me.id : null))) {
+			if (
+				!(await this.noteEntityService.isVisibleForMe(note, me ? me.id : null))
+			) {
 				return 204; // TODO: 良い感じのエラー返す
 			}
 
@@ -81,9 +84,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			params.append('text', note.text);
 			params.append('target_lang', targetLang);
 
-			const endpoint = instance.deeplIsPro ? 'https://api.deepl.com/v2/translate' : 'https://api-free.deepl.com/v2/translate';
+			const endpoint = instance.deeplIsPro
+				? 'https://api.deepl.com/v2/translate'
+				: 'https://api-free.deepl.com/v2/translate';
 
-			const res = await this.httpRequestService.send(endpoint, {
+			const res_ = await this.httpRequestService.send(endpoint, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/x-www-form-urlencoded',
@@ -92,7 +97,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				body: params.toString(),
 			});
 
-			const json = (await res.json()) as {
+			const json = (await res_.json()) as {
 				translations: {
 					detected_source_language: string;
 					text: string;
@@ -102,7 +107,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			return {
 				sourceLang: json.translations[0].detected_source_language,
 				text: json.translations[0].text,
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

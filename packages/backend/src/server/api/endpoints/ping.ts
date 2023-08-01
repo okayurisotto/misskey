@@ -1,38 +1,32 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 
+const res = z.object({
+	pong: z.number(),
+});
 export const meta = {
 	requireCredential: false,
-
 	tags: ['meta'],
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			pong: {
-				type: 'number',
-				optional: false, nullable: false,
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {},
-	required: [],
-} as const;
+const paramDef_ = z.object({});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor(
-	) {
-		super(meta, paramDef, async () => {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
+	constructor() {
+		super(meta, paramDef_, async () => {
 			return {
 				pong: Date.now(),
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

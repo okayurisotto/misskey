@@ -1,59 +1,41 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { RelayService } from '@/core/RelayService.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 
+const res = z.array(
+	z.object({
+		id: misskeyIdPattern,
+		inbox: z.string().url(),
+		status: z
+			.enum(['requesting', 'accepted', 'rejected'])
+			.default('requesting'),
+	}),
+);
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireModerator: true,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			properties: {
-				id: {
-					type: 'string',
-					optional: false, nullable: false,
-					format: 'id',
-				},
-				inbox: {
-					type: 'string',
-					optional: false, nullable: false,
-					format: 'url',
-				},
-				status: {
-					type: 'string',
-					optional: false, nullable: false,
-					default: 'requesting',
-					enum: [
-						'requesting',
-						'accepted',
-						'rejected',
-					],
-				},
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {},
-	required: [],
-} as const;
+const paramDef_ = z.unknown();
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor(
-		private relayService: RelayService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			return await this.relayService.listRelay();
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
+	constructor(private relayService: RelayService) {
+		super(meta, paramDef_, async (ps, me) => {
+			return (await this.relayService.listRelay()) satisfies z.infer<
+				typeof res
+			>;
 		});
 	}
 }

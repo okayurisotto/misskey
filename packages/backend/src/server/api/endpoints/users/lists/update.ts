@@ -1,25 +1,21 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UserListsRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserListEntityService } from '@/core/entities/UserListEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { UserListSchema } from '@/models/zod/UserListSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
+const res = UserListSchema;
 export const meta = {
 	tags: ['lists'],
-
 	requireCredential: true,
-
 	kind: 'write:account',
-
 	description: 'Update the properties of a list.',
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'UserList',
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchList: {
 			message: 'No such list.',
@@ -29,26 +25,27 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		listId: { type: 'string', format: 'misskey:id' },
-		name: { type: 'string', minLength: 1, maxLength: 100 },
-		isPublic: { type: 'boolean' },
-	},
-	required: ['listId'],
-} as const;
+const paramDef_ = z.object({
+	listId: misskeyIdPattern,
+	name: z.string().min(1).max(100).optional(),
+	isPublic: z.boolean().optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.userListsRepository)
 		private userListsRepository: UserListsRepository,
 
 		private userListEntityService: UserListEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const userList = await this.userListsRepository.findOneBy({
 				id: ps.listId,
 				userId: me.id,
@@ -63,7 +60,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				isPublic: ps.isPublic,
 			});
 
-			return await this.userListEntityService.pack(userList.id);
+			return (await this.userListEntityService.pack(
+				userList.id,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

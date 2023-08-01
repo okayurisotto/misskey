@@ -1,29 +1,27 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { ChannelsRepository, Note, NotesRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	ChannelsRepository,
+	Note,
+	NotesRepository,
+} from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes', 'channels'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Note',
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchChannel: {
 			message: 'No such channel.',
@@ -33,22 +31,23 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		channelId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-		sinceDate: { type: 'integer' },
-		untilDate: { type: 'integer' },
-	},
-	required: ['channelId'],
-} as const;
+const paramDef_ = z.object({
+	channelId: misskeyIdPattern,
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+	sinceDate: z.number().int().optional(),
+	untilDate: z.number().int().optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
@@ -64,7 +63,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private queryService: QueryService,
 		private activeUsersChart: ActiveUsersChart,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const channel = await this.channelsRepository.findOneBy({
 				id: ps.channelId,
 			});
@@ -81,15 +80,26 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			if (!ps.sinceId && !ps.sinceDate) {
 				noteIdsRes = await this.redisClient.xrevrange(
 					`channelTimeline:${channel.id}`,
-					ps.untilId ? this.idService.parse(ps.untilId).date.getTime() : ps.untilDate ?? '+',
+					ps.untilId
+						? this.idService.parse(ps.untilId).date.getTime()
+						: ps.untilDate ?? '+',
 					'-',
-					'COUNT', limit);
+					'COUNT',
+					limit,
+				);
 			}
 
 			// redis から取得していないとき・取得数が足りないとき
 			if (noteIdsRes.length < limit) {
 				//#region Construct query
-				const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId, ps.sinceDate, ps.untilDate)
+				const query = this.queryService
+					.makePaginationQuery(
+						this.notesRepository.createQueryBuilder('note'),
+						ps.sinceId,
+						ps.untilId,
+						ps.sinceDate,
+						ps.untilDate,
+					)
 					.andWhere('note.channelId = :channelId', { channelId: channel.id })
 					.innerJoinAndSelect('note.user', 'user')
 					.leftJoinAndSelect('note.reply', 'reply')
@@ -107,14 +117,17 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 				timeline = await query.limit(ps.limit).getMany();
 			} else {
-				const noteIds = noteIdsRes.map(x => x[1][1]).filter(x => x !== ps.untilId);
+				const noteIds = noteIdsRes
+					.map((x) => x[1][1])
+					.filter((x) => x !== ps.untilId);
 
 				if (noteIds.length === 0) {
 					return [];
 				}
 
 				//#region Construct query
-				const query = this.notesRepository.createQueryBuilder('note')
+				const query = this.notesRepository
+					.createQueryBuilder('note')
 					.where('note.id IN (:...noteIds)', { noteIds: noteIds })
 					.innerJoinAndSelect('note.user', 'user')
 					.leftJoinAndSelect('note.reply', 'reply')
@@ -131,12 +144,15 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				//#endregion
 
 				timeline = await query.getMany();
-				timeline.sort((a, b) => a.id > b.id ? -1 : 1);
+				timeline.sort((a, b) => (a.id > b.id ? -1 : 1));
 			}
 
 			if (me) this.activeUsersChart.read(me);
 
-			return await this.noteEntityService.packMany(timeline, me);
+			return (await this.noteEntityService.packMany(
+				timeline,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -1,18 +1,18 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UserListsRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
+// const res = z.unknown();
 export const meta = {
 	tags: ['lists'],
-
 	requireCredential: true,
-
 	kind: 'write:account',
-
 	description: 'Delete an existing list of users.',
-
 	errors: {
 		noSuchList: {
 			message: 'No such list.',
@@ -22,22 +22,23 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		listId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['listId'],
-} as const;
+const paramDef_ = z.object({
+	listId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.userListsRepository)
 		private userListsRepository: UserListsRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const userList = await this.userListsRepository.findOneBy({
 				id: ps.listId,
 				userId: me.id,

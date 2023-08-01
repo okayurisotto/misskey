@@ -1,28 +1,22 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { NotesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { SearchService } from '@/core/SearchService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Note',
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		unavailable: {
 			message: 'Search of notes unavailable.',
@@ -32,29 +26,30 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		query: { type: 'string' },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		offset: { type: 'integer', default: 0 },
-		host: {
-			type: 'string',
-			description: 'The local host is represented with `.`.',
-		},
-		userId: { type: 'string', format: 'misskey:id', nullable: true, default: null },
-		channelId: { type: 'string', format: 'misskey:id', nullable: true, default: null },
-	},
-	required: ['query'],
-} as const;
+const paramDef_ = z.object({
+	query: z.string(),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+	limit: z.number().int().min(1).max(100).default(10),
+	offset: z.number().int().default(0),
+	host: z
+		.string()
+		.optional()
+		.describe('The local host is represented with `.`.'),
+	userId: misskeyIdPattern.nullable().default(null),
+	channelId: misskeyIdPattern.nullable().default(null),
+});
+export const paramDef = generateSchema(paramDef_);
 
 // TODO: ロジックをサービスに切り出す
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
@@ -63,23 +58,33 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private searchService: SearchService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const policies = await this.roleService.getUserPolicies(me ? me.id : null);
+		super(meta, paramDef_, async (ps, me) => {
+			const policies = await this.roleService.getUserPolicies(
+				me ? me.id : null,
+			);
 			if (!policies.canSearchNotes) {
 				throw new ApiError(meta.errors.unavailable);
 			}
 
-			const notes = await this.searchService.searchNote(ps.query, me, {
-				userId: ps.userId,
-				channelId: ps.channelId,
-				host: ps.host,
-			}, {
-				untilId: ps.untilId,
-				sinceId: ps.sinceId,
-				limit: ps.limit,
-			});
+			const notes = await this.searchService.searchNote(
+				ps.query,
+				me,
+				{
+					userId: ps.userId,
+					channelId: ps.channelId,
+					host: ps.host,
+				},
+				{
+					untilId: ps.untilId,
+					sinceId: ps.sinceId,
+					limit: ps.limit,
+				},
+			);
 
-			return await this.noteEntityService.packMany(notes, me);
+			return (await this.noteEntityService.packMany(
+				notes,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

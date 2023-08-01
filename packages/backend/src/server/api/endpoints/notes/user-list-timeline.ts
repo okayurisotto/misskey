@@ -1,28 +1,26 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository, UserListsRepository, UserListJoiningsRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import type {
+	NotesRepository,
+	UserListsRepository,
+	UserListJoiningsRepository,
+} from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { DI } from '@/di-symbols.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes', 'lists'],
-
 	requireCredential: true,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Note',
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchList: {
 			message: 'No such list.',
@@ -32,30 +30,30 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		listId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-		sinceDate: { type: 'integer' },
-		untilDate: { type: 'integer' },
-		includeMyRenotes: { type: 'boolean', default: true },
-		includeRenotedMyNotes: { type: 'boolean', default: true },
-		includeLocalRenotes: { type: 'boolean', default: true },
-		withFiles: {
-			type: 'boolean',
-			default: false,
-			description: 'Only show notes that have attached files.',
-		},
-	},
-	required: ['listId'],
-} as const;
+const paramDef_ = z.object({
+	listId: misskeyIdPattern,
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+	sinceDate: z.number().int().optional(),
+	untilDate: z.number().int().optional(),
+	includeMyRenotes: z.boolean().default(true),
+	includeRenotedMyNotes: z.boolean().default(true),
+	includeLocalRenotes: z.boolean().default(true),
+	withFiles: z
+		.boolean()
+		.default(false)
+		.describe('Only show notes that have attached files.'),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
@@ -70,7 +68,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private queryService: QueryService,
 		private activeUsersChart: ActiveUsersChart,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const list = await this.userListsRepository.findOneBy({
 				id: ps.listId,
 				userId: me.id,
@@ -81,49 +79,72 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			}
 
 			//#region Construct query
-			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
-				.innerJoin(this.userListJoiningsRepository.metadata.targetName, 'userListJoining', 'userListJoining.userId = note.userId')
+			const query = this.queryService
+				.makePaginationQuery(
+					this.notesRepository.createQueryBuilder('note'),
+					ps.sinceId,
+					ps.untilId,
+				)
+				.innerJoin(
+					this.userListJoiningsRepository.metadata.targetName,
+					'userListJoining',
+					'userListJoining.userId = note.userId',
+				)
 				.innerJoinAndSelect('note.user', 'user')
 				.leftJoinAndSelect('note.reply', 'reply')
 				.leftJoinAndSelect('note.renote', 'renote')
 				.leftJoinAndSelect('reply.user', 'replyUser')
 				.leftJoinAndSelect('renote.user', 'renoteUser')
-				.andWhere('userListJoining.userListId = :userListId', { userListId: list.id });
+				.andWhere('userListJoining.userListId = :userListId', {
+					userListId: list.id,
+				});
 
 			this.queryService.generateVisibilityQuery(query, me);
 
 			if (ps.includeMyRenotes === false) {
-				query.andWhere(new Brackets(qb => {
-					qb.orWhere('note.userId != :meId', { meId: me.id });
-					qb.orWhere('note.renoteId IS NULL');
-					qb.orWhere('note.text IS NOT NULL');
-					qb.orWhere('note.fileIds != \'{}\'');
-					qb.orWhere('0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)');
-				}));
+				query.andWhere(
+					new Brackets((qb) => {
+						qb.orWhere('note.userId != :meId', { meId: me.id });
+						qb.orWhere('note.renoteId IS NULL');
+						qb.orWhere('note.text IS NOT NULL');
+						qb.orWhere("note.fileIds != '{}'");
+						qb.orWhere(
+							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
+						);
+					}),
+				);
 			}
 
 			if (ps.includeRenotedMyNotes === false) {
-				query.andWhere(new Brackets(qb => {
-					qb.orWhere('note.renoteUserId != :meId', { meId: me.id });
-					qb.orWhere('note.renoteId IS NULL');
-					qb.orWhere('note.text IS NOT NULL');
-					qb.orWhere('note.fileIds != \'{}\'');
-					qb.orWhere('0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)');
-				}));
+				query.andWhere(
+					new Brackets((qb) => {
+						qb.orWhere('note.renoteUserId != :meId', { meId: me.id });
+						qb.orWhere('note.renoteId IS NULL');
+						qb.orWhere('note.text IS NOT NULL');
+						qb.orWhere("note.fileIds != '{}'");
+						qb.orWhere(
+							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
+						);
+					}),
+				);
 			}
 
 			if (ps.includeLocalRenotes === false) {
-				query.andWhere(new Brackets(qb => {
-					qb.orWhere('note.renoteUserHost IS NOT NULL');
-					qb.orWhere('note.renoteId IS NULL');
-					qb.orWhere('note.text IS NOT NULL');
-					qb.orWhere('note.fileIds != \'{}\'');
-					qb.orWhere('0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)');
-				}));
+				query.andWhere(
+					new Brackets((qb) => {
+						qb.orWhere('note.renoteUserHost IS NOT NULL');
+						qb.orWhere('note.renoteId IS NULL');
+						qb.orWhere('note.text IS NOT NULL');
+						qb.orWhere("note.fileIds != '{}'");
+						qb.orWhere(
+							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
+						);
+					}),
+				);
 			}
 
 			if (ps.withFiles) {
-				query.andWhere('note.fileIds != \'{}\'');
+				query.andWhere("note.fileIds != '{}'");
 			}
 			//#endregion
 
@@ -131,7 +152,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			this.activeUsersChart.read(me);
 
-			return await this.noteEntityService.packMany(timeline, me);
+			return (await this.noteEntityService.packMany(
+				timeline,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

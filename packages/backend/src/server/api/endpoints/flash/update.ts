@@ -1,31 +1,28 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import ms from 'ms';
 import { Inject, Injectable } from '@nestjs/common';
 import type { FlashsRepository, DriveFilesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['flash'],
-
 	requireCredential: true,
-
 	prohibitMoved: true,
-
 	kind: 'write:flash',
-
 	limit: {
 		duration: ms('1hour'),
 		max: 300,
 	},
-
 	errors: {
 		noSuchFlash: {
 			message: 'No such flash.',
 			code: 'NO_SUCH_FLASH',
 			id: '611e13d2-309e-419a-a5e4-e0422da39b02',
 		},
-
 		accessDenied: {
 			message: 'Access denied.',
 			code: 'ACCESS_DENIED',
@@ -34,23 +31,22 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		flashId: { type: 'string', format: 'misskey:id' },
-		title: { type: 'string' },
-		summary: { type: 'string' },
-		script: { type: 'string' },
-		permissions: { type: 'array', items: {
-			type: 'string',
-		} },
-	},
-	required: ['flashId', 'title', 'summary', 'script', 'permissions'],
-} as const;
+const paramDef_ = z.object({
+	flashId: misskeyIdPattern,
+	title: z.string(),
+	summary: z.string(),
+	script: z.string(),
+	permissions: z.array(z.string()),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.flashsRepository)
 		private flashsRepository: FlashsRepository,
@@ -58,7 +54,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		@Inject(DI.driveFilesRepository)
 		private driveFilesRepository: DriveFilesRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const flash = await this.flashsRepository.findOneBy({ id: ps.flashId });
 			if (flash == null) {
 				throw new ApiError(meta.errors.noSuchFlash);

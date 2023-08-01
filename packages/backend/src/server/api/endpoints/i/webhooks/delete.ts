@@ -1,17 +1,17 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { WebhooksRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['webhooks'],
-
 	requireCredential: true,
-
 	kind: 'write:account',
-
 	errors: {
 		noSuchWebhook: {
 			message: 'No such webhook.',
@@ -21,26 +21,27 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		webhookId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['webhookId'],
-} as const;
+const paramDef_ = z.object({
+	webhookId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
 // TODO: ロジックをサービスに切り出す
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.webhooksRepository)
 		private webhooksRepository: WebhooksRepository,
 
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const webhook = await this.webhooksRepository.findOneBy({
 				id: ps.webhookId,
 				userId: me.id,

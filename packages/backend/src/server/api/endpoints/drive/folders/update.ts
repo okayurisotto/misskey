@@ -1,58 +1,54 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { DriveFoldersRepository } from '@/models/index.js';
 import { DriveFolderEntityService } from '@/core/entities/DriveFolderEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
+import { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
+const res = DriveFolderSchema;
 export const meta = {
 	tags: ['drive'],
-
 	requireCredential: true,
-
 	kind: 'write:drive',
-
 	errors: {
 		noSuchFolder: {
 			message: 'No such folder.',
 			code: 'NO_SUCH_FOLDER',
 			id: 'f7974dac-2c0d-4a27-926e-23583b28e98e',
 		},
-
 		noSuchParentFolder: {
 			message: 'No such parent folder.',
 			code: 'NO_SUCH_PARENT_FOLDER',
 			id: 'ce104e3a-faaf-49d5-b459-10ff0cbbcaa1',
 		},
-
 		recursiveNesting: {
 			message: 'It can not be structured like nesting folders recursively.',
 			code: 'RECURSIVE_NESTING',
 			id: 'dbeb024837894013aed44279f9199740',
 		},
 	},
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'DriveFolder',
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		folderId: { type: 'string', format: 'misskey:id' },
-		name: { type: 'string', maxLength: 200 },
-		parentId: { type: 'string', format: 'misskey:id', nullable: true },
-	},
-	required: ['folderId'],
-} as const;
+const paramDef_ = z.object({
+	folderId: misskeyIdPattern,
+	name: z.string().max(200).optional(),
+	parentId: misskeyIdPattern.nullable().optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.driveFoldersRepository)
 		private driveFoldersRepository: DriveFoldersRepository,
@@ -60,7 +56,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private driveFolderEntityService: DriveFolderEntityService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Fetch folder
 			const folder = await this.driveFoldersRepository.findOneBy({
 				id: ps.folderId,
@@ -124,9 +120,13 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			const folderObj = await this.driveFolderEntityService.pack(folder);
 
 			// Publish folderUpdated event
-			this.globalEventService.publishDriveStream(me.id, 'folderUpdated', folderObj);
+			this.globalEventService.publishDriveStream(
+				me.id,
+				'folderUpdated',
+				folderObj,
+			);
 
-			return folderObj;
+			return folderObj satisfies z.infer<typeof res>;
 		});
 	}
 }

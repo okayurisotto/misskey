@@ -1,33 +1,37 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import bcrypt from 'bcryptjs';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { UserProfilesRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 
 export const meta = {
 	requireCredential: true,
-
 	secure: true,
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		currentPassword: { type: 'string' },
-		newPassword: { type: 'string', minLength: 1 },
-	},
-	required: ['currentPassword', 'newPassword'],
-} as const;
+const paramDef_ = z.object({
+	currentPassword: z.string(),
+	newPassword: z.string().min(1),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.userProfilesRepository)
 		private userProfilesRepository: UserProfilesRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: me.id });
+		super(meta, paramDef_, async (ps, me) => {
+			const profile = await this.userProfilesRepository.findOneByOrFail({
+				userId: me.id,
+			});
 
 			// Compare password
 			const same = await bcrypt.compare(ps.currentPassword, profile.password!);

@@ -1,37 +1,35 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { DriveFilesRepository, ChannelsRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	DriveFilesRepository,
+	ChannelsRepository,
+} from '@/models/index.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
+import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = ChannelSchema;
 export const meta = {
 	tags: ['channels'],
-
 	requireCredential: true,
-
 	kind: 'write:channels',
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'Channel',
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchChannel: {
 			message: 'No such channel.',
 			code: 'NO_SUCH_CHANNEL',
 			id: 'f9c5467f-d492-4c3c-9a8d-a70dacc86512',
 		},
-
 		accessDenied: {
 			message: 'You do not have edit privilege of the channel.',
 			code: 'ACCESS_DENIED',
 			id: '1fb7cb09-d46a-4fdf-b8df-057788cce513',
 		},
-
 		noSuchFile: {
 			message: 'No such file.',
 			code: 'NO_SUCH_FILE',
@@ -40,28 +38,24 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		channelId: { type: 'string', format: 'misskey:id' },
-		name: { type: 'string', minLength: 1, maxLength: 128 },
-		description: { type: 'string', nullable: true, minLength: 1, maxLength: 2048 },
-		bannerId: { type: 'string', format: 'misskey:id', nullable: true },
-		isArchived: { type: 'boolean', nullable: true },
-		pinnedNoteIds: {
-			type: 'array',
-			items: {
-				type: 'string', format: 'misskey:id',
-			},
-		},
-		color: { type: 'string', minLength: 1, maxLength: 16 },
-	},
-	required: ['channelId'],
-} as const;
+const paramDef_ = z.object({
+	channelId: misskeyIdPattern,
+	name: z.string().min(1).max(128).optional(),
+	description: z.string().min(1).max(2048).nullable().optional(),
+	bannerId: misskeyIdPattern.nullable().optional(),
+	isArchived: z.boolean().nullable().optional(),
+	pinnedNoteIds: z.array(misskeyIdPattern).optional(),
+	color: z.string().min(1).max(16).optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.channelsRepository)
 		private channelsRepository: ChannelsRepository,
@@ -73,7 +67,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const channel = await this.channelsRepository.findOneBy({
 				id: ps.channelId,
 			});
@@ -104,14 +98,23 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			await this.channelsRepository.update(channel.id, {
 				...(ps.name !== undefined ? { name: ps.name } : {}),
-				...(ps.description !== undefined ? { description: ps.description } : {}),
-				...(ps.pinnedNoteIds !== undefined ? { pinnedNoteIds: ps.pinnedNoteIds } : {}),
+				...(ps.description !== undefined
+					? { description: ps.description }
+					: {}),
+				...(ps.pinnedNoteIds !== undefined
+					? { pinnedNoteIds: ps.pinnedNoteIds }
+					: {}),
 				...(ps.color !== undefined ? { color: ps.color } : {}),
-				...(typeof ps.isArchived === 'boolean' ? { isArchived: ps.isArchived } : {}),
+				...(typeof ps.isArchived === 'boolean'
+					? { isArchived: ps.isArchived }
+					: {}),
 				...(banner ? { bannerId: banner.id } : {}),
 			});
 
-			return await this.channelEntityService.pack(channel.id, me);
+			return (await this.channelEntityService.pack(
+				channel.id,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

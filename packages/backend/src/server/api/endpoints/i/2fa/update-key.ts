@@ -1,44 +1,49 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import bcrypt from 'bcryptjs';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { UserProfilesRepository, UserSecurityKeysRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	UserProfilesRepository,
+	UserSecurityKeysRepository,
+} from '@/models/index.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
 import { ApiError } from '../../../error.js';
 
+const res = z.unknown();
 export const meta = {
 	requireCredential: true,
-
 	secure: true,
-
 	errors: {
 		noSuchKey: {
 			message: 'No such key.',
 			code: 'NO_SUCH_KEY',
 			id: 'f9c5467f-d492-4d3c-9a8g-a70dacc86512',
 		},
-
 		accessDenied: {
 			message: 'You do not have edit privilege of the channel.',
 			code: 'ACCESS_DENIED',
 			id: '1fb7cb09-d46a-4fff-b8df-057708cce513',
 		},
 	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		name: { type: 'string', minLength: 1, maxLength: 30 },
-		credentialId: { type: 'string' },
-	},
-	required: ['name', 'credentialId'],
-} as const;
+const paramDef_ = z.object({
+	name: z.string().min(1).max(30),
+	credentialId: z.string(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.userSecurityKeysRepository)
 		private userSecurityKeysRepository: UserSecurityKeysRepository,
@@ -49,7 +54,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private userEntityService: UserEntityService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const key = await this.userSecurityKeysRepository.findOneBy({
 				id: ps.credentialId,
 			});
@@ -67,12 +72,16 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			});
 
 			// Publish meUpdated event
-			this.globalEventService.publishMainStream(me.id, 'meUpdated', await this.userEntityService.pack(me.id, me, {
-				detail: true,
-				includeSecrets: true,
-			}));
+			this.globalEventService.publishMainStream(
+				me.id,
+				'meUpdated',
+				await this.userEntityService.pack(me.id, me, {
+					detail: true,
+					includeSecrets: true,
+				}),
+			);
 
-			return {};
+			return {} satisfies z.infer<typeof res>;
 		});
 	}
 }

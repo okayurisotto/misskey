@@ -1,15 +1,16 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AnnouncementsRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireModerator: true,
-
 	errors: {
 		noSuchAnnouncement: {
 			message: 'No such announcement.',
@@ -19,28 +20,33 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		id: { type: 'string', format: 'misskey:id' },
-		title: { type: 'string', minLength: 1 },
-		text: { type: 'string', minLength: 1 },
-		imageUrl: { type: 'string', nullable: true, minLength: 0 },
-	},
-	required: ['id', 'title', 'text', 'imageUrl'],
-} as const;
+const paramDef_ = z.object({
+	id: misskeyIdPattern,
+	title: z.string().min(1),
+	text: z.string().min(1),
+	imageUrl: z.string().min(0).nullable(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.announcementsRepository)
 		private announcementsRepository: AnnouncementsRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const announcement = await this.announcementsRepository.findOneBy({ id: ps.id });
+		super(meta, paramDef_, async (ps, me) => {
+			const announcement = await this.announcementsRepository.findOneBy({
+				id: ps.id,
+			});
 
-			if (announcement == null) throw new ApiError(meta.errors.noSuchAnnouncement);
+			if (announcement == null) {
+				throw new ApiError(meta.errors.noSuchAnnouncement);
+			}
 
 			await this.announcementsRepository.update(announcement.id, {
 				updatedAt: new Date(),

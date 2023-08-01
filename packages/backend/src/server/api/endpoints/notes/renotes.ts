@@ -1,27 +1,21 @@
 import { Inject, Injectable } from '@nestjs/common';
+import z from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import type { NotesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
+import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Note',
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchNote: {
 			message: 'No such note.',
@@ -31,20 +25,21 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		noteId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['noteId'],
-} as const;
+const paramDef_ = z.object({
+	noteId: misskeyIdPattern,
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.notesRepository)
 		private notesRepository: NotesRepository,
@@ -53,13 +48,20 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private queryService: QueryService,
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const note = await this.getterService.getNote(ps.noteId).catch(err => {
-				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
+		super(meta, paramDef_, async (ps, me) => {
+			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
+				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
+					throw new ApiError(meta.errors.noSuchNote);
+				}
 				throw err;
 			});
 
-			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), ps.sinceId, ps.untilId)
+			const query = this.queryService
+				.makePaginationQuery(
+					this.notesRepository.createQueryBuilder('note'),
+					ps.sinceId,
+					ps.untilId,
+				)
 				.andWhere('note.renoteId = :renoteId', { renoteId: note.id })
 				.innerJoinAndSelect('note.user', 'user')
 				.leftJoinAndSelect('note.reply', 'reply')
@@ -73,7 +75,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 			const renotes = await query.limit(ps.limit).getMany();
 
-			return await this.noteEntityService.packMany(renotes, me);
+			return (await this.noteEntityService.packMany(
+				renotes,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

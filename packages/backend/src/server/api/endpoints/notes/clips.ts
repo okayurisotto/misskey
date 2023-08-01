@@ -1,27 +1,21 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { In } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { ClipNotesRepository, ClipsRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
+import { ClipSchema } from '@/models/zod/ClipSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.array(ClipSchema);
 export const meta = {
 	tags: ['clips', 'notes'],
-
 	requireCredential: false,
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'Clip',
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		noSuchNote: {
 			message: 'No such note.',
@@ -31,17 +25,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		noteId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['noteId'],
-} as const;
+const paramDef_ = z.object({
+	noteId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.clipsRepository)
 		private clipsRepository: ClipsRepository,
@@ -52,9 +47,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private clipEntityService: ClipEntityService,
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const note = await this.getterService.getNote(ps.noteId).catch(err => {
-				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') throw new ApiError(meta.errors.noSuchNote);
+		super(meta, paramDef_, async (ps, me) => {
+			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
+				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24')
+					throw new ApiError(meta.errors.noSuchNote);
 				throw err;
 			});
 
@@ -63,11 +59,14 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			});
 
 			const clips = await this.clipsRepository.findBy({
-				id: In(clipNotes.map(x => x.clipId)),
+				id: In(clipNotes.map((x) => x.clipId)),
 				isPublic: true,
 			});
 
-			return await this.clipEntityService.packMany(clips, me);
+			return (await this.clipEntityService.packMany(
+				clips,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

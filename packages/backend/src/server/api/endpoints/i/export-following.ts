@@ -1,6 +1,8 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueueService } from '@/core/QueueService.js';
 
 export const meta = {
@@ -12,23 +14,26 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		excludeMuting: { type: 'boolean', default: false },
-		excludeInactive: { type: 'boolean', default: false },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	excludeMuting: z.boolean().default(false),
+	excludeInactive: z.boolean().default(false),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
-	constructor(
-		private queueService: QueueService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			this.queueService.createExportFollowingJob(me, ps.excludeMuting, ps.excludeInactive);
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
+	constructor(private queueService: QueueService) {
+		super(meta, paramDef_, async (ps, me) => {
+			this.queueService.createExportFollowingJob(
+				me,
+				ps.excludeMuting,
+				ps.excludeInactive,
+			);
 		});
 	}
 }

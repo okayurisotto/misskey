@@ -1,28 +1,24 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import type { UserProfilesRepository, NoteReactionsRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import type {
+	UserProfilesRepository,
+	NoteReactionsRepository,
+} from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
 import { NoteReactionEntityService } from '@/core/entities/NoteReactionEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = z.array(NoteReactionSchema);
 export const meta = {
 	tags: ['users', 'reactions'],
-
 	requireCredential: false,
-
 	description: 'Show all reactions this user made.',
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			ref: 'NoteReaction',
-		},
-	},
-
+	res: generateSchema(res),
 	errors: {
 		reactionsNotPublic: {
 			message: 'Reactions of the user is not public.',
@@ -32,22 +28,23 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		userId: { type: 'string', format: 'misskey:id' },
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-		sinceDate: { type: 'integer' },
-		untilDate: { type: 'integer' },
-	},
-	required: ['userId'],
-} as const;
+const paramDef_ = z.object({
+	userId: misskeyIdPattern,
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+	sinceDate: z.number().int().optional(),
+	untilDate: z.number().int().optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.userProfilesRepository)
 		private userProfilesRepository: UserProfilesRepository,
@@ -58,25 +55,35 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private noteReactionEntityService: NoteReactionEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: ps.userId });
+		super(meta, paramDef_, async (ps, me) => {
+			const profile = await this.userProfilesRepository.findOneByOrFail({
+				userId: ps.userId,
+			});
 
 			if ((me == null || me.id !== ps.userId) && !profile.publicReactions) {
 				throw new ApiError(meta.errors.reactionsNotPublic);
 			}
 
-			const query = this.queryService.makePaginationQuery(this.noteReactionsRepository.createQueryBuilder('reaction'),
-				ps.sinceId, ps.untilId, ps.sinceDate, ps.untilDate)
+			const query = this.queryService
+				.makePaginationQuery(
+					this.noteReactionsRepository.createQueryBuilder('reaction'),
+					ps.sinceId,
+					ps.untilId,
+					ps.sinceDate,
+					ps.untilDate,
+				)
 				.andWhere('reaction.userId = :userId', { userId: ps.userId })
 				.leftJoinAndSelect('reaction.note', 'note');
 
 			this.queryService.generateVisibilityQuery(query, me);
 
-			const reactions = await query
-				.limit(ps.limit)
-				.getMany();
+			const reactions = await query.limit(ps.limit).getMany();
 
-			return await Promise.all(reactions.map(reaction => this.noteReactionEntityService.pack(reaction, me, { withNote: true })));
+			return (await Promise.all(
+				reactions.map((reaction) =>
+					this.noteReactionEntityService.pack(reaction, me, { withNote: true }),
+				),
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

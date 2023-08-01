@@ -1,112 +1,58 @@
 import * as os from 'node:os';
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import si from 'systeminformation';
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import * as Redis from 'ioredis';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 
+const res = z.object({
+	machine: z.string(),
+	os: z.string(),
+	node: z.string(),
+	psql: z.string(),
+	cpu: z.object({
+		model: z.string(),
+		cores: z.number(),
+	}),
+	mem: z.object({
+		total: z.number(),
+	}),
+	fs: z.object({
+		total: z.number(),
+		used: z.number(),
+	}),
+	net: z.object({
+		interface: z.string(),
+	}),
+});
 export const meta = {
 	requireCredential: true,
 	requireModerator: true,
-
 	tags: ['admin', 'meta'],
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		properties: {
-			machine: {
-				type: 'string',
-				optional: false, nullable: false,
-			},
-			os: {
-				type: 'string',
-				optional: false, nullable: false,
-				example: 'linux',
-			},
-			node: {
-				type: 'string',
-				optional: false, nullable: false,
-			},
-			psql: {
-				type: 'string',
-				optional: false, nullable: false,
-			},
-			cpu: {
-				type: 'object',
-				optional: false, nullable: false,
-				properties: {
-					model: {
-						type: 'string',
-						optional: false, nullable: false,
-					},
-					cores: {
-						type: 'number',
-						optional: false, nullable: false,
-					},
-				},
-			},
-			mem: {
-				type: 'object',
-				optional: false, nullable: false,
-				properties: {
-					total: {
-						type: 'number',
-						optional: false, nullable: false,
-						format: 'bytes',
-					},
-				},
-			},
-			fs: {
-				type: 'object',
-				optional: false, nullable: false,
-				properties: {
-					total: {
-						type: 'number',
-						optional: false, nullable: false,
-						format: 'bytes',
-					},
-					used: {
-						type: 'number',
-						optional: false, nullable: false,
-						format: 'bytes',
-					},
-				},
-			},
-			net: {
-				type: 'object',
-				optional: false, nullable: false,
-				properties: {
-					interface: {
-						type: 'string',
-						optional: false, nullable: false,
-						example: 'eth0',
-					},
-				},
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {},
-	required: [],
-} as const;
+const paramDef_ = z.unknown();
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.db)
 		private db: DataSource,
 
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
-
 	) {
-		super(meta, paramDef, async () => {
+		super(meta, paramDef_, async () => {
 			const memStats = await si.mem();
 			const fsStats = await si.fsSize();
 			const netInterface = await si.networkInterfaceDefault();
@@ -119,7 +65,9 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				machine: os.hostname(),
 				os: os.platform(),
 				node: process.version,
-				psql: await this.db.query('SHOW server_version').then(x => x[0].server_version),
+				psql: await this.db
+					.query('SHOW server_version')
+					.then((x) => x[0].server_version),
 				redis: redis_version,
 				cpu: {
 					model: os.cpus()[0].model,
@@ -135,7 +83,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				net: {
 					interface: netInterface,
 				},
-			};
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

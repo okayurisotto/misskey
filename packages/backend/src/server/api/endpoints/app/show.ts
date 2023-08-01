@@ -1,13 +1,17 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AppsRepository } from '@/models/index.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { AppSchema } from '@/models/zod/AppSchema.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
+const res = AppSchema;
 export const meta = {
 	tags: ['app'],
-
 	errors: {
 		noSuchApp: {
 			message: 'No such app.',
@@ -15,32 +19,28 @@ export const meta = {
 			id: 'dce83913-2dc6-4093-8a7b-71dbb11718a3',
 		},
 	},
-
-	res: {
-		type: 'object',
-		optional: false, nullable: false,
-		ref: 'App',
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		appId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['appId'],
-} as const;
+const paramDef_ = z.object({
+	appId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.appsRepository)
 		private appsRepository: AppsRepository,
 
 		private appEntityService: AppEntityService,
 	) {
-		super(meta, paramDef, async (ps, user, token) => {
+		super(meta, paramDef_, async (ps, user, token) => {
 			const isSecure = user != null && token == null;
 
 			// Lookup app
@@ -50,10 +50,10 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 				throw new ApiError(meta.errors.noSuchApp);
 			}
 
-			return await this.appEntityService.pack(ap, user, {
+			return (await this.appEntityService.pack(ap, user, {
 				detail: true,
-				includeSecret: isSecure && (ap.userId === user!.id),
-			});
+				includeSecret: isSecure && ap.userId === user!.id,
+			})) satisfies z.infer<typeof res>;
 		});
 	}
 }

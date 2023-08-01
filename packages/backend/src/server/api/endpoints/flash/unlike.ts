@@ -1,18 +1,17 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { FlashsRepository, FlashLikesRepository } from '@/models/index.js';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['flash'],
-
 	requireCredential: true,
-
 	prohibitMoved: true,
-
 	kind: 'write:flash-likes',
-
 	errors: {
 		noSuchFlash: {
 			message: 'No such flash.',
@@ -28,17 +27,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		flashId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['flashId'],
-} as const;
+const paramDef_ = z.object({
+	flashId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.flashsRepository)
 		private flashsRepository: FlashsRepository,
@@ -46,7 +46,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		@Inject(DI.flashLikesRepository)
 		private flashLikesRepository: FlashLikesRepository,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			const flash = await this.flashsRepository.findOneBy({ id: ps.flashId });
 			if (flash == null) {
 				throw new ApiError(meta.errors.noSuchFlash);

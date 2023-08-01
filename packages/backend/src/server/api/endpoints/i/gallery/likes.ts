@@ -1,52 +1,41 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { GalleryLikesRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { GalleryLikeEntityService } from '@/core/entities/GalleryLikeEntityService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
+import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 
+const res = z.array(
+	z.object({
+		id: misskeyIdPattern,
+		post: GalleryPostSchema,
+	}),
+);
 export const meta = {
 	tags: ['account', 'gallery'],
-
 	requireCredential: true,
-
 	kind: 'read:gallery-likes',
-
-	res: {
-		type: 'array',
-		optional: false, nullable: false,
-		items: {
-			type: 'object',
-			optional: false, nullable: false,
-			properties: {
-				id: {
-					type: 'string',
-					optional: false, nullable: false,
-					format: 'id',
-				},
-				post: {
-					type: 'object',
-					optional: false, nullable: false,
-					ref: 'GalleryPost',
-				},
-			},
-		},
-	},
+	res: generateSchema(res),
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		limit: { type: 'integer', minimum: 1, maximum: 100, default: 10 },
-		sinceId: { type: 'string', format: 'misskey:id' },
-		untilId: { type: 'string', format: 'misskey:id' },
-	},
-	required: [],
-} as const;
+const paramDef_ = z.object({
+	limit: z.number().int().min(1).max(100).default(10),
+	sinceId: misskeyIdPattern.optional(),
+	untilId: misskeyIdPattern.optional(),
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	typeof res
+> {
 	constructor(
 		@Inject(DI.galleryLikesRepository)
 		private galleryLikesRepository: GalleryLikesRepository,
@@ -54,16 +43,22 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 		private galleryLikeEntityService: GalleryLikeEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(this.galleryLikesRepository.createQueryBuilder('like'), ps.sinceId, ps.untilId)
+		super(meta, paramDef_, async (ps, me) => {
+			const query = this.queryService
+				.makePaginationQuery(
+					this.galleryLikesRepository.createQueryBuilder('like'),
+					ps.sinceId,
+					ps.untilId,
+				)
 				.andWhere('like.userId = :meId', { meId: me.id })
 				.leftJoinAndSelect('like.post', 'post');
 
-			const likes = await query
-				.limit(ps.limit)
-				.getMany();
+			const likes = await query.limit(ps.limit).getMany();
 
-			return await this.galleryLikeEntityService.packMany(likes, me);
+			return (await this.galleryLikeEntityService.packMany(
+				likes,
+				me,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

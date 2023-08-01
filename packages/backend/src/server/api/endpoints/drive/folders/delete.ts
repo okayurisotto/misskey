@@ -1,24 +1,26 @@
+import { z } from 'zod';
+import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
-import { Endpoint } from '@/server/api/endpoint-base.js';
-import type { DriveFoldersRepository, DriveFilesRepository } from '@/models/index.js';
+import { Endpoint } from '@/server/api/abstract-endpoint.js';
+import type {
+	DriveFoldersRepository,
+	DriveFilesRepository,
+} from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { DI } from '@/di-symbols.js';
+import { misskeyIdPattern } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['drive'],
-
 	requireCredential: true,
-
 	kind: 'write:drive',
-
 	errors: {
 		noSuchFolder: {
 			message: 'No such folder.',
 			code: 'NO_SUCH_FOLDER',
 			id: '1069098f-c281-440f-b085-f9932edbe091',
 		},
-
 		hasChildFilesOrFolders: {
 			message: 'This folder has child files or folders.',
 			code: 'HAS_CHILD_FILES_OR_FOLDERS',
@@ -27,17 +29,18 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = {
-	type: 'object',
-	properties: {
-		folderId: { type: 'string', format: 'misskey:id' },
-	},
-	required: ['folderId'],
-} as const;
+const paramDef_ = z.object({
+	folderId: misskeyIdPattern,
+});
+export const paramDef = generateSchema(paramDef_);
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
-export default class extends Endpoint<typeof meta, typeof paramDef> {
+// eslint-disable-next-line import/no-default-export
+export default class extends Endpoint<
+	typeof meta,
+	typeof paramDef_,
+	z.ZodType<void>
+> {
 	constructor(
 		@Inject(DI.driveFilesRepository)
 		private driveFilesRepository: DriveFilesRepository,
@@ -47,7 +50,7 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef_, async (ps, me) => {
 			// Get folder
 			const folder = await this.driveFoldersRepository.findOneBy({
 				id: ps.folderId,
@@ -70,7 +73,11 @@ export default class extends Endpoint<typeof meta, typeof paramDef> {
 			await this.driveFoldersRepository.delete(folder.id);
 
 			// Publish folderCreated event
-			this.globalEventService.publishDriveStream(me.id, 'folderDeleted', folder.id);
+			this.globalEventService.publishDriveStream(
+				me.id,
+				'folderDeleted',
+				folder.id,
+			);
 		});
 	}
 }
