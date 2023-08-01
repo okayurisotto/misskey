@@ -3,12 +3,13 @@ import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { In } from 'typeorm';
 import { DI } from '@/di-symbols.js';
 import type { User } from '@/models/entities/User.js';
-import type { Packed } from '@/misc/json-schema.js';
 import type { Note } from '@/models/entities/Note.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { NoteUnreadsRepository, MutingsRepository, NoteThreadMutingsRepository } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class NoteReadService implements OnApplicationShutdown {
@@ -80,10 +81,10 @@ export class NoteReadService implements OnApplicationShutdown {
 	@bindThis
 	public async read(
 		userId: User['id'],
-		notes: (Note | Packed<'Note'>)[],
+		notes: (Note | z.infer<typeof NoteSchema>)[],
 	): Promise<void> {
-		const readMentions: (Note | Packed<'Note'>)[] = [];
-		const readSpecifiedNotes: (Note | Packed<'Note'>)[] = [];
+		const readMentions: (Note | z.infer<typeof NoteSchema>)[] = [];
+		const readSpecifiedNotes: (Note | z.infer<typeof NoteSchema>)[] = [];
 
 		for (const note of notes) {
 			if (note.mentions && note.mentions.includes(userId)) {

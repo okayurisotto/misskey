@@ -13,8 +13,9 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import type { Packed } from '@/misc/json-schema.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
+import type { z } from 'zod';
 
 export type RolePolicies = {
 	gtlAvailable: boolean;
@@ -428,7 +429,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async addNoteToRoleTimeline(note: Packed<'Note'>): Promise<void> {
+	public async addNoteToRoleTimeline(note: z.infer<typeof NoteSchema>): Promise<void> {
 		const roles = await this.getUserRoles(note.userId);
 
 		const redisPipeline = this.redisClient.pipeline();

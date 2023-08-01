@@ -1,11 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { HashtagsRepository } from '@/models/index.js';
-import type { Packed } from '@/misc/json-schema.js';
 import type { } from '@/models/entities/Blocking.js';
 import type { Hashtag } from '@/models/entities/Hashtag.js';
 import { bindThis } from '@/decorators.js';
+import type { HashtagSchema } from '@/models/zod/HashtagSchema.js';
 import { UserEntityService } from './UserEntityService.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class HashtagEntityService {
@@ -20,7 +21,7 @@ export class HashtagEntityService {
 	@bindThis
 	public async pack(
 		src: Hashtag,
-	): Promise<Packed<'Hashtag'>> {
+	): Promise<z.infer<typeof HashtagSchema>> {
 		return {
 			tag: src.name,
 			mentionedUsersCount: src.mentionedUsersCount,

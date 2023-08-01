@@ -3,19 +3,21 @@ import push from 'web-push';
 import * as Redis from 'ioredis';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import type { Packed } from '@/misc/json-schema.js';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
 import type { SwSubscription, SwSubscriptionsRepository } from '@/models/index.js';
 import { MetaService } from '@/core/MetaService.js';
 import { bindThis } from '@/decorators.js';
 import { RedisKVCache } from '@/misc/cache.js';
+import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import type { z } from 'zod';
 
 // Defined also packages/sw/types.ts#L13
 type PushNotificationsTypes = {
-	'notification': Packed<'Notification'>;
+	'notification': z.infer<typeof NotificationSchema>;
 	'unreadAntennaNote': {
 		antenna: { id: string, name: string };
-		note: Packed<'Note'>;
+		note: z.infer<typeof NoteSchema>;
 	};
 	'readAllNotifications': undefined;
 };
@@ -30,7 +32,7 @@ function truncateBody<T extends keyof PushNotificationsTypes>(type: T, body: Pus
 			note: {
 				...body.note,
 				// textをgetNoteSummaryしたものに置き換える
-				text: getNoteSummary(('type' in body && body.type === 'renote') ? body.note.renote as Packed<'Note'> : body.note),
+				text: getNoteSummary(('type' in body && body.type === 'renote') ? body.note.renote as z.infer<typeof NoteSchema> : body.note),
 
 				cw: undefined,
 				reply: undefined,

@@ -2,11 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { RegistrationTicketsRepository } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { Packed } from '@/misc/json-schema.js';
 import type { User } from '@/models/entities/User.js';
 import type { RegistrationTicket } from '@/models/entities/RegistrationTicket.js';
 import { bindThis } from '@/decorators.js';
+import type { InviteCodeSchema } from '@/models/zod/InviteCodeSchema.js';
 import { UserEntityService } from './UserEntityService.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class InviteCodeEntityService {
@@ -22,7 +23,7 @@ export class InviteCodeEntityService {
 	public async pack(
 		src: RegistrationTicket['id'] | RegistrationTicket,
 		me?: { id: User['id'] } | null | undefined,
-	): Promise<Packed<'InviteCode'>> {
+	): Promise<z.infer<typeof InviteCodeSchema>> {
 		const target = typeof src === 'object' ? src : await this.registrationTicketsRepository.findOneOrFail({
 			where: {
 				id: src,

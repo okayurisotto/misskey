@@ -8,7 +8,6 @@ import PerUserFollowingChart from '@/core/chart/charts/per-user-following.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { IdService } from '@/core/IdService.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
-import type { Packed } from '@/misc/json-schema.js';
 import InstanceChart from '@/core/chart/charts/instance.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { WebhookService } from '@/core/WebhookService.js';
@@ -23,7 +22,9 @@ import { MetaService } from '@/core/MetaService.js';
 import { CacheService } from '@/core/CacheService.js';
 import type { Config } from '@/config.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';
+import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import Logger from '../logger.js';
+import type { z } from 'zod';
 
 const logger = new Logger('following/create');
 
@@ -273,7 +274,7 @@ export class UserFollowingService implements OnModuleInit {
 			this.userEntityService.pack(followee.id, follower, {
 				detail: true,
 			}).then(async packed => {
-				this.globalEventService.publishMainStream(follower.id, 'follow', packed as Packed<'UserDetailedNotMe'>);
+				this.globalEventService.publishMainStream(follower.id, 'follow', packed as z.infer<typeof UserDetailedNotMeSchema>);
 
 				const webhooks = (await this.webhookService.getActiveWebhooks()).filter(x => x.userId === follower.id && x.on.includes('follow'));
 				for (const webhook of webhooks) {

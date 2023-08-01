@@ -4,7 +4,6 @@ import * as Redis from 'ioredis';
 import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import type { Packed } from '@/misc/json-schema.js';
 import type { Promiseable } from '@/misc/prelude/await-all.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { USER_ACTIVE_THRESHOLD, USER_ONLINE_THRESHOLD } from '@/const.js';
@@ -14,20 +13,26 @@ import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
+import type { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
+import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
+import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
+import type { UserSchema } from '@/models/zod/UserSchema.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { AntennaService } from '../AntennaService.js';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
 import type { DriveFileEntityService } from './DriveFileEntityService.js';
 import type { PageEntityService } from './PageEntityService.js';
+import type { z } from 'zod';
 
-type IsUserDetailed<Detailed extends boolean> = Detailed extends true ? Packed<'UserDetailed'> : Packed<'UserLite'>;
+type IsUserDetailed<Detailed extends boolean> = Detailed extends true ? z.infer<typeof UserDetailedSchema> : z.infer<typeof UserLiteSchema>;
 type IsMeAndIsUserDetailed<ExpectsMe extends boolean | null, Detailed extends boolean> =
 	Detailed extends true ?
-		ExpectsMe extends true ? Packed<'MeDetailed'> :
-		ExpectsMe extends false ? Packed<'UserDetailedNotMe'> :
-		Packed<'UserDetailed'> :
-	Packed<'UserLite'>;
+		ExpectsMe extends true ? z.infer<typeof MeDetailedSchema> :
+		ExpectsMe extends false ? z.infer<typeof UserDetailedNotMeSchema> :
+		z.infer<typeof UserDetailedSchema> :
+	z.infer<typeof UserLiteSchema>;
 
 function isLocalUser(user: User): user is LocalUser;
 function isLocalUser<T extends { host: User['host'] }>(user: T): user is (T & { host: null; });
@@ -487,7 +492,7 @@ export class UserEntityService implements OnModuleInit {
 				isMuted: relation.isMuted,
 				isRenoteMuted: relation.isRenoteMuted,
 			} : {}),
-		} as Promiseable<Packed<'User'>> as Promiseable<IsMeAndIsUserDetailed<ExpectsMe, D>>;
+		} as Promiseable<z.infer<typeof UserSchema>> as Promiseable<IsMeAndIsUserDetailed<ExpectsMe, D>>;
 
 		return await awaitAll(packed);
 	}

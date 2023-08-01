@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import { checkWordMute } from '@/misc/check-word-mute.js';
 import { isInstanceMuted } from '@/misc/is-instance-muted.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
-import type { Packed } from '@/misc/json-schema.js';
 import { MetaService } from '@/core/MetaService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import Channel from '../channel.js';
 
 class GlobalTimelineChannel extends Channel {
@@ -39,7 +40,7 @@ class GlobalTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	private async onNote(note: Packed<'Note'>) {
+	private async onNote(note: z.infer<typeof NoteSchema>) {
 		if (note.visibility !== 'public') return;
 		if (note.channelId != null) return;
 

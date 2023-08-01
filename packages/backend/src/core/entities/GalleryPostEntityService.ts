@@ -2,13 +2,14 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { GalleryLikesRepository, GalleryPostsRepository } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { Packed } from '@/misc/json-schema.js';
 import type { } from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { GalleryPost } from '@/models/entities/GalleryPost.js';
 import { bindThis } from '@/decorators.js';
+import type { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { UserEntityService } from './UserEntityService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class GalleryPostEntityService {
@@ -28,7 +29,7 @@ export class GalleryPostEntityService {
 	public async pack(
 		src: GalleryPost['id'] | GalleryPost,
 		me?: { id: User['id'] } | null | undefined,
-	): Promise<Packed<'GalleryPost'>> {
+	): Promise<z.infer<typeof GalleryPostSchema>> {
 		const meId = me ? me.id : null;
 		const post = typeof src === 'object' ? src : await this.galleryPostsRepository.findOneByOrFail({ id: src });
 

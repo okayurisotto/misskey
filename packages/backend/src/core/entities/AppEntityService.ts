@@ -1,10 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { AccessTokensRepository, AppsRepository } from '@/models/index.js';
-import type { Packed } from '@/misc/json-schema.js';
+import type { AppSchema } from '@/models/zod/AppSchema.js';
 import type { App } from '@/models/entities/App.js';
 import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class AppEntityService {
@@ -26,7 +27,7 @@ export class AppEntityService {
 			includeSecret?: boolean,
 			includeProfileImageIds?: boolean
 		},
-	): Promise<Packed<'App'>> {
+	): Promise<z.infer<typeof AppSchema>> {
 		const opts = Object.assign({
 			detail: false,
 			includeSecret: false,

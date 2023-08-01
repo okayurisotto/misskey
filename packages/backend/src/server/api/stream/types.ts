@@ -9,12 +9,19 @@ import type { UserList } from '@/models/entities/UserList.js';
 import type { AbuseUserReport } from '@/models/entities/AbuseUserReport.js';
 import type { Signin } from '@/models/entities/Signin.js';
 import type { Page } from '@/models/entities/Page.js';
-import type { Packed } from '@/misc/json-schema.js';
 import type { Webhook } from '@/models/entities/Webhook.js';
 import type { Meta } from '@/models/entities/Meta.js';
 import { Role, RoleAssignment } from '@/models/index.js';
-import type Emitter from 'strict-event-emitter-types';
+import type { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
+import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
+import type { UserSchema } from '@/models/zod/UserSchema.js';
+import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
+import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
+import type { z } from 'zod';
 import type { EventEmitter } from 'events';
+import type Emitter from 'strict-event-emitter-types';
 
 //#region Stream type-body definitions
 export interface InternalStreamTypes {
@@ -47,10 +54,10 @@ export interface InternalStreamTypes {
 
 export interface BroadcastTypes {
 	emojiAdded: {
-		emoji: Packed<'EmojiDetailed'>;
+		emoji: z.infer<typeof EmojiDetailedSchema>;
 	};
 	emojiUpdated: {
-		emojis: Packed<'EmojiDetailed'>[];
+		emojis: z.infer<typeof EmojiDetailedSchema>[];
 	};
 	emojiDeleted: {
 		emojis: {
@@ -62,27 +69,27 @@ export interface BroadcastTypes {
 }
 
 export interface MainStreamTypes {
-	notification: Packed<'Notification'>;
-	mention: Packed<'Note'>;
-	reply: Packed<'Note'>;
-	renote: Packed<'Note'>;
-	follow: Packed<'UserDetailedNotMe'>;
-	followed: Packed<'User'>;
-	unfollow: Packed<'User'>;
-	meUpdated: Packed<'User'>;
+	notification: z.infer<typeof NotificationSchema>;
+	mention: z.infer<typeof NoteSchema>;
+	reply: z.infer<typeof NoteSchema>;
+	renote: z.infer<typeof NoteSchema>;
+	follow: z.infer<typeof UserDetailedNotMeSchema>;
+	followed: z.infer<typeof UserSchema>;
+	unfollow: z.infer<typeof UserSchema>;
+	meUpdated: z.infer<typeof UserSchema>;
 	pageEvent: {
 		pageId: Page['id'];
 		event: string;
 		var: any;
 		userId: User['id'];
-		user: Packed<'User'>;
+		user: z.infer<typeof UserSchema>;
 	};
 	urlUploadFinished: {
 		marker?: string | null;
-		file: Packed<'DriveFile'>;
+		file: z.infer<typeof DriveFileSchema>;
 	};
 	readAllNotifications: undefined;
-	unreadNotification: Packed<'Notification'>;
+	unreadNotification: z.infer<typeof NotificationSchema>;
 	unreadMention: Note['id'];
 	readAllUnreadMentions: undefined;
 	unreadSpecifiedNote: Note['id'];
@@ -97,18 +104,18 @@ export interface MainStreamTypes {
 		key: string;
 		value: any | null;
 	};
-	driveFileCreated: Packed<'DriveFile'>;
+	driveFileCreated: z.infer<typeof DriveFileSchema>;
 	readAntenna: Antenna;
-	receiveFollowRequest: Packed<'User'>;
+	receiveFollowRequest: z.infer<typeof UserSchema>;
 }
 
 export interface DriveStreamTypes {
-	fileCreated: Packed<'DriveFile'>;
+	fileCreated: z.infer<typeof DriveFileSchema>;
 	fileDeleted: DriveFile['id'];
-	fileUpdated: Packed<'DriveFile'>;
-	folderCreated: Packed<'DriveFolder'>;
+	fileUpdated: z.infer<typeof DriveFileSchema>;
+	folderCreated: z.infer<typeof DriveFolderSchema>;
 	folderDeleted: DriveFolder['id'];
-	folderUpdated: Packed<'DriveFolder'>;
+	folderUpdated: z.infer<typeof DriveFolderSchema>;
 }
 
 export interface NoteStreamTypes {
@@ -140,8 +147,8 @@ type NoteStreamEventTypes = {
 };
 
 export interface UserListStreamTypes {
-	userAdded: Packed<'User'>;
-	userRemoved: Packed<'User'>;
+	userAdded: z.infer<typeof UserSchema>;
+	userRemoved: z.infer<typeof UserSchema>;
 }
 
 export interface AntennaStreamTypes {
@@ -149,7 +156,7 @@ export interface AntennaStreamTypes {
 }
 
 export interface RoleTimelineStreamTypes {
-	note: Packed<'Note'>;
+	note: z.infer<typeof NoteSchema>;
 }
 
 export interface AdminStreamTypes {
@@ -227,7 +234,7 @@ export type StreamMessages = {
 	};
 	notes: {
 		name: 'notesStream';
-		payload: Serialized<Packed<'Note'>>;
+		payload: Serialized<z.infer<typeof NoteSchema>>;
 	};
 };
 

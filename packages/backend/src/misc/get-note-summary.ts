@@ -1,10 +1,11 @@
-import type { Packed } from './json-schema.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import type { z } from 'zod';
 
 /**
  * 投稿を表す文字列を取得します。
  * @param {*} note (packされた)投稿
  */
-export const getNoteSummary = (note: Packed<'Note'>): string => {
+export const getNoteSummary = (note: z.infer<typeof NoteSchema>): string => {
 	if (note.deletedAt) {
 		return '(❌⛔)';
 	}

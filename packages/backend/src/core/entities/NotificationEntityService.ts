@@ -6,14 +6,17 @@ import type { AccessTokensRepository, FollowRequestsRepository, NoteReactionsRep
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Notification } from '@/models/entities/Notification.js';
 import type { Note } from '@/models/entities/Note.js';
-import type { Packed } from '@/misc/json-schema.js';
 import { bindThis } from '@/decorators.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { notificationTypes } from '@/types.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
+import type { UserSchema } from '@/models/zod/UserSchema.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
 import type { UserEntityService } from './UserEntityService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
+import type { z } from 'zod';
 
 const NOTE_REQUIRED_NOTIFICATION_TYPES = new Set(['mention', 'reply', 'renote', 'quote', 'reaction', 'pollEnded'] as (typeof notificationTypes[number])[]);
 
@@ -62,10 +65,10 @@ export class NotificationEntityService implements OnModuleInit {
 
 		},
 		hint?: {
-			packedNotes: Map<Note['id'], Packed<'Note'>>;
-			packedUsers: Map<User['id'], Packed<'User'>>;
+			packedNotes: Map<Note['id'], z.infer<typeof NoteSchema>>;
+			packedUsers: Map<User['id'], z.infer<typeof UserSchema>>;
 		},
-	): Promise<Packed<'Notification'>> {
+	): Promise<z.infer<typeof NotificationSchema>> {
 		const notification = src;
 		const token = notification.appAccessTokenId ? await this.accessTokensRepository.findOneByOrFail({ id: notification.appAccessTokenId }) : null;
 		const noteIfNeed = NOTE_REQUIRED_NOTIFICATION_TYPES.has(notification.type) && notification.noteId != null ? (

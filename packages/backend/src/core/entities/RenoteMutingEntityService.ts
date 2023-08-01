@@ -2,12 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { RenoteMutingsRepository } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { Packed } from '@/misc/json-schema.js';
 import type { } from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { RenoteMuting } from '@/models/entities/RenoteMuting.js';
 import { bindThis } from '@/decorators.js';
+import type { RenoteMutingSchema } from '@/models/zod/RenoteMutingSchema.js';
 import { UserEntityService } from './UserEntityService.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class RenoteMutingEntityService {
@@ -23,7 +24,7 @@ export class RenoteMutingEntityService {
 	public async pack(
 		src: RenoteMuting['id'] | RenoteMuting,
 		me?: { id: User['id'] } | null | undefined,
-	): Promise<Packed<'RenoteMuting'>> {
+	): Promise<z.infer<typeof RenoteMutingSchema>> {
 		const muting = typeof src === 'object' ? src : await this.renoteMutingsRepository.findOneByOrFail({ id: src });
 
 		return await awaitAll({

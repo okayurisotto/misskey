@@ -3,7 +3,6 @@ import { DataSource, In } from 'typeorm';
 import * as mfm from 'mfm-js';
 import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
-import type { Packed } from '@/misc/json-schema.js';
 import { nyaize } from '@/misc/nyaize.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { User } from '@/models/entities/User.js';
@@ -12,11 +11,14 @@ import type { NoteReaction } from '@/models/entities/NoteReaction.js';
 import type { UsersRepository, NotesRepository, FollowingsRepository, PollsRepository, PollVotesRepository, NoteReactionsRepository, ChannelsRepository, DriveFilesRepository } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
 import { isNotNull } from '@/misc/is-not-null.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
 import type { ReactionService } from '../ReactionService.js';
 import type { UserEntityService } from './UserEntityService.js';
 import type { DriveFileEntityService } from './DriveFileEntityService.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class NoteEntityService implements OnModuleInit {
@@ -70,7 +72,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async hideNote(packedNote: Packed<'Note'>, meId: User['id'] | null) {
+	private async hideNote(packedNote: z.infer<typeof NoteSchema>, meId: User['id'] | null) {
 	// TODO: isVisibleForMe を使うようにしても良さそう(型違うけど)
 		let hide = false;
 
@@ -253,7 +255,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async packAttachedFiles(fileIds: Note['fileIds'], packedFiles: Map<Note['fileIds'][number], Packed<'DriveFile'> | null>): Promise<Packed<'DriveFile'>[]> {
+	public async packAttachedFiles(fileIds: Note['fileIds'], packedFiles: Map<Note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>): Promise<z.infer<typeof DriveFileSchema>[]> {
 		const missingIds = [];
 		for (const id of fileIds) {
 			if (!packedFiles.has(id)) missingIds.push(id);
@@ -276,10 +278,10 @@ export class NoteEntityService implements OnModuleInit {
 			skipHide?: boolean;
 			_hint_?: {
 				myReactions: Map<Note['id'], NoteReaction | null>;
-				packedFiles: Map<Note['fileIds'][number], Packed<'DriveFile'> | null>;
+				packedFiles: Map<Note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>;
 			};
 		},
-	): Promise<Packed<'Note'>> {
+	): Promise<z.infer<typeof NoteSchema>> {
 		const opts = Object.assign({
 			detail: true,
 			skipHide: false,
@@ -306,7 +308,7 @@ export class NoteEntityService implements OnModuleInit {
 			.map(x => this.reactionService.decodeReaction(x).reaction.replaceAll(':', ''));
 		const packedFiles = options?._hint_?.packedFiles;
 
-		const packed: Packed<'Note'> = await awaitAll({
+		const packed: z.infer<typeof NoteSchema> = await awaitAll({
 			id: note.id,
 			createdAt: note.createdAt.toISOString(),
 			userId: note.userId,

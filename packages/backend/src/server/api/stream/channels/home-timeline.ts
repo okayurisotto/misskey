@@ -2,10 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { checkWordMute } from '@/misc/check-word-mute.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { isInstanceMuted } from '@/misc/is-instance-muted.js';
-import type { Packed } from '@/misc/json-schema.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { bindThis } from '@/decorators.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import Channel from '../channel.js';
+import type z from 'zod';
 
 class HomeTimelineChannel extends Channel {
 	public readonly chName = 'homeTimeline';
@@ -31,7 +32,7 @@ class HomeTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	private async onNote(note: Packed<'Note'>) {
+	private async onNote(note: z.infer<typeof NoteSchema>) {
 		if (note.channelId) {
 			if (!this.followingChannels.has(note.channelId)) return;
 		} else {

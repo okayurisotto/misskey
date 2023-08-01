@@ -2,12 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { MutingsRepository } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { Packed } from '@/misc/json-schema.js';
 import type { } from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { Muting } from '@/models/entities/Muting.js';
 import { bindThis } from '@/decorators.js';
+import type { MutingSchema } from '@/models/zod/MutingSchema.js';
 import { UserEntityService } from './UserEntityService.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class MutingEntityService {
@@ -23,7 +24,7 @@ export class MutingEntityService {
 	public async pack(
 		src: Muting['id'] | Muting,
 		me?: { id: User['id'] } | null | undefined,
-	): Promise<Packed<'Muting'>> {
+	): Promise<z.infer<typeof MutingSchema>> {
 		const muting = typeof src === 'object' ? src : await this.mutingsRepository.findOneByOrFail({ id: src });
 
 		return await awaitAll({

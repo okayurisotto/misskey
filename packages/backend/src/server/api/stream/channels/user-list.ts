@@ -2,11 +2,12 @@ import { Inject, Injectable } from '@nestjs/common';
 import type { UserListJoiningsRepository, UserListsRepository } from '@/models/index.js';
 import type { User } from '@/models/entities/User.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
-import type { Packed } from '@/misc/json-schema.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import Channel from '../channel.js';
+import type { z } from 'zod';
 
 class UserListChannel extends Channel {
 	public readonly chName = 'userList';
@@ -64,7 +65,7 @@ class UserListChannel extends Channel {
 	}
 
 	@bindThis
-	private async onNote(note: Packed<'Note'>) {
+	private async onNote(note: z.infer<typeof NoteSchema>) {
 		if (!this.listUsers.includes(note.userId)) return;
 
 		if (['followers', 'specified'].includes(note.visibility)) {

@@ -16,11 +16,12 @@ import type {
 	UserListStreamTypes,
 	RoleTimelineStreamTypes,
 } from '@/server/api/stream/types.js';
-import type { Packed } from '@/misc/json-schema.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
 import { Role } from '@/models/index.js';
+import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class GlobalEventService {
@@ -89,7 +90,7 @@ export class GlobalEventService {
 	}
 
 	@bindThis
-	public publishNotesStream(note: Packed<'Note'>): void {
+	public publishNotesStream(note: z.infer<typeof NoteSchema>): void {
 		this.publish('notesStream', null, note);
 	}
 
