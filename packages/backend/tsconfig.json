@@ -2,7 +2,6 @@
 	"compileOnSave": false,
 	"compilerOptions": {
 		"allowJs": true,
-		"allowSyntheticDefaultImports": true,
 		"baseUrl": "./",
 		"declaration": false,
 		"emitDecoratorMetadata": true,
@@ -10,7 +9,6 @@
 		"isolatedModules": true,
 		"lib": ["esnext"],
 		"module": "ESNext",
-		"moduleResolution": "node16",
 		"noEmitOnError": true,
 		"noFallthroughCasesInSwitch": true,
 		"noImplicitReturns": true,
@@ -24,14 +22,12 @@
 		"removeComments": false,
 		"resolveJsonModule": true,
 		"rootDir": "./src",
-		"skipLibCheck": true,
 		"sourceMap": false,
-		"strict": true,
 		"strictPropertyInitialization": false,
-		"target": "ES2022",
 		"typeRoots": ["./node_modules/@types", "./src/@types"],
 		"types": ["node"]
 	},
 	"exclude": ["./src/**/*.test.ts"],
+	"extends": ["@tsconfig/node-lts/tsconfig.json"],
 	"include": ["./src/**/*.ts"]
 }
