@@ -1,11 +1,11 @@
 {
-    "search.exclude": {
-        "**/node_modules": true
-    },
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "files.associations": {
-        "*.test.ts": "typescript"
-    },
-    "jest.jestCommandLine": "pnpm run jest",
-    "jest.autoRun": "off"
+	"files.associations": {
+		"*.test.ts": "typescript"
+	},
+	"jest.autoRun": "off",
+	"jest.jestCommandLine": "pnpm run jest",
+	"search.exclude": {
+		"**/node_modules": true
+	},
+	"typescript.tsdk": "node_modules/typescript/lib"
 }
