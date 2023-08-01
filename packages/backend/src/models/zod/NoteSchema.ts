@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { defineOpenApiSpec } from 'zod2spec';
 import { misskeyIdPattern } from './misc.js';
 import { UserLiteSchema } from './UserLiteSchema.js';
 import { DriveFileSchema } from './DriveFileSchema.js';
@@ -42,6 +43,12 @@ type NoteSchemaType = z.infer<typeof NoteSchemaBase> & {
 };
 
 export const NoteSchema: z.ZodType<NoteSchemaType> = NoteSchemaBase.extend({
-	reply: z.lazy(() => NoteSchema.nullable()).optional(),
-	renote: z.lazy(() => NoteSchema.nullable()).optional(),
+	reply: defineOpenApiSpec(
+		z.lazy(() => NoteSchema.nullable()),
+		{ $ref: '#/components/schemas/Note' },
+	).optional(),
+	renote: defineOpenApiSpec(
+		z.lazy(() => NoteSchema.nullable()),
+		{ $ref: '#/components/schemas/Note' },
+	).optional(),
 });

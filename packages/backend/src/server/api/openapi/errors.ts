@@ -1,4 +1,3 @@
-
 export const errors = {
 	'400': {
 		'INVALID_PARAM': {

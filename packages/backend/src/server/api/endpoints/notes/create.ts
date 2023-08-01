@@ -2,7 +2,6 @@ import ms from 'ms';
 import { In } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import z from 'zod';
-import { extendApi, generateSchema } from '@anatine/zod-openapi';
 import type { User } from '@/models/entities/User.js';
 import type {
 	UsersRepository,
@@ -78,12 +77,8 @@ export const meta = {
 	},
 } as const;
 
-const paramDeffileIds = extendApi(z.array(misskeyIdPattern).min(1).max(16), {
-	uniqueItems: true,
-});
-const paramDefmediaIds = extendApi(z.array(misskeyIdPattern).min(1).max(16), {
-	uniqueItems: true,
-});
+const paramDeffileIds = uniqueItems(z.array(misskeyIdPattern).min(1).max(16));
+const paramDefmediaIds = uniqueItems(z.array(misskeyIdPattern).min(1).max(16));
 const paramDefpoll = z.object({
 	choices: uniqueItems(z.array(z.string().min(1).max(50)).min(2).max(10)),
 	expiredAfter: z.number().int().min(1).nullable().optional(),
@@ -114,8 +109,8 @@ const paramDefBase = z.object({
 		.default('public'),
 	visibleUserIds: uniqueItems(z.array(misskeyIdPattern)).optional(),
 	...{
-		fileIds: uniqueItems(paramDeffileIds).optional(),
-		mediaIds: uniqueItems(paramDefmediaIds).optional(),
+		fileIds: paramDeffileIds.optional(),
+		mediaIds: paramDefmediaIds.optional(),
 		poll: paramDefpoll.nullable().optional(),
 		renoteId: paramDefrenoteId.nullable().optional(),
 		text: paramDeftext.optional(),

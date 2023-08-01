@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { defineOpenApiSpec } from 'zod2spec';
 import { misskeyIdPattern } from './misc.js';
 
 const DriveFolderSchemaBase = z.object({
@@ -17,5 +18,8 @@ type DriveFolderType = z.infer<typeof DriveFolderSchemaBase> & {
 
 export const DriveFolderSchema: z.ZodType<DriveFolderType> =
 	DriveFolderSchemaBase.extend({
-		parent: z.lazy(() => DriveFolderSchema.nullable()).optional(),
+		parent: defineOpenApiSpec(
+			z.lazy(() => DriveFolderSchema.nullable()),
+			{ $ref: '#/components/schemas/DriveFolder' },
+		).optional(),
 	});

@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as stream from 'node:stream/promises';
 import { Inject, Injectable } from '@nestjs/common';
-import { generateSchema } from '@anatine/zod-openapi';
 import { DI } from '@/di-symbols.js';
 import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser, User } from '@/models/entities/User.js';
@@ -20,6 +19,7 @@ import { AuthenticateService, AuthenticationError } from './AuthenticateService.
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { IEndpointMeta, IEndpoint } from './endpoints.js';
+import { generateOpenApiSpec } from 'zod2spec';
 
 const accessDenied = {
 	message: 'Access denied.',
@@ -335,7 +335,7 @@ export class ApiCallService implements OnApplicationShutdown {
 		}
 
 		// Cast non JSON input
-		const params = generateSchema(ep.params);
+		const params = generateOpenApiSpec([])(ep.params);
 		if ((ep.meta.requireFile || request.method === 'GET') && params.properties) {
 			for (const k of Object.keys(params.properties)) {
 				const param = params.properties![k];
