@@ -5,16 +5,18 @@
 		"baseUrl": "./",
 		"declaration": false,
 		"emitDecoratorMetadata": true,
+		"exactOptionalPropertyTypes": false, // TODO
 		"experimentalDecorators": true,
 		"isolatedModules": true,
 		"lib": ["esnext"],
 		"module": "ESNext",
 		"noEmitOnError": true,
-		"noFallthroughCasesInSwitch": true,
-		"noImplicitReturns": true,
+		"noImplicitOverride": false, // TODO
 		"noLib": false,
-		"noUnusedLocals": false,
-		"noUnusedParameters": false,
+		"noPropertyAccessFromIndexSignature": false, // TODO
+		"noUncheckedIndexedAccess": false, // TODO
+		"noUnusedLocals": false, // TODO
+		"noUnusedParameters": false, // TODO
 		"outDir": "./built",
 		"paths": {
 			"@/*": ["./src/*"]
@@ -23,11 +25,14 @@
 		"resolveJsonModule": true,
 		"rootDir": "./src",
 		"sourceMap": false,
-		"strictPropertyInitialization": false,
+		"strictPropertyInitialization": false, // TODO
 		"typeRoots": ["./node_modules/@types", "./src/@types"],
 		"types": ["node"]
 	},
 	"exclude": ["./src/**/*.test.ts"],
-	"extends": ["@tsconfig/node-lts/tsconfig.json"],
+	"extends": [
+		"@tsconfig/node-lts/tsconfig.json",
+		"@tsconfig/strictest/tsconfig.json"
+	],
 	"include": ["./src/**/*.ts"]
 }
