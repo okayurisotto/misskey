@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import ms from 'ms';
 import { Inject, Injectable } from '@nestjs/common';
 import type { DriveFilesRepository } from '@/models/index.js';
@@ -23,7 +22,7 @@ export const meta = {
 	kind: 'write:drive',
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	url: z.string(),
 	folderId: misskeyIdPattern.nullable().default(null),
 	isSensitive: z.boolean().default(false),
@@ -31,13 +30,12 @@ const paramDef_ = z.object({
 	marker: z.string().nullable().default(null),
 	force: z.boolean().default(false),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
@@ -48,7 +46,7 @@ export default class extends Endpoint<
 		private driveService: DriveService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef_, async (ps, user, _1, _2, _3, ip, headers) => {
+		super(meta, paramDef, async (ps, user, _1, _2, _3, ip, headers) => {
 			this.driveService
 				.uploadFromUrl({
 					url: ps.url,

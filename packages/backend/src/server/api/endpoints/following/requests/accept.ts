@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
@@ -25,23 +24,22 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
 		private getterService: GetterService,
 		private userFollowingService: UserFollowingService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Fetch follower
 			const follower = await this.getterService
 				.getUser(ps.userId)

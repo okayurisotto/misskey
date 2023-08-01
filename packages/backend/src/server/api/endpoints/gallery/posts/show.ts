@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { GalleryPostsRepository } from '@/models/index.js';
@@ -20,19 +19,18 @@ export const meta = {
 			id: '1137bf14-c5b0-4604-85bb-5b5371b1cd45',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	postId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -41,7 +39,7 @@ export default class extends Endpoint<
 
 		private galleryPostEntityService: GalleryPostEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const post = await this.galleryPostsRepository.findOneBy({
 				id: ps.postId,
 			});

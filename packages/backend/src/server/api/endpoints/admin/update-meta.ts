@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import type { Meta } from '@/models/entities/Meta.js';
@@ -15,7 +14,7 @@ export const meta = {
 	requireAdmin: true,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	disableRegistration: z.boolean().nullable().optional(),
 	pinnedUsers: z.array(z.string()).nullable().optional(),
 	hiddenTags: z.array(z.string()).nullable().optional(),
@@ -100,13 +99,12 @@ const paramDef_ = z.object({
 	serverRules: z.array(z.string()).optional(),
 	preservedUsernames: z.array(z.string()).optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
@@ -116,7 +114,7 @@ export default class extends Endpoint<
 		private metaService: MetaService,
 		private moderationLogService: ModerationLogService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const set = {} as Partial<Meta>;
 
 			if (typeof ps.disableRegistration === 'boolean') {

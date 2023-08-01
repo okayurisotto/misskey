@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { FollowingsRepository } from '@/models/index.js';
@@ -29,19 +28,18 @@ export const meta = {
 			id: '089b125b-d338-482a-9a09-e2622ac9f8d4',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -52,7 +50,7 @@ export default class extends Endpoint<
 		private getterService: GetterService,
 		private userFollowingService: UserFollowingService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Fetch followee
 			const followee = await this.getterService
 				.getUser(ps.userId)

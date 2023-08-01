@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import ms from 'ms';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -38,19 +37,18 @@ export const meta = {
 			id: '5dbf82f5-c92b-40b1-87d1-6c8c0741fd09',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -64,7 +62,7 @@ export default class extends Endpoint<
 		private getterService: GetterService,
 		private userFollowingService: UserFollowingService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const followee = me;
 
 			// Check if the follower is yourself

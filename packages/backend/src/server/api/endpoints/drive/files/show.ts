@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import type { DriveFilesRepository } from '@/models/index.js';
@@ -17,7 +16,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'read:drive',
 	description: 'Show the properties of a drive file.',
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchFile: {
 			message: 'No such file.',
@@ -32,17 +31,16 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.union([
+export const paramDef = z.union([
 	z.object({ fileId: misskeyIdPattern }),
 	z.object({ url: z.string() }),
 ]);
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -52,7 +50,7 @@ export default class extends Endpoint<
 		private driveFileEntityService: DriveFileEntityService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			let file: DriveFile | null = null;
 
 			if ('fileId' in ps) {

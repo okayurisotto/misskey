@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { IsNull, Not } from 'typeorm';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -11,21 +10,20 @@ const res = z.unknown();
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
 	offset: z.number().int().default(0),
 	sort: z.enum(['desc', 'asc']).default('desc'),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -34,7 +32,7 @@ export default class extends Endpoint<
 
 		private appEntityService: AppEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Get tokens
 			const tokens = await this.accessTokensRepository.find({
 				where: {

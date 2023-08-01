@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -28,20 +27,19 @@ export const meta = {
 			id: '53326628-a00d-40a6-a3cd-8975105c0f95',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	name: z.string().max(200).default('Untitled').optional(),
 	parentId: misskeyIdPattern.nullable().optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -52,7 +50,7 @@ export default class extends Endpoint<
 		private idService: IdService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// If the parent folder is specified
 			let parent = null;
 			if (ps.parentId) {

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { IsNull } from 'typeorm';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -25,20 +24,19 @@ const res = UserDetailedSchema; // TODO
 export const meta = {
 	tags: ['admin'],
 
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	username: LocalUsernameSchema,
 	password: PasswordSchema,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -48,7 +46,7 @@ export default class extends Endpoint<
 		private userEntityService: UserEntityService,
 		private signupService: SignupService,
 	) {
-		super(meta, paramDef_, async (ps, _me) => {
+		super(meta, paramDef, async (ps, _me) => {
 			const me = _me
 				? await this.usersRepository.findOneByOrFail({ id: _me.id })
 				: null;

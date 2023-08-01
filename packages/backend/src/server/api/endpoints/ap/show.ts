@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -41,19 +40,18 @@ export const meta = {
 			id: 'dc94d745-1262-4e63-a17d-fecaa57efc82',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	uri: z.string(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -72,7 +70,7 @@ export default class extends Endpoint<
 		private apPersonService: ApPersonService,
 		private apNoteService: ApNoteService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const object = await this.fetchAny(ps.uri, me);
 			if (object) {
 				return object;

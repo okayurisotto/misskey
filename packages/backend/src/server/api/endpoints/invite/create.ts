@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { MoreThan } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -25,17 +24,16 @@ export const meta = {
 			id: '8b165dd3-6f37-4557-8db1-73175d63c641',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({});
-export const paramDef = generateSchema(paramDef_);
+export const paramDef = z.object({});
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -46,7 +44,7 @@ export default class extends Endpoint<
 		private idService: IdService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const policies = await this.roleService.getUserPolicies(me.id);
 
 			if (policies.inviteLimit) {

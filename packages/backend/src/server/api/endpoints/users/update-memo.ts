@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
@@ -22,7 +21,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern,
 	memo: z
 		.string()
@@ -31,13 +30,12 @@ const paramDef_ = z.object({
 			'A personal memo for the target user. If null or empty, delete the memo.',
 		),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
@@ -46,7 +44,7 @@ export default class extends Endpoint<
 		private getterService: GetterService,
 		private idService: IdService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Get target
 			const target = await this.getterService
 				.getUser(ps.userId)

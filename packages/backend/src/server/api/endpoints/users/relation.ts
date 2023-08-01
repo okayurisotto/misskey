@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UsersRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -24,19 +23,18 @@ export const meta = {
 	requireCredential: true,
 	description:
 		'Show the different kinds of relations between the authenticated user and the specified user(s).',
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: z.union([misskeyIdPattern, z.array(misskeyIdPattern)]),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -45,7 +43,7 @@ export default class extends Endpoint<
 
 		private userEntityService: UserEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const ids = Array.isArray(ps.userId) ? ps.userId : [ps.userId];
 
 			const relations = await Promise.all(

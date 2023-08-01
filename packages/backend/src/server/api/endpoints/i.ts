@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
 	UserProfilesRepository,
@@ -15,7 +14,7 @@ const res = MeDetailedSchema;
 export const meta = {
 	tags: ['account'],
 	requireCredential: true,
-	res: generateSchema(res),
+	res,
 	errors: {
 		userIsDeleted: {
 			message: 'User is deleted.',
@@ -26,14 +25,13 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({});
-export const paramDef = generateSchema(paramDef_);
+export const paramDef = z.object({});
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -45,7 +43,7 @@ export default class extends Endpoint<
 
 		private userEntityService: UserEntityService,
 	) {
-		super(meta, paramDef_, async (ps, user, token) => {
+		super(meta, paramDef, async (ps, user, token) => {
 			const isSecure = token == null;
 
 			const now = new Date();

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import RE2 from 're2';
 import * as mfm from 'mfm-js';
 import { Inject, Injectable } from '@nestjs/common';
@@ -103,10 +102,10 @@ export const meta = {
 			id: '8feff0ba-5ab5-585b-31f4-4df816663fad',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	name: NameSchema.nullable().optional(),
 	description: DescriptionSchema.nullable().optional(),
 	location: LocationSchema.nullable().optional(),
@@ -149,13 +148,12 @@ const paramDef_ = z.object({
 	emailNotificationTypes: z.array(z.string()).optional(),
 	alsoKnownAs: uniqueItems(z.array(z.string()).max(10)).optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -183,7 +181,7 @@ export default class extends Endpoint<
 		private roleService: RoleService,
 		private cacheService: CacheService,
 	) {
-		super(meta, paramDef_, async (ps, _user, token) => {
+		super(meta, paramDef, async (ps, _user, token) => {
 			const user = await this.usersRepository.findOneByOrFail({ id: _user.id });
 			const isSecure = token == null;
 

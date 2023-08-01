@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
@@ -15,7 +14,7 @@ export const meta = {
 	tags: ['webhooks'],
 	requireCredential: true,
 	kind: 'write:account',
-	res: generateSchema(res),
+	res,
 	errors: {
 		tooManyWebhooks: {
 			message: 'You cannot create webhook any more.',
@@ -25,13 +24,12 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	name: z.string().min(1).max(100),
 	url: z.string().min(1).max(1024),
 	secret: z.string().min(1).max(1024),
 	on: z.array(z.enum(webhookEventTypes)),
 });
-export const paramDef = generateSchema(paramDef_);
 
 // TODO: ロジックをサービスに切り出す
 
@@ -39,7 +37,7 @@ export const paramDef = generateSchema(paramDef_);
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -50,7 +48,7 @@ export default class extends Endpoint<
 		private globalEventService: GlobalEventService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const currentWebhooksCount = await this.webhooksRepository.countBy({
 				userId: me.id,
 			});

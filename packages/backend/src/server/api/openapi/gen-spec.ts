@@ -1,3 +1,4 @@
+import { generateSchema } from '@anatine/zod-openapi';
 import type { Config } from '@/config.js';
 import endpoints from '../endpoints.js';
 import { errors as basicErrors } from './errors.js';
@@ -50,7 +51,7 @@ export function genOpenapiSpec(config: Config) {
 			}
 		}
 
-		const resSchema = endpoint.meta.res ? convertSchemaToOpenApiSchema(endpoint.meta.res) : {};
+		const resSchema = endpoint.meta.res ? convertSchemaToOpenApiSchema(generateSchema(endpoint.meta.res)) : {};
 
 		let desc = (endpoint.meta.description ? endpoint.meta.description : 'No description provided.') + '\n\n';
 		desc += `**Credential required**: *${endpoint.meta.requireCredential ? 'Yes' : 'No'}*`;

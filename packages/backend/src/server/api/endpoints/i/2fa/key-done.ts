@@ -1,6 +1,5 @@
 import { promisify } from 'node:util';
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import bcrypt from 'bcryptjs';
 import cbor from 'cbor';
 import { Inject, Injectable } from '@nestjs/common';
@@ -22,23 +21,22 @@ const res = z.unknown();
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	clientDataJSON: z.string(),
 	attestationObject: z.string(),
 	password: z.string(),
 	challengeId: z.string(),
 	name: z.string().min(1).max(30),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -58,7 +56,7 @@ export default class extends Endpoint<
 		private globalEventService: GlobalEventService,
 		private twoFactorAuthenticationService: TwoFactorAuthenticationService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const rpIdHashReal = this.twoFactorAuthenticationService.hash(
 				Buffer.from(this.config.hostname, 'utf-8'),
 			);

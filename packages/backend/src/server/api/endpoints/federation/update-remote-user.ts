@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
@@ -11,23 +10,22 @@ export const meta = {
 	requireCredential: true,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
 		private getterService: GetterService,
 		private apPersonService: ApPersonService,
 	) {
-		super(meta, paramDef_, async (ps) => {
+		super(meta, paramDef, async (ps) => {
 			const user = await this.getterService.getRemoteUser(ps.userId);
 			await this.apPersonService.updatePerson(user.uri!);
 		});

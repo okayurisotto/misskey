@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UserListsRepository, UsersRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -15,7 +14,7 @@ export const meta = {
 	requireCredential: false,
 	kind: 'read:account',
 	description: 'Show all lists that the authenticated user has created.',
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchUser: {
 			message: 'No such user.',
@@ -35,16 +34,15 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern.optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -56,7 +54,7 @@ export default class extends Endpoint<
 
 		private userListEntityService: UserListEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			if (typeof ps.userId !== 'undefined') {
 				const user = await this.usersRepository.findOneBy({ id: ps.userId });
 				if (user === null) throw new ApiError(meta.errors.noSuchUser);

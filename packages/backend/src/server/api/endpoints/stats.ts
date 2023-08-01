@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
 	InstancesRepository,
@@ -24,17 +23,16 @@ const res = z.object({
 export const meta = {
 	requireCredential: false,
 	tags: ['meta'],
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({});
-export const paramDef = generateSchema(paramDef_);
+export const paramDef = z.object({});
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -53,7 +51,7 @@ export default class extends Endpoint<
 		private notesChart: NotesChart,
 		private usersChart: UsersChart,
 	) {
-		super(meta, paramDef_, async () => {
+		super(meta, paramDef, async () => {
 			const notesChart = await this.notesChart.getChart('hour', 1, null);
 			const notesCount = notesChart.local.total[0] + notesChart.remote.total[0];
 			const originalNotesCount = notesChart.local.total[0];

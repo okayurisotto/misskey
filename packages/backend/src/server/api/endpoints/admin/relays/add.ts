@@ -1,6 +1,5 @@
 import { URL } from 'node:url';
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { RelayService } from '@/core/RelayService.js';
@@ -23,23 +22,22 @@ export const meta = {
 			id: 'fb8c92d3-d4e5-44e7-b3d4-800d5cef8b2c',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	inbox: z.string(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(private relayService: RelayService) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			try {
 				if (new URL(ps.inbox).protocol !== 'https:') {
 					throw new Error('https only');

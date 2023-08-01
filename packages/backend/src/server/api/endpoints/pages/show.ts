@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { IsNull } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { UsersRepository, PagesRepository } from '@/models/index.js';
@@ -15,7 +14,7 @@ const res = PageSchema;
 export const meta = {
 	tags: ['pages'],
 	requireCredential: false,
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchPage: {
 			message: 'No such page.',
@@ -25,7 +24,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.union([
+export const paramDef = z.union([
 	z.object({
 		pageId: misskeyIdPattern,
 	}),
@@ -34,13 +33,12 @@ const paramDef_ = z.union([
 		username: z.string(),
 	}),
 ]);
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -52,7 +50,7 @@ export default class extends Endpoint<
 
 		private pageEntityService: PageEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			let page: Page | null = null;
 
 			if ('pageId' in ps) {

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -30,13 +29,12 @@ export const meta = {
 		},
 	},
 
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	emojiId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 // TODO: ロジックをサービスに切り出す
 
@@ -44,7 +42,7 @@ export const paramDef = generateSchema(paramDef_);
 @Injectable()
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -59,7 +57,7 @@ export default class extends Endpoint<
 		private globalEventService: GlobalEventService,
 		private driveService: DriveService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const emoji = await this.emojisRepository.findOneBy({ id: ps.emojiId });
 
 			if (emoji == null) {

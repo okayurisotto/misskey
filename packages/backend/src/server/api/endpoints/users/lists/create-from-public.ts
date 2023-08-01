@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
 	UserListsRepository,
@@ -22,7 +21,7 @@ const res = UserListSchema;
 export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
-	res: generateSchema(res),
+	res,
 	errors: {
 		tooManyUserLists: {
 			message: 'You cannot create user list any more.',
@@ -58,17 +57,16 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	name: z.string().min(1).max(100),
 	listId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -87,7 +85,7 @@ export default class extends Endpoint<
 		private getterService: GetterService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const listExist = await this.userListsRepository.exist({
 				where: {
 					id: ps.listId,

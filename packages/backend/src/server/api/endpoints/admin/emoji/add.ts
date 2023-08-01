@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { DriveFilesRepository } from '@/models/index.js';
@@ -15,7 +14,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchFile: {
 			message: 'No such file.',
@@ -25,7 +24,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	name: z.string().regex(/^[a-zA-Z0-9_]+$/),
 	fileId: misskeyIdPattern,
 	category: z
@@ -39,7 +38,6 @@ const paramDef_ = z.object({
 	localOnly: z.boolean().optional(),
 	roleIdsThatCanBeUsedThisEmojiAsReaction: z.array(z.string()).optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 // TODO: ロジックをサービスに切り出す
 
@@ -47,7 +45,7 @@ export const paramDef = generateSchema(paramDef_);
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -59,7 +57,7 @@ export default class extends Endpoint<
 		private emojiEntityService: EmojiEntityService,
 		private moderationLogService: ModerationLogService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const driveFile = await this.driveFilesRepository.findOneBy({
 				id: ps.fileId,
 			});

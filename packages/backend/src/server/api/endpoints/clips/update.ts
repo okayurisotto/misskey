@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { ClipsRepository } from '@/models/index.js';
@@ -22,22 +21,21 @@ export const meta = {
 			id: 'b4d92d70-b216-46fa-9a3f-a8c811699257',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	clipId: misskeyIdPattern,
 	name: z.string().min(1).max(100),
 	isPublic: z.boolean().optional(),
 	description: z.string().min(1).max(2048).nullable().optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -46,7 +44,7 @@ export default class extends Endpoint<
 
 		private clipEntityService: ClipEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Fetch the clip
 			const clip = await this.clipsRepository.findOneBy({
 				id: ps.clipId,

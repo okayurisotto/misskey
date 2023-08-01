@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { IsNull, MoreThan, Not } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
@@ -17,19 +16,18 @@ export const meta = {
 	requireCredential: false,
 	allowGet: true,
 	cacheSec: 60 * 60,
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -41,7 +39,7 @@ export default class extends Endpoint<
 
 		private instanceEntityService: InstanceEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const [topSubInstances, topPubInstances, allSubCount, allPubCount] =
 				await Promise.all([
 					this.instancesRepository.find({

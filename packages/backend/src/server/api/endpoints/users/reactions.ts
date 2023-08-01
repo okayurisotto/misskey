@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
 	UserProfilesRepository,
@@ -18,7 +17,7 @@ export const meta = {
 	tags: ['users', 'reactions'],
 	requireCredential: false,
 	description: 'Show all reactions this user made.',
-	res: generateSchema(res),
+	res,
 	errors: {
 		reactionsNotPublic: {
 			message: 'Reactions of the user is not public.',
@@ -28,7 +27,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern,
 	limit: z.number().int().min(1).max(100).default(10),
 	sinceId: misskeyIdPattern.optional(),
@@ -36,13 +35,12 @@ const paramDef_ = z.object({
 	sinceDate: z.number().int().optional(),
 	untilDate: z.number().int().optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -55,7 +53,7 @@ export default class extends Endpoint<
 		private noteReactionEntityService: NoteReactionEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const profile = await this.userProfilesRepository.findOneByOrFail({
 				userId: ps.userId,
 			});

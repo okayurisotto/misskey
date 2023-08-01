@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { EmojisRepository } from '@/models/index.js';
@@ -27,10 +26,10 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	query: z.string().nullable().default(null),
 	host: z
 		.string()
@@ -41,13 +40,12 @@ const paramDef_ = z.object({
 	sinceId: misskeyIdPattern.optional(),
 	untilId: misskeyIdPattern.optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 // eslint-disable-next-line import/no-default-export
 @Injectable()
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -58,7 +56,7 @@ export default class extends Endpoint<
 		private queryService: QueryService,
 		private emojiEntityService: EmojiEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const q = this.queryService.makePaginationQuery(
 				this.emojisRepository.createQueryBuilder('emoji'),
 				ps.sinceId,

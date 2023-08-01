@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
 
@@ -30,7 +29,7 @@ export const meta = {
 		duration: ms('1day'),
 		max: 5,
 	},
-	res: generateSchema(res),
+	res,
 	errors: {
 		destinationAccountForbids: {
 			message:
@@ -66,16 +65,15 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	moveToAccount: z.string(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -89,7 +87,7 @@ export default class extends Endpoint<
 		private apPersonService: ApPersonService,
 		private userEntityService: UserEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// check parameter
 			if (!ps.moveToAccount) throw new ApiError(meta.errors.noSuchUser);
 			// abort if user is the root

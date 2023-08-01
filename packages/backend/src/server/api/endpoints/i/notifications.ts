@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets, In } from 'typeorm';
 import * as Redis from 'ioredis';
 import { Inject, Injectable } from '@nestjs/common';
@@ -31,10 +30,10 @@ export const meta = {
 		max: 30,
 	},
 	kind: 'read:notifications',
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
 	sinceId: misskeyIdPattern.optional(),
 	untilId: misskeyIdPattern.optional(),
@@ -46,13 +45,12 @@ const paramDef_ = z.object({
 		.array(z.enum([...notificationTypes, ...obsoleteNotificationTypes]))
 		.optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -77,7 +75,7 @@ export default class extends Endpoint<
 		private queryService: QueryService,
 		private noteReadService: NoteReadService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// includeTypes が空の場合はクエリしない
 			if (ps.includeTypes && ps.includeTypes.length === 0) {
 				return [];

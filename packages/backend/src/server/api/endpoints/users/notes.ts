@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { NotesRepository } from '@/models/index.js';
@@ -16,7 +15,7 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['users', 'notes'],
 	description: 'Show all notes that this user created.',
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchUser: {
 			message: 'No such user.',
@@ -26,7 +25,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern,
 	includeReplies: z.boolean().default(true),
 	limit: z.number().int().min(1).max(100).default(10),
@@ -39,13 +38,12 @@ const paramDef_ = z.object({
 	fileType: z.array(z.string()).optional(),
 	excludeNsfw: z.boolean().default(false),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -56,7 +54,7 @@ export default class extends Endpoint<
 		private queryService: QueryService,
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Lookup user
 			const user = await this.getterService.getUser(ps.userId).catch((err) => {
 				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {

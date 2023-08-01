@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AdsRepository } from '@/models/index.js';
@@ -20,7 +19,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	id: misskeyIdPattern,
 	memo: z.string(),
 	url: z.string().min(1),
@@ -32,20 +31,19 @@ const paramDef_ = z.object({
 	startsAt: z.number().int(),
 	dayOfWeek: z.number().int(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
 		@Inject(DI.adsRepository)
 		private adsRepository: AdsRepository,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const ad = await this.adsRepository.findOneBy({ id: ps.id });
 
 			if (ad == null) throw new ApiError(meta.errors.noSuchAd);

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AdsRepository } from '@/models/index.js';
@@ -12,7 +11,7 @@ export const meta = {
 	requireModerator: true,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	url: z.string().min(1),
 	memo: z.string(),
 	place: z.string(),
@@ -23,13 +22,12 @@ const paramDef_ = z.object({
 	imageUrl: z.string().min(1),
 	dayOfWeek: z.number().int(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
@@ -38,7 +36,7 @@ export default class extends Endpoint<
 
 		private idService: IdService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			await this.adsRepository.insert({
 				id: this.idService.genId(),
 				createdAt: new Date(),

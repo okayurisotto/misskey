@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -11,23 +10,22 @@ export const meta = {
 	requireAdmin: true,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	policies: z.unknown(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
 		private metaService: MetaService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef_, async (ps) => {
+		super(meta, paramDef, async (ps) => {
 			await this.metaService.update({
 				policies: ps.policies,
 			});

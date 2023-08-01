@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -36,17 +35,16 @@ export const meta = {
 	requireCredential: false,
 	allowGet: true,
 	cacheSec: 60 * 1,
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({});
-export const paramDef = generateSchema(paramDef_);
+export const paramDef = z.object({});
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -55,7 +53,7 @@ export default class extends Endpoint<
 
 		private metaService: MetaService,
 	) {
-		super(meta, paramDef_, async () => {
+		super(meta, paramDef, async () => {
 			const instance = await this.metaService.fetch(true);
 			const hiddenTags = instance.hiddenTags.map((t) => normalizeForSearch(t));
 

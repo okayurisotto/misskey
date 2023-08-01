@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import z from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import type { NoteReactionsRepository } from '@/models/index.js';
 import type { NoteReaction } from '@/models/entities/NoteReaction.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -16,7 +15,7 @@ export const meta = {
 	requireCredential: false,
 	allowGet: true,
 	cacheSec: 60,
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchNote: {
 			message: 'No such note.',
@@ -26,7 +25,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	noteId: misskeyIdPattern,
 	type: z.string().nullable().optional(),
 	limit: z.number().int().min(1).max(100).default(10),
@@ -34,13 +33,12 @@ const paramDef_ = z.object({
 	sinceId: misskeyIdPattern.optional(),
 	untilId: misskeyIdPattern.optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -49,7 +47,7 @@ export default class extends Endpoint<
 
 		private noteReactionEntityService: NoteReactionEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const query = {
 				noteId: ps.noteId,
 			} as FindOptionsWhere<NoteReaction>;

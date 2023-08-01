@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { NotesRepository } from '@/models/index.js';
@@ -18,7 +17,7 @@ import { misskeyIdPattern } from '@/models/zod/misc.js';
 const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
-	res: generateSchema(res),
+	res,
 	errors: {
 		ltlDisabled: {
 			message: 'Local timeline has been disabled.',
@@ -28,7 +27,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	withFiles: z.boolean().default(false),
 	withReplies: z.boolean().default(false),
 	fileType: z.array(z.string()).optional(),
@@ -39,13 +38,12 @@ const paramDef_ = z.object({
 	sinceDate: z.number().int().optional(),
 	untilDate: z.number().int().optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -59,7 +57,7 @@ export default class extends Endpoint<
 		private activeUsersChart: ActiveUsersChart,
 		private idService: IdService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const policies = await this.roleService.getUserPolicies(
 				me ? me.id : null,
 			);

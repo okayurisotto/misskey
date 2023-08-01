@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Not, In, IsNull } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import { maximum } from '@/misc/prelude/array.js';
@@ -23,7 +22,7 @@ export const meta = {
 	requireCredential: false,
 	description:
 		'Get a list of other users that the specified user frequently replies to.',
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchUser: {
 			message: 'No such user.',
@@ -33,17 +32,16 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern,
 	limit: z.number().int().min(1).max(100).default(10),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -56,7 +54,7 @@ export default class extends Endpoint<
 		private userEntityService: UserEntityService,
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Lookup user
 			const user = await this.getterService.getUser(ps.userId).catch((err) => {
 				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {

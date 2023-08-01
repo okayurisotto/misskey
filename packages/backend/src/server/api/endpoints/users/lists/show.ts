@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
 	UserListsRepository,
@@ -18,7 +17,7 @@ export const meta = {
 	requireCredential: false,
 	kind: 'read:account',
 	description: 'Show the properties of a list.',
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchList: {
 			message: 'No such list.',
@@ -28,17 +27,16 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	listId: misskeyIdPattern,
 	forPublic: z.boolean().default(false),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -50,7 +48,7 @@ export default class extends Endpoint<
 
 		private userListEntityService: UserListEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const additionalProperties: Partial<{
 				likedCount: number;
 				isLiked: boolean;

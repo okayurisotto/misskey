@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { DriveFilesRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,10 +13,10 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
 	sinceId: misskeyIdPattern.optional(),
 	untilId: misskeyIdPattern.optional(),
@@ -34,13 +33,12 @@ const paramDef_ = z.object({
 		.default(null)
 		.describe('The local host is represented with `null`.'),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -50,7 +48,7 @@ export default class extends Endpoint<
 		private driveFileEntityService: DriveFileEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const query = this.queryService.makePaginationQuery(
 				this.driveFilesRepository.createQueryBuilder('file'),
 				ps.sinceId,

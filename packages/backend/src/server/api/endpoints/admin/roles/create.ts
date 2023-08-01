@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { RolesRepository } from '@/models/index.js';
@@ -13,10 +12,10 @@ export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,
 	requireAdmin: true,
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	name: z.string(),
 	description: z.string(),
 	color: z.string().nullable(),
@@ -32,13 +31,12 @@ const paramDef_ = z.object({
 	displayOrder: z.number(),
 	policies: z.unknown(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -49,7 +47,7 @@ export default class extends Endpoint<
 		private idService: IdService,
 		private roleEntityService: RoleEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const date = new Date();
 			const created = await this.rolesRepository
 				.insert({

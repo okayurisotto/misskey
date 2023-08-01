@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
@@ -19,23 +18,22 @@ export const meta = {
 	tags: ['users'],
 	requireCredential: false,
 	description: 'Search for users.',
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	query: z.string(),
 	offset: z.number().int().default(0),
 	limit: z.number().int().min(1).max(100).default(10),
 	origin: z.enum(['local', 'remote', 'combined']).default('combined'),
 	detail: z.boolean().default(true),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -47,7 +45,7 @@ export default class extends Endpoint<
 
 		private userEntityService: UserEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const activeThreshold = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30); // 30日
 
 			ps.query = ps.query.trim();

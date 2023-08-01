@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { DriveFilesRepository, UsersRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -47,20 +46,19 @@ export const meta = {
 			id: 'caf3ca38-c6e5-472e-a30c-b05377dcc240',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.union([
+export const paramDef = z.union([
 	z.object({ fileId: misskeyIdPattern }),
 	z.object({ url: z.string() }),
 ]);
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -72,7 +70,7 @@ export default class extends Endpoint<
 
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const file =
 				'fileId' in ps
 					? await this.driveFilesRepository.findOneBy({ id: ps.fileId })

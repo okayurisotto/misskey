@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { IsNull } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { EmojisRepository } from '@/models/index.js';
@@ -15,19 +14,18 @@ export const meta = {
 	requireCredential: false,
 	allowGet: true,
 	cacheSec: 3600,
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	name: z.string(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -39,7 +37,7 @@ export default class extends Endpoint<
 
 		private emojiEntityService: EmojiEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const emoji = await this.emojisRepository.findOneOrFail({
 				where: {
 					name: ps.name,

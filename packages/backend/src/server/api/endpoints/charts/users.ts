@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import UsersChart from '@/core/chart/charts/users.js';
@@ -18,27 +17,26 @@ const res = z.object({
 });
 export const meta = {
 	tags: ['charts', 'users'],
-	res: generateSchema(res),
+	res,
 	allowGet: true,
 	cacheSec: 60 * 60,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	span: z.enum(['day', 'hour']),
 	limit: z.number().int().min(1).max(500).default(30),
 	offset: z.number().int().nullable().default(null),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(private usersChart: UsersChart) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			return await this.usersChart.getChart(
 				ps.span,
 				ps.limit,

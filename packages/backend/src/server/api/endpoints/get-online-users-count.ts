@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { MoreThan } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import { USER_ONLINE_THRESHOLD } from '@/const.js';
@@ -13,24 +12,23 @@ export const meta = {
 	requireCredential: false,
 	allowGet: true,
 	cacheSec: 60 * 1,
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({});
-export const paramDef = generateSchema(paramDef_);
+export const paramDef = z.object({});
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
 		@Inject(DI.usersRepository)
 		private usersRepository: UsersRepository,
 	) {
-		super(meta, paramDef_, async () => {
+		super(meta, paramDef, async () => {
 			const count = await this.usersRepository.countBy({
 				lastActiveDate: MoreThan(new Date(Date.now() - USER_ONLINE_THRESHOLD)),
 			});

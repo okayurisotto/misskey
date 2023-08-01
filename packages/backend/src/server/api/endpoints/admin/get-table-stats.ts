@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,24 +9,23 @@ export const meta = {
 	requireCredential: true,
 	requireAdmin: true,
 	tags: ['admin'],
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.unknown();
-export const paramDef = generateSchema(paramDef_);
+export const paramDef = z.unknown();
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
 		@Inject(DI.db)
 		private db: DataSource,
 	) {
-		super(meta, paramDef_, async () => {
+		super(meta, paramDef, async () => {
 			const sizes = await this.db
 				.query(
 					`

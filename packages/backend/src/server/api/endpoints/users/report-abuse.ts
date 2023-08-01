@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import sanitizeHtml from 'sanitize-html';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
@@ -41,17 +40,16 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	userId: misskeyIdPattern,
 	comment: z.string().min(1).max(2048),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
@@ -68,7 +66,7 @@ export default class extends Endpoint<
 		private roleService: RoleService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Lookup user
 			const user = await this.getterService.getUser(ps.userId).catch((err) => {
 				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {

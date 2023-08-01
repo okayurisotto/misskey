@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
@@ -31,7 +30,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	id: misskeyIdPattern,
 	name: z.string().regex(/^[a-zA-Z0-9_]+$/),
 	fileId: misskeyIdPattern.optional(),
@@ -46,13 +45,12 @@ const paramDef_ = z.object({
 	localOnly: z.boolean().optional(),
 	roleIdsThatCanBeUsedThisEmojiAsReaction: z.array(z.string()).optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
@@ -61,7 +59,7 @@ export default class extends Endpoint<
 
 		private customEmojiService: CustomEmojiService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			let driveFile;
 
 			if (ps.fileId) {

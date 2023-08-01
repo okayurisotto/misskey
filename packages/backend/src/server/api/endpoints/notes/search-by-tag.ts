@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { NotesRepository } from '@/models/index.js';
@@ -15,7 +14,7 @@ import { misskeyIdPattern } from '@/models/zod/misc.js';
 const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes', 'hashtags'],
-	res: generateSchema(res),
+	res,
 } as const;
 
 const paramDefBase = z.object({
@@ -30,7 +29,7 @@ const paramDefBase = z.object({
 	untilId: misskeyIdPattern,
 	limit: z.number().int().min(1).max(100).default(10),
 });
-const paramDef_ = z.union([
+export const paramDef = z.union([
 	paramDefBase.merge(
 		z.object({
 			tag: z.string().min(1),
@@ -47,13 +46,12 @@ const paramDef_ = z.union([
 		}),
 	),
 ]);
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -63,7 +61,7 @@ export default class extends Endpoint<
 		private noteEntityService: NoteEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const query = this.queryService
 				.makePaginationQuery(
 					this.notesRepository.createQueryBuilder('note'),

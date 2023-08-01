@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import ms from 'ms';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -23,24 +22,23 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 300,
 	},
-	res: generateSchema(res),
+	res,
 	errors: {},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	postId: misskeyIdPattern,
 	title: z.string().min(1),
 	description: z.string().nullable().optional(),
 	fileIds: uniqueItems(z.array(misskeyIdPattern).min(1).max(32)),
 	isSensitive: z.boolean().default(false),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -52,7 +50,7 @@ export default class extends Endpoint<
 
 		private galleryPostEntityService: GalleryPostEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const files = (
 				await Promise.all(
 					ps.fileIds.map((fileId) =>

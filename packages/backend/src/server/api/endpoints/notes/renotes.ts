@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import z from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import type { NotesRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueryService } from '@/core/QueryService.js';
@@ -15,7 +14,7 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
 	requireCredential: false,
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchNote: {
 			message: 'No such note.',
@@ -25,19 +24,18 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	noteId: misskeyIdPattern,
 	limit: z.number().int().min(1).max(100).default(10),
 	sinceId: misskeyIdPattern.optional(),
 	untilId: misskeyIdPattern.optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -48,7 +46,7 @@ export default class extends Endpoint<
 		private queryService: QueryService,
 		private getterService: GetterService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
 				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
 					throw new ApiError(meta.errors.noSuchNote);

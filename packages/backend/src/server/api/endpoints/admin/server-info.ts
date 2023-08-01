@@ -1,6 +1,5 @@
 import * as os from 'node:os';
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import si from 'systeminformation';
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
@@ -32,17 +31,16 @@ export const meta = {
 	requireCredential: true,
 	requireModerator: true,
 	tags: ['admin', 'meta'],
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.unknown();
-export const paramDef = generateSchema(paramDef_);
+export const paramDef = z.unknown();
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -52,7 +50,7 @@ export default class extends Endpoint<
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
 	) {
-		super(meta, paramDef_, async () => {
+		super(meta, paramDef, async () => {
 			const memStats = await si.mem();
 			const fsStats = await si.fsSize();
 			const netInterface = await si.networkInterfaceDefault();

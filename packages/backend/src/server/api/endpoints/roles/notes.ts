@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -23,10 +22,10 @@ export const meta = {
 			id: 'eb70323a-df61-4dd4-ad90-89c83c7cf26e',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	roleId: misskeyIdPattern,
 	limit: z.number().int().min(1).max(100).default(10),
 	sinceId: misskeyIdPattern.optional(),
@@ -34,13 +33,12 @@ const paramDef_ = z.object({
 	sinceDate: z.number().int().optional(),
 	untilDate: z.number().int().optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -57,7 +55,7 @@ export default class extends Endpoint<
 		private noteEntityService: NoteEntityService,
 		private queryService: QueryService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const role = await this.rolesRepository.findOneBy({
 				id: ps.roleId,
 				isPublic: true,

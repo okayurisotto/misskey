@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as stream from 'node:stream/promises';
 import { Inject, Injectable } from '@nestjs/common';
+import { generateSchema } from '@anatine/zod-openapi';
 import { DI } from '@/di-symbols.js';
 import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser, User } from '@/models/entities/User.js';
@@ -334,9 +335,10 @@ export class ApiCallService implements OnApplicationShutdown {
 		}
 
 		// Cast non JSON input
-		if ((ep.meta.requireFile || request.method === 'GET') && ep.params.properties) {
-			for (const k of Object.keys(ep.params.properties)) {
-				const param = ep.params.properties![k];
+		const params = generateSchema(ep.params);
+		if ((ep.meta.requireFile || request.method === 'GET') && params.properties) {
+			for (const k of Object.keys(params.properties)) {
+				const param = params.properties![k];
 				if (['boolean', 'number', 'integer'].includes(param.type ?? '') && typeof data[k] === 'string') {
 					try {
 						data[k] = JSON.parse(data[k]);

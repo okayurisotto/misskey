@@ -33,7 +33,7 @@ export const meta = {
 		max: 300,
 	},
 	kind: 'write:notes',
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchRenoteTarget: {
 			message: 'No such renote target.',
@@ -78,20 +78,20 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_fileIds = extendApi(z.array(misskeyIdPattern).min(1).max(16), {
+const paramDeffileIds = extendApi(z.array(misskeyIdPattern).min(1).max(16), {
 	uniqueItems: true,
 });
-const paramDef_mediaIds = extendApi(z.array(misskeyIdPattern).min(1).max(16), {
+const paramDefmediaIds = extendApi(z.array(misskeyIdPattern).min(1).max(16), {
 	uniqueItems: true,
 });
-const paramDef_poll = z.object({
+const paramDefpoll = z.object({
 	choices: uniqueItems(z.array(z.string().min(1).max(50)).min(2).max(10)),
 	expiredAfter: z.number().int().min(1).nullable().optional(),
 	expiresAt: z.number().int().nullable().optional(),
 	multiple: z.boolean().optional(),
 });
-const paramDef_renoteId = misskeyIdPattern;
-const paramDef_text = z.string().min(1).max(MAX_NOTE_TEXT_LENGTH);
+const paramDefrenoteId = misskeyIdPattern;
+const paramDeftext = z.string().min(1).max(MAX_NOTE_TEXT_LENGTH);
 const paramDefBase = z.object({
 	channelId: misskeyIdPattern.nullable().optional(),
 	cw: z.string().max(100).nullable().optional(),
@@ -114,27 +114,26 @@ const paramDefBase = z.object({
 		.default('public'),
 	visibleUserIds: uniqueItems(z.array(misskeyIdPattern)).optional(),
 	...{
-		fileIds: uniqueItems(paramDef_fileIds).optional(),
-		mediaIds: uniqueItems(paramDef_mediaIds).optional(),
-		poll: paramDef_poll.nullable().optional(),
-		renoteId: paramDef_renoteId.nullable().optional(),
-		text: paramDef_text.optional(),
+		fileIds: uniqueItems(paramDeffileIds).optional(),
+		mediaIds: uniqueItems(paramDefmediaIds).optional(),
+		poll: paramDefpoll.nullable().optional(),
+		renoteId: paramDefrenoteId.nullable().optional(),
+		text: paramDeftext.optional(),
 	},
 });
-const paramDef_ = z.union([
-	paramDefBase.extend({ fileIds: paramDef_fileIds }),
-	paramDefBase.extend({ mediaIds: paramDef_mediaIds }),
-	paramDefBase.extend({ poll: paramDef_poll }),
-	paramDefBase.extend({ renoteId: paramDef_renoteId }),
-	paramDefBase.extend({ text: paramDef_text }),
+export const paramDef = z.union([
+	paramDefBase.extend({ fileIds: paramDeffileIds }),
+	paramDefBase.extend({ mediaIds: paramDefmediaIds }),
+	paramDefBase.extend({ poll: paramDefpoll }),
+	paramDefBase.extend({ renoteId: paramDefrenoteId }),
+	paramDefBase.extend({ text: paramDeftext }),
 ]);
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -156,7 +155,7 @@ export default class extends Endpoint<
 		private noteEntityService: NoteEntityService,
 		private noteCreateService: NoteCreateService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			let visibleUsers: User[] = [];
 			if (ps.visibleUserIds) {
 				visibleUsers = await this.usersRepository.findBy({

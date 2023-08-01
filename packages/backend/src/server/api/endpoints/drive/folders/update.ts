@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { DriveFoldersRepository } from '@/models/index.js';
@@ -32,21 +31,20 @@ export const meta = {
 			id: 'dbeb024837894013aed44279f9199740',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	folderId: misskeyIdPattern,
 	name: z.string().max(200).optional(),
 	parentId: misskeyIdPattern.nullable().optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -56,7 +54,7 @@ export default class extends Endpoint<
 		private driveFolderEntityService: DriveFolderEntityService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Fetch folder
 			const folder = await this.driveFoldersRepository.findOneBy({
 				id: ps.folderId,

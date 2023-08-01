@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AppsRepository } from '@/models/index.js';
@@ -19,19 +18,18 @@ export const meta = {
 			id: 'dce83913-2dc6-4093-8a7b-71dbb11718a3',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	appId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -40,7 +38,7 @@ export default class extends Endpoint<
 
 		private appEntityService: AppEntityService,
 	) {
-		super(meta, paramDef_, async (ps, user, token) => {
+		super(meta, paramDef, async (ps, user, token) => {
 			const isSecure = user != null && token == null;
 
 			// Lookup app

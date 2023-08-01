@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { RolesRepository } from '@/models/index.js';
@@ -21,7 +20,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	roleId: misskeyIdPattern,
 	name: z.string(),
 	description: z.string(),
@@ -38,13 +37,12 @@ const paramDef_ = z.object({
 	displayOrder: z.number(),
 	policies: z.unknown(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
@@ -53,7 +51,7 @@ export default class extends Endpoint<
 
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef_, async (ps) => {
+		super(meta, paramDef, async (ps) => {
 			const roleExist = await this.rolesRepository.exist({
 				where: { id: ps.roleId },
 			});

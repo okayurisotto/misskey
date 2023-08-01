@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
@@ -20,7 +19,7 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes', 'lists'],
 	requireCredential: true,
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchList: {
 			message: 'No such list.',
@@ -30,7 +29,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	listId: misskeyIdPattern,
 	limit: z.number().int().min(1).max(100).default(10),
 	sinceId: misskeyIdPattern.optional(),
@@ -45,13 +44,12 @@ const paramDef_ = z.object({
 		.default(false)
 		.describe('Only show notes that have attached files.'),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -68,7 +66,7 @@ export default class extends Endpoint<
 		private queryService: QueryService,
 		private activeUsersChart: ActiveUsersChart,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const list = await this.userListsRepository.findOneBy({
 				id: ps.listId,
 				userId: me.id,

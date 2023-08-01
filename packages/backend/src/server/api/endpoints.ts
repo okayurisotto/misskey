@@ -1,4 +1,5 @@
-import type { Schema } from '@/misc/json-schema.js';
+import type { z } from 'zod';
+
 import { RolePolicies } from '@/core/RoleService.js';
 
 import * as ep___admin_meta from './endpoints/admin/meta.js';
@@ -700,7 +701,7 @@ export interface IEndpointMeta {
 		};
 	};
 
-	readonly res?: Schema;
+	readonly res?: z.ZodType;
 
 	/**
 	 * このエンドポイントにリクエストするのにユーザー情報が必須か否か
@@ -789,7 +790,7 @@ export interface IEndpointMeta {
 export interface IEndpoint {
 	name: string;
 	meta: IEndpointMeta;
-	params: Schema;
+	params: z.ZodType;
 }
 
 const endpoints: IEndpoint[] = (eps as [string, any]).map(([name, ep]) => {

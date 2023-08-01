@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import ms from 'ms';
 import { Inject, Injectable } from '@nestjs/common';
 import type { DriveFilesRepository } from '@/models/index.js';
@@ -26,7 +25,7 @@ export const meta = {
 	requireFile: true,
 	kind: 'write:drive',
 	description: 'Upload a new drive file.',
-	res: generateSchema(res),
+	res,
 	errors: {
 		invalidFileName: {
 			message: 'Invalid file name.',
@@ -48,20 +47,19 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	folderId: misskeyIdPattern.nullable().default(null),
 	name: z.string().nullable().default(null),
 	comment: z.string().max(DB_MAX_IMAGE_COMMENT_LENGTH).nullable().default(null),
 	isSensitive: z.boolean().default(false),
 	force: z.boolean().default(false),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -72,7 +70,7 @@ export default class extends Endpoint<
 		private metaService: MetaService,
 		private driveService: DriveService,
 	) {
-		super(meta, paramDef_, async (ps, me, _, file, cleanup, ip, headers) => {
+		super(meta, paramDef, async (ps, me, _, file, cleanup, ip, headers) => {
 			// Get 'name' parameter
 			let name = ps.name ?? file!.name ?? null;
 			if (name != null) {

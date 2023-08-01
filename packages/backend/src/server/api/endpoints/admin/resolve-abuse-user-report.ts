@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type {
@@ -18,11 +17,10 @@ export const meta = {
 	requireModerator: true,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	reportId: misskeyIdPattern,
 	forward: z.boolean().default(false),
 });
-export const paramDef = generateSchema(paramDef_);
 
 // TODO: ロジックをサービスに切り出す
 
@@ -30,7 +28,7 @@ export const paramDef = generateSchema(paramDef_);
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
@@ -44,7 +42,7 @@ export default class extends Endpoint<
 		private instanceActorService: InstanceActorService,
 		private apRendererService: ApRendererService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const report = await this.abuseUserReportsRepository.findOneBy({
 				id: ps.reportId,
 			});

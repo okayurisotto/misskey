@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
 import type { NoteFavoritesRepository } from '@/models/index.js';
@@ -34,16 +33,15 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	noteId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
@@ -54,7 +52,7 @@ export default class extends Endpoint<
 		private getterService: GetterService,
 		private achievementService: AchievementService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Get favoritee
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
 				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {

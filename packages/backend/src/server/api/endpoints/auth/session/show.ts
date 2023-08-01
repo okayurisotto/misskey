@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AuthSessionsRepository } from '@/models/index.js';
@@ -24,19 +23,18 @@ export const meta = {
 			id: 'bd72c97d-eba7-4adb-a467-f171b8847250',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	token: z.string(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -45,7 +43,7 @@ export default class extends Endpoint<
 
 		private authSessionEntityService: AuthSessionEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			// Lookup session
 			const session = await this.authSessionsRepository.findOneBy({
 				token: ps.token,

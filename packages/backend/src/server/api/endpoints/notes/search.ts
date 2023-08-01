@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type { NotesRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -16,7 +15,7 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
 	requireCredential: false,
-	res: generateSchema(res),
+	res,
 	errors: {
 		unavailable: {
 			message: 'Search of notes unavailable.',
@@ -26,7 +25,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	query: z.string(),
 	sinceId: misskeyIdPattern.optional(),
 	untilId: misskeyIdPattern.optional(),
@@ -39,7 +38,6 @@ const paramDef_ = z.object({
 	userId: misskeyIdPattern.nullable().default(null),
 	channelId: misskeyIdPattern.nullable().default(null),
 });
-export const paramDef = generateSchema(paramDef_);
 
 // TODO: ロジックをサービスに切り出す
 
@@ -47,7 +45,7 @@ export const paramDef = generateSchema(paramDef_);
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -58,7 +56,7 @@ export default class extends Endpoint<
 		private searchService: SearchService,
 		private roleService: RoleService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const policies = await this.roleService.getUserPolicies(
 				me ? me.id : null,
 			);

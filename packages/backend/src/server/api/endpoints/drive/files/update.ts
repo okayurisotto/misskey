@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import type {
 	DriveFilesRepository,
@@ -47,23 +46,22 @@ export const meta = {
 			id: '7f59dccb-f465-75ab-5cf4-3ce44e3282f7',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	fileId: misskeyIdPattern,
 	folderId: misskeyIdPattern.nullable().optional(),
 	name: z.string().optional(),
 	isSensitive: z.boolean().optional(),
 	comment: z.string().max(512).nullable().optional(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -77,7 +75,7 @@ export default class extends Endpoint<
 		private roleService: RoleService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
 			const alwaysMarkNsfw = (await this.roleService.getUserPolicies(me.id))
 				.alwaysMarkNsfw;

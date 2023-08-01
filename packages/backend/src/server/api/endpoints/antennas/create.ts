@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
@@ -33,10 +32,10 @@ export const meta = {
 			id: 'faf47050-e8b5-438c-913c-db2b1576fde4',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	name: z.string().min(1).max(100),
 	src: z.enum(['home', 'all', 'users', 'list']),
 	userListId: misskeyIdPattern.nullable().optional(),
@@ -48,13 +47,12 @@ const paramDef_ = z.object({
 	withFile: z.boolean(),
 	notify: z.boolean(),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -69,7 +67,7 @@ export default class extends Endpoint<
 		private idService: IdService,
 		private globalEventService: GlobalEventService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			if (ps.keywords.length === 0 || ps.keywords[0].every((x) => x === '')) {
 				throw new Error('invalid param');
 			}

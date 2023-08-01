@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -31,26 +30,25 @@ export const meta = {
 			id: '8b18c2b7-68fe-4edb-9892-c0cbaeb6c913',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	noteId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
 		private userEntityService: UserEntityService,
 		private notePiningService: NotePiningService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			await this.notePiningService.addPinned(me, ps.noteId).catch((err) => {
 				if (err.id === '70c4e51f-5bea-449c-a030-53bee3cce202') {
 					throw new ApiError(meta.errors.noSuchNote);

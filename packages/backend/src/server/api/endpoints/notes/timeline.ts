@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import type { NotesRepository, FollowingsRepository } from '@/models/index.js';
@@ -16,10 +15,10 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
 	requireCredential: true,
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
 	sinceId: misskeyIdPattern.optional(),
 	untilId: misskeyIdPattern.optional(),
@@ -31,13 +30,12 @@ const paramDef_ = z.object({
 	withFiles: z.boolean().default(false),
 	withReplies: z.boolean().default(false),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -52,7 +50,7 @@ export default class extends Endpoint<
 		private activeUsersChart: ActiveUsersChart,
 		private idService: IdService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const followees = await this.followingsRepository
 				.createQueryBuilder('following')
 				.select('following.followeeId')

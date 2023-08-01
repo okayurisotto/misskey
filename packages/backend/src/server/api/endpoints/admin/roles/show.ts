@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { RolesRepository } from '@/models/index.js';
@@ -20,19 +19,18 @@ export const meta = {
 			id: '07dc7d34-c0d8-49b7-96c6-db3ce64ee0b3',
 		},
 	},
-	res: generateSchema(res),
+	res,
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	roleId: misskeyIdPattern,
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -41,7 +39,7 @@ export default class extends Endpoint<
 
 		private roleEntityService: RoleEntityService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			const role = await this.rolesRepository.findOneBy({ id: ps.roleId });
 			if (role == null) {
 				throw new ApiError(meta.errors.noSuchRole);

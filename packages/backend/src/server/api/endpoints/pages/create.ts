@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { generateSchema } from '@anatine/zod-openapi';
 import ms from 'ms';
 import { Inject, Injectable } from '@nestjs/common';
 import type { DriveFilesRepository, PagesRepository } from '@/models/index.js';
@@ -22,7 +21,7 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 10,
 	},
-	res: generateSchema(res),
+	res,
 	errors: {
 		noSuchFile: {
 			message: 'No such file.',
@@ -37,7 +36,7 @@ export const meta = {
 	},
 } as const;
 
-const paramDef_ = z.object({
+export const paramDef = z.object({
 	title: z.string(),
 	name: z.string().min(1),
 	summary: z.string().nullable().optional(),
@@ -49,13 +48,12 @@ const paramDef_ = z.object({
 	alignCenter: z.boolean().default(false),
 	hideTitleWhenPinned: z.boolean().default(false),
 });
-export const paramDef = generateSchema(paramDef_);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
-	typeof paramDef_,
+	typeof paramDef,
 	typeof res
 > {
 	constructor(
@@ -68,7 +66,7 @@ export default class extends Endpoint<
 		private pageEntityService: PageEntityService,
 		private idService: IdService,
 	) {
-		super(meta, paramDef_, async (ps, me) => {
+		super(meta, paramDef, async (ps, me) => {
 			let eyeCatchingImage = null;
 			if (ps.eyeCatchingImageId != null) {
 				eyeCatchingImage = await this.driveFilesRepository.findOneBy({
