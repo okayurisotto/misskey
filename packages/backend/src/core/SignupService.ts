@@ -16,6 +16,7 @@ import { bindThis } from '@/decorators.js';
 import UsersChart from '@/core/chart/charts/users.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { MetaService } from '@/core/MetaService.js';
+import { LocalUsernameSchema, PasswordSchema } from '@/models/zod/misc.js';
 
 @Injectable()
 export class SignupService {
@@ -52,13 +53,13 @@ export class SignupService {
 		let hash = passwordHash;
 
 		// Validate username
-		if (!this.userEntityService.validateLocalUsername(username)) {
+		if (!LocalUsernameSchema.safeParse(username).success) {
 			throw new Error('INVALID_USERNAME');
 		}
 
 		if (password != null && passwordHash == null) {
 			// Validate password
-			if (!this.userEntityService.validatePassword(password)) {
+			if (!PasswordSchema.safeParse(password).success) {
 				throw new Error('INVALID_PASSWORD');
 			}
 

@@ -1,5 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
-import _Ajv from 'ajv';
+import { z } from 'zod';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import Logger from '@/logger.js';
@@ -10,39 +10,17 @@ import { QueueLoggerService } from '../QueueLoggerService.js';
 import { DBAntennaImportJobData } from '../types.js';
 import type * as Bull from 'bullmq';
 
-const Ajv = _Ajv.default;
-
-const validate = new Ajv().compile({
-	type: 'object',
-	properties: {
-		name: { type: 'string', minLength: 1, maxLength: 100 },
-		src: { type: 'string', enum: ['home', 'all', 'users', 'list'] },
-		userListAccts: {
-			type: 'array',
-			items: {
-				type: 'string',
-			},
-			nullable: true,
-		},
-		keywords: { type: 'array', items: {
-			type: 'array', items: {
-				type: 'string',
-			},
-		} },
-		excludeKeywords: { type: 'array', items: {
-			type: 'array', items: {
-				type: 'string',
-			},
-		} },
-		users: { type: 'array', items: {
-			type: 'string',
-		} },
-		caseSensitive: { type: 'boolean' },
-		withReplies: { type: 'boolean' },
-		withFile: { type: 'boolean' },
-		notify: { type: 'boolean' },
-	},
-	required: ['name', 'src', 'keywords', 'excludeKeywords', 'users', 'caseSensitive', 'withReplies', 'withFile', 'notify'],
+const validate = z.object({
+	name: z.string().min(1).max(100),
+	src: z.enum(['home', 'all', 'users', 'list']),
+	userListAccts: z.array(z.string()).nullable().optional(),
+	keywords: z.array(z.array(z.string())),
+	excludeKeywords: z.array(z.array(z.string())),
+	users: z.array(z.string()),
+	caseSensitive: z.boolean(),
+	withReplies: z.boolean(),
+	withFile: z.boolean(),
+	notify: z.boolean(),
 });
 
 @Injectable()
@@ -66,7 +44,7 @@ export class ImportAntennasProcessorService {
 		try {
 			for (const antenna of job.data.antenna) {
 				if (antenna.keywords.length === 0 || antenna.keywords[0].every(x => x === '')) continue;
-				if (!validate(antenna)) {
+				if (!validate.safeParse(antenna).success) {
 					this.logger.warn('Validation Failed');
 					continue;
 				}

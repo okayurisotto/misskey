@@ -12,6 +12,7 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';
+import { LocalUsernameSchema } from '@/models/zod/misc.js';
 
 const res = z.array(UserSchema);
 export const meta = {
@@ -92,7 +93,7 @@ export default class extends Endpoint<
 							});
 
 							// Also search username if it qualifies as username
-							if (this.userEntityService.validateLocalUsername(ps.query)) {
+							if (LocalUsernameSchema.safeParse(ps.query).success) {
 								qb.orWhere('user.usernameLower LIKE :username', {
 									username: '%' + sqlLikeEscape(ps.query.toLowerCase()) + '%',
 								});

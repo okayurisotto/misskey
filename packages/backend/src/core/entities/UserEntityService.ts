@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { In, Not } from 'typeorm';
 import * as Redis from 'ioredis';
-import _Ajv from 'ajv';
 import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
@@ -10,7 +9,6 @@ import type { Promiseable } from '@/misc/prelude/await-all.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { USER_ACTIVE_THRESHOLD, USER_ONLINE_THRESHOLD } from '@/const.js';
 import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser, User } from '@/models/entities/User.js';
-import { birthdaySchema, descriptionSchema, localUsernameSchema, locationSchema, nameSchema, passwordSchema } from '@/models/entities/User.js';
 import type { UsersRepository, UserSecurityKeysRepository, FollowingsRepository, FollowRequestsRepository, BlockingsRepository, MutingsRepository, DriveFilesRepository, NoteUnreadsRepository, ChannelFollowingsRepository, UserNotePiningsRepository, UserProfilesRepository, InstancesRepository, AnnouncementReadsRepository, AnnouncementsRepository, PagesRepository, UserProfile, RenoteMutingsRepository, UserMemoRepository } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
@@ -30,9 +28,6 @@ type IsMeAndIsUserDetailed<ExpectsMe extends boolean | null, Detailed extends bo
 		ExpectsMe extends false ? Packed<'UserDetailedNotMe'> :
 		Packed<'UserDetailed'> :
 	Packed<'UserLite'>;
-
-const Ajv = _Ajv.default;
-const ajv = new Ajv();
 
 function isLocalUser(user: User): user is LocalUser;
 function isLocalUser<T extends { host: User['host'] }>(user: T): user is (T & { host: null; });
@@ -136,15 +131,6 @@ export class UserEntityService implements OnModuleInit {
 		this.roleService = this.moduleRef.get('RoleService');
 		this.federatedInstanceService = this.moduleRef.get('FederatedInstanceService');
 	}
-
-	//#region Validators
-	public validateLocalUsername = ajv.compile(localUsernameSchema);
-	public validatePassword = ajv.compile(passwordSchema);
-	public validateName = ajv.compile(nameSchema);
-	public validateDescription = ajv.compile(descriptionSchema);
-	public validateLocation = ajv.compile(locationSchema);
-	public validateBirthday = ajv.compile(birthdaySchema);
-	//#endregion
 
 	public isLocalUser = isLocalUser;
 	public isRemoteUser = isRemoteUser;
