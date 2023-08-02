@@ -24,7 +24,11 @@ const NoteSchemaBase = z.object({
 	poll: z.unknown().nullable().optional(),
 	channelId: MisskeyIdSchema.nullable().optional(),
 	channel: z
-		.object({ id: z.string(), name: z.string().nullable() })
+		.object({
+			id: z.string(),
+			name: z.string().nullable(),
+			color: z.string(),
+		})
 		.nullable()
 		.optional(),
 	localOnly: z.boolean().optional(),

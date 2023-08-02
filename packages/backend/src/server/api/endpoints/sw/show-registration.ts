@@ -4,11 +4,13 @@ import type { SwSubscriptionsRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 
-const res = z.object({
-	userId: z.string(),
-	endpoint: z.string(),
-	sendReadMessage: z.boolean(),
-});
+const res = z
+	.object({
+		userId: z.string(),
+		endpoint: z.string(),
+		sendReadMessage: z.boolean(),
+	})
+	.nullable();
 export const meta = {
 	tags: ['account'],
 	requireCredential: true,

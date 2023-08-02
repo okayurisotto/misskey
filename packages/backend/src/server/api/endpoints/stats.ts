@@ -19,6 +19,7 @@ const res = z.object({
 	instances: z.number(),
 	driveUsageLocal: z.number(),
 	driveUsageRemote: z.number(),
+	reactionsCount: z.number(),
 });
 export const meta = {
 	requireCredential: false,

@@ -33,16 +33,16 @@ export default class extends Endpoint<
 
 			const items = await query.getMany();
 
-			const res = [] as string[][];
+			const res_ = [] as string[][];
 
 			for (const item of items) {
-				if (res.some((scope) => scope.join('.') === item.scope.join('.'))) {
+				if (res_.some((scope) => scope.join('.') === item.scope.join('.'))) {
 					continue;
 				}
-				res.push(item.scope);
+				res_.push(item.scope);
 			}
 
-			return res satisfies z.infer<typeof res>;
+			return res_ satisfies z.infer<typeof res>;
 		});
 	}
 }

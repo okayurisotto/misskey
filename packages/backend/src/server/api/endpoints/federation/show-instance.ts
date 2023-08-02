@@ -7,7 +7,7 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { DI } from '@/di-symbols.js';
 import { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
 
-const res = FederationInstanceSchema;
+const res = FederationInstanceSchema.nullable();
 export const meta = {
 	tags: ['federation'],
 	requireCredential: false,
@@ -37,9 +37,9 @@ export default class extends Endpoint<
 				host: this.utilityService.toPuny(ps.host),
 			});
 
-			return instance
-				? await this.instanceEntityService.pack(instance)
-				: (null satisfies z.infer<typeof res>);
+			return (
+				instance ? await this.instanceEntityService.pack(instance) : null
+			) satisfies z.infer<typeof res>;
 		});
 	}
 }

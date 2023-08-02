@@ -1,4 +1,4 @@
-import type { z } from 'zod';
+import type { OpenApiZod } from 'zod2spec/built/type.js';
 
 import { RolePolicies } from '@/core/RoleService.js';
 
@@ -701,7 +701,7 @@ export interface IEndpointMeta {
 		};
 	};
 
-	readonly res?: z.ZodType;
+	readonly res?: OpenApiZod;
 
 	/**
 	 * このエンドポイントにリクエストするのにユーザー情報が必須か否か
@@ -790,7 +790,7 @@ export interface IEndpointMeta {
 export interface IEndpoint {
 	name: string;
 	meta: IEndpointMeta;
-	params: z.ZodType;
+	params: OpenApiZod;
 }
 
 const endpoints: IEndpoint[] = (eps as [string, any]).map(([name, ep]) => {

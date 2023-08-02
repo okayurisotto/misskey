@@ -26,6 +26,8 @@ const res = z.object({
 	net: z.object({
 		interface: z.string(),
 	}),
+
+	redis: z.string().optional(),
 });
 export const meta = {
 	requireCredential: true,

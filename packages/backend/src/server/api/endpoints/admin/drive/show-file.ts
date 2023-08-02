@@ -34,6 +34,12 @@ const res = z.object({
 	folderId: MisskeyIdSchema.nullable(),
 	isSensitive: z.boolean(),
 	isLink: z.boolean(),
+
+	maybePorn: z.boolean(),
+	maybeSensitive: z.boolean(),
+	webpublicType: z.string().nullable(),
+	requestIp: z.string().nullable(),
+	requestHeaders: z.record(z.string(), z.string()).nullable(),
 });
 export const meta = {
 	tags: ['admin'],
