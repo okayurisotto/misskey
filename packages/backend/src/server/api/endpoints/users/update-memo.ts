@@ -1,10 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import type { UserMemoRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
-import { GetterService } from '@/server/api/GetterService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
@@ -39,51 +37,49 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.userMemosRepository)
-		private userMemosRepository: UserMemoRepository,
-		private getterService: GetterService,
-		private idService: IdService,
+		private readonly prismaService: PrismaService,
+		private readonly idService: IdService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			// Get target
-			const target = await this.getterService
-				.getUser(ps.userId)
-				.catch((err) => {
-					if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
-						throw new ApiError(meta.errors.noSuchUser);
-					}
-					throw err;
-				});
+			const target = await this.prismaService.client.user.findUnique({
+				where: { id: ps.userId },
+			});
+			if (target === null) {
+				throw new ApiError(meta.errors.noSuchUser);
+			}
 
-			// 引数がnullか空文字であれば、パーソナルメモを削除する
+			// 引数が空文字列かnullであればメモを削除する
 			if (ps.memo === '' || ps.memo == null) {
-				await this.userMemosRepository.delete({
-					userId: me.id,
-					targetUserId: target.id,
-				});
+				await this.prismaService.client.user_memo
+					.delete({
+						where: {
+							userId_targetUserId: {
+								userId: me.id,
+								targetUserId: target.id,
+							},
+						},
+					})
+					.catch(() => {}); // 削除対象のメモが存在しなかった場合
 				return;
 			}
 
-			// 以前に作成されたパーソナルメモがあるかどうか確認
-			const previousMemo = await this.userMemosRepository.findOneBy({
-				userId: me.id,
-				targetUserId: target.id,
-			});
-
-			if (!previousMemo) {
-				await this.userMemosRepository.insert({
+			await this.prismaService.client.user_memo.upsert({
+				where: {
+					userId_targetUserId: {
+						userId: me.id,
+						targetUserId: target.id,
+					},
+				},
+				create: {
 					id: this.idService.genId(),
 					userId: me.id,
 					targetUserId: target.id,
 					memo: ps.memo,
-				});
-			} else {
-				await this.userMemosRepository.update(previousMemo.id, {
-					userId: me.id,
-					targetUserId: target.id,
+				},
+				update: {
 					memo: ps.memo,
-				});
-			}
+				},
+			});
 		});
 	}
 }
