@@ -5,6 +5,7 @@ module.exports = {
 	},
 	extends: [
 		'../shared/.eslintrc.js',
+		'prettier',
 	],
 	rules: {
 		'import/order': ['warn', {
