@@ -79,12 +79,27 @@ export class PageEntityService {
 			});
 		}
 
-		return await awaitAll({
+		const result = await awaitAll({
+			user: () =>
+				this.userEntityService.pack(page.user ?? page.userId, me), // { detail: true } すると無限ループするので注意
+			eyeCatchingImage: () =>
+				page.eyeCatchingImageId
+					? this.driveFileEntityService.pack(page.eyeCatchingImageId)
+					: Promise.resolve(null),
+			attachedFiles: async () =>
+				this.driveFileEntityService.packMany((await Promise.all(attachedFiles)).filter((x): x is DriveFile => x != null)),
+			isLiked: () =>
+				meId
+					? this.pageLikesRepository.exist({ where: { pageId: page.id, userId: meId } })
+					: Promise.resolve(undefined),
+		});
+
+		return {
 			id: page.id,
 			createdAt: page.createdAt.toISOString(),
 			updatedAt: page.updatedAt.toISOString(),
 			userId: page.userId,
-			user: this.userEntityService.pack(page.user ?? page.userId, me), // { detail: true } すると無限ループするので注意
+			user: result.user,
 			content: page.content,
 			variables: page.variables,
 			title: page.title,
@@ -95,11 +110,11 @@ export class PageEntityService {
 			font: page.font,
 			script: page.script,
 			eyeCatchingImageId: page.eyeCatchingImageId,
-			eyeCatchingImage: page.eyeCatchingImageId ? await this.driveFileEntityService.pack(page.eyeCatchingImageId) : null,
-			attachedFiles: this.driveFileEntityService.packMany((await Promise.all(attachedFiles)).filter((x): x is DriveFile => x != null)),
+			eyeCatchingImage: result.eyeCatchingImage,
+			attachedFiles: result.attachedFiles,
 			likedCount: page.likedCount,
-			isLiked: meId ? await this.pageLikesRepository.exist({ where: { pageId: page.id, userId: meId } }) : undefined,
-		});
+			isLiked: result.isLiked,
+		};
 	}
 
 	@bindThis

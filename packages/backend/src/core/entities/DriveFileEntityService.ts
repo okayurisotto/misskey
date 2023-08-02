@@ -196,7 +196,18 @@ export class DriveFileEntityService {
 
 		const file = typeof src === 'object' ? src : await this.driveFilesRepository.findOneByOrFail({ id: src });
 
-		return await awaitAll<z.infer<typeof DriveFileSchema>>({
+		const result = await awaitAll({
+			folder: () =>
+				opts.detail && file.folderId
+					? this.driveFolderEntityService.pack(file.folderId, { detail: true })
+					: Promise.resolve(null),
+			user: () =>
+				opts.withUser && file.userId
+					? this.userEntityService.pack(file.userId)
+					: Promise.resolve(null),
+		});
+
+		return {
 			id: file.id,
 			createdAt: file.createdAt.toISOString(),
 			name: file.name,
@@ -210,12 +221,10 @@ export class DriveFileEntityService {
 			thumbnailUrl: this.getThumbnailUrl(file),
 			comment: file.comment,
 			folderId: file.folderId,
-			folder: opts.detail && file.folderId ? this.driveFolderEntityService.pack(file.folderId, {
-				detail: true,
-			}) : null,
+			folder: result.folder,
 			userId: opts.withUser ? file.userId : null,
-			user: (opts.withUser && file.userId) ? this.userEntityService.pack(file.userId) : null,
-		});
+			user: result.user,
+		};
 	}
 
 	@bindThis
@@ -231,7 +240,18 @@ export class DriveFileEntityService {
 		const file = typeof src === 'object' ? src : await this.driveFilesRepository.findOneBy({ id: src });
 		if (file == null) return null;
 
-		return await awaitAll<z.infer<typeof DriveFileSchema>>({
+		const result = await awaitAll({
+			folder: () =>
+				opts.detail && file.folderId
+					? this.driveFolderEntityService.pack(file.folderId, { detail: true })
+					: Promise.resolve(null),
+			user: () =>
+				opts.withUser && file.userId
+					? this.userEntityService.pack(file.userId)
+					: Promise.resolve(null),
+		});
+
+		return {
 			id: file.id,
 			createdAt: file.createdAt.toISOString(),
 			name: file.name,
@@ -245,12 +265,10 @@ export class DriveFileEntityService {
 			thumbnailUrl: this.getThumbnailUrl(file),
 			comment: file.comment,
 			folderId: file.folderId,
-			folder: opts.detail && file.folderId ? this.driveFolderEntityService.pack(file.folderId, {
-				detail: true,
-			}) : null,
+			folder: result.folder,
 			userId: opts.withUser ? file.userId : null,
-			user: (opts.withUser && file.userId) ? this.userEntityService.pack(file.userId) : null,
-		});
+			user: result.user,
+		};
 	}
 
 	@bindThis

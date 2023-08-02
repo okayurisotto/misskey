@@ -308,13 +308,57 @@ export class NoteEntityService implements OnModuleInit {
 			.map(x => this.reactionService.decodeReaction(x).reaction.replaceAll(':', ''));
 		const packedFiles = options?._hint_?.packedFiles;
 
-		const packed: z.infer<typeof NoteSchema> = await awaitAll({
+		const getDetail = (async () => {
+			if (!opts.detail) return {};
+
+			const result = await awaitAll({
+				reply: () =>
+					note.replyId
+						? this.pack(note.reply ?? note.replyId, me, { detail: false, _hint_: options?._hint_ })
+						: Promise.resolve(undefined),
+				renote: () =>
+					note.renoteId
+						? this.pack(note.renote ?? note.renoteId, me, { detail: true, _hint_: options?._hint_ })
+						: Promise.resolve(undefined),
+				poll: () =>
+					note.hasPoll
+						? this.populatePoll(note, meId)
+						: Promise.resolve(undefined),
+				myReaction: () =>
+					meId
+						? this.populateMyReaction(note, meId, options?._hint_)
+						: Promise.resolve(undefined),
+			});
+
+			return {
+				reply: result.reply,
+				renote: result.renote,
+				poll: result.poll,
+				...(result.myReaction != null ? { myReaction: result.myReaction } : {}),
+			};
+		});
+
+		const result = await awaitAll({
+			user: () =>
+				this.userEntityService.pack(note.user ?? note.userId, me, { detail: false }),
+			reactionEmojis: () =>
+				this.customEmojiService.populateEmojis(reactionEmojiNames, host),
+			emojis: () =>
+				host != null
+					? this.customEmojiService.populateEmojis(note.emojis, host)
+					: Promise.resolve(undefined),
+			files: () =>
+				packedFiles != null
+					? Promise.resolve(this.packAttachedFiles(note.fileIds, packedFiles))
+					: this.driveFileEntityService.packManyByIds(note.fileIds),
+			detail: getDetail,
+		});
+
+		const packed = {
 			id: note.id,
 			createdAt: note.createdAt.toISOString(),
 			userId: note.userId,
-			user: this.userEntityService.pack(note.user ?? note.userId, me, {
-				detail: false,
-			}),
+			user: result.user,
 			text: text,
 			cw: note.cw,
 			visibility: note.visibility,
@@ -324,11 +368,11 @@ export class NoteEntityService implements OnModuleInit {
 			renoteCount: note.renoteCount,
 			repliesCount: note.repliesCount,
 			reactions: this.reactionService.convertLegacyReactions(note.reactions),
-			reactionEmojis: this.customEmojiService.populateEmojis(reactionEmojiNames, host),
-			emojis: host != null ? this.customEmojiService.populateEmojis(note.emojis, host) : undefined,
+			reactionEmojis: result.reactionEmojis,
+			emojis: result.emojis,
 			tags: note.tags.length > 0 ? note.tags : undefined,
 			fileIds: note.fileIds,
-			files: packedFiles != null ? this.packAttachedFiles(note.fileIds, packedFiles) : this.driveFileEntityService.packManyByIds(note.fileIds),
+			files: result.files,
 			replyId: note.replyId,
 			renoteId: note.renoteId,
 			channelId: note.channelId ?? undefined,
@@ -340,25 +384,8 @@ export class NoteEntityService implements OnModuleInit {
 			mentions: note.mentions.length > 0 ? note.mentions : undefined,
 			uri: note.uri ?? undefined,
 			url: note.url ?? undefined,
-
-			...(opts.detail ? {
-				reply: note.replyId ? this.pack(note.reply ?? note.replyId, me, {
-					detail: false,
-					_hint_: options?._hint_,
-				}) : undefined,
-
-				renote: note.renoteId ? this.pack(note.renote ?? note.renoteId, me, {
-					detail: true,
-					_hint_: options?._hint_,
-				}) : undefined,
-
-				poll: note.hasPoll ? this.populatePoll(note, meId) : undefined,
-
-				...(meId ? {
-					myReaction: this.populateMyReaction(note, meId, options?._hint_),
-				} : {}),
-			} : {}),
-		});
+			...result.detail,
+		};
 
 		if (packed.user.isCat && packed.text) {
 			const tokens = packed.text ? mfm.parse(packed.text) : [];

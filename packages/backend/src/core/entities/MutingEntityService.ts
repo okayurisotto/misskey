@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { MutingsRepository } from '@/models/index.js';
-import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { } from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { Muting } from '@/models/entities/Muting.js';
@@ -27,15 +26,13 @@ export class MutingEntityService {
 	): Promise<z.infer<typeof MutingSchema>> {
 		const muting = typeof src === 'object' ? src : await this.mutingsRepository.findOneByOrFail({ id: src });
 
-		return await awaitAll({
+		return {
 			id: muting.id,
 			createdAt: muting.createdAt.toISOString(),
 			expiresAt: muting.expiresAt ? muting.expiresAt.toISOString() : null,
 			muteeId: muting.muteeId,
-			mutee: this.userEntityService.pack(muting.muteeId, me, {
-				detail: true,
-			}),
-		});
+			mutee: await this.userEntityService.pack(muting.muteeId, me, { detail: true }),
+		};
 	}
 
 	@bindThis

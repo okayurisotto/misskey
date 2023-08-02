@@ -77,18 +77,25 @@ export class FollowingEntityService {
 
 		if (opts == null) opts = {};
 
-		return await awaitAll({
+		const result = await awaitAll({
+			followee: () =>
+				opts?.populateFollowee
+					? this.userEntityService.pack(following.followee ?? following.followeeId, me, { detail: true })
+					: Promise.resolve(undefined),
+			follower: () =>
+				opts?.populateFollower
+					? this.userEntityService.pack(following.follower ?? following.followerId, me, { detail: true })
+					: Promise.resolve(undefined),
+		});
+
+		return {
 			id: following.id,
 			createdAt: following.createdAt.toISOString(),
 			followeeId: following.followeeId,
 			followerId: following.followerId,
-			followee: opts.populateFollowee ? this.userEntityService.pack(following.followee ?? following.followeeId, me, {
-				detail: true,
-			}) : undefined,
-			follower: opts.populateFollower ? this.userEntityService.pack(following.follower ?? following.followerId, me, {
-				detail: true,
-			}) : undefined,
-		});
+			followee: result.followee,
+			follower: result.follower,
+		};
 	}
 
 	@bindThis

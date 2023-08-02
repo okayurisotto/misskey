@@ -17,12 +17,36 @@ export class AbuseUserReportEntityService {
 	}
 
 	@bindThis
-	public async pack(
-		src: AbuseUserReport['id'] | AbuseUserReport,
-	) {
-		const report = typeof src === 'object' ? src : await this.abuseUserReportsRepository.findOneByOrFail({ id: src });
+	public async pack(src: AbuseUserReport['id'] | AbuseUserReport) {
+		const report =
+			typeof src === 'object'
+				? src
+				: await this.abuseUserReportsRepository.findOneByOrFail({ id: src });
 
-		return await awaitAll({
+		const result = await awaitAll({
+			reporter: () =>
+				this.userEntityService.pack(
+					report.reporter ?? report.reporterId,
+					null,
+					{ detail: true },
+				),
+			targetUser: () =>
+				this.userEntityService.pack(
+					report.targetUser ?? report.targetUserId,
+					null,
+					{ detail: true },
+				),
+			assignee: () =>
+				report.assigneeId
+					? this.userEntityService.pack(
+							report.assignee ?? report.assigneeId,
+							null,
+							{ detail: true },
+					  )
+					: Promise.resolve(null),
+		});
+
+		return {
 			id: report.id,
 			createdAt: report.createdAt.toISOString(),
 			comment: report.comment,
@@ -30,17 +54,11 @@ export class AbuseUserReportEntityService {
 			reporterId: report.reporterId,
 			targetUserId: report.targetUserId,
 			assigneeId: report.assigneeId,
-			reporter: this.userEntityService.pack(report.reporter ?? report.reporterId, null, {
-				detail: true,
-			}),
-			targetUser: this.userEntityService.pack(report.targetUser ?? report.targetUserId, null, {
-				detail: true,
-			}),
-			assignee: report.assigneeId ? this.userEntityService.pack(report.assignee ?? report.assigneeId, null, {
-				detail: true,
-			}) : null,
+			reporter: result.reporter,
+			targetUser: result.targetUser,
+			assignee: result.assignee,
 			forwarded: report.forwarded,
-		});
+		};
 	}
 
 	@bindThis

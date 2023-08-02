@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { ModerationLogsRepository } from '@/models/index.js';
-import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { } from '@/models/entities/Blocking.js';
 import type { ModerationLog } from '@/models/entities/ModerationLog.js';
 import { bindThis } from '@/decorators.js';
@@ -23,16 +22,14 @@ export class ModerationLogEntityService {
 	) {
 		const log = typeof src === 'object' ? src : await this.moderationLogsRepository.findOneByOrFail({ id: src });
 
-		return await awaitAll({
+		return {
 			id: log.id,
 			createdAt: log.createdAt.toISOString(),
 			type: log.type,
 			info: log.info,
 			userId: log.userId,
-			user: this.userEntityService.pack(log.user ?? log.userId, null, {
-				detail: true,
-			}),
-		});
+			user: await this.userEntityService.pack(log.user ?? log.userId, null, { detail: true }),
+		};
 	}
 
 	@bindThis

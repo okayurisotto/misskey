@@ -27,13 +27,11 @@ export class RenoteMutingEntityService {
 	): Promise<z.infer<typeof RenoteMutingSchema>> {
 		const muting = typeof src === 'object' ? src : await this.renoteMutingsRepository.findOneByOrFail({ id: src });
 
-		return await awaitAll({
+		return ({
 			id: muting.id,
 			createdAt: muting.createdAt.toISOString(),
 			muteeId: muting.muteeId,
-			mutee: this.userEntityService.pack(muting.muteeId, me, {
-				detail: true,
-			}),
+			mutee: await this.userEntityService.pack(muting.muteeId, me, { detail: true }),
 		});
 	}
 

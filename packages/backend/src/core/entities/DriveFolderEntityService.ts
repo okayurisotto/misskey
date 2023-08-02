@@ -32,27 +32,30 @@ export class DriveFolderEntityService {
 
 		const folder = typeof src === 'object' ? src : await this.driveFoldersRepository.findOneByOrFail({ id: src });
 
-		return await awaitAll({
+		const getDetail = async () => {
+			if (!opts.detail) return {};
+
+			const result = await awaitAll({
+				foldersCount: () =>
+					this.driveFoldersRepository.countBy({ parentId: folder.id }),
+				filesCount: () =>
+					this.driveFilesRepository.countBy({ folderId: folder.id }),
+			});
+
+			return {
+				foldersCount: result.foldersCount,
+				filesCount: result.filesCount,
+				...(folder.parentId ? { parent: await this.pack(folder.parentId, { detail: true }) } : {}),
+			};
+		};
+
+		return {
 			id: folder.id,
 			createdAt: folder.createdAt.toISOString(),
 			name: folder.name,
 			parentId: folder.parentId,
-
-			...(opts.detail ? {
-				foldersCount: this.driveFoldersRepository.countBy({
-					parentId: folder.id,
-				}),
-				filesCount: this.driveFilesRepository.countBy({
-					folderId: folder.id,
-				}),
-
-				...(folder.parentId ? {
-					parent: this.pack(folder.parentId, {
-						detail: true,
-					}),
-				} : {}),
-			} : {}),
-		});
+			...await getDetail(),
+		};
 	}
 }
 

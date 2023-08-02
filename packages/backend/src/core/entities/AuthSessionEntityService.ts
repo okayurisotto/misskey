@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { AuthSessionsRepository } from '@/models/index.js';
-import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { AuthSession } from '@/models/entities/AuthSession.js';
 import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
@@ -24,10 +23,10 @@ export class AuthSessionEntityService {
 	) {
 		const session = typeof src === 'object' ? src : await this.authSessionsRepository.findOneByOrFail({ id: src });
 
-		return await awaitAll({
+		return {
 			id: session.id,
-			app: this.appEntityService.pack(session.appId, me),
+			app: await this.appEntityService.pack(session.appId, me),
 			token: session.token,
-		});
+		};
 	}
 }

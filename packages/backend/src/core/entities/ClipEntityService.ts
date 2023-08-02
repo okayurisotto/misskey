@@ -30,18 +30,29 @@ export class ClipEntityService {
 		const meId = me ? me.id : null;
 		const clip = typeof src === 'object' ? src : await this.clipsRepository.findOneByOrFail({ id: src });
 
-		return await awaitAll({
+		const result = await awaitAll({
+			user: () =>
+				this.userEntityService.pack(clip.user ?? clip.userId),
+			favoritedCount: () =>
+				this.clipFavoritesRepository.countBy({ clipId: clip.id }),
+			isFavorited: () =>
+				meId
+					? this.clipFavoritesRepository.exist({ where: { clipId: clip.id, userId: meId } })
+					: Promise.resolve(undefined),
+		});
+
+		return {
 			id: clip.id,
 			createdAt: clip.createdAt.toISOString(),
 			lastClippedAt: clip.lastClippedAt ? clip.lastClippedAt.toISOString() : null,
 			userId: clip.userId,
-			user: this.userEntityService.pack(clip.user ?? clip.userId),
+			user: result.user,
 			name: clip.name,
 			description: clip.description,
 			isPublic: clip.isPublic,
-			favoritedCount: await this.clipFavoritesRepository.countBy({ clipId: clip.id }),
-			isFavorited: meId ? await this.clipFavoritesRepository.exist({ where: { clipId: clip.id, userId: meId } }) : undefined,
-		});
+			favoritedCount: result.favoritedCount,
+			isFavorited: result.isFavorited,
+		};
 	}
 
 	@bindThis

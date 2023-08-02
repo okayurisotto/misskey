@@ -31,18 +31,27 @@ export class FlashEntityService {
 		const meId = me ? me.id : null;
 		const flash = typeof src === 'object' ? src : await this.flashsRepository.findOneByOrFail({ id: src });
 
-		return await awaitAll({
+		const result = await awaitAll({
+			user: () =>
+				this.userEntityService.pack(flash.user ?? flash.userId, me), // { detail: true } すると無限ループするので注意
+			isLiked: () =>
+				meId
+					? this.flashLikesRepository.exist({ where: { flashId: flash.id, userId: meId } })
+					: Promise.resolve(undefined),
+		});
+
+		return {
 			id: flash.id,
 			createdAt: flash.createdAt.toISOString(),
 			updatedAt: flash.updatedAt.toISOString(),
 			userId: flash.userId,
-			user: this.userEntityService.pack(flash.user ?? flash.userId, me), // { detail: true } すると無限ループするので注意
+			user: result.user,
 			title: flash.title,
 			summary: flash.summary,
 			script: flash.script,
 			likedCount: flash.likedCount,
-			isLiked: meId ? await this.flashLikesRepository.exist({ where: { flashId: flash.id, userId: meId } }) : undefined,
-		});
+			isLiked: result.isLiked,
+		};
 	}
 
 	@bindThis

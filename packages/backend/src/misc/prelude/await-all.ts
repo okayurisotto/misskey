@@ -1,21 +1,52 @@
-export type Promiseable<T> = {
-	[K in keyof T]: Promise<T[K]> | T[K];
+import type { UnionToIntersection } from 'type-fest';
+
+const toEntries = <T extends Record<string, unknown>>(
+	record: T,
+): readonly { [K in keyof T]: readonly [K, T[K]] }[keyof T][] => {
+	return Object.entries(record) as readonly {
+		[K in keyof T]: readonly [K, T[K]];
+	}[keyof T][];
 };
 
-export async function awaitAll<T>(obj: Promiseable<T>): Promise<T> {
-	const target = {} as T;
-	const keys = Object.keys(obj) as unknown as (keyof T)[];
-	const values = Object.values(obj) as any[];
+type EntryUnion2ObjectUnion<T extends readonly [string, unknown]> =
+	T extends unknown ? { [_ in T[0]]: T[1] } : never;
 
-	const resolvedValues = await Promise.all(values.map(value =>
-		(!value || !value.constructor || value.constructor.name !== 'Object')
-			? value
-			: awaitAll(value),
-	));
+const fromEntries = <T extends readonly (readonly [string, unknown])[]>(
+	entries: [...T],
+): UnionToIntersection<EntryUnion2ObjectUnion<T[number]>> => {
+	return Object.fromEntries(entries) as UnionToIntersection<
+		EntryUnion2ObjectUnion<T[number]>
+	>;
+};
 
-	for (let i = 0; i < keys.length; i++) {
-		target[keys[i]] = resolvedValues[i];
-	}
+export const awaitAll = async <
+	T extends Record<string, () => Promise<unknown>>,
+>(
+	data: T,
+): Promise<
+	UnionToIntersection<
+		EntryUnion2ObjectUnion<
+			{
+				[K in keyof T]: K extends string
+					? [K, Awaited<ReturnType<T[K]>>]
+					: never;
+			}[keyof T]
+		>
+	>
+> => {
+	const entries = toEntries(data);
 
-	return target;
-}
+	const promises = entries.map(async ([k, v]) => {
+		return [k, await v()];
+	}) as {
+		[K in keyof T]: Promise<[K, Awaited<ReturnType<T[K]>>]>;
+	}[keyof T][];
+
+	const awaited = (await Promise.all(promises)) as {
+		[K in keyof T]: K extends string
+			? Awaited<Promise<[K, Awaited<ReturnType<T[K]>>]>>
+			: never;
+	}[keyof T][];
+
+	return fromEntries(awaited);
+};

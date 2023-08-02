@@ -4,7 +4,6 @@ import * as Redis from 'ioredis';
 import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import type { Promiseable } from '@/misc/prelude/await-all.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { USER_ACTIVE_THRESHOLD, USER_ONLINE_THRESHOLD } from '@/const.js';
 import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser, User } from '@/models/entities/User.js';
@@ -142,65 +141,53 @@ export class UserEntityService implements OnModuleInit {
 
 	@bindThis
 	public async getRelation(me: User['id'], target: User['id']) {
-		return awaitAll({
-			id: target,
-			isFollowing: this.followingsRepository.count({
-				where: {
-					followerId: me,
-					followeeId: target,
-				},
-				take: 1,
-			}).then(n => n > 0),
-			isFollowed: this.followingsRepository.count({
-				where: {
-					followerId: target,
-					followeeId: me,
-				},
-				take: 1,
-			}).then(n => n > 0),
-			hasPendingFollowRequestFromYou: this.followRequestsRepository.count({
-				where: {
-					followerId: me,
-					followeeId: target,
-				},
-				take: 1,
-			}).then(n => n > 0),
-			hasPendingFollowRequestToYou: this.followRequestsRepository.count({
-				where: {
-					followerId: target,
-					followeeId: me,
-				},
-				take: 1,
-			}).then(n => n > 0),
-			isBlocking: this.blockingsRepository.count({
-				where: {
-					blockerId: me,
-					blockeeId: target,
-				},
-				take: 1,
-			}).then(n => n > 0),
-			isBlocked: this.blockingsRepository.count({
-				where: {
-					blockerId: target,
-					blockeeId: me,
-				},
-				take: 1,
-			}).then(n => n > 0),
-			isMuted: this.mutingsRepository.count({
-				where: {
-					muterId: me,
-					muteeId: target,
-				},
-				take: 1,
-			}).then(n => n > 0),
-			isRenoteMuted: this.renoteMutingsRepository.count({
-				where: {
-					muterId: me,
-					muteeId: target,
-				},
-				take: 1,
-			}).then(n => n > 0),
+		const result = await awaitAll({
+			isFollowing: () =>
+				this.followingsRepository.count({
+					where: { followerId: me, followeeId: target },
+					take: 1,
+				}).then(n => n > 0),
+			isFollowed: () =>
+				this.followingsRepository.count({
+					where: { followerId: target, followeeId: me },
+					take: 1,
+				}).then(n => n > 0),
+			hasPendingFollowRequestFromYou: () =>
+				this.followRequestsRepository.count({
+					where: { followerId: me, followeeId: target },
+					take: 1,
+				}).then(n => n > 0),
+			hasPendingFollowRequestToYou: () =>
+				this.followRequestsRepository.count({
+					where: { followerId: target, followeeId: me },
+					take: 1,
+				}).then(n => n > 0),
+			isBlocking: () =>
+				this.blockingsRepository.count({
+					where: { blockerId: me, blockeeId: target },
+					take: 1,
+				}).then(n => n > 0),
+			isBlocked: () =>
+				this.blockingsRepository.count({
+					where: { blockerId: target, blockeeId: me },
+					take: 1,
+				}).then(n => n > 0),
+			isMuted: () =>
+				this.mutingsRepository.count({
+					where: { muterId: me, muteeId: target },
+					take: 1,
+				}).then(n => n > 0),
+			isRenoteMuted: () =>
+				this.renoteMutingsRepository.count({
+					where: { muterId: me, muteeId: target },
+					take: 1,
+				}).then(n => n > 0),
 		});
+
+		return {
+			id: target,
+			...result,
+		};
 	}
 
 	@bindThis
@@ -345,47 +332,65 @@ export class UserEntityService implements OnModuleInit {
 
 		const falsy = opts.detail ? false : undefined;
 
-		const packed = {
-			id: user.id,
-			name: user.name,
-			username: user.username,
-			host: user.host,
-			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
-			avatarBlurhash: user.avatarBlurhash,
-			isBot: user.isBot ?? falsy,
-			isCat: user.isCat ?? falsy,
-			instance: user.host ? this.federatedInstanceService.federatedInstanceCache.fetch(user.host).then(instance => instance ? {
-				name: instance.name,
-				softwareName: instance.softwareName,
-				softwareVersion: instance.softwareVersion,
-				iconUrl: instance.iconUrl,
-				faviconUrl: instance.faviconUrl,
-				themeColor: instance.themeColor,
-			} : undefined) : undefined,
-			emojis: this.customEmojiService.populateEmojis(user.emojis, user.host),
-			onlineStatus: this.getOnlineStatus(user),
-			// パフォーマンス上の理由でローカルユーザーのみ
-			badgeRoles: user.host == null ? this.roleService.getUserBadgeRoles(user.id).then(rs => rs.sort((a, b) => b.displayOrder - a.displayOrder).map(r => ({
-				name: r.name,
-				iconUrl: r.iconUrl,
-				displayOrder: r.displayOrder,
-			}))) : undefined,
+		const getDetail = async () => {
+			if (!opts.detail) return {};
 
-			...(opts.detail ? {
+			const result = await awaitAll({
+				movedTo: () =>
+					user.movedToUri
+						? this.apPersonService.resolvePerson(user.movedToUri).then(user => user.id).catch(() => null)
+						: Promise.resolve(null),
+				alsoKnownAs: () =>
+					user.alsoKnownAs
+						? Promise.all(user.alsoKnownAs.map(uri => this.apPersonService.fetchPerson(uri).then(user => user?.id).catch(() => null)))
+							.then(xs => xs.length === 0 ? null : xs.filter((x): x is string => x != null))
+						: Promise.resolve(null),
+				isSilenced: () =>
+					this.roleService.getUserPolicies(user.id).then(r => !r.canPublicNote),
+				pinnedNotes: () =>
+					this.noteEntityService.packMany(pins.map(pin => pin.note!), me, { detail: true }),
+				pinnedPage: () =>
+					profile!.pinnedPageId
+						? this.pageEntityService.pack(profile!.pinnedPageId, me)
+						: Promise.resolve(null),
+				securityKeys: () =>
+					profile!.twoFactorEnabled
+						? this.userSecurityKeysRepository.countBy({ userId: user.id }).then(result => result >= 1)
+						: Promise.resolve(false),
+				roles: () =>
+					this.roleService.getUserRoles(user.id).then(roles =>
+						roles
+							.filter(role => role.isPublic)
+							.sort((a, b) => b.displayOrder - a.displayOrder)
+							.map(role => ({
+								id: role.id,
+								name: role.name,
+								color: role.color,
+								iconUrl: role.iconUrl,
+								description: role.description,
+								isModerator: role.isModerator,
+								isAdministrator: role.isAdministrator,
+								displayOrder: role.displayOrder,
+							})),
+					),
+				memos: () =>
+					meId == null
+						? Promise.resolve(null)
+						: this.userMemosRepository.findOneBy({ userId: meId, targetUserId: user.id }).then(row => row?.memo ?? null),
+			});
+
+			return {
 				url: profile!.url,
 				uri: user.uri,
-				movedTo: user.movedToUri ? this.apPersonService.resolvePerson(user.movedToUri).then(user => user.id).catch(() => null) : null,
-				alsoKnownAs: user.alsoKnownAs
-					? Promise.all(user.alsoKnownAs.map(uri => this.apPersonService.fetchPerson(uri).then(user => user?.id).catch(() => null)))
-						.then(xs => xs.length === 0 ? null : xs.filter(x => x != null) as string[])
-					: null,
+				movedTo: result.movedTo,
+				alsoKnownAs: result.alsoKnownAs,
 				createdAt: user.createdAt.toISOString(),
 				updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
 				lastFetchedAt: user.lastFetchedAt ? user.lastFetchedAt.toISOString() : null,
 				bannerUrl: user.bannerUrl,
 				bannerBlurhash: user.bannerBlurhash,
 				isLocked: user.isLocked,
-				isSilenced: this.roleService.getUserPolicies(user.id).then(r => !r.canPublicNote),
+				isSilenced: result.isSilenced,
 				isSuspended: user.isSuspended ?? falsy,
 				description: profile!.description,
 				location: profile!.location,
@@ -396,42 +401,48 @@ export class UserEntityService implements OnModuleInit {
 				followingCount: followingCount ?? 0,
 				notesCount: user.notesCount,
 				pinnedNoteIds: pins.map(pin => pin.noteId),
-				pinnedNotes: this.noteEntityService.packMany(pins.map(pin => pin.note!), me, {
-					detail: true,
-				}),
+				pinnedNotes: result.pinnedNotes,
 				pinnedPageId: profile!.pinnedPageId,
-				pinnedPage: profile!.pinnedPageId ? this.pageEntityService.pack(profile!.pinnedPageId, me) : null,
+				pinnedPage: result.pinnedPage,
 				publicReactions: profile!.publicReactions,
 				ffVisibility: profile!.ffVisibility,
 				twoFactorEnabled: profile!.twoFactorEnabled,
 				usePasswordLessLogin: profile!.usePasswordLessLogin,
-				securityKeys: profile!.twoFactorEnabled
-					? this.userSecurityKeysRepository.countBy({
-						userId: user.id,
-					}).then(result => result >= 1)
-					: false,
-				roles: this.roleService.getUserRoles(user.id).then(roles => roles.filter(role => role.isPublic).sort((a, b) => b.displayOrder - a.displayOrder).map(role => ({
-					id: role.id,
-					name: role.name,
-					color: role.color,
-					iconUrl: role.iconUrl,
-					description: role.description,
-					isModerator: role.isModerator,
-					isAdministrator: role.isAdministrator,
-					displayOrder: role.displayOrder,
-				}))),
-				memo: meId == null ? null : await this.userMemosRepository.findOneBy({
-					userId: meId,
-					targetUserId: user.id,
-				}).then(row => row?.memo ?? null),
+				securityKeys: result.securityKeys,
+				roles: result.roles,
+				memo: result.memos,
 				moderationNote: iAmModerator ? (profile!.moderationNote ?? '') : undefined,
-			} : {}),
+			};
+		};
 
-			...(opts.detail && isMe ? {
+		const getDetailMe = async () => {
+			if (!opts.detail) return {};
+			if (!isMe) return {};
+
+			const result = await awaitAll({
+				isModerator: () => Promise.resolve(isModerator),
+				isAdmin: () => Promise.resolve(isAdmin),
+				hasUnreadSpecifiedNotes: () =>
+					this.noteUnreadsRepository.count({ where: { userId: user.id, isSpecified: true }, take: 1 }).then(count => count > 0),
+				hasUnreadMentions: () =>
+					this.noteUnreadsRepository.count({ where: { userId: user.id, isMentioned: true }, take: 1 }).then(count => count > 0),
+				hasUnreadAnnouncement: () =>
+					this.getHasUnreadAnnouncement(user.id),
+				hasUnreadAntenna: () =>
+					this.getHasUnreadAntenna(user.id),
+				hasUnreadNotification: () =>
+					this.getHasUnreadNotification(user.id),
+				hasPendingReceivedFollowRequest: () =>
+					this.getHasPendingReceivedFollowRequest(user.id),
+				policies: () =>
+					this.roleService.getUserPolicies(user.id),
+			});
+
+			return {
 				avatarId: user.avatarId,
 				bannerId: user.bannerId,
-				isModerator: isModerator,
-				isAdmin: isAdmin,
+				isModerator: result.isModerator,
+				isAdmin: result.isAdmin,
 				injectFeaturedNote: profile!.injectFeaturedNote,
 				receiveAnnouncementEmail: profile!.receiveAnnouncementEmail,
 				alwaysMarkNsfw: profile!.alwaysMarkNsfw,
@@ -443,46 +454,42 @@ export class UserEntityService implements OnModuleInit {
 				isExplorable: user.isExplorable,
 				isDeleted: user.isDeleted,
 				hideOnlineStatus: user.hideOnlineStatus,
-				hasUnreadSpecifiedNotes: this.noteUnreadsRepository.count({
-					where: { userId: user.id, isSpecified: true },
-					take: 1,
-				}).then(count => count > 0),
-				hasUnreadMentions: this.noteUnreadsRepository.count({
-					where: { userId: user.id, isMentioned: true },
-					take: 1,
-				}).then(count => count > 0),
-				hasUnreadAnnouncement: this.getHasUnreadAnnouncement(user.id),
-				hasUnreadAntenna: this.getHasUnreadAntenna(user.id),
+				hasUnreadSpecifiedNotes: result.hasUnreadSpecifiedNotes,
+				hasUnreadMentions: result.hasUnreadMentions,
+				hasUnreadAnnouncement: result.hasUnreadAnnouncement,
+				hasUnreadAntenna: result.hasUnreadAntenna,
 				hasUnreadChannel: false, // 後方互換性のため
-				hasUnreadNotification: this.getHasUnreadNotification(user.id),
-				hasPendingReceivedFollowRequest: this.getHasPendingReceivedFollowRequest(user.id),
+				hasUnreadNotification: result.hasUnreadNotification,
+				hasPendingReceivedFollowRequest: result.hasPendingReceivedFollowRequest,
 				mutedWords: profile!.mutedWords,
 				mutedInstances: profile!.mutedInstances,
 				mutingNotificationTypes: profile!.mutingNotificationTypes,
 				emailNotificationTypes: profile!.emailNotificationTypes,
 				achievements: profile!.achievements,
 				loggedInDays: profile!.loggedInDates.length,
-				policies: this.roleService.getUserPolicies(user.id),
-			} : {}),
+				policies: result.policies,
+			};
+		};
 
-			...(opts.includeSecrets ? {
+		const getSecrets = async () => {
+			if (!opts.includeSecrets) return {};
+
+			return {
 				email: profile!.email,
 				emailVerified: profile!.emailVerified,
 				securityKeysList: profile!.twoFactorEnabled
-					? this.userSecurityKeysRepository.find({
-						where: {
-							userId: user.id,
-						},
-						select: {
-							id: true,
-							name: true,
-							lastUsed: true,
-						},
+					? await this.userSecurityKeysRepository.find({
+						where: { userId: user.id },
+						select: { id: true, name: true, lastUsed: true },
 					})
 					: [],
-			} : {}),
+			};
+		};
 
-			...(relation ? {
+		const getRelation = async () => {
+			if (!relation) return {};
+
+			return {
 				isFollowing: relation.isFollowing,
 				isFollowed: relation.isFollowed,
 				hasPendingFollowRequestFromYou: relation.hasPendingFollowRequestFromYou,
@@ -491,10 +498,60 @@ export class UserEntityService implements OnModuleInit {
 				isBlocked: relation.isBlocked,
 				isMuted: relation.isMuted,
 				isRenoteMuted: relation.isRenoteMuted,
-			} : {}),
-		} as Promiseable<z.infer<typeof UserSchema>> as Promiseable<IsMeAndIsUserDetailed<ExpectsMe, D>>;
+			};
+		};
 
-		return await awaitAll(packed);
+		const result = await awaitAll({
+			instance: () =>
+				user.host
+					? this.federatedInstanceService.federatedInstanceCache.fetch(user.host).then(instance =>
+						instance
+							? {
+								name: instance.name,
+								softwareName: instance.softwareName,
+								softwareVersion: instance.softwareVersion,
+								iconUrl: instance.iconUrl,
+								faviconUrl: instance.faviconUrl,
+								themeColor: instance.themeColor,
+							}
+							: undefined)
+					: Promise.resolve(undefined),
+			badgeRoles: () =>
+				user.host == null // パフォーマンス上の理由でローカルユーザーのみ
+					? this.roleService.getUserBadgeRoles(user.id).then(rs => rs.sort((a, b) => b.displayOrder - a.displayOrder).map(r => ({
+						name: r.name,
+						iconUrl: r.iconUrl,
+						displayOrder: r.displayOrder,
+					})))
+					: Promise.resolve(undefined),
+			emojis: () =>
+				this.customEmojiService.populateEmojis(user.emojis, user.host),
+			detail: getDetail,
+			detailMe: getDetailMe,
+			secrets: getSecrets,
+			relation: getRelation,
+		});
+
+		const packed = {
+			id: user.id,
+			name: user.name,
+			username: user.username,
+			host: user.host,
+			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
+			avatarBlurhash: user.avatarBlurhash,
+			isBot: user.isBot ?? falsy,
+			isCat: user.isCat ?? falsy,
+			instance: result.instance,
+			emojis: result.emojis,
+			onlineStatus: this.getOnlineStatus(user),
+			badgeRoles: result.badgeRoles,
+			...result.detail,
+			...result.detailMe,
+			...result.secrets,
+			...result.relation,
+		} as z.infer<typeof UserSchema> as IsMeAndIsUserDetailed<ExpectsMe, D>;
+
+		return packed;
 	}
 
 	public packMany<D extends boolean = false>(

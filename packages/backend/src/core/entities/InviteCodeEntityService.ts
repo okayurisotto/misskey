@@ -24,23 +24,34 @@ export class InviteCodeEntityService {
 		src: RegistrationTicket['id'] | RegistrationTicket,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof InviteCodeSchema>> {
-		const target = typeof src === 'object' ? src : await this.registrationTicketsRepository.findOneOrFail({
-			where: {
-				id: src,
-			},
-			relations: ['createdBy', 'usedBy'],
+		const target = typeof src === 'object'
+			? src
+			: await this.registrationTicketsRepository.findOneOrFail({
+				where: { id: src },
+				relations: ['createdBy', 'usedBy'],
+			});
+
+		const result = await awaitAll({
+			createdBy: () =>
+				target.createdBy
+					? this.userEntityService.pack(target.createdBy, me)
+					: Promise.resolve(null),
+			usedBy: () =>
+				target.usedBy
+					? this.userEntityService.pack(target.usedBy, me)
+					: Promise.resolve(null),
 		});
 
-		return await awaitAll({
+		return {
 			id: target.id,
 			code: target.code,
 			expiresAt: target.expiresAt ? target.expiresAt.toISOString() : null,
 			createdAt: target.createdAt.toISOString(),
-			createdBy: target.createdBy ? await this.userEntityService.pack(target.createdBy, me) : null,
-			usedBy: target.usedBy ? await this.userEntityService.pack(target.usedBy, me) : null,
+			createdBy: result.createdBy,
+			usedBy: result.usedBy,
 			usedAt: target.usedAt ? target.usedAt.toISOString() : null,
 			used: !!target.usedAt,
-		});
+		};
 	}
 
 	@bindThis

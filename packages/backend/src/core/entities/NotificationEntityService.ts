@@ -70,41 +70,40 @@ export class NotificationEntityService implements OnModuleInit {
 		},
 	): Promise<z.infer<typeof NotificationSchema>> {
 		const notification = src;
-		const token = notification.appAccessTokenId ? await this.accessTokensRepository.findOneByOrFail({ id: notification.appAccessTokenId }) : null;
-		const noteIfNeed = NOTE_REQUIRED_NOTIFICATION_TYPES.has(notification.type) && notification.noteId != null ? (
-			hint?.packedNotes != null
-				? hint.packedNotes.get(notification.noteId)
-				: this.noteEntityService.pack(notification.noteId!, { id: meId }, {
-					detail: true,
-				})
-		) : undefined;
-		const userIfNeed = notification.notifierId != null ? (
-			hint?.packedUsers != null
-				? hint.packedUsers.get(notification.notifierId)
-				: this.userEntityService.pack(notification.notifierId!, { id: meId }, {
-					detail: false,
-				})
-		) : undefined;
+		const result = await awaitAll({
+			token: () =>
+				notification.appAccessTokenId
+					? this.accessTokensRepository.findOneByOrFail({ id: notification.appAccessTokenId })
+					: Promise.resolve(null),
+			noteIfNeed: () =>
+				NOTE_REQUIRED_NOTIFICATION_TYPES.has(notification.type) && notification.noteId != null
+					? hint?.packedNotes != null
+						? Promise.resolve(hint.packedNotes.get(notification.noteId))
+						: this.noteEntityService.pack(notification.noteId, { id: meId }, { detail: true })
+					: Promise.resolve(undefined),
+			userIfNeed: () =>
+				notification.notifierId != null
+					? hint?.packedUsers != null
+						? Promise.resolve(hint.packedUsers.get(notification.notifierId))
+						: this.userEntityService.pack(notification.notifierId, { id: meId }, { detail: false })
+					: Promise.resolve(undefined),
+		});
 
-		return await awaitAll({
+		return {
 			id: notification.id,
 			createdAt: new Date(notification.createdAt).toISOString(),
 			type: notification.type,
 			userId: notification.notifierId,
-			...(userIfNeed != null ? { user: userIfNeed } : {}),
-			...(noteIfNeed != null ? { note: noteIfNeed } : {}),
-			...(notification.type === 'reaction' ? {
-				reaction: notification.reaction,
-			} : {}),
-			...(notification.type === 'achievementEarned' ? {
-				achievement: notification.achievement,
-			} : {}),
+			...(result.userIfNeed != null ? { user: result.userIfNeed } : {}),
+			...(result.noteIfNeed != null ? { note: result.noteIfNeed } : {}),
+			...(notification.type === 'reaction' ? { reaction: notification.reaction } : {}),
+			...(notification.type === 'achievementEarned' ? { achievement: notification.achievement } : {}),
 			...(notification.type === 'app' ? {
 				body: notification.customBody,
-				header: notification.customHeader ?? token?.name,
-				icon: notification.customIcon ?? token?.iconUrl,
+				header: notification.customHeader ?? result.token?.name,
+				icon: notification.customIcon ?? result.token?.iconUrl,
 			} : {}),
-		});
+		};
 	}
 
 	@bindThis
