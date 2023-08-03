@@ -47,9 +47,10 @@ export default class extends Endpoint<
 
 			const mutings = await query.limit(ps.limit).getMany();
 
-			return (await this.renoteMutingEntityService.packMany(
-				mutings,
-				me,
+			return (await Promise.all(
+				mutings.map((muting) =>
+					this.renoteMutingEntityService.pack(muting, me),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

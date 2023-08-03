@@ -36,9 +36,8 @@ export default class extends Endpoint<
 
 			const flashs = await query.limit(10).getMany();
 
-			return (await this.flashEntityService.packMany(
-				flashs,
-				me,
+			return (await Promise.all(
+				flashs.map((flash) => this.flashEntityService.pack(flash, me)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

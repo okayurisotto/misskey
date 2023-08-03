@@ -53,9 +53,8 @@ export default class extends Endpoint<
 
 			const likes = await query.limit(ps.limit).getMany();
 
-			return (await this.flashLikeEntityService.packMany(
-				likes,
-				me,
+			return (await Promise.all(
+				likes.map((like) => this.flashLikeEntityService.pack(like, me)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

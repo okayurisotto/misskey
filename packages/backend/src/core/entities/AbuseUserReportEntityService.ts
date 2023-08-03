@@ -13,8 +13,7 @@ export class AbuseUserReportEntityService {
 		private abuseUserReportsRepository: AbuseUserReportsRepository,
 
 		private userEntityService: UserEntityService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async pack(src: AbuseUserReport['id'] | AbuseUserReport) {
@@ -59,12 +58,5 @@ export class AbuseUserReportEntityService {
 			assignee: result.assignee,
 			forwarded: report.forwarded,
 		};
-	}
-
-	@bindThis
-	public packMany(
-		reports: any[],
-	) {
-		return Promise.all(reports.map(x => this.pack(x)));
 	}
 }

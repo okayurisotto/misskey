@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { FollowingsRepository } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { } from '@/models/entities/Blocking.js';
+import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { Following } from '@/models/entities/Following.js';
 import { bindThis } from '@/decorators.js';
@@ -41,26 +41,33 @@ export class FollowingEntityService {
 		private followingsRepository: FollowingsRepository,
 
 		private userEntityService: UserEntityService,
-	) {
-	}
+	) {}
 
 	@bindThis
-	public isLocalFollower(following: Following): following is LocalFollowerFollowing {
+	public isLocalFollower(
+		following: Following,
+	): following is LocalFollowerFollowing {
 		return following.followerHost == null;
 	}
 
 	@bindThis
-	public isRemoteFollower(following: Following): following is RemoteFollowerFollowing {
+	public isRemoteFollower(
+		following: Following,
+	): following is RemoteFollowerFollowing {
 		return following.followerHost != null;
 	}
 
 	@bindThis
-	public isLocalFollowee(following: Following): following is LocalFolloweeFollowing {
+	public isLocalFollowee(
+		following: Following,
+	): following is LocalFolloweeFollowing {
 		return following.followeeHost == null;
 	}
 
 	@bindThis
-	public isRemoteFollowee(following: Following): following is RemoteFolloweeFollowing {
+	public isRemoteFollowee(
+		following: Following,
+	): following is RemoteFolloweeFollowing {
 		return following.followeeHost != null;
 	}
 
@@ -73,18 +80,29 @@ export class FollowingEntityService {
 			populateFollower?: boolean;
 		},
 	): Promise<z.infer<typeof FollowingSchema>> {
-		const following = typeof src === 'object' ? src : await this.followingsRepository.findOneByOrFail({ id: src });
+		const following =
+			typeof src === 'object'
+				? src
+				: await this.followingsRepository.findOneByOrFail({ id: src });
 
 		if (opts == null) opts = {};
 
 		const result = await awaitAll({
 			followee: () =>
 				opts?.populateFollowee
-					? this.userEntityService.pack(following.followee ?? following.followeeId, me, { detail: true })
+					? this.userEntityService.pack(
+							following.followee ?? following.followeeId,
+							me,
+							{ detail: true },
+					  )
 					: Promise.resolve(undefined),
 			follower: () =>
 				opts?.populateFollower
-					? this.userEntityService.pack(following.follower ?? following.followerId, me, { detail: true })
+					? this.userEntityService.pack(
+							following.follower ?? following.followerId,
+							me,
+							{ detail: true },
+					  )
 					: Promise.resolve(undefined),
 		});
 
@@ -97,17 +115,4 @@ export class FollowingEntityService {
 			follower: result.follower,
 		};
 	}
-
-	@bindThis
-	public packMany(
-		followings: any[],
-		me?: { id: User['id'] } | null | undefined,
-		opts?: {
-			populateFollowee?: boolean;
-			populateFollower?: boolean;
-		},
-	) {
-		return Promise.all(followings.map(x => this.pack(x, me, opts)));
-	}
 }
-

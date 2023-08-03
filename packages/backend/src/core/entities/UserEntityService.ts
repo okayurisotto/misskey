@@ -553,15 +553,4 @@ export class UserEntityService implements OnModuleInit {
 
 		return packed;
 	}
-
-	public packMany<D extends boolean = false>(
-		users: (User['id'] | User)[],
-		me?: { id: User['id'] } | null | undefined,
-		options?: {
-			detail?: D,
-			includeSecrets?: boolean,
-		},
-	): Promise<IsUserDetailed<D>[]> {
-		return Promise.all(users.map(u => this.pack(u, me, options)));
-	}
 }

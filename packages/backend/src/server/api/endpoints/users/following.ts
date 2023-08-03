@@ -123,9 +123,13 @@ export default class extends Endpoint<
 
 			const followings = await query.limit(ps.limit).getMany();
 
-			return (await this.followingEntityService.packMany(followings, me, {
-				populateFollowee: true,
-			})) satisfies z.infer<typeof res>;
+			return (await Promise.all(
+				followings.map((following) =>
+					this.followingEntityService.pack(following, me, {
+						populateFollowee: true,
+					}),
+				),
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

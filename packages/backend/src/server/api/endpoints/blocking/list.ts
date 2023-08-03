@@ -47,9 +47,10 @@ export default class extends Endpoint<
 
 			const blockings = await query.limit(ps.limit).getMany();
 
-			return (await this.blockingEntityService.packMany(
-				blockings,
-				me,
+			return (await Promise.all(
+				blockings.map((blocking) =>
+					this.blockingEntityService.pack(blocking, me),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

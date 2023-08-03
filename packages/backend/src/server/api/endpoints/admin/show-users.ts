@@ -160,9 +160,9 @@ export default class extends Endpoint<
 
 			const users = await query.getMany();
 
-			return (await this.userEntityService.packMany(users, me, {
-				detail: true,
-			})) satisfies z.infer<typeof res>;
+			return (await Promise.all(
+				users.map((user) => this.userEntityService.pack(user, me, { detail: true })),
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -109,9 +109,9 @@ export default class extends Endpoint<
 
 			const tags = await query.limit(ps.limit).getMany();
 
-			return (await this.hashtagEntityService.packMany(tags)) satisfies z.infer<
-				typeof res
-			>;
+			return (await Promise.all(
+				tags.map((tag) => this.hashtagEntityService.pack(tag)),
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -97,8 +97,8 @@ export default class extends Endpoint<
 
 			const reports = await query.limit(ps.limit).getMany();
 
-			return (await this.abuseUserReportEntityService.packMany(
-				reports,
+			return (await Promise.all(
+				reports.map((report) => this.abuseUserReportEntityService.pack(report)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

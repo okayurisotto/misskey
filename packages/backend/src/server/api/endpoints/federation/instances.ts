@@ -179,8 +179,8 @@ export default class extends Endpoint<
 
 			const instances = await query.limit(ps.limit).offset(ps.offset).getMany();
 
-			return (await this.instanceEntityService.packMany(
-				instances,
+			return (await Promise.all(
+				instances.map((instance) => this.instanceEntityService.pack(instance)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

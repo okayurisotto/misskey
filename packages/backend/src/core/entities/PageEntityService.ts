@@ -1,8 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { DriveFilesRepository, PagesRepository, PageLikesRepository } from '@/models/index.js';
+import type {
+	DriveFilesRepository,
+	PagesRepository,
+	PageLikesRepository,
+} from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { } from '@/models/entities/Blocking.js';
+import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { Page } from '@/models/entities/Page.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
@@ -26,8 +30,7 @@ export class PageEntityService {
 
 		private userEntityService: UserEntityService,
 		private driveFileEntityService: DriveFileEntityService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async pack(
@@ -35,16 +38,21 @@ export class PageEntityService {
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof PageSchema>> {
 		const meId = me ? me.id : null;
-		const page = typeof src === 'object' ? src : await this.pagesRepository.findOneByOrFail({ id: src });
+		const page =
+			typeof src === 'object'
+				? src
+				: await this.pagesRepository.findOneByOrFail({ id: src });
 
 		const attachedFiles: Promise<DriveFile | null>[] = [];
 		const collectFile = (xs: any[]) => {
 			for (const x of xs) {
 				if (x.type === 'image') {
-					attachedFiles.push(this.driveFilesRepository.findOneBy({
-						id: x.fileId,
-						userId: page.userId,
-					}));
+					attachedFiles.push(
+						this.driveFilesRepository.findOneBy({
+							id: x.fileId,
+							userId: page.userId,
+						}),
+					);
 				}
 				if (x.children) {
 					collectFile(x.children);
@@ -80,17 +88,22 @@ export class PageEntityService {
 		}
 
 		const result = await awaitAll({
-			user: () =>
-				this.userEntityService.pack(page.user ?? page.userId, me), // { detail: true } すると無限ループするので注意
+			user: () => this.userEntityService.pack(page.user ?? page.userId, me), // { detail: true } すると無限ループするので注意
 			eyeCatchingImage: () =>
 				page.eyeCatchingImageId
 					? this.driveFileEntityService.pack(page.eyeCatchingImageId)
 					: Promise.resolve(null),
 			attachedFiles: async () =>
-				this.driveFileEntityService.packMany((await Promise.all(attachedFiles)).filter((x): x is DriveFile => x != null)),
+				this.driveFileEntityService.packMany(
+					(await Promise.all(attachedFiles)).filter(
+						(x): x is DriveFile => x != null,
+					),
+				),
 			isLiked: () =>
 				meId
-					? this.pageLikesRepository.exist({ where: { pageId: page.id, userId: meId } })
+					? this.pageLikesRepository.exist({
+							where: { pageId: page.id, userId: meId },
+					  })
 					: Promise.resolve(undefined),
 		});
 
@@ -116,13 +129,4 @@ export class PageEntityService {
 			isLiked: result.isLiked,
 		};
 	}
-
-	@bindThis
-	public packMany(
-		pages: Page[],
-		me?: { id: User['id'] } | null | undefined,
-	) {
-		return Promise.all(pages.map(x => this.pack(x, me)));
-	}
 }
-

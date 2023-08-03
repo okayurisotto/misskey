@@ -81,9 +81,17 @@ export default class extends Endpoint<
 
 			const result = await awaitAll({
 				topSubInstances: () =>
-					this.instanceEntityService.packMany(topSubInstances),
+					Promise.all(
+						topSubInstances.map((instacne) =>
+							this.instanceEntityService.pack(instacne),
+						),
+					),
 				topPubInstances: () =>
-					this.instanceEntityService.packMany(topPubInstances),
+					Promise.all(
+						topPubInstances.map((instacne) =>
+							this.instanceEntityService.pack(instacne),
+						),
+					),
 			});
 
 			return {

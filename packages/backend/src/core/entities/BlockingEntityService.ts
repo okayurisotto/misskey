@@ -15,15 +15,17 @@ export class BlockingEntityService {
 		private blockingsRepository: BlockingsRepository,
 
 		private userEntityService: UserEntityService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async pack(
 		src: Blocking['id'] | Blocking,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof BlockingSchema>> {
-		const blocking = typeof src === 'object' ? src : await this.blockingsRepository.findOneByOrFail({ id: src });
+		const blocking =
+			typeof src === 'object'
+				? src
+				: await this.blockingsRepository.findOneByOrFail({ id: src });
 
 		return {
 			id: blocking.id,
@@ -33,13 +35,5 @@ export class BlockingEntityService {
 				detail: true,
 			}),
 		};
-	}
-
-	@bindThis
-	public packMany(
-		blockings: any[],
-		me: { id: User['id'] },
-	) {
-		return Promise.all(blockings.map(x => this.pack(x, me)));
 	}
 }

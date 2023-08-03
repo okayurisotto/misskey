@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { FlashsRepository, FlashLikesRepository } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { } from '@/models/entities/Blocking.js';
+import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { Flash } from '@/models/entities/Flash.js';
 import { bindThis } from '@/decorators.js';
@@ -20,8 +20,7 @@ export class FlashEntityService {
 		private flashLikesRepository: FlashLikesRepository,
 
 		private userEntityService: UserEntityService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async pack(
@@ -29,14 +28,18 @@ export class FlashEntityService {
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof FlashSchema>> {
 		const meId = me ? me.id : null;
-		const flash = typeof src === 'object' ? src : await this.flashsRepository.findOneByOrFail({ id: src });
+		const flash =
+			typeof src === 'object'
+				? src
+				: await this.flashsRepository.findOneByOrFail({ id: src });
 
 		const result = await awaitAll({
-			user: () =>
-				this.userEntityService.pack(flash.user ?? flash.userId, me), // { detail: true } すると無限ループするので注意
+			user: () => this.userEntityService.pack(flash.user ?? flash.userId, me), // { detail: true } すると無限ループするので注意
 			isLiked: () =>
 				meId
-					? this.flashLikesRepository.exist({ where: { flashId: flash.id, userId: meId } })
+					? this.flashLikesRepository.exist({
+							where: { flashId: flash.id, userId: meId },
+					  })
 					: Promise.resolve(undefined),
 		});
 
@@ -53,13 +56,4 @@ export class FlashEntityService {
 			isLiked: result.isLiked,
 		};
 	}
-
-	@bindThis
-	public packMany(
-		flashs: Flash[],
-		me?: { id: User['id'] } | null | undefined,
-	) {
-		return Promise.all(flashs.map(x => this.pack(x, me)));
-	}
 }
-

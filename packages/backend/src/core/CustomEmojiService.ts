@@ -160,7 +160,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		this.localEmojisCache.refresh();
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await this.emojiEntityService.packDetailedMany(ids),
+			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
 		});
 	}
 
@@ -176,7 +176,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		this.localEmojisCache.refresh();
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await this.emojiEntityService.packDetailedMany(ids),
+			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
 		});
 	}
 
@@ -196,7 +196,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		this.localEmojisCache.refresh();
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await this.emojiEntityService.packDetailedMany(ids),
+			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
 		});
 	}
 
@@ -212,7 +212,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		this.localEmojisCache.refresh();
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await this.emojiEntityService.packDetailedMany(ids),
+			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
 		});
 	}
 
@@ -228,7 +228,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		this.localEmojisCache.refresh();
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await this.emojiEntityService.packDetailedMany(ids),
+			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
 		});
 	}
 
@@ -258,7 +258,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		this.localEmojisCache.refresh();
 
 		this.globalEventService.publishBroadcastStream('emojiDeleted', {
-			emojis: await this.emojiEntityService.packDetailedMany(emojis),
+			emojis: await Promise.all(emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji))),
 		});
 	}
 

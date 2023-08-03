@@ -131,9 +131,9 @@ export class NotificationEntityService implements OnModuleInit {
 		const users = userIds.length > 0 ? await this.usersRepository.find({
 			where: { id: In(userIds) },
 		}) : [];
-		const packedUsersArray = await this.userEntityService.packMany(users, { id: meId }, {
-			detail: false,
-		});
+		const packedUsersArray = await Promise.all(
+			users.map((user) => this.userEntityService.pack(user, { id: meId }, { detail: false })),
+		);
 		const packedUsers = new Map(packedUsersArray.map(p => [p.id, p]));
 
 		// 既に解決されたフォローリクエストの通知を除外
@@ -145,9 +145,8 @@ export class NotificationEntityService implements OnModuleInit {
 			validNotifications = validNotifications.filter(x => (x.type !== 'receiveFollowRequest') || reqs.some(r => r.followerId === x.notifierId));
 		}
 
-		return await Promise.all(validNotifications.map(x => this.pack(x, meId, {}, {
-			packedNotes,
-			packedUsers,
-		})));
+		return await Promise.all(
+			validNotifications.map(x => this.pack(x, meId, {}, { packedNotes, packedUsers })),
+		);
 	}
 }

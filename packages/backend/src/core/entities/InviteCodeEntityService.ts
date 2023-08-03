@@ -16,20 +16,20 @@ export class InviteCodeEntityService {
 		private registrationTicketsRepository: RegistrationTicketsRepository,
 
 		private userEntityService: UserEntityService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async pack(
 		src: RegistrationTicket['id'] | RegistrationTicket,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof InviteCodeSchema>> {
-		const target = typeof src === 'object'
-			? src
-			: await this.registrationTicketsRepository.findOneOrFail({
-				where: { id: src },
-				relations: ['createdBy', 'usedBy'],
-			});
+		const target =
+			typeof src === 'object'
+				? src
+				: await this.registrationTicketsRepository.findOneOrFail({
+						where: { id: src },
+						relations: ['createdBy', 'usedBy'],
+				  });
 
 		const result = await awaitAll({
 			createdBy: () =>
@@ -52,13 +52,5 @@ export class InviteCodeEntityService {
 			usedAt: target.usedAt ? target.usedAt.toISOString() : null,
 			used: !!target.usedAt,
 		};
-	}
-
-	@bindThis
-	public packMany(
-		targets: any[],
-		me: { id: User['id'] },
-	) {
-		return Promise.all(targets.map(x => this.pack(x, me)));
 	}
 }

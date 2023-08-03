@@ -74,9 +74,8 @@ export default class extends Endpoint<
 
 			const tickets = await query.getMany();
 
-			return (await this.inviteCodeEntityService.packMany(
-				tickets,
-				me,
+			return (await Promise.all(
+				tickets.map((ticket) => this.inviteCodeEntityService.pack(ticket)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

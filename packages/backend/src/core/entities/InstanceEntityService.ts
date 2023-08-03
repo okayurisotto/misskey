@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { InstancesRepository } from '@/models/index.js';
-import type { } from '@/models/entities/Blocking.js';
+import type {} from '@/models/entities/Blocking.js';
 import type { Instance } from '@/models/entities/Instance.js';
 import { MetaService } from '@/core/MetaService.js';
 import { bindThis } from '@/decorators.js';
@@ -18,8 +18,7 @@ export class InstanceEntityService {
 		private metaService: MetaService,
 
 		private utilityService: UtilityService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async pack(
@@ -36,7 +35,10 @@ export class InstanceEntityService {
 			followersCount: instance.followersCount,
 			isNotResponding: instance.isNotResponding,
 			isSuspended: instance.isSuspended,
-			isBlocked: this.utilityService.isBlockedHost(meta.blockedHosts, instance.host),
+			isBlocked: this.utilityService.isBlockedHost(
+				meta.blockedHosts,
+				instance.host,
+			),
 			softwareName: instance.softwareName,
 			softwareVersion: instance.softwareVersion,
 			openRegistrations: instance.openRegistrations,
@@ -47,15 +49,9 @@ export class InstanceEntityService {
 			iconUrl: instance.iconUrl,
 			faviconUrl: instance.faviconUrl,
 			themeColor: instance.themeColor,
-			infoUpdatedAt: instance.infoUpdatedAt ? instance.infoUpdatedAt.toISOString() : null,
+			infoUpdatedAt: instance.infoUpdatedAt
+				? instance.infoUpdatedAt.toISOString()
+				: null,
 		};
 	}
-
-	@bindThis
-	public packMany(
-		instances: Instance[],
-	) {
-		return Promise.all(instances.map(x => this.pack(x)));
-	}
 }
-

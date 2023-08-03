@@ -37,9 +37,10 @@ export default class extends Endpoint<
 
 			const favorites = await query.getMany();
 
-			return (await this.clipEntityService.packMany(
-				favorites.map((x) => x.clip!),
-				me,
+			return (await Promise.all(
+				favorites.map((favorite) =>
+					this.clipEntityService.pack(favorite.clip!, me),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

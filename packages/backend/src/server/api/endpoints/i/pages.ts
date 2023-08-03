@@ -47,9 +47,9 @@ export default class extends Endpoint<
 
 			const pages = await query.limit(ps.limit).getMany();
 
-			return (await this.pageEntityService.packMany(pages)) satisfies z.infer<
-				typeof res
-			>;
+			return (await Promise.all(
+				pages.map((page) => this.pageEntityService.pack(page)),
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

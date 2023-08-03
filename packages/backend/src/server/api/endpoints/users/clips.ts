@@ -48,9 +48,8 @@ export default class extends Endpoint<
 
 			const clips = await query.limit(ps.limit).getMany();
 
-			return (await this.clipEntityService.packMany(
-				clips,
-				me,
+			return (await Promise.all(
+				clips.map((clip) => this.clipEntityService.pack(clip, me)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

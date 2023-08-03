@@ -158,9 +158,9 @@ export default class extends Endpoint<
 				}
 			}
 
-			return (await this.userEntityService.packMany(users, me, {
-				detail: ps.detail,
-			})) satisfies z.infer<typeof res>;
+			return (await Promise.all(
+				users.map((user) => this.userEntityService.pack(user, me, { detail: ps.detail }))
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

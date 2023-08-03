@@ -34,13 +34,6 @@ export class EmojiEntityService {
 	}
 
 	@bindThis
-	public packSimpleMany(
-		emojis: any[],
-	) {
-		return Promise.all(emojis.map(x => this.packSimple(x)));
-	}
-
-	@bindThis
 	public async packDetailed(
 		src: Emoji['id'] | Emoji,
 	): Promise<z.infer<typeof EmojiDetailedSchema>> {
@@ -60,12 +53,4 @@ export class EmojiEntityService {
 			roleIdsThatCanBeUsedThisEmojiAsReaction: emoji.roleIdsThatCanBeUsedThisEmojiAsReaction,
 		};
 	}
-
-	@bindThis
-	public packDetailedMany(
-		emojis: any[],
-	) {
-		return Promise.all(emojis.map(x => this.packDetailed(x)));
-	}
 }
-

@@ -87,8 +87,8 @@ export default class extends Endpoint<
 				emojis = await q.limit(ps.limit).getMany();
 			}
 
-			return (await this.emojiEntityService.packDetailedMany(
-				emojis,
+			return (await Promise.all(
+				emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

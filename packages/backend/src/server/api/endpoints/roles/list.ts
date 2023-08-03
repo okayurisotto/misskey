@@ -32,7 +32,9 @@ export default class extends Endpoint<
 				isPublic: true,
 				isExplorable: true,
 			});
-			return await this.roleEntityService.packMany(roles, me) satisfies z.infer<typeof res>;
+			return (await Promise.all(
+				roles.map((role) => this.roleEntityService.pack(role, me)),
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

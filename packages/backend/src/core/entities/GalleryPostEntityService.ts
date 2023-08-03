@@ -1,8 +1,11 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { GalleryLikesRepository, GalleryPostsRepository } from '@/models/index.js';
+import type {
+	GalleryLikesRepository,
+	GalleryPostsRepository,
+} from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { } from '@/models/entities/Blocking.js';
+import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { GalleryPost } from '@/models/entities/GalleryPost.js';
 import { bindThis } from '@/decorators.js';
@@ -22,8 +25,7 @@ export class GalleryPostEntityService {
 
 		private userEntityService: UserEntityService,
 		private driveFileEntityService: DriveFileEntityService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async pack(
@@ -31,16 +33,19 @@ export class GalleryPostEntityService {
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof GalleryPostSchema>> {
 		const meId = me ? me.id : null;
-		const post = typeof src === 'object' ? src : await this.galleryPostsRepository.findOneByOrFail({ id: src });
+		const post =
+			typeof src === 'object'
+				? src
+				: await this.galleryPostsRepository.findOneByOrFail({ id: src });
 
 		const result = await awaitAll({
-			user: () =>
-				this.userEntityService.pack(post.user ?? post.userId, me),
-			files: () =>
-				this.driveFileEntityService.packManyByIds(post.fileIds), // TODO: packMany causes N+1 queries
+			user: () => this.userEntityService.pack(post.user ?? post.userId, me),
+			files: () => this.driveFileEntityService.packManyByIds(post.fileIds), // TODO: packMany causes N+1 queries
 			isLiked: () =>
 				meId
-					? this.galleryLikesRepository.exist({ where: { postId: post.id, userId: meId } })
+					? this.galleryLikesRepository.exist({
+							where: { postId: post.id, userId: meId },
+					  })
 					: Promise.resolve(undefined),
 		});
 
@@ -60,13 +65,4 @@ export class GalleryPostEntityService {
 			isLiked: result.isLiked,
 		};
 	}
-
-	@bindThis
-	public packMany(
-		posts: GalleryPost[],
-		me?: { id: User['id'] } | null | undefined,
-	) {
-		return Promise.all(posts.map(x => this.pack(x, me)));
-	}
 }
-

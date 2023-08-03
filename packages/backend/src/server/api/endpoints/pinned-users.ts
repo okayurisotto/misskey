@@ -47,10 +47,10 @@ export default class extends Endpoint<
 					),
 			);
 
-			return (await this.userEntityService.packMany(
-				users.filter((x) => x !== null) as User[],
-				me,
-				{ detail: true },
+			return (await Promise.all(
+				users
+					.filter((user): user is User => user !== null)
+					.map((user) => this.userEntityService.pack(user, me, { detail: true }))
 			)) satisfies z.infer<typeof res>;
 		});
 	}

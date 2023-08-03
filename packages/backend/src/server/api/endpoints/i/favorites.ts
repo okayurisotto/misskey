@@ -48,9 +48,10 @@ export default class extends Endpoint<
 
 			const favorites = await query.limit(ps.limit).getMany();
 
-			return (await this.noteFavoriteEntityService.packMany(
-				favorites,
-				me,
+			return (await Promise.all(
+				favorites.map((favorite) =>
+					this.noteFavoriteEntityService.pack(favorite, me),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

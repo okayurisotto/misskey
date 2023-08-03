@@ -49,7 +49,9 @@ export default class extends Endpoint<
 			});
 
 			return {
-				emojis: await this.emojiEntityService.packSimpleMany(emojis),
+				emojis: await Promise.all(
+					emojis.map((emoji) => this.emojiEntityService.packSimple(emoji)),
+				),
 			} satisfies z.infer<typeof res>;
 		});
 	}

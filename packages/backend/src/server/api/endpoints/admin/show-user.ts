@@ -91,7 +91,9 @@ export default class extends Endpoint<
 				moderationNote: profile.moderationNote ?? '',
 				signins,
 				policies: await this.roleService.getUserPolicies(user.id),
-				roles: await this.roleEntityService.packMany(roles, me),
+				roles: await Promise.all(
+					roles.map((role) => this.roleEntityService.pack(role, me)),
+				),
 				roleAssigns: roleAssigns.map((a) => ({
 					createdAt: a.createdAt.toISOString(),
 					expiresAt: a.expiresAt ? a.expiresAt.toISOString() : null,

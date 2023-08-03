@@ -33,9 +33,8 @@ export default class extends Endpoint<
 			const roles = await this.rolesRepository.find({
 				order: { lastUsedAt: 'DESC' },
 			});
-			return (await this.roleEntityService.packMany(
-				roles,
-				me,
+			return (await Promise.all(
+				roles.map((role) => this.roleEntityService.pack(role, me)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

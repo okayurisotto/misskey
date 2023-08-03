@@ -45,9 +45,8 @@ export default class extends Endpoint<
 
 			const posts = await query.limit(ps.limit).getMany();
 
-			return (await this.galleryPostEntityService.packMany(
-				posts,
-				me,
+			return (await Promise.all(
+				posts.map((post) => this.galleryPostEntityService.pack(post, me)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}
