@@ -4,7 +4,9 @@ import type { AbuseUserReportsRepository } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { AbuseUserReport } from '@/models/entities/AbuseUserReport.js';
 import { bindThis } from '@/decorators.js';
+import { AbuseUserReportSchema } from '@/models/zod/AbuseUserReportSchema.js';
 import { UserEntityService } from './UserEntityService.js';
+import type { z } from 'zod';
 
 @Injectable()
 export class AbuseUserReportEntityService {
@@ -16,7 +18,9 @@ export class AbuseUserReportEntityService {
 	) {}
 
 	@bindThis
-	public async pack(src: AbuseUserReport['id'] | AbuseUserReport) {
+	public async pack(
+		src: AbuseUserReport['id'] | AbuseUserReport,
+	): Promise<z.infer<typeof AbuseUserReportSchema>> {
 		const report =
 			typeof src === 'object'
 				? src

@@ -6,28 +6,13 @@ import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { AbuseUserReportEntityService } from '@/core/entities/AbuseUserReportEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { UserSchema } from '@/models/zod/UserSchema.js';
+import { AbuseUserReportSchema } from '@/models/zod/AbuseUserReportSchema.js';
 
-const res = z.array(
-	z.object({
-		id: MisskeyIdSchema,
-		createdAt: z.string().datetime(),
-		comment: z.string(),
-		resolved: z.boolean(),
-		reporterId: MisskeyIdSchema,
-		targetUserId: MisskeyIdSchema,
-		assigneeId: MisskeyIdSchema.nullable(),
-		reporter: UserSchema,
-		targetUser: UserSchema,
-		assignee: UserSchema.nullable().optional(),
-	}),
-);
+const res = z.array(AbuseUserReportSchema);
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireModerator: true,
-
 	res,
 } as const;
 
