@@ -4,9 +4,10 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { AdsRepository } from '@/models/index.js';
 import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
+import { AdSchema } from '@/models/zod/AdSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
-const res = z.array(z.unknown()); // TODO
+const res = z.array(AdSchema);
 export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
