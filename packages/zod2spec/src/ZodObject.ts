@@ -24,7 +24,7 @@ export const convertZodObject: Converter<typeof ZodObject> = (
     properties: Object.fromEntries(
       Object.entries(result.shape()).map(([k, v]) => [k, recursive(v)]),
     ),
-    ...(required.length > 1 ? { required } : {}),
+    ...(required.length > 0 ? { required } : {}),
     additionalProperties:
       result.unknownKeys === "strict"
         ? false
