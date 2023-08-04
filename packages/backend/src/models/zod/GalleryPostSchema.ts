@@ -15,4 +15,6 @@ export const GalleryPostSchema = z.object({
 	files: z.array(DriveFileSchema).optional(),
 	tags: z.array(z.string()).optional(),
 	isSensitive: z.boolean(),
+	likedCount: z.number().int(),
+	isLiked: z.boolean().optional(),
 });
