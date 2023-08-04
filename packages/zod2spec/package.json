@@ -7,8 +7,7 @@
   "type": "module",
   "scripts": {
     "build": "swc -d built src",
-    "build:type": "tsc --declaration --emitDeclarationOnly --outDir built src/index.ts",
-    "start": "node out/main.js"
+    "build:type": "tsc --declaration --emitDeclarationOnly --outDir built src/index.ts"
   },
   "devDependencies": {
     "@swc/cli": "^0.1.62",
