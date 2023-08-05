@@ -225,11 +225,13 @@ export const role = async (user: UserToken, role: any = {}, policies: any = {}):
 		name: 'New Role',
 		target: 'manual',
 		policies: {
-			...Object.entries(DEFAULT_POLICIES).map(([k, v]) => [k, {
-				priority: 0,
-				useDefault: true,
-				value: v,
-			}]),
+			...Object.fromEntries(
+				Object.entries(DEFAULT_POLICIES).map(([k, v]) => [k, {
+					priority: 0,
+					useDefault: true,
+					value: v,
+				}]),
+			),
 			...policies,
 		},
 		...role,
