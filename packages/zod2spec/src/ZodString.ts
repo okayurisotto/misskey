@@ -22,6 +22,10 @@ export const ZodString = z.object({
           value: z.number().int().nonnegative(),
         }),
         z.object({
+          kind: z.literal("length"),
+          value: z.number().int().nonnegative(),
+        }),
+        z.object({
           kind: z.literal("regex"),
           regex: z.custom<RegExp>((v) => v instanceof RegExp),
         }),
@@ -48,6 +52,12 @@ export const convertZodString: Converter<typeof ZodString> = (result) => {
   const max = result.checks?.find(
     (check): check is { kind: "max"; value: number } => {
       return check.kind === "max";
+    },
+  );
+
+  const length = result.checks?.find(
+    (check): check is { kind: "length"; value: number } => {
+      return check.kind === "length";
     },
   );
 
@@ -82,6 +92,9 @@ export const convertZodString: Converter<typeof ZodString> = (result) => {
     ...(format !== undefined ? { format: formatMap.get(format.kind)! } : {}),
     ...(max !== undefined ? { maxLength: max.value } : {}),
     ...(min !== undefined ? { minLength: min.value } : {}),
+    ...(length !== undefined
+      ? { maxLength: length.value, minLength: length.value }
+      : {}),
     ...(regex !== undefined ? { pattern: regex.regex.source } : {}),
   };
 };

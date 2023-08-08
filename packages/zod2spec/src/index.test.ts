@@ -20,6 +20,11 @@ const entries = [
   ["string[min]", z.string().min(10), { type: "string", minLength: 10 }],
   ["string[max]", z.string().max(10), { type: "string", maxLength: 10 }],
   [
+    "string[length]",
+    z.string().length(10),
+    { type: "string", minLength: 10, maxLength: 10 },
+  ],
+  [
     "string[pattern]",
     z.string().regex(/^\w+\s+\w+$/),
     { type: "string", pattern: /^\w+\s+\w+$/.source },
