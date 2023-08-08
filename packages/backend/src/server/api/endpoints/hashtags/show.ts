@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { HashtagsRepository } from '@/models/index.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { HashtagEntityService } from '@/core/entities/HashtagEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { HashtagSchema } from '@/models/zod/HashtagSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = HashtagSchema;
@@ -34,14 +33,14 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.hashtagsRepository)
-		private hashtagsRepository: HashtagsRepository,
-
-		private hashtagEntityService: HashtagEntityService,
+		private readonly hashtagEntityService: HashtagEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const hashtag = await this.hashtagsRepository.findOneBy({
-				name: normalizeForSearch(ps.tag),
+			const hashtag = await this.prismaService.client.hashtag.findUnique({
+				where: {
+					name: normalizeForSearch(ps.tag),
+				},
 			});
 			if (hashtag == null) {
 				throw new ApiError(meta.errors.noSuchHashtag);

@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { NotesRepository, UsersRepository, PollsRepository, PollVotesRepository, User } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
+import type { User } from '@/models/index.js';
 import type { Note } from '@/models/entities/Note.js';
 import { RelayService } from '@/core/RelayService.js';
 import { IdService } from '@/core/IdService.js';
@@ -10,35 +9,26 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { bindThis } from '@/decorators.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { note, user } from '@prisma/client';
 
 @Injectable()
 export class PollService {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.pollsRepository)
-		private pollsRepository: PollsRepository,
-
-		@Inject(DI.pollVotesRepository)
-		private pollVotesRepository: PollVotesRepository,
-
-		private userEntityService: UserEntityService,
-		private idService: IdService,
-		private relayService: RelayService,
-		private globalEventService: GlobalEventService,
-		private userBlockingService: UserBlockingService,
-		private apRendererService: ApRendererService,
-		private apDeliverManagerService: ApDeliverManagerService,
-	) {
-	}
+		private readonly userEntityService: UserEntityService,
+		private readonly idService: IdService,
+		private readonly relayService: RelayService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly userBlockingService: UserBlockingService,
+		private readonly apRendererService: ApRendererService,
+		private readonly apDeliverManagerService: ApDeliverManagerService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
-	public async vote(user: User, note: Note, choice: number) {
-		const poll = await this.pollsRepository.findOneBy({ noteId: note.id });
+	public async vote(user: T2P<User, user>, note: T2P<Note, note>, choice: number) {
+		const poll = await this.prismaService.client.poll.findUnique({ where: { noteId: note.id } });
 
 		if (poll == null) throw new Error('poll not found');
 
@@ -54,9 +44,11 @@ export class PollService {
 		}
 
 		// if already voted
-		const exist = await this.pollVotesRepository.findBy({
-			noteId: note.id,
-			userId: user.id,
+		const exist = await this.prismaService.client.poll_vote.findMany({
+			where: {
+				noteId: note.id,
+				userId: user.id,
+			},
 		});
 
 		if (poll.multiple) {
@@ -68,17 +60,31 @@ export class PollService {
 		}
 
 		// Create vote
-		await this.pollVotesRepository.insert({
-			id: this.idService.genId(),
-			createdAt: new Date(),
-			noteId: note.id,
-			userId: user.id,
-			choice: choice,
+		await this.prismaService.client.poll_vote.create({
+			data: {
+				id: this.idService.genId(),
+				createdAt: new Date(),
+				noteId: note.id,
+				userId: user.id,
+				choice: choice,
+			},
 		});
 
-		// Increment votes count
-		const index = choice + 1; // In SQL, array index is 1 based
-		await this.pollsRepository.query(`UPDATE poll SET votes[${index}] = votes[${index}] + 1 WHERE "noteId" = '${poll.noteId}'`);
+		this.prismaService.client.$transaction(async (client) => {
+			const data = await client.poll.findUniqueOrThrow({
+				where: { noteId: poll.noteId },
+			});
+
+			await client.poll.update({
+				where: { noteId: poll.noteId },
+				data: {
+					votes: data.votes.map((vote, index) => {
+						if (index !== choice) return vote;
+						return vote + 1;
+					}),
+				},
+			});
+		});
 
 		this.globalEventService.publishNoteStream(note.id, 'pollVoted', {
 			choice: choice,
@@ -88,10 +94,10 @@ export class PollService {
 
 	@bindThis
 	public async deliverQuestionUpdate(noteId: Note['id']) {
-		const note = await this.notesRepository.findOneBy({ id: noteId });
+		const note = await this.prismaService.client.note.findUnique({ where: { id: noteId } });
 		if (note == null) throw new Error('note not found');
 
-		const user = await this.usersRepository.findOneBy({ id: note.userId });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: note.userId } });
 		if (user == null) throw new Error('note not found');
 
 		if (this.userEntityService.isLocalUser(user)) {

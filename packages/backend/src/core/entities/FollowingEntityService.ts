@@ -1,14 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { FollowingsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { Following } from '@/models/entities/Following.js';
 import { bindThis } from '@/decorators.js';
 import type { FollowingSchema } from '@/models/zod/FollowingSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
+import type { following } from '@prisma/client';
 
 type LocalFollowerFollowing = Following & {
 	followerHost: null;
@@ -37,43 +38,41 @@ type RemoteFolloweeFollowing = Following & {
 @Injectable()
 export class FollowingEntityService {
 	constructor(
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly userEntityService: UserEntityService,
 	) {}
 
 	@bindThis
 	public isLocalFollower(
-		following: Following,
+		following: T2P<Following, following>,
 	): following is LocalFollowerFollowing {
 		return following.followerHost == null;
 	}
 
 	@bindThis
 	public isRemoteFollower(
-		following: Following,
+		following: T2P<Following, following>,
 	): following is RemoteFollowerFollowing {
 		return following.followerHost != null;
 	}
 
 	@bindThis
 	public isLocalFollowee(
-		following: Following,
+		following: T2P<Following, following>,
 	): following is LocalFolloweeFollowing {
 		return following.followeeHost == null;
 	}
 
 	@bindThis
 	public isRemoteFollowee(
-		following: Following,
+		following: T2P<Following, following>,
 	): following is RemoteFolloweeFollowing {
 		return following.followeeHost != null;
 	}
 
 	@bindThis
 	public async pack(
-		src: Following['id'] | Following,
+		src: Following['id'] | T2P<Following, following>,
 		me?: { id: User['id'] } | null | undefined,
 		opts?: {
 			populateFollowee?: boolean;
@@ -83,7 +82,7 @@ export class FollowingEntityService {
 		const following =
 			typeof src === 'object'
 				? src
-				: await this.followingsRepository.findOneByOrFail({ id: src });
+				: await this.prismaService.client.following.findUniqueOrThrow({ where: { id: src } });
 
 		if (opts == null) opts = {};
 
@@ -91,7 +90,7 @@ export class FollowingEntityService {
 			followee: () =>
 				opts?.populateFollowee
 					? this.userEntityService.pack(
-							following.followee ?? following.followeeId,
+							following.followeeId,
 							me,
 							{ detail: true },
 					  )
@@ -99,7 +98,7 @@ export class FollowingEntityService {
 			follower: () =>
 				opts?.populateFollower
 					? this.userEntityService.pack(
-							following.follower ?? following.followerId,
+							following.followerId,
 							me,
 							{ detail: true },
 					  )

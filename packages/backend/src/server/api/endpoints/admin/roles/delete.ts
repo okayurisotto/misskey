@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RolesRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { ApiError } from '@/server/api/error.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -32,18 +31,18 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.rolesRepository)
-		private rolesRepository: RolesRepository,
-
-		private globalEventService: GlobalEventService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const role = await this.rolesRepository.findOneBy({ id: ps.roleId });
-			if (role == null) {
+			const role = await this.prismaService.client.role.findUnique({
+				where: { id: ps.roleId },
+			});
+			if (role === null) {
 				throw new ApiError(meta.errors.noSuchRole);
 			}
-			await this.rolesRepository.delete({
-				id: ps.roleId,
+			await this.prismaService.client.role.delete({
+				where: { id: ps.roleId },
 			});
 			this.globalEventService.publishInternalEvent('roleDeleted', role);
 		});

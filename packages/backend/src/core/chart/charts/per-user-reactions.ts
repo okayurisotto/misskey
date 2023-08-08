@@ -10,6 +10,8 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-reactions.js';
 import type { KVs } from '../core.js';
+import type { T2P } from '@/types.js';
+import type { note } from '@prisma/client';
 
 /**
  * ユーザーごとのリアクションに関するチャート
@@ -37,7 +39,7 @@ export default class PerUserReactionsChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async update(user: { id: User['id'], host: User['host'] }, note: Note): Promise<void> {
+	public async update(user: { id: User['id'], host: User['host'] }, note: T2P<Note, note>): Promise<void> {
 		const prefix = this.userEntityService.isLocalUser(user) ? 'local' : 'remote';
 		this.commit({
 			[`${prefix}.count`]: 1,

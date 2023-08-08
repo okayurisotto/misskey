@@ -1,16 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UserProfilesRepository,
-	NoteReactionsRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteReactionEntityService } from '@/core/entities/NoteReactionEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteReactionSchema);
 export const meta = {
@@ -44,38 +40,42 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.noteReactionsRepository)
-		private noteReactionsRepository: NoteReactionsRepository,
-
-		private noteReactionEntityService: NoteReactionEntityService,
-		private queryService: QueryService,
+		private readonly noteReactionEntityService: NoteReactionEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: ps.userId,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: {
+						userId: ps.userId,
+					},
+				});
 
 			if ((me == null || me.id !== ps.userId) && !profile.publicReactions) {
 				throw new ApiError(meta.errors.reactionsNotPublic);
 			}
 
-			const query = this.queryService
-				.makePaginationQuery(
-					this.noteReactionsRepository.createQueryBuilder('reaction'),
-					ps.sinceId,
-					ps.untilId,
-					ps.sinceDate,
-					ps.untilDate,
-				)
-				.andWhere('reaction.userId = :userId', { userId: ps.userId })
-				.leftJoinAndSelect('reaction.note', 'note');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+				sinceDate: ps.sinceDate,
+				untilDate: ps.untilDate,
+			});
 
-			this.queryService.generateVisibilityQuery(query, me);
-
-			const reactions = await query.limit(ps.limit).getMany();
+			const reactions = await this.prismaService.client.note_reaction.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{ userId: ps.userId },
+						this.prismaQueryService.getVisibilityWhereForNoteReaction(
+							me?.id ?? null,
+						),
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				reactions.map((reaction) =>

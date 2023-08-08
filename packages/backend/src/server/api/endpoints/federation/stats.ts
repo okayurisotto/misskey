@@ -1,14 +1,9 @@
 import { z } from 'zod';
-import { IsNull, MoreThan, Not } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	FollowingsRepository,
-	InstancesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { InstanceEntityService } from '@/core/entities/InstanceEntityService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -31,44 +26,27 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private instanceEntityService: InstanceEntityService,
+		private readonly instanceEntityService: InstanceEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const [topSubInstances, topPubInstances, allSubCount, allPubCount] =
 				await Promise.all([
-					this.instancesRepository.find({
-						where: {
-							followersCount: MoreThan(0),
-						},
-						order: {
-							followersCount: 'DESC',
-						},
+					this.prismaService.client.instance.findMany({
+						where: { followersCount: { gt: 0 } },
+						orderBy: { followersCount: 'desc' },
 						take: ps.limit,
 					}),
-					this.instancesRepository.find({
-						where: {
-							followingCount: MoreThan(0),
-						},
-						order: {
-							followingCount: 'DESC',
-						},
+					this.prismaService.client.instance.findMany({
+						where: { followingCount: { gt: 0 } },
+						orderBy: { followingCount: 'desc' },
 						take: ps.limit,
 					}),
-					this.followingsRepository.count({
-						where: {
-							followeeHost: Not(IsNull()),
-						},
+					this.prismaService.client.following.count({
+						where: { followeeHost: { not: null } },
 					}),
-					this.followingsRepository.count({
-						where: {
-							followerHost: Not(IsNull()),
-						},
+					this.prismaService.client.following.count({
+						where: { followerHost: { not: null } },
 					}),
 				]);
 

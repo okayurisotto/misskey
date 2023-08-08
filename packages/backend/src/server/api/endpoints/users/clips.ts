@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { ClipsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(ClipSchema);
 export const meta = {
@@ -30,23 +29,26 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		private clipEntityService: ClipEntityService,
-		private queryService: QueryService,
+		private readonly clipEntityService: ClipEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.clipsRepository.createQueryBuilder('clip'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('clip.userId = :userId', { userId: ps.userId })
-				.andWhere('clip.isPublic = true');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const clips = await query.limit(ps.limit).getMany();
+			const clips = await this.prismaService.client.clip.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{ userId: ps.userId, isPublic: true },
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				clips.map((clip) => this.clipEntityService.pack(clip, me)),

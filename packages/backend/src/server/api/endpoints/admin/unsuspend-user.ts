@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UsersRepository } from '@/models/index.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -13,9 +12,7 @@ export const meta = {
 	requireModerator: true,
 } as const;
 
-export const paramDef = z.object({
-	userId: MisskeyIdSchema,
-});
+export const paramDef = z.object({ userId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -25,21 +22,22 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private userSuspendService: UserSuspendService,
-		private moderationLogService: ModerationLogService,
+		private readonly userSuspendService: UserSuspendService,
+		private readonly moderationLogService: ModerationLogService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const user = await this.usersRepository.findOneBy({ id: ps.userId });
+			const user = await this.prismaService.client.user.findUnique({
+				where: { id: ps.userId },
+			});
 
 			if (user == null) {
 				throw new Error('user not found');
 			}
 
-			await this.usersRepository.update(user.id, {
-				isSuspended: false,
+			await this.prismaService.client.user.update({
+				where: { id: user.id },
+				data: { isSuspended: false },
 			});
 
 			this.moderationLogService.insertModerationLog(me, 'unsuspend', {

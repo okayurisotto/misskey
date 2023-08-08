@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RegistryItemsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -22,24 +21,20 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.registryItemsRepository)
-		private registryItemsRepository: RegistryItemsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.registryItemsRepository
-				.createQueryBuilder('item')
-				.where('item.domain IS NULL')
-				.andWhere('item.userId = :userId', { userId: me.id })
-				.andWhere('item.scope = :scope', { scope: ps.scope });
+			const items = await this.prismaService.client.registry_item.findMany({
+				where: {
+					domain: null,
+					userId: me.id,
+					scope: { equals: ps.scope },
+				},
+			});
 
-			const items = await query.getMany();
-
-			const res_ = {} as Record<string, any>;
-
-			for (const item of items) {
-				res_[item.key] = item.value;
-			}
+			const res_ = items.reduce<Record<string, unknown>>(
+				(acc, cur) => ({ ...acc, [cur.key]: cur.value }),
+				{},
+			);
 
 			return res_ satisfies z.infer<typeof res>;
 		});

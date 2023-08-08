@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RenoteMutingsRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { RenoteMutingEntityService } from '@/core/entities/RenoteMutingEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { RenoteMutingSchema } from '@/models/zod/RenoteMutingSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(RenoteMutingSchema);
 export const meta = {
@@ -30,22 +29,21 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.renoteMutingsRepository)
-		private renoteMutingsRepository: RenoteMutingsRepository,
-
-		private renoteMutingEntityService: RenoteMutingEntityService,
-		private queryService: QueryService,
+		private readonly renoteMutingEntityService: RenoteMutingEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.renoteMutingsRepository.createQueryBuilder('muting'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('muting.muterId = :meId', { meId: me.id });
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const mutings = await query.limit(ps.limit).getMany();
+			const mutings = await this.prismaService.client.renote_muting.findMany({
+				where: { AND: [paginationQuery.where, { muterId: me.id }] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				mutings.map((muting) =>

@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { NotesRepository, PollsRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import type { IPoll } from '@/models/entities/Poll.js';
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { isQuestion } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import { ApResolverService } from '../ApResolverService.js';
@@ -17,16 +17,11 @@ export class ApQuestionService {
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.pollsRepository)
-		private pollsRepository: PollsRepository,
-
-		private apResolverService: ApResolverService,
-		private apLoggerService: ApLoggerService,
+		private readonly apResolverService: ApResolverService,
+		private readonly apLoggerService: ApLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.apLoggerService.logger;
 	}
@@ -68,10 +63,10 @@ export class ApQuestionService {
 		if (uri.startsWith(this.config.url + '/')) throw new Error('uri points local');
 
 		//#region このサーバーに既に登録されているか
-		const note = await this.notesRepository.findOneBy({ uri });
+		const note = await this.prismaService.client.note.findFirst({ where: { uri } });
 		if (note == null) throw new Error('Question is not registed');
 
-		const poll = await this.pollsRepository.findOneBy({ noteId: note.id });
+		const poll = await this.prismaService.client.poll.findUnique({ where: { noteId: note.id } });
 		if (poll == null) throw new Error('Question is not registed');
 		//#endregion
 
@@ -99,7 +94,10 @@ export class ApQuestionService {
 			}
 		}
 
-		await this.pollsRepository.update({ noteId: note.id }, { votes: poll.votes });
+		await this.prismaService.client.poll.update({
+			where: { noteId: note.id },
+			data: { votes: poll.votes },
+		});
 
 		return changed;
 	}

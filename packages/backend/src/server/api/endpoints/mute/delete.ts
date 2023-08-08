@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { MutingsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserMutingService } from '@/core/UserMutingService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -43,11 +42,9 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		private userMutingService: UserMutingService,
-		private getterService: GetterService,
+		private readonly userMutingService: UserMutingService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const muter = me;
@@ -66,9 +63,13 @@ export default class extends Endpoint<
 			});
 
 			// Check not muting
-			const exist = await this.mutingsRepository.findOneBy({
-				muterId: muter.id,
-				muteeId: mutee.id,
+			const exist = await this.prismaService.client.muting.findUnique({
+				where: {
+					muterId_muteeId: {
+						muterId: muter.id,
+						muteeId: mutee.id,
+					},
+				},
 			});
 
 			if (exist == null) {

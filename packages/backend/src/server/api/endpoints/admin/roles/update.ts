@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RolesRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { ApiError } from '@/server/api/error.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -46,39 +45,42 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.rolesRepository)
-		private rolesRepository: RolesRepository,
-
-		private globalEventService: GlobalEventService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const roleExist = await this.rolesRepository.exist({
-				where: { id: ps.roleId },
-			});
+			const roleExist =
+				(await this.prismaService.client.role.count({
+					where: { id: ps.roleId },
+					take: 1,
+				})) > 0;
 			if (!roleExist) {
 				throw new ApiError(meta.errors.noSuchRole);
 			}
 
 			const date = new Date();
-			await this.rolesRepository.update(ps.roleId, {
-				updatedAt: date,
-				name: ps.name,
-				description: ps.description,
-				color: ps.color,
-				iconUrl: ps.iconUrl,
-				target: ps.target,
-				condFormula: ps.condFormula,
-				isPublic: ps.isPublic,
-				isModerator: ps.isModerator,
-				isAdministrator: ps.isAdministrator,
-				isExplorable: ps.isExplorable,
-				asBadge: ps.asBadge,
-				canEditMembersByModerator: ps.canEditMembersByModerator,
-				displayOrder: ps.displayOrder,
-				policies: ps.policies,
+			await this.prismaService.client.role.update({
+				where: { id: ps.roleId },
+				data: {
+					updatedAt: date,
+					name: ps.name,
+					description: ps.description,
+					color: ps.color,
+					iconUrl: ps.iconUrl,
+					target: ps.target,
+					condFormula: ps.condFormula,
+					isPublic: ps.isPublic,
+					isModerator: ps.isModerator,
+					isAdministrator: ps.isAdministrator,
+					isExplorable: ps.isExplorable,
+					asBadge: ps.asBadge,
+					canEditMembersByModerator: ps.canEditMembersByModerator,
+					displayOrder: ps.displayOrder,
+					policies: ps.policies,
+				},
 			});
-			const updated = await this.rolesRepository.findOneByOrFail({
-				id: ps.roleId,
+			const updated = await this.prismaService.client.role.findUniqueOrThrow({
+				where: { id: ps.roleId },
 			});
 			this.globalEventService.publishInternalEvent('roleUpdated', updated);
 		});

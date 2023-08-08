@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { InstancesRepository } from '@/models/index.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { DI } from '@/di-symbols.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -17,30 +16,28 @@ export const paramDef = z.object({
 	isSuspended: z.boolean(),
 });
 
-// eslint-disable-next-line import/no-default-export
 @Injectable()
+// eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
 	typeof meta,
 	typeof paramDef,
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		private utilityService: UtilityService,
-		private federatedInstanceService: FederatedInstanceService,
+		private readonly utilityService: UtilityService,
+		private readonly federatedInstanceService: FederatedInstanceService,
+		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const instance = await this.instancesRepository.findOneBy({
-				host: this.utilityService.toPuny(ps.host),
+		super(meta, paramDef, async (ps) => {
+			const instance = await this.prismaService.client.instance.findUnique({
+				where: { host: this.utilityService.toPuny(ps.host) },
 			});
 
-			if (instance == null) {
+			if (instance === null) {
 				throw new Error('instance not found');
 			}
 
-			this.federatedInstanceService.update(instance.id, {
+			await this.federatedInstanceService.update(instance.id, {
 				isSuspended: ps.isSuspended,
 			});
 		});

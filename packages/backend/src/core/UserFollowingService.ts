@@ -1,6 +1,5 @@
-import { Inject, Injectable, OnModuleInit, forwardRef } from '@nestjs/common';
+import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { IsNull } from 'typeorm';
 import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser, User } from '@/models/entities/User.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { QueueService } from '@/core/QueueService.js';
@@ -13,7 +12,6 @@ import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { WebhookService } from '@/core/WebhookService.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import { DI } from '@/di-symbols.js';
-import type { FollowingsRepository, FollowRequestsRepository, InstancesRepository, UserProfilesRepository, UsersRepository } from '@/models/index.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { bindThis } from '@/decorators.js';
@@ -23,8 +21,11 @@ import { CacheService } from '@/core/CacheService.js';
 import type { Config } from '@/config.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import Logger from '../logger.js';
 import type { z } from 'zod';
+import type { user } from '@prisma/client';
 
 const logger = new Logger('following/create');
 
@@ -51,36 +52,21 @@ export class UserFollowingService implements OnModuleInit {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		@Inject(DI.followRequestsRepository)
-		private followRequestsRepository: FollowRequestsRepository,
-
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		private cacheService: CacheService,
-		private userEntityService: UserEntityService,
-		private idService: IdService,
-		private queueService: QueueService,
-		private globalEventService: GlobalEventService,
-		private metaService: MetaService,
-		private notificationService: NotificationService,
-		private federatedInstanceService: FederatedInstanceService,
-		private webhookService: WebhookService,
-		private apRendererService: ApRendererService,
-		private accountMoveService: AccountMoveService,
-		private perUserFollowingChart: PerUserFollowingChart,
-		private instanceChart: InstanceChart,
-	) {
-	}
+		private readonly cacheService: CacheService,
+		private readonly userEntityService: UserEntityService,
+		private readonly idService: IdService,
+		private readonly queueService: QueueService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly metaService: MetaService,
+		private readonly notificationService: NotificationService,
+		private readonly federatedInstanceService: FederatedInstanceService,
+		private readonly webhookService: WebhookService,
+		private readonly apRendererService: ApRendererService,
+		private readonly accountMoveService: AccountMoveService,
+		private readonly perUserFollowingChart: PerUserFollowingChart,
+		private readonly instanceChart: InstanceChart,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	onModuleInit() {
 		this.userBlockingService = this.moduleRef.get('UserBlockingService');
@@ -89,8 +75,8 @@ export class UserFollowingService implements OnModuleInit {
 	@bindThis
 	public async follow(_follower: { id: User['id'] }, _followee: { id: User['id'] }, requestId?: string, silent = false): Promise<void> {
 		const [follower, followee] = await Promise.all([
-			this.usersRepository.findOneByOrFail({ id: _follower.id }),
-			this.usersRepository.findOneByOrFail({ id: _followee.id }),
+			this.prismaService.client.user.findUniqueOrThrow({ where: { id: _follower.id } }),
+			this.prismaService.client.user.findUniqueOrThrow({ where: { id: _followee.id } }),
 		]) as [LocalUser | RemoteUser, LocalUser | RemoteUser];
 
 		// check blocking
@@ -113,7 +99,7 @@ export class UserFollowingService implements OnModuleInit {
 			if (blocked) throw new IdentifiableError('3338392a-f764-498d-8855-db939dcf8c48', 'blocked');
 		}
 
-		const followeeProfile = await this.userProfilesRepository.findOneByOrFail({ userId: followee.id });
+		const followeeProfile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: followee.id } });
 
 		// フォロー対象が鍵アカウントである or
 		// フォロワーがBotであり、フォロー対象がBotからのフォローに慎重である or
@@ -123,24 +109,26 @@ export class UserFollowingService implements OnModuleInit {
 			let autoAccept = false;
 
 			// 鍵アカウントであっても、既にフォローされていた場合はスルー
-			const isFollowing = await this.followingsRepository.exist({
+			const isFollowing = (await this.prismaService.client.following.count({
 				where: {
 					followerId: follower.id,
 					followeeId: followee.id,
 				},
-			});
+				take: 1,
+			})) > 0;
 			if (isFollowing) {
 				autoAccept = true;
 			}
 
 			// フォローしているユーザーは自動承認オプション
 			if (!autoAccept && (this.userEntityService.isLocalUser(followee) && followeeProfile.autoAcceptFollowed)) {
-				const isFollowed = await this.followingsRepository.exist({
+				const isFollowed = (await this.prismaService.client.following.count({
 					where: {
 						followerId: followee.id,
 						followeeId: follower.id,
 					},
-				});
+					take: 1,
+				})) > 0;
 
 				if (isFollowed) autoAccept = true;
 			}
@@ -149,12 +137,13 @@ export class UserFollowingService implements OnModuleInit {
 			if (followee.isLocked && !autoAccept) {
 				autoAccept = !!(await this.accountMoveService.validateAlsoKnownAs(
 					follower,
-					(oldSrc, newSrc) => this.followingsRepository.exist({
+					async (oldSrc, newSrc) => (await this.prismaService.client.following.count({
 						where: {
 							followeeId: followee.id,
 							followerId: newSrc.id,
 						},
-					}),
+						take: 1,
+					})) > 0,
 					true,
 				));
 			}
@@ -187,19 +176,21 @@ export class UserFollowingService implements OnModuleInit {
 
 		let alreadyFollowed = false as boolean;
 
-		await this.followingsRepository.insert({
-			id: this.idService.genId(),
-			createdAt: new Date(),
-			followerId: follower.id,
-			followeeId: followee.id,
+		await this.prismaService.client.following.create({
+			data: {
+				id: this.idService.genId(),
+				createdAt: new Date(),
+				followerId: follower.id,
+				followeeId: followee.id,
 
-			// 非正規化
-			followerHost: follower.host,
-			followerInbox: this.userEntityService.isRemoteUser(follower) ? follower.inbox : null,
-			followerSharedInbox: this.userEntityService.isRemoteUser(follower) ? follower.sharedInbox : null,
-			followeeHost: followee.host,
-			followeeInbox: this.userEntityService.isRemoteUser(followee) ? followee.inbox : null,
-			followeeSharedInbox: this.userEntityService.isRemoteUser(followee) ? followee.sharedInbox : null,
+				// 非正規化
+				followerHost: follower.host,
+				followerInbox: this.userEntityService.isRemoteUser(follower) ? follower.inbox : null,
+				followerSharedInbox: this.userEntityService.isRemoteUser(follower) ? follower.sharedInbox : null,
+				followeeHost: followee.host,
+				followeeInbox: this.userEntityService.isRemoteUser(followee) ? followee.inbox : null,
+				followeeSharedInbox: this.userEntityService.isRemoteUser(followee) ? followee.sharedInbox : null,
+			},
 		}).catch(err => {
 			if (isDuplicateKeyValueError(err) && this.userEntityService.isRemoteUser(follower) && this.userEntityService.isLocalUser(followee)) {
 				logger.info(`Insert duplicated ignore. ${follower.id} => ${followee.id}`);
@@ -211,17 +202,22 @@ export class UserFollowingService implements OnModuleInit {
 
 		this.cacheService.userFollowingsCache.refresh(follower.id);
 
-		const requestExist = await this.followRequestsRepository.exist({
+		const requestExist = (await this.prismaService.client.follow_request.count({
 			where: {
 				followeeId: followee.id,
 				followerId: follower.id,
 			},
-		});
+			take: 1,
+		})) > 0;
 
 		if (requestExist) {
-			await this.followRequestsRepository.delete({
-				followeeId: followee.id,
-				followerId: follower.id,
+			await this.prismaService.client.follow_request.delete({
+				where: {
+					followerId_followeeId: {
+						followeeId: followee.id,
+						followerId: follower.id,
+					},
+				},
 			});
 
 			// 通知を作成
@@ -235,30 +231,42 @@ export class UserFollowingService implements OnModuleInit {
 		this.globalEventService.publishInternalEvent('follow', { followerId: follower.id, followeeId: followee.id });
 
 		const [followeeUser, followerUser] = await Promise.all([
-			this.usersRepository.findOneByOrFail({ id: followee.id }),
-			this.usersRepository.findOneByOrFail({ id: follower.id }),
+			this.prismaService.client.user.findUniqueOrThrow({ where: { id: followee.id } }),
+			this.prismaService.client.user.findUniqueOrThrow({ where: { id: follower.id } }),
 		]);
 
 		// Neither followee nor follower has moved.
 		if (!followeeUser.movedToUri && !followerUser.movedToUri) {
 			//#region Increment counts
 			await Promise.all([
-				this.usersRepository.increment({ id: follower.id }, 'followingCount', 1),
-				this.usersRepository.increment({ id: followee.id }, 'followersCount', 1),
+				this.prismaService.client.user.update({
+					where: { id: follower.id },
+					data: { followingCount: { increment: 1 } },
+				}),
+				this.prismaService.client.user.update({
+					where: { id: followee.id },
+					data: { followersCount: { increment: 1 } },
+				}),
 			]);
 			//#endregion
 
 			//#region Update instance stats
 			if (this.userEntityService.isRemoteUser(follower) && this.userEntityService.isLocalUser(followee)) {
 				this.federatedInstanceService.fetch(follower.host).then(async i => {
-					this.instancesRepository.increment({ id: i.id }, 'followingCount', 1);
+					this.prismaService.client.instance.update({
+						where: { id: i.id },
+						data: { followingCount: { increment: 1 } },
+					});
 					if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
 						this.instanceChart.updateFollowing(i.host, true);
 					}
 				});
 			} else if (this.userEntityService.isLocalUser(follower) && this.userEntityService.isRemoteUser(followee)) {
 				this.federatedInstanceService.fetch(followee.host).then(async i => {
-					this.instancesRepository.increment({ id: i.id }, 'followersCount', 1);
+					this.prismaService.client.instance.update({
+						where: { id: i.id },
+						data: { followersCount: { increment: 1 } },
+					});
 					if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
 						this.instanceChart.updateFollowers(i.host, true);
 					}
@@ -315,27 +323,29 @@ export class UserFollowingService implements OnModuleInit {
 		},
 		silent = false,
 	): Promise<void> {
-		const following = await this.followingsRepository.findOne({
-			relations: {
-				follower: true,
-				followee: true,
-			},
+		const following = await this.prismaService.client.following.findUnique({
 			where: {
-				followerId: follower.id,
-				followeeId: followee.id,
+				followerId_followeeId: {
+					followerId: follower.id,
+					followeeId: followee.id,
+				},
 			},
+			include: {
+				user_following_followerIdTouser: true,
+				user_following_followeeIdTouser: true,
+			}
 		});
 
-		if (following === null || !following.follower || !following.followee) {
+		if (following === null) {
 			logger.warn('フォロー解除がリクエストされましたがフォローしていませんでした');
 			return;
 		}
 
-		await this.followingsRepository.delete(following.id);
+		await this.prismaService.client.following.delete({ where: { id: following.id } });
 
 		this.cacheService.userFollowingsCache.refresh(follower.id);
 
-		this.decrementFollowing(following.follower, following.followee);
+		await this.decrementFollowing(following.user_following_followerIdTouser, following.user_following_followeeIdTouser);
 
 		// Publish unfollow event
 		if (!silent && this.userEntityService.isLocalUser(follower)) {
@@ -367,8 +377,8 @@ export class UserFollowingService implements OnModuleInit {
 
 	@bindThis
 	private async decrementFollowing(
-		follower: User,
-		followee: User,
+		follower: T2P<User, user>,
+		followee: T2P<User, user>,
 	): Promise<void> {
 		this.globalEventService.publishInternalEvent('unfollow', { followerId: follower.id, followeeId: followee.id });
 
@@ -376,22 +386,34 @@ export class UserFollowingService implements OnModuleInit {
 		if (!follower.movedToUri && !followee.movedToUri) {
 			//#region Decrement following / followers counts
 			await Promise.all([
-				this.usersRepository.decrement({ id: follower.id }, 'followingCount', 1),
-				this.usersRepository.decrement({ id: followee.id }, 'followersCount', 1),
+				this.prismaService.client.user.update({
+					where: { id: follower.id },
+					data: { followingCount: { decrement: 1 } },
+				}),
+				this.prismaService.client.user.update({
+					where: { id: followee.id },
+					data: { followersCount: { decrement: 1 } },
+				}),
 			]);
 			//#endregion
 
 			//#region Update instance stats
 			if (this.userEntityService.isRemoteUser(follower) && this.userEntityService.isLocalUser(followee)) {
 				this.federatedInstanceService.fetch(follower.host).then(async i => {
-					this.instancesRepository.decrement({ id: i.id }, 'followingCount', 1);
+					this.prismaService.client.instance.update({
+						where: { id: i.id },
+						data: { followingCount: { decrement: 1 } },
+					});
 					if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
 						this.instanceChart.updateFollowing(i.host, false);
 					}
 				});
 			} else if (this.userEntityService.isLocalUser(follower) && this.userEntityService.isRemoteUser(followee)) {
 				this.federatedInstanceService.fetch(followee.host).then(async i => {
-					this.instancesRepository.decrement({ id: i.id }, 'followersCount', 1);
+					this.prismaService.client.instance.update({
+						where: { id: i.id },
+						data: { followersCount: { decrement: 1 } },
+					});
 					if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
 						this.instanceChart.updateFollowers(i.host, false);
 					}
@@ -405,32 +427,26 @@ export class UserFollowingService implements OnModuleInit {
 			for (const user of [follower, followee]) {
 				if (user.movedToUri) continue; // No need to update if the user has already moved.
 
-				const nonMovedFollowees = await this.followingsRepository.count({
-					relations: {
-						followee: true,
-					},
+				const nonMovedFollowees = await this.prismaService.client.following.count({
 					where: {
 						followerId: user.id,
-						followee: {
-							movedToUri: IsNull(),
+						user_following_followeeIdTouser: {
+							movedToUri: null,
 						},
 					},
 				});
-				const nonMovedFollowers = await this.followingsRepository.count({
-					relations: {
-						follower: true,
-					},
+				const nonMovedFollowers = await this.prismaService.client.following.count({
 					where: {
 						followeeId: user.id,
-						follower: {
-							movedToUri: IsNull(),
+						user_following_followerIdTouser: {
+							movedToUri: null,
 						},
 					},
 				});
-				await this.usersRepository.update(
-					{ id: user.id },
-					{ followingCount: nonMovedFollowees, followersCount: nonMovedFollowers },
-				);
+				await this.prismaService.client.user.update({
+					where: { id: user.id },
+					data: { followingCount: nonMovedFollowees, followersCount: nonMovedFollowers },
+				});
 			}
 
 			// TODO: adjust charts
@@ -458,21 +474,23 @@ export class UserFollowingService implements OnModuleInit {
 		if (blocking) throw new Error('blocking');
 		if (blocked) throw new Error('blocked');
 
-		const followRequest = await this.followRequestsRepository.insert({
-			id: this.idService.genId(),
-			createdAt: new Date(),
-			followerId: follower.id,
-			followeeId: followee.id,
-			requestId,
+		const followRequest = await this.prismaService.client.follow_request.create({
+			data: {
+				id: this.idService.genId(),
+				createdAt: new Date(),
+				followerId: follower.id,
+				followeeId: followee.id,
+				requestId,
 
-			// 非正規化
-			followerHost: follower.host,
-			followerInbox: this.userEntityService.isRemoteUser(follower) ? follower.inbox : undefined,
-			followerSharedInbox: this.userEntityService.isRemoteUser(follower) ? follower.sharedInbox : undefined,
-			followeeHost: followee.host,
-			followeeInbox: this.userEntityService.isRemoteUser(followee) ? followee.inbox : undefined,
-			followeeSharedInbox: this.userEntityService.isRemoteUser(followee) ? followee.sharedInbox : undefined,
-		}).then(x => this.followRequestsRepository.findOneByOrFail(x.identifiers[0]));
+				// 非正規化
+				followerHost: follower.host,
+				followerInbox: this.userEntityService.isRemoteUser(follower) ? follower.inbox : undefined,
+				followerSharedInbox: this.userEntityService.isRemoteUser(follower) ? follower.sharedInbox : undefined,
+				followeeHost: followee.host,
+				followeeInbox: this.userEntityService.isRemoteUser(followee) ? followee.inbox : undefined,
+				followeeSharedInbox: this.userEntityService.isRemoteUser(followee) ? followee.sharedInbox : undefined,
+			},
+		});
 
 		// Publish receiveRequest event
 		if (this.userEntityService.isLocalUser(followee)) {
@@ -512,20 +530,25 @@ export class UserFollowingService implements OnModuleInit {
 			}
 		}
 
-		const requestExist = await this.followRequestsRepository.exist({
+		const requestExist = (await this.prismaService.client.follow_request.count({
 			where: {
 				followeeId: followee.id,
 				followerId: follower.id,
 			},
-		});
+			take: 1,
+		})) > 0;
 
 		if (!requestExist) {
 			throw new IdentifiableError('17447091-ce07-46dd-b331-c1fd4f15b1e7', 'request not found');
 		}
 
-		await this.followRequestsRepository.delete({
-			followeeId: followee.id,
-			followerId: follower.id,
+		await this.prismaService.client.follow_request.delete({
+			where: {
+				followerId_followeeId: {
+					followeeId: followee.id,
+					followerId: follower.id,
+				},
+			},
 		});
 
 		this.userEntityService.pack(followee.id, followee, {
@@ -538,11 +561,15 @@ export class UserFollowingService implements OnModuleInit {
 		followee: {
 			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox'];
 		},
-		follower: User,
+		follower: T2P<User, user>,
 	): Promise<void> {
-		const request = await this.followRequestsRepository.findOneBy({
-			followeeId: followee.id,
-			followerId: follower.id,
+		const request = await this.prismaService.client.follow_request.findUnique({
+			where: {
+				followerId_followeeId: {
+					followeeId: followee.id,
+					followerId: follower.id,
+				},
+			},
 		});
 
 		if (request == null) {
@@ -567,13 +594,15 @@ export class UserFollowingService implements OnModuleInit {
 			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox'];
 		},
 	): Promise<void> {
-		const requests = await this.followRequestsRepository.findBy({
-			followeeId: user.id,
+		const requests = await this.prismaService.client.follow_request.findMany({
+			where: {
+				followeeId: user.id,
+			},
 		});
 
 		for (const request of requests) {
-			const follower = await this.usersRepository.findOneByOrFail({ id: request.followerId });
-			this.acceptFollowRequest(user, follower);
+			const follower = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: request.followerId } });
+			await this.acceptFollowRequest(user, follower);
 		}
 	}
 
@@ -583,13 +612,13 @@ export class UserFollowingService implements OnModuleInit {
 	@bindThis
 	public async rejectFollowRequest(user: Local, follower: Both): Promise<void> {
 		if (this.userEntityService.isRemoteUser(follower)) {
-			this.deliverReject(user, follower);
+			await this.deliverReject(user, follower);
 		}
 
 		await this.removeFollowRequest(user, follower);
 
 		if (this.userEntityService.isLocalUser(follower)) {
-			this.publishUnfollow(user, follower);
+			await this.publishUnfollow(user, follower);
 		}
 	}
 
@@ -599,13 +628,13 @@ export class UserFollowingService implements OnModuleInit {
 	@bindThis
 	public async rejectFollow(user: Local, follower: Both): Promise<void> {
 		if (this.userEntityService.isRemoteUser(follower)) {
-			this.deliverReject(user, follower);
+			await this.deliverReject(user, follower);
 		}
 
 		await this.removeFollow(user, follower);
 
 		if (this.userEntityService.isLocalUser(follower)) {
-			this.publishUnfollow(user, follower);
+			await this.publishUnfollow(user, follower);
 		}
 	}
 
@@ -616,7 +645,7 @@ export class UserFollowingService implements OnModuleInit {
 	public async remoteReject(actor: Remote, follower: Local): Promise<void> {
 		await this.removeFollowRequest(actor, follower);
 		await this.removeFollow(actor, follower);
-		this.publishUnfollow(actor, follower);
+		await this.publishUnfollow(actor, follower);
 	}
 
 	/**
@@ -624,14 +653,18 @@ export class UserFollowingService implements OnModuleInit {
 	 */
 	@bindThis
 	private async removeFollowRequest(followee: Both, follower: Both): Promise<void> {
-		const request = await this.followRequestsRepository.findOneBy({
-			followeeId: followee.id,
-			followerId: follower.id,
+		const request = await this.prismaService.client.follow_request.findUnique({
+			where: {
+				followerId_followeeId: {
+					followeeId: followee.id,
+					followerId: follower.id,
+				},
+			},
 		});
 
 		if (!request) return;
 
-		await this.followRequestsRepository.delete(request.id);
+		await this.prismaService.client.follow_request.delete({ where: { id: request.id } });
 	}
 
 	/**
@@ -639,22 +672,24 @@ export class UserFollowingService implements OnModuleInit {
 	 */
 	@bindThis
 	private async removeFollow(followee: Both, follower: Both): Promise<void> {
-		const following = await this.followingsRepository.findOne({
-			relations: {
-				followee: true,
-				follower: true,
+		const following = await this.prismaService.client.following.findUnique({
+			include: {
+				user_following_followeeIdTouser: true,
+				user_following_followerIdTouser: true,
 			},
 			where: {
-				followeeId: followee.id,
-				followerId: follower.id,
+				followerId_followeeId: {
+					followeeId: followee.id,
+					followerId: follower.id,
+				},
 			},
 		});
 
-		if (!following || !following.followee || !following.follower) return;
+		if (!following) return;
 
-		await this.followingsRepository.delete(following.id);
+		await this.prismaService.client.following.delete({ where: { id: following.id } });
 
-		this.decrementFollowing(following.follower, following.followee);
+		await this.decrementFollowing(following.user_following_followerIdTouser, following.user_following_followeeIdTouser);
 	}
 
 	/**
@@ -662,9 +697,13 @@ export class UserFollowingService implements OnModuleInit {
 	 */
 	@bindThis
 	private async deliverReject(followee: Local, follower: Remote): Promise<void> {
-		const request = await this.followRequestsRepository.findOneBy({
-			followeeId: followee.id,
-			followerId: follower.id,
+		const request = await this.prismaService.client.follow_request.findUnique({
+			where: {
+				followerId_followeeId: {
+					followeeId: followee.id,
+					followerId: follower.id,
+				},
+			},
 		});
 
 		const content = this.apRendererService.addContext(this.apRendererService.renderReject(this.apRendererService.renderFollow(follower, followee, request?.requestId ?? undefined), followee));

@@ -1,12 +1,9 @@
 import { URL } from 'node:url';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import httpSignature from '@peertube/http-signature';
 import * as Bull from 'bullmq';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import type Logger from '@/logger.js';
 import { MetaService } from '@/core/MetaService.js';
-import { ApRequestService } from '@/core/activitypub/ApRequestService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
 import InstanceChart from '@/core/chart/charts/instance.js';
@@ -22,24 +19,22 @@ import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { LdSignatureService } from '@/core/activitypub/LdSignatureService.js';
 import { ApInboxService } from '@/core/activitypub/ApInboxService.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { InboxJobData } from '../types.js';
+import type { user_publickey } from '@prisma/client';
 
 @Injectable()
 export class InboxProcessorService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
 		private utilityService: UtilityService,
 		private metaService: MetaService,
 		private apInboxService: ApInboxService,
 		private federatedInstanceService: FederatedInstanceService,
 		private fetchInstanceMetadataService: FetchInstanceMetadataService,
 		private ldSignatureService: LdSignatureService,
-		private apRequestService: ApRequestService,
 		private apPersonService: ApPersonService,
 		private apDbResolverService: ApDbResolverService,
 		private instanceChart: InstanceChart,
@@ -77,7 +72,7 @@ export class InboxProcessorService {
 		// HTTP-Signature keyIdを元にDBから取得
 		let authUser: {
 			user: RemoteUser;
-			key: UserPublickey | null;
+			key: T2P<UserPublickey, user_publickey> | null;
 		} | null = await this.apDbResolverService.getAuthUserFromKeyId(signature.keyId);
 
 		// keyIdでわからなければ、activity.actorを元にDBから取得 || activity.actorを元にリモートから取得

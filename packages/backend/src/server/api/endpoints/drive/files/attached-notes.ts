@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { NotesRepository, DriveFilesRepository } from '@/models/index.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { ApiError } from '../../../error.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { ApiError } from '../../../error.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -36,29 +35,25 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch file
-			const file = await this.driveFilesRepository.findOneBy({
-				id: ps.fileId,
-				userId: me.id,
+			const file = await this.prismaService.client.drive_file.findUnique({
+				where: {
+					id: ps.fileId,
+					userId: me.id,
+				},
 			});
 
 			if (file == null) {
 				throw new ApiError(meta.errors.noSuchFile);
 			}
 
-			const notes = await this.notesRepository
-				.createQueryBuilder('note')
-				.where(':file = ANY(note.fileIds)', { file: file.id })
-				.getMany();
+			const notes = await this.prismaService.client.note.findMany({
+				where: { fileIds: { has: file.id } },
+			});
 
 			return (await this.noteEntityService.packMany(notes, me, {
 				detail: true,

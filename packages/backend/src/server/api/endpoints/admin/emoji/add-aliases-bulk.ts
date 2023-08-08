@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
@@ -22,8 +22,8 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(private customEmojiService: CustomEmojiService) {
-		super(meta, paramDef, async (ps, me) => {
+	constructor(private readonly customEmojiService: CustomEmojiService) {
+		super(meta, paramDef, async (ps) => {
 			await this.customEmojiService.addAliasesBulk(ps.ids, ps.aliases);
 		});
 	}

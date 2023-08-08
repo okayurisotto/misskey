@@ -1,14 +1,10 @@
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	UserProfilesRepository,
-	UserSecurityKeysRepository,
-} from '@/models/index.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -30,19 +26,15 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.userSecurityKeysRepository)
-		private userSecurityKeysRepository: UserSecurityKeysRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		private userEntityService: UserEntityService,
-		private globalEventService: GlobalEventService,
+		private readonly userEntityService: UserEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: me.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: me.id },
+				});
 
 			// Compare password
 			const same = await bcrypt.compare(ps.password, profile.password!);
@@ -52,26 +44,22 @@ export default class extends Endpoint<
 			}
 
 			// Make sure we only delete the user's own creds
-			await this.userSecurityKeysRepository.delete({
-				userId: me.id,
-				id: ps.credentialId,
+			await this.prismaService.client.user_security_key.delete({
+				where: {
+					userId: me.id,
+					id: ps.credentialId,
+				},
 			});
 
 			// 使われているキーがなくなったらパスワードレスログインをやめる
-			const keyCount = await this.userSecurityKeysRepository.count({
-				where: {
-					userId: me.id,
-				},
-				select: {
-					id: true,
-					name: true,
-					lastUsed: true,
-				},
+			const keyCount = await this.prismaService.client.user_security_key.count({
+				where: { userId: me.id },
 			});
 
 			if (keyCount === 0) {
-				await this.userProfilesRepository.update(me.id, {
-					usePasswordLessLogin: false,
+				await this.prismaService.client.user_profile.update({
+					where: { userId: me.id },
+					data: { usePasswordLessLogin: false },
 				});
 			}
 

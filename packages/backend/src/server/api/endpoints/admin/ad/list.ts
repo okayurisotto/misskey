@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AdsRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
-import { DI } from '@/di-symbols.js';
 import { AdSchema } from '@/models/zod/AdSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(AdSchema);
 export const meta = {
@@ -29,18 +28,20 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.adsRepository)
-		private adsRepository: AdsRepository,
-
-		private queryService: QueryService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(
-				this.adsRepository.createQueryBuilder('ad'),
-				ps.sinceId,
-				ps.untilId,
-			);
-			const ads = await query.limit(ps.limit ?? 10).getMany();
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
+
+			const ads = await this.prismaService.client.ad.findMany({
+				where: { AND: [paginationQuery.where] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return ads satisfies z.infer<typeof res>;
 		});

@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AnnouncementsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -33,25 +32,25 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.announcementsRepository)
-		private announcementsRepository: AnnouncementsRepository,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const announcement = await this.announcementsRepository.findOneBy({
-				id: ps.id,
-			});
+	constructor(private readonly prismaService: PrismaService) {
+		super(meta, paramDef, async (ps) => {
+			const announcement =
+				await this.prismaService.client.announcement.findUnique({
+					where: { id: ps.id },
+				});
 
-			if (announcement == null) {
+			if (announcement === null) {
 				throw new ApiError(meta.errors.noSuchAnnouncement);
 			}
 
-			await this.announcementsRepository.update(announcement.id, {
-				updatedAt: new Date(),
-				title: ps.title,
-				text: ps.text,
-				/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- 空の文字列の場合、nullを渡すようにするため */
-				imageUrl: ps.imageUrl || null,
+			await this.prismaService.client.announcement.update({
+				where: { id: announcement.id },
+				data: {
+					updatedAt: new Date(),
+					title: ps.title,
+					text: ps.text,
+					imageUrl: ps.imageUrl === '' ? null : ps.imageUrl,
+				},
 			});
 		});
 	}

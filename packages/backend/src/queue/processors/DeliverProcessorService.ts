@@ -1,9 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as Bull from 'bullmq';
-import { DI } from '@/di-symbols.js';
-import type { DriveFilesRepository, InstancesRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
-import type Logger from '@/logger.js';
 import { MetaService } from '@/core/MetaService.js';
 import { ApRequestService } from '@/core/activitypub/ApRequestService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
@@ -16,36 +12,24 @@ import FederationChart from '@/core/chart/charts/federation.js';
 import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
-import { QueueLoggerService } from '../QueueLoggerService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import type { DeliverJobData } from '../types.js';
 
 @Injectable()
 export class DeliverProcessorService {
-	private logger: Logger;
-	private suspendedHostsCache: MemorySingleCache<Instance[]>;
-	private latest: string | null;
+	private readonly suspendedHostsCache: MemorySingleCache<Instance[]>;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private metaService: MetaService,
-		private utilityService: UtilityService,
-		private federatedInstanceService: FederatedInstanceService,
-		private fetchInstanceMetadataService: FetchInstanceMetadataService,
-		private apRequestService: ApRequestService,
-		private instanceChart: InstanceChart,
-		private apRequestChart: ApRequestChart,
-		private federationChart: FederationChart,
-		private queueLoggerService: QueueLoggerService,
+		private readonly metaService: MetaService,
+		private readonly utilityService: UtilityService,
+		private readonly federatedInstanceService: FederatedInstanceService,
+		private readonly fetchInstanceMetadataService: FetchInstanceMetadataService,
+		private readonly apRequestService: ApRequestService,
+		private readonly instanceChart: InstanceChart,
+		private readonly apRequestChart: ApRequestChart,
+		private readonly federationChart: FederationChart,
+		private readonly prismaService: PrismaService,
 	) {
-		this.logger = this.queueLoggerService.logger.createSubLogger('deliver');
 		this.suspendedHostsCache = new MemorySingleCache<Instance[]>(1000 * 60 * 60);
 	}
 
@@ -62,7 +46,7 @@ export class DeliverProcessorService {
 		// isSuspendedなら中断
 		let suspendedHosts = this.suspendedHostsCache.get();
 		if (suspendedHosts == null) {
-			suspendedHosts = await this.instancesRepository.find({
+			suspendedHosts = await this.prismaService.client.instance.findMany({
 				where: {
 					isSuspended: true,
 				},

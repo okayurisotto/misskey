@@ -4,10 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import Fastify, { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
-import { IsNull } from 'typeorm';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { Config } from '@/config.js';
-import type { EmojisRepository, UserProfilesRepository, UsersRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import type Logger from '@/logger.js';
 import * as Acct from '@/misc/acct.js';
@@ -25,6 +23,7 @@ import { WellKnownServerService } from './WellKnownServerService.js';
 import { FileServerService } from './FileServerService.js';
 import { ClientServerService } from './web/ClientServerService.js';
 import { OpenApiServerService } from './api/openapi/OpenApiServerService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const _dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -37,27 +36,19 @@ export class ServerService implements OnApplicationShutdown {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
-		private metaService: MetaService,
-		private userEntityService: UserEntityService,
-		private apiServerService: ApiServerService,
-		private openApiServerService: OpenApiServerService,
-		private streamingApiServerService: StreamingApiServerService,
-		private activityPubServerService: ActivityPubServerService,
-		private wellKnownServerService: WellKnownServerService,
-		private nodeinfoServerService: NodeinfoServerService,
-		private fileServerService: FileServerService,
-		private clientServerService: ClientServerService,
-		private globalEventService: GlobalEventService,
-		private loggerService: LoggerService,
+		private readonly metaService: MetaService,
+		private readonly userEntityService: UserEntityService,
+		private readonly apiServerService: ApiServerService,
+		private readonly openApiServerService: OpenApiServerService,
+		private readonly streamingApiServerService: StreamingApiServerService,
+		private readonly activityPubServerService: ActivityPubServerService,
+		private readonly wellKnownServerService: WellKnownServerService,
+		private readonly nodeinfoServerService: NodeinfoServerService,
+		private readonly fileServerService: FileServerService,
+		private readonly clientServerService: ClientServerService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly loggerService: LoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.loggerService.getLogger('server', 'gray', false);
 	}
@@ -106,10 +97,12 @@ export class ServerService implements OnApplicationShutdown {
 			const name = path.split('@')[0].replace('.webp', '');
 			const host = path.split('@')[1]?.replace('.webp', '');
 
-			const emoji = await this.emojisRepository.findOneBy({
-				// `@.` is the spec of ReactionService.decodeReaction
-				host: (host == null || host === '.') ? IsNull() : host,
-				name: name,
+			const emoji = await this.prismaService.client.emoji.findFirst({
+				where: {
+					// `@.` is the spec of ReactionService.decodeReaction
+					host: (host == null || host === '.') ? null : host,
+					name: name,
+				},
 			});
 
 			reply.header('Content-Security-Policy', 'default-src \'none\'; style-src \'unsafe-inline\'');
@@ -145,10 +138,10 @@ export class ServerService implements OnApplicationShutdown {
 
 		fastify.get<{ Params: { acct: string } }>('/avatar/@:acct', async (request, reply) => {
 			const { username, host } = Acct.parse(request.params.acct);
-			const user = await this.usersRepository.findOne({
+			const user = await this.prismaService.client.user.findFirst({
 				where: {
 					usernameLower: username.toLowerCase(),
-					host: (host == null) || (host === this.config.host) ? IsNull() : host,
+					host: (host == null) || (host === this.config.host) ? null : host,
 					isSuspended: false,
 				},
 			});
@@ -176,14 +169,19 @@ export class ServerService implements OnApplicationShutdown {
 		});
 
 		fastify.get<{ Params: { code: string } }>('/verify-email/:code', async (request, reply) => {
-			const profile = await this.userProfilesRepository.findOneBy({
-				emailVerifyCode: request.params.code,
+			const profile = await this.prismaService.client.user_profile.findFirst({
+				where: {
+					emailVerifyCode: request.params.code,
+				},
 			});
 
 			if (profile != null) {
-				await this.userProfilesRepository.update({ userId: profile.userId }, {
-					emailVerified: true,
-					emailVerifyCode: null,
+				await this.prismaService.client.user_profile.update({
+					where: { userId: profile.userId },
+					data: {
+						emailVerified: true,
+						emailVerifyCode: null,
+					},
 				});
 
 				this.globalEventService.publishMainStream(profile.userId, 'meUpdated', await this.userEntityService.pack(profile.userId, { id: profile.userId }, {

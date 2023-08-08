@@ -1,43 +1,40 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import type { LocalUser, User } from '@/models/entities/User.js';
-import type { RelaysRepository, UsersRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { MemorySingleCache } from '@/misc/cache.js';
 import type { Relay } from '@/models/entities/Relay.js';
 import { QueueService } from '@/core/QueueService.js';
 import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
-import { DI } from '@/di-symbols.js';
 import { deepClone } from '@/misc/clone.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { relay } from '@prisma/client';
 
 const ACTOR_USERNAME = 'relay.actor' as const;
 
 @Injectable()
 export class RelayService {
-	private relaysCache: MemorySingleCache<Relay[]>;
+	private relaysCache: MemorySingleCache<T2P<Relay, relay>[]>;
 
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.relaysRepository)
-		private relaysRepository: RelaysRepository,
-
-		private idService: IdService,
-		private queueService: QueueService,
-		private createSystemUserService: CreateSystemUserService,
-		private apRendererService: ApRendererService,
+		private readonly idService: IdService,
+		private readonly queueService: QueueService,
+		private readonly createSystemUserService: CreateSystemUserService,
+		private readonly apRendererService: ApRendererService,
+		private readonly prismaService: PrismaService,
 	) {
-		this.relaysCache = new MemorySingleCache<Relay[]>(1000 * 60 * 10);
+		this.relaysCache = new MemorySingleCache<T2P<Relay, relay>[]>(1000 * 60 * 10);
 	}
 
 	@bindThis
 	private async getRelayActor(): Promise<LocalUser> {
-		const user = await this.usersRepository.findOneBy({
-			host: IsNull(),
-			username: ACTOR_USERNAME,
+		const user = await this.prismaService.client.user.findFirst({
+			where: {
+				host: null,
+				username: ACTOR_USERNAME,
+			},
 		});
 
 		if (user) return user as LocalUser;
@@ -47,12 +44,14 @@ export class RelayService {
 	}
 
 	@bindThis
-	public async addRelay(inbox: string): Promise<Relay> {
-		const relay = await this.relaysRepository.insert({
-			id: this.idService.genId(),
-			inbox,
-			status: 'requesting',
-		}).then(x => this.relaysRepository.findOneByOrFail(x.identifiers[0]));
+	public async addRelay(inbox: string): Promise<T2P<Relay, relay>> {
+		const relay = await this.prismaService.client.relay.create({
+			data: {
+				id: this.idService.genId(),
+				inbox,
+				status: 'requesting',
+			},
+		});
 
 		const relayActor = await this.getRelayActor();
 		const follow = await this.apRendererService.renderFollowRelay(relay, relayActor);
@@ -64,8 +63,8 @@ export class RelayService {
 
 	@bindThis
 	public async removeRelay(inbox: string): Promise<void> {
-		const relay = await this.relaysRepository.findOneBy({
-			inbox,
+		const relay = await this.prismaService.client.relay.findUnique({
+			where: { inbox },
 		});
 
 		if (relay == null) {
@@ -78,39 +77,41 @@ export class RelayService {
 		const activity = this.apRendererService.addContext(undo);
 		this.queueService.deliver(relayActor, activity, relay.inbox, false);
 
-		await this.relaysRepository.delete(relay.id);
+		await this.prismaService.client.relay.delete({ where: { id: relay.id } });
 	}
 
 	@bindThis
-	public async listRelay(): Promise<Relay[]> {
-		const relays = await this.relaysRepository.find();
+	public async listRelay(): Promise<T2P<Relay, relay>[]> {
+		const relays = await this.prismaService.client.relay.findMany();
 		return relays;
 	}
 
 	@bindThis
 	public async relayAccepted(id: string): Promise<string> {
-		const result = await this.relaysRepository.update(id, {
-			status: 'accepted',
+		await this.prismaService.client.relay.update({
+			where: { id },
+			data: { status: 'accepted' },
 		});
 
-		return JSON.stringify(result);
+		return 'relayAccepted';
 	}
 
 	@bindThis
 	public async relayRejected(id: string): Promise<string> {
-		const result = await this.relaysRepository.update(id, {
-			status: 'rejected',
+		await this.prismaService.client.relay.update({
+			where: { id },
+			data: { status: 'rejected' },
 		});
 
-		return JSON.stringify(result);
+		return 'relayRejected';
 	}
 
 	@bindThis
 	public async deliverToRelays(user: { id: User['id']; host: null; }, activity: any): Promise<void> {
 		if (activity == null) return;
 
-		const relays = await this.relaysCache.fetch(() => this.relaysRepository.findBy({
-			status: 'accepted',
+		const relays = await this.relaysCache.fetch(() => this.prismaService.client.relay.findMany({
+			where: { status: 'accepted' },
 		}));
 		if (relays.length === 0) return;
 

@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { BlockingsRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { BlockingEntityService } from '@/core/entities/BlockingEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { BlockingSchema } from '@/models/zod/BlockingSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(BlockingSchema);
 export const meta = {
@@ -30,22 +29,20 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		private blockingEntityService: BlockingEntityService,
-		private queryService: QueryService,
+		private readonly blockingEntityService: BlockingEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.blockingsRepository.createQueryBuilder('blocking'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('blocking.blockerId = :meId', { meId: me.id });
-
-			const blockings = await query.limit(ps.limit).getMany();
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
+			const blockings = await this.prismaService.client.blocking.findMany({
+				where: { AND: [paginationQuery.where, { blockerId: me.id }] },
+				take: ps.limit,
+				orderBy: { blockeeId: 'desc' },
+			});
 
 			return (await Promise.all(
 				blockings.map((blocking) =>

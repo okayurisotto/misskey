@@ -1,27 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { In } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { MutingsRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
 import { UserMutingService } from '@/core/UserMutingService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
-import type * as Bull from 'bullmq';
 
 @Injectable()
 export class CheckExpiredMutingsProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		private userMutingService: UserMutingService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly userMutingService: UserMutingService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('check-expired-mutings');
 	}
@@ -30,11 +21,11 @@ export class CheckExpiredMutingsProcessorService {
 	public async process(): Promise<void> {
 		this.logger.info('Checking expired mutings...');
 
-		const expired = await this.mutingsRepository.createQueryBuilder('muting')
-			.where('muting.expiresAt IS NOT NULL')
-			.andWhere('muting.expiresAt < :now', { now: new Date() })
-			.innerJoinAndSelect('muting.mutee', 'mutee')
-			.getMany();
+		const expired = await this.prismaService.client.muting.findMany({
+			where: {
+				expiresAt: { not: null, lt: new Date() },
+			},
+		});
 
 		if (expired.length > 0) {
 			await this.userMutingService.unmute(expired);

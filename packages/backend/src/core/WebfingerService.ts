@@ -1,7 +1,5 @@
 import { URL } from 'node:url';
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
 import { query as urlQuery } from '@/misc/prelude/url.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { bindThis } from '@/decorators.js';
@@ -21,13 +19,7 @@ const mRegex = /^([^@]+)@(.*)/;
 
 @Injectable()
 export class WebfingerService {
-	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		private httpRequestService: HttpRequestService,
-	) {
-	}
+	constructor(private readonly httpRequestService: HttpRequestService) {}
 
 	@bindThis
 	public async webfinger(query: string): Promise<IWebFinger> {

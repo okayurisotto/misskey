@@ -1,7 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { DataSource, In } from 'typeorm';
+import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
-import type { NotesRepository, DriveFilesRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { User } from '@/models/entities/User.js';
@@ -9,45 +8,38 @@ import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { appendQuery, query } from '@/misc/prelude/url.js';
 import { deepClone } from '@/misc/clone.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
+import type { T2P } from '@/types.js';
+import { bindThis } from '@/decorators.js';
+import { isMimeImage } from '@/misc/is-mime-image.js';
+import { isNotNull } from '@/misc/is-not-null.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { UtilityService } from '../UtilityService.js';
 import { VideoProcessingService } from '../VideoProcessingService.js';
 import { UserEntityService } from './UserEntityService.js';
 import { DriveFolderEntityService } from './DriveFolderEntityService.js';
-import type { z } from 'zod';
+import type { drive_file } from '@prisma/client';
 
 type PackOptions = {
 	detail?: boolean,
 	self?: boolean,
 	withUser?: boolean,
 };
-import { bindThis } from '@/decorators.js';
-import { isMimeImage } from '@/misc/is-mime-image.js';
-import { isNotNull } from '@/misc/is-not-null.js';
 
 @Injectable()
 export class DriveFileEntityService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.db)
-		private db: DataSource,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
+		private readonly config: Config,
 
 		// 循環参照のため / for circular dependency
 		@Inject(forwardRef(() => UserEntityService))
-		private userEntityService: UserEntityService,
+		private readonly userEntityService: UserEntityService,
 
-		private utilityService: UtilityService,
-		private driveFolderEntityService: DriveFolderEntityService,
-		private videoProcessingService: VideoProcessingService,
-	) {
-	}
+		private readonly utilityService: UtilityService,
+		private readonly driveFolderEntityService: DriveFolderEntityService,
+		private readonly videoProcessingService: VideoProcessingService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
 	public validateFileName(name: string): boolean {
@@ -61,17 +53,24 @@ export class DriveFileEntityService {
 	}
 
 	@bindThis
-	public getPublicProperties(file: DriveFile): DriveFile['properties'] {
-		if (file.properties.orientation != null) {
-			const properties = deepClone(file.properties);
-			if (file.properties.orientation >= 5) {
+	public getPublicProperties(file: T2P<DriveFile, drive_file>) {
+		const properties_ = z.object({
+			width: z.number().optional(),
+			height: z.number().optional(),
+			orientation: z.number().optional(),
+			avgColor: z.string().optional(),
+		}).parse(file.properties);
+
+		if (properties_.orientation != null) {
+			const properties = deepClone(properties_);
+			if (properties_.orientation >= 5) {
 				[properties.width, properties.height] = [properties.height, properties.width];
 			}
 			properties.orientation = undefined;
 			return properties;
 		}
 
-		return file.properties;
+		return properties_;
 	}
 
 	@bindThis
@@ -86,7 +85,7 @@ export class DriveFileEntityService {
 	}
 
 	@bindThis
-	public getThumbnailUrl(file: DriveFile): string | null {
+	public getThumbnailUrl(file: T2P<DriveFile, drive_file>): string | null {
 		if (file.type.startsWith('video')) {
 			if (file.thumbnailUrl) return file.thumbnailUrl;
 
@@ -109,7 +108,7 @@ export class DriveFileEntityService {
 	}
 
 	@bindThis
-	public getPublicUrl(file: DriveFile, mode?: 'avatar'): string { // static = thumbnail
+	public getPublicUrl(file: T2P<DriveFile, drive_file>, mode?: 'avatar'): string { // static = thumbnail
 		// リモートかつメディアプロキシ
 		if (file.uri != null && file.userHost != null && this.config.externalMediaProxyEnabled) {
 			return this.getProxiedUrl(file.uri, mode);
@@ -138,55 +137,56 @@ export class DriveFileEntityService {
 	public async calcDriveUsageOf(user: User['id'] | { id: User['id'] }): Promise<number> {
 		const id = typeof user === 'object' ? user.id : user;
 
-		const { sum } = await this.driveFilesRepository
-			.createQueryBuilder('file')
-			.where('file.userId = :id', { id: id })
-			.andWhere('file.isLink = FALSE')
-			.select('SUM(file.size)', 'sum')
-			.getRawOne();
+		const { _sum: { size } } = await this.prismaService.client.drive_file.aggregate({
+			where: { userId: id, isLink: false },
+			_sum: { size: true }
+		});
 
-		return parseInt(sum, 10) ?? 0;
+		return size ?? 0;
 	}
 
 	@bindThis
 	public async calcDriveUsageOfHost(host: string): Promise<number> {
-		const { sum } = await this.driveFilesRepository
-			.createQueryBuilder('file')
-			.where('file.userHost = :host', { host: this.utilityService.toPuny(host) })
-			.andWhere('file.isLink = FALSE')
-			.select('SUM(file.size)', 'sum')
-			.getRawOne();
+		const { _sum: { size } } = await this.prismaService.client.drive_file.aggregate({
+			where: {
+				userHost: this.utilityService.toPuny(host),
+				isLink: false,
+			},
+			_sum: { size: true },
+		})
 
-		return parseInt(sum, 10) ?? 0;
+		return size ?? 0;
 	}
 
 	@bindThis
 	public async calcDriveUsageOfLocal(): Promise<number> {
-		const { sum } = await this.driveFilesRepository
-			.createQueryBuilder('file')
-			.where('file.userHost IS NULL')
-			.andWhere('file.isLink = FALSE')
-			.select('SUM(file.size)', 'sum')
-			.getRawOne();
+		const { _sum: { size } } = await this.prismaService.client.drive_file.aggregate({
+			where: {
+				userHost: null,
+				isLink: false,
+			},
+			_sum: { size: true },
+		});
 
-		return parseInt(sum, 10) ?? 0;
+		return size ?? 0;
 	}
 
 	@bindThis
 	public async calcDriveUsageOfRemote(): Promise<number> {
-		const { sum } = await this.driveFilesRepository
-			.createQueryBuilder('file')
-			.where('file.userHost IS NOT NULL')
-			.andWhere('file.isLink = FALSE')
-			.select('SUM(file.size)', 'sum')
-			.getRawOne();
+		const { _sum: { size } } = await this.prismaService.client.drive_file.aggregate({
+			where: {
+				userHost: { not: null },
+				isLink: false,
+			},
+			_sum: { size: true },
+		});
 
-		return parseInt(sum, 10) ?? 0;
+		return size ?? 0;
 	}
 
 	@bindThis
 	public async pack(
-		src: DriveFile['id'] | DriveFile,
+		src: DriveFile['id'] | T2P<DriveFile, drive_file>,
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema>> {
 		const opts = Object.assign({
@@ -194,7 +194,9 @@ export class DriveFileEntityService {
 			self: false,
 		}, options);
 
-		const file = typeof src === 'object' ? src : await this.driveFilesRepository.findOneByOrFail({ id: src });
+		const file = typeof src === 'object'
+			? src
+			: await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
 			folder: () =>
@@ -216,7 +218,14 @@ export class DriveFileEntityService {
 			size: file.size,
 			isSensitive: file.isSensitive,
 			blurhash: file.blurhash,
-			properties: opts.self ? file.properties : this.getPublicProperties(file),
+			properties: opts.self
+				? z.object({
+						width: z.number().optional(),
+						height: z.number().optional(),
+						orientation: z.number().optional(),
+						avgColor: z.string().optional(),
+					}).parse(file.properties)
+				: this.getPublicProperties(file),
 			url: opts.self ? file.url : this.getPublicUrl(file),
 			thumbnailUrl: this.getThumbnailUrl(file),
 			comment: file.comment,
@@ -229,7 +238,7 @@ export class DriveFileEntityService {
 
 	@bindThis
 	public async packNullable(
-		src: DriveFile['id'] | DriveFile,
+		src: DriveFile['id'] | T2P<DriveFile, drive_file>,
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema> | null> {
 		const opts = Object.assign({
@@ -237,7 +246,9 @@ export class DriveFileEntityService {
 			self: false,
 		}, options);
 
-		const file = typeof src === 'object' ? src : await this.driveFilesRepository.findOneBy({ id: src });
+		const file = typeof src === 'object'
+			? src
+			: await this.prismaService.client.drive_file.findUnique({ where: { id: src } });
 		if (file == null) return null;
 
 		const result = await awaitAll({
@@ -260,7 +271,14 @@ export class DriveFileEntityService {
 			size: file.size,
 			isSensitive: file.isSensitive,
 			blurhash: file.blurhash,
-			properties: opts.self ? file.properties : this.getPublicProperties(file),
+			properties: opts.self
+				? z.object({
+						width: z.number().optional(),
+						height: z.number().optional(),
+						orientation: z.number().optional(),
+						avgColor: z.string().optional(),
+					}).parse(file.properties)
+				: this.getPublicProperties(file),
 			url: opts.self ? file.url : this.getPublicUrl(file),
 			thumbnailUrl: this.getThumbnailUrl(file),
 			comment: file.comment,
@@ -273,7 +291,7 @@ export class DriveFileEntityService {
 
 	@bindThis
 	public async packMany(
-		files: DriveFile[],
+		files: T2P<DriveFile, drive_file>[],
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema>[]> {
 		const items = await Promise.all(files.map(f => this.packNullable(f, options)));
@@ -286,7 +304,7 @@ export class DriveFileEntityService {
 		options?: PackOptions,
 	): Promise<Map<z.infer<typeof DriveFileSchema>['id'], z.infer<typeof DriveFileSchema> | null>> {
 		if (fileIds.length === 0) return new Map();
-		const files = await this.driveFilesRepository.findBy({ id: In(fileIds) });
+		const files = await this.prismaService.client.drive_file.findMany({ where: { id: { in: fileIds } } });
 		const packedFiles = await this.packMany(files, options);
 		const map = new Map<z.infer<typeof DriveFileSchema>['id'], z.infer<typeof DriveFileSchema> | null>(packedFiles.map(f => [f.id, f]));
 		for (const id of fileIds) {

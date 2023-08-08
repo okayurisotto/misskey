@@ -1,15 +1,13 @@
 import { z } from 'zod';
 import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
-import type { DriveFilesRepository, PagesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
-import { Page } from '@/models/entities/Page.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { PageSchema } from '@/models/zod/PageSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = PageSchema;
 export const meta = {
@@ -57,32 +55,32 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private pageEntityService: PageEntityService,
-		private idService: IdService,
+		private readonly pageEntityService: PageEntityService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			let eyeCatchingImage = null;
 			if (ps.eyeCatchingImageId != null) {
-				eyeCatchingImage = await this.driveFilesRepository.findOneBy({
-					id: ps.eyeCatchingImageId,
-					userId: me.id,
-				});
+				eyeCatchingImage =
+					await this.prismaService.client.drive_file.findUnique({
+						where: {
+							id: ps.eyeCatchingImageId,
+							userId: me.id,
+						},
+					});
 
 				if (eyeCatchingImage == null) {
 					throw new ApiError(meta.errors.noSuchFile);
 				}
 			}
 
-			await this.pagesRepository
-				.findBy({
-					userId: me.id,
-					name: ps.name,
+			await this.prismaService.client.page
+				.findMany({
+					where: {
+						userId: me.id,
+						name: ps.name,
+					},
 				})
 				.then((result) => {
 					if (result.length > 0) {
@@ -90,27 +88,25 @@ export default class extends Endpoint<
 					}
 				});
 
-			const page = await this.pagesRepository
-				.insert(
-					new Page({
-						id: this.idService.genId(),
-						createdAt: new Date(),
-						updatedAt: new Date(),
-						title: ps.title,
-						name: ps.name,
-						summary: ps.summary,
-						content: ps.content,
-						variables: ps.variables,
-						script: ps.script,
-						eyeCatchingImageId: eyeCatchingImage ? eyeCatchingImage.id : null,
-						userId: me.id,
-						visibility: 'public',
-						alignCenter: ps.alignCenter,
-						hideTitleWhenPinned: ps.hideTitleWhenPinned,
-						font: ps.font,
-					}),
-				)
-				.then((x) => this.pagesRepository.findOneByOrFail(x.identifiers[0]));
+			const page = await this.prismaService.client.page.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					title: ps.title,
+					name: ps.name,
+					summary: ps.summary,
+					content: ps.content,
+					variables: ps.variables,
+					script: ps.script,
+					eyeCatchingImageId: eyeCatchingImage ? eyeCatchingImage.id : null,
+					userId: me.id,
+					visibility: 'public',
+					alignCenter: ps.alignCenter,
+					hideTitleWhenPinned: ps.hideTitleWhenPinned,
+					font: ps.font,
+				},
+			});
 
 			return (await this.pageEntityService.pack(page)) satisfies z.infer<
 				typeof res

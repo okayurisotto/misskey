@@ -36,7 +36,7 @@ export class HttpRequestService {
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 	) {
 		const cache = new CacheableLookup({
 			maxTtl: 3600,	// 1hours

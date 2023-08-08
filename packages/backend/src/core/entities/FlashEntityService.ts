@@ -1,46 +1,43 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { FlashsRepository, FlashLikesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { Flash } from '@/models/entities/Flash.js';
 import { bindThis } from '@/decorators.js';
 import type { FlashSchema } from '@/models/zod/FlashSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
+import type { flash } from '@prisma/client';
 
 @Injectable()
 export class FlashEntityService {
 	constructor(
-		@Inject(DI.flashsRepository)
-		private flashsRepository: FlashsRepository,
-
-		@Inject(DI.flashLikesRepository)
-		private flashLikesRepository: FlashLikesRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly userEntityService: UserEntityService,
 	) {}
 
 	@bindThis
 	public async pack(
-		src: Flash['id'] | Flash,
+		src: Flash['id'] | T2P<Flash, flash>,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof FlashSchema>> {
 		const meId = me ? me.id : null;
 		const flash =
 			typeof src === 'object'
 				? src
-				: await this.flashsRepository.findOneByOrFail({ id: src });
+				: await this.prismaService.client.flash.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.pack(flash.user ?? flash.userId, me), // { detail: true } すると無限ループするので注意
-			isLiked: () =>
+			user: () => this.userEntityService.pack(flash.userId, me), // { detail: true } すると無限ループするので注意
+			isLiked: async () =>
 				meId
-					? this.flashLikesRepository.exist({
+					? await this.prismaService.client.flash_like.count({
 							where: { flashId: flash.id, userId: meId },
-					  })
-					: Promise.resolve(undefined),
+							take: 1,
+					  }) > 0
+					: undefined,
 		});
 
 		return {

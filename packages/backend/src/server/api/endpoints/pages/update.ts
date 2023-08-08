@@ -1,12 +1,10 @@
 import { z } from 'zod';
 import ms from 'ms';
-import { Not } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { PagesRepository, DriveFilesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { ApiError } from '../../error.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['pages'],
@@ -46,8 +44,8 @@ export const paramDef = z.object({
 	title: z.string(),
 	name: z.string().min(1),
 	summary: z.string().nullable().optional(),
-	content: z.array(z.record(z.string(), z.unknown())),
-	variables: z.array(z.record(z.string(), z.unknown())),
+	content: z.array(z.record(z.string(), z.any())),
+	variables: z.array(z.record(z.string(), z.any())),
 	script: z.string(),
 	eyeCatchingImageId: MisskeyIdSchema.nullable().optional(),
 	font: z.enum(['serif', 'sans-serif']).default('sans-serif').optional(),
@@ -62,15 +60,11 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const page = await this.pagesRepository.findOneBy({ id: ps.pageId });
+			const page = await this.prismaService.client.page.findUnique({
+				where: { id: ps.pageId },
+			});
 			if (page == null) {
 				throw new ApiError(meta.errors.noSuchPage);
 			}
@@ -80,21 +74,26 @@ export default class extends Endpoint<
 
 			let eyeCatchingImage = null;
 			if (ps.eyeCatchingImageId != null) {
-				eyeCatchingImage = await this.driveFilesRepository.findOneBy({
-					id: ps.eyeCatchingImageId,
-					userId: me.id,
-				});
+				eyeCatchingImage =
+					await this.prismaService.client.drive_file.findUnique({
+						where: {
+							id: ps.eyeCatchingImageId,
+							userId: me.id,
+						},
+					});
 
 				if (eyeCatchingImage == null) {
 					throw new ApiError(meta.errors.noSuchFile);
 				}
 			}
 
-			await this.pagesRepository
-				.findBy({
-					id: Not(ps.pageId),
-					userId: me.id,
-					name: ps.name,
+			await this.prismaService.client.page
+				.findMany({
+					where: {
+						id: { not: ps.pageId },
+						userId: me.id,
+						name: ps.name,
+					},
 				})
 				.then((result) => {
 					if (result.length > 0) {
@@ -102,27 +101,30 @@ export default class extends Endpoint<
 					}
 				});
 
-			await this.pagesRepository.update(page.id, {
-				updatedAt: new Date(),
-				title: ps.title,
-				name: ps.name === undefined ? page.name : ps.name,
-				summary: ps.summary === undefined ? page.summary : ps.summary,
-				content: ps.content,
-				variables: ps.variables,
-				script: ps.script,
-				alignCenter:
-					ps.alignCenter === undefined ? page.alignCenter : ps.alignCenter,
-				hideTitleWhenPinned:
-					ps.hideTitleWhenPinned === undefined
-						? page.hideTitleWhenPinned
-						: ps.hideTitleWhenPinned,
-				font: ps.font === undefined ? page.font : ps.font,
-				eyeCatchingImageId:
-					ps.eyeCatchingImageId === null
-						? null
-						: ps.eyeCatchingImageId === undefined
-						? page.eyeCatchingImageId
-						: eyeCatchingImage!.id,
+			await this.prismaService.client.page.update({
+				where: { id: page.id },
+				data: {
+					updatedAt: new Date(),
+					title: ps.title,
+					name: ps.name === undefined ? page.name : ps.name,
+					summary: ps.summary === undefined ? page.summary : ps.summary,
+					content: ps.content,
+					variables: ps.variables,
+					script: ps.script,
+					alignCenter:
+						ps.alignCenter === undefined ? page.alignCenter : ps.alignCenter,
+					hideTitleWhenPinned:
+						ps.hideTitleWhenPinned === undefined
+							? page.hideTitleWhenPinned
+							: ps.hideTitleWhenPinned,
+					font: ps.font === undefined ? page.font : ps.font,
+					eyeCatchingImageId:
+						ps.eyeCatchingImageId === null
+							? null
+							: ps.eyeCatchingImageId === undefined
+							? page.eyeCatchingImageId
+							: eyeCatchingImage!.id,
+				},
 			});
 		});
 	}

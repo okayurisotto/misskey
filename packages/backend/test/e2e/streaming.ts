@@ -2,7 +2,7 @@ process.env.NODE_ENV = 'test';
 
 import * as assert from 'assert';
 import { Following } from '@/models/entities/Following.js';
-import { connectStream, signup, api, post, startServer, initTestDb, waitFire } from '../utils.js';
+import { signup, api, post, startServer, initTestDb, waitFire } from '../utils.js';
 import type { INestApplicationContext } from '@nestjs/common';
 import type * as misskey from 'misskey-js';
 

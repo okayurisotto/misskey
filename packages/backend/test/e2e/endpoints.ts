@@ -4,7 +4,7 @@ import * as assert from 'assert';
 // node-fetch only supports it's own Blob yet
 // https://github.com/node-fetch/node-fetch/pull/1664
 import { Blob } from 'node-fetch';
-import { User } from '@/models/index.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { startServer, signup, post, api, uploadFile, simpleGet, initTestDb } from '../utils.js';
 import type { INestApplicationContext } from '@nestjs/common';
 import type * as misskey from 'misskey-js';
@@ -293,11 +293,11 @@ describe('Endpoints', () => {
 			assert.strictEqual(res.status, 200);
 
 			const connection = await initTestDb(true);
-			const Users = connection.getRepository(User);
-			const newBob = await Users.findOneByOrFail({ id: bob.id });
+			const prismaService = app.get(PrismaService);
+			const newBob = await prismaService.client.user.findUniqueOrThrow({ where: { id: bob.id } });
 			assert.strictEqual(newBob.followersCount, 0);
 			assert.strictEqual(newBob.followingCount, 1);
-			const newAlice = await Users.findOneByOrFail({ id: alice.id });
+			const newAlice = await prismaService.client.user.findUniqueOrThrow({ where: { id: alice.id } });
 			assert.strictEqual(newAlice.followersCount, 1);
 			assert.strictEqual(newAlice.followingCount, 0);
 			connection.destroy();
@@ -355,11 +355,11 @@ describe('Endpoints', () => {
 			assert.strictEqual(res.status, 200);
 
 			const connection = await initTestDb(true);
-			const Users = connection.getRepository(User);
-			const newBob = await Users.findOneByOrFail({ id: bob.id });
+			const prismaService = app.get(PrismaService);
+			const newBob = await prismaService.client.user.findUniqueOrThrow({ where: { id: bob.id } });
 			assert.strictEqual(newBob.followersCount, 0);
 			assert.strictEqual(newBob.followingCount, 0);
-			const newAlice = await Users.findOneByOrFail({ id: alice.id });
+			const newAlice = await prismaService.client.user.findUniqueOrThrow({ where: { id: alice.id } });
 			assert.strictEqual(newAlice.followersCount, 0);
 			assert.strictEqual(newAlice.followingCount, 0);
 			connection.destroy();

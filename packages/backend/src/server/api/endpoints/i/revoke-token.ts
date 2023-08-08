@@ -1,10 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AccessTokensRepository } from '@/models/index.js';
-import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	requireCredential: true,
@@ -22,21 +20,20 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.accessTokensRepository)
-		private accessTokensRepository: AccessTokensRepository,
-
-		private globalEventService: GlobalEventService,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const tokenExist = await this.accessTokensRepository.exist({
-				where: { id: ps.tokenId },
-			});
+			const tokenExist =
+				(await this.prismaService.client.access_token.count({
+					where: { id: ps.tokenId },
+					take: 1,
+				})) > 0;
 
 			if (tokenExist) {
-				await this.accessTokensRepository.delete({
-					id: ps.tokenId,
-					userId: me.id,
+				await this.prismaService.client.access_token.delete({
+					where: {
+						id: ps.tokenId,
+						userId: me.id,
+					},
 				});
 			}
 		});

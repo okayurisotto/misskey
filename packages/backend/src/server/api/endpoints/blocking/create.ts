@@ -1,14 +1,13 @@
 import { z } from 'zod';
 import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UsersRepository, BlockingsRepository } from '@/models/index.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = UserDetailedNotMeSchema;
@@ -40,9 +39,7 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	userId: MisskeyIdSchema,
-});
+export const paramDef = z.object({ userId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -52,18 +49,15 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		private userEntityService: UserEntityService,
-		private getterService: GetterService,
-		private userBlockingService: UserBlockingService,
+		private readonly userEntityService: UserEntityService,
+		private readonly getterService: GetterService,
+		private readonly userBlockingService: UserBlockingService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const blocker = await this.usersRepository.findOneByOrFail({ id: me.id });
+			const blocker = await this.prismaService.client.user.findUniqueOrThrow({
+				where: { id: me.id },
+			});
 
 			// 自分自身
 			if (me.id === ps.userId) {
@@ -81,12 +75,14 @@ export default class extends Endpoint<
 				});
 
 			// Check if already blocking
-			const exist = await this.blockingsRepository.exist({
-				where: {
-					blockerId: blocker.id,
-					blockeeId: blockee.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.blocking.count({
+					where: {
+						blockerId: blocker.id,
+						blockeeId: blockee.id,
+					},
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyBlocking);

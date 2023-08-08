@@ -1,16 +1,13 @@
 import * as fs from 'node:fs';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ZipReader } from 'slacc';
-import { DataSource } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { EmojisRepository, DriveFilesRepository, UsersRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
 import type Logger from '@/logger.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { createTempDir } from '@/misc/create-temp.js';
 import { DriveService } from '@/core/DriveService.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbUserImportJobData } from '../types.js';
@@ -21,25 +18,11 @@ export class ImportCustomEmojisProcessorService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.db)
-		private db: DataSource,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
 		private customEmojiService: CustomEmojiService,
 		private driveService: DriveService,
 		private downloadService: DownloadService,
 		private queueLoggerService: QueueLoggerService,
+		private prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('import-custom-emojis');
 	}
@@ -48,8 +31,10 @@ export class ImportCustomEmojisProcessorService {
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		this.logger.info('Importing custom emojis ...');
 
-		const file = await this.driveFilesRepository.findOneBy({
-			id: job.data.fileId,
+		const file = await this.prismaService.client.drive_file.findUnique({
+			where: {
+				id: job.data.fileId,
+			},
 		});
 		if (file == null) {
 			return;
@@ -90,8 +75,13 @@ export class ImportCustomEmojisProcessorService {
 					continue;
 				}
 				const emojiPath = outputPath + '/' + record.fileName;
-				await this.emojisRepository.delete({
-					name: emojiInfo.name,
+				const emoji = await this.prismaService.client.emoji.findFirstOrThrow({
+					where: {
+						name: emojiInfo.name,
+					},
+				});
+				await this.prismaService.client.emoji.delete({
+					where: { id: emoji.id }
 				});
 				const driveFile = await this.driveService.addFile({
 					user: null,

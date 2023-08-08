@@ -2,14 +2,14 @@ import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { NotesRepository, RolesRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { DI } from '@/di-symbols.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -45,20 +45,17 @@ export default class extends Endpoint<
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
 
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.rolesRepository)
-		private rolesRepository: RolesRepository,
-
-		private idService: IdService,
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
+		private readonly idService: IdService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const role = await this.rolesRepository.findOneBy({
-				id: ps.roleId,
-				isPublic: true,
+			const role = await this.prismaService.client.role.findUnique({
+				where: {
+					id: ps.roleId,
+					isPublic: true,
+				},
 			});
 
 			if (role == null) {
@@ -92,22 +89,19 @@ export default class extends Endpoint<
 				return [];
 			}
 
-			const query = this.notesRepository
-				.createQueryBuilder('note')
-				.where('note.id IN (:...noteIds)', { noteIds: noteIds })
-				.andWhere("(note.visibility = 'public')")
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
-
-			this.queryService.generateVisibilityQuery(query, me);
-			this.queryService.generateMutedUserQuery(query, me);
-			this.queryService.generateBlockedUserQuery(query, me);
-
-			const notes = await query.getMany();
-			notes.sort((a, b) => (a.id > b.id ? -1 : 1));
+			const notes = (
+				await this.prismaService.client.note.findMany({
+					where: {
+						AND: [
+							{ id: { in: noteIds } },
+							{ visibility: 'public' },
+							this.prismaQueryService.getVisibilityWhereForNote(me.id),
+							await this.prismaQueryService.getMutingWhereForNote(me.id),
+							this.prismaQueryService.getBlockedWhereForNote(me.id),
+						],
+					},
+				})
+			).sort((a, b) => (a.id > b.id ? -1 : 1));
 
 			return (await this.noteEntityService.packMany(
 				notes,

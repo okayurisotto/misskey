@@ -1,8 +1,6 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import promiseLimit from 'promise-limit';
-import { In } from 'typeorm';
 import { DI } from '@/di-symbols.js';
-import type { PollsRepository, EmojisRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import type { RemoteUser } from '@/models/entities/User.js';
 import type { Note } from '@/models/entities/Note.js';
@@ -19,6 +17,8 @@ import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { checkHttps } from '@/misc/check-https.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { getOneApId, getApId, getOneApHrefNullable, validPost, isEmoji, getApType } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import { ApMfmService } from '../ApMfmService.js';
@@ -32,6 +32,7 @@ import { ApQuestionService } from './ApQuestionService.js';
 import { ApImageService } from './ApImageService.js';
 import type { Resolver } from '../ApResolverService.js';
 import type { IObject, IPost } from '../type.js';
+import type { drive_file, note } from '@prisma/client';
 
 @Injectable()
 export class ApNoteService {
@@ -39,33 +40,28 @@ export class ApNoteService {
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.pollsRepository)
-		private pollsRepository: PollsRepository,
-
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
-		private idService: IdService,
-		private apMfmService: ApMfmService,
-		private apResolverService: ApResolverService,
+		private readonly idService: IdService,
+		private readonly apMfmService: ApMfmService,
+		private readonly apResolverService: ApResolverService,
 
 		// 循環参照のため / for circular dependency
 		@Inject(forwardRef(() => ApPersonService))
-		private apPersonService: ApPersonService,
+		private readonly apPersonService: ApPersonService,
 
-		private utilityService: UtilityService,
-		private apAudienceService: ApAudienceService,
-		private apMentionService: ApMentionService,
-		private apImageService: ApImageService,
-		private apQuestionService: ApQuestionService,
-		private metaService: MetaService,
-		private appLockService: AppLockService,
-		private pollService: PollService,
-		private noteCreateService: NoteCreateService,
-		private apDbResolverService: ApDbResolverService,
-		private apLoggerService: ApLoggerService,
+		private readonly utilityService: UtilityService,
+		private readonly apAudienceService: ApAudienceService,
+		private readonly apMentionService: ApMentionService,
+		private readonly apImageService: ApImageService,
+		private readonly apQuestionService: ApQuestionService,
+		private readonly metaService: MetaService,
+		private readonly appLockService: AppLockService,
+		private readonly pollService: PollService,
+		private readonly noteCreateService: NoteCreateService,
+		private readonly apDbResolverService: ApDbResolverService,
+		private readonly apLoggerService: ApLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.apLoggerService.logger;
 	}
@@ -96,7 +92,7 @@ export class ApNoteService {
 	 * Misskeyに対象のNoteが登録されていればそれを返します。
 	 */
 	@bindThis
-	public async fetchNote(object: string | IObject): Promise<Note | null> {
+	public async fetchNote(object: string | IObject): Promise<T2P<Note, note> | null> {
 		return await this.apDbResolverService.getNoteFromApId(object);
 	}
 
@@ -104,7 +100,7 @@ export class ApNoteService {
 	 * Noteを作成します。
 	 */
 	@bindThis
-	public async createNote(value: string | IObject, resolver?: Resolver, silent = false): Promise<Note | null> {
+	public async createNote(value: string | IObject, resolver?: Resolver, silent = false): Promise<T2P<Note, note> | null> {
 		// eslint-disable-next-line no-param-reassign
 		if (resolver == null) resolver = this.apResolverService.createResolver();
 
@@ -167,7 +163,7 @@ export class ApNoteService {
 		// 添付ファイル
 		// TODO: attachmentは必ずしもImageではない
 		// TODO: attachmentは必ずしも配列ではない
-		const limit = promiseLimit<DriveFile>(2);
+		const limit = promiseLimit<T2P<DriveFile, drive_file>>(2);
 		const files = (await Promise.all(toArray(note.attachment).map(attach => (
 			limit(() => this.apImageService.resolveImage(actor, {
 				...attach,
@@ -176,7 +172,7 @@ export class ApNoteService {
 		))));
 
 		// リプライ
-		const reply: Note | null = note.inReplyTo
+		const reply: T2P<Note, note> | null = note.inReplyTo
 			? await this.resolveNote(note.inReplyTo, { resolver })
 				.then(x => {
 					if (x == null) {
@@ -197,7 +193,7 @@ export class ApNoteService {
 
 		if (note._misskey_quote || note.quoteUrl) {
 			const tryResolveNote = async (uri: string): Promise<
-				| { status: 'ok'; res: Note }
+				| { status: 'ok'; res: T2P<Note, note> }
 				| { status: 'permerror' | 'temperror' }
 			> => {
 				if (!/^https?:/.test(uri)) return { status: 'permerror' };
@@ -237,7 +233,7 @@ export class ApNoteService {
 
 		// vote
 		if (reply && reply.hasPoll) {
-			const poll = await this.pollsRepository.findOneByOrFail({ noteId: reply.id });
+			const poll = await this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: reply.id } });
 
 			const tryCreateVote = async (name: string, index: number): Promise<null> => {
 				if (poll.expiresAt && Date.now() > new Date(poll.expiresAt).getTime()) {
@@ -293,7 +289,7 @@ export class ApNoteService {
 	 * リモートサーバーからフェッチしてMisskeyに登録しそれを返します。
 	 */
 	@bindThis
-	public async resolveNote(value: string | IObject, options: { sentFrom?: URL, resolver?: Resolver } = {}): Promise<Note | null> {
+	public async resolveNote(value: string | IObject, options: { sentFrom?: URL, resolver?: Resolver } = {}): Promise<T2P<Note, note> | null> {
 		const uri = getApId(value);
 
 		// ブロックしていたら中断
@@ -331,9 +327,11 @@ export class ApNoteService {
 
 		const eomjiTags = toArray(tags).filter(isEmoji);
 
-		const existingEmojis = await this.emojisRepository.findBy({
-			host,
-			name: In(eomjiTags.map(tag => tag.name.replaceAll(':', ''))),
+		const existingEmojis = await this.prismaService.client.emoji.findMany({
+			where: {
+				host,
+				name: { in: eomjiTags.map(tag => tag.name.replaceAll(':', '')) },
+			},
 		});
 
 		return await Promise.all(eomjiTags.map(async tag => {
@@ -348,17 +346,17 @@ export class ApNoteService {
 					|| (new Date(tag.updated) > exists.updatedAt)
 					|| (tag.icon.url !== exists.originalUrl)
 				) {
-					await this.emojisRepository.update({
-						host,
-						name,
-					}, {
-						uri: tag.id,
-						originalUrl: tag.icon.url,
-						publicUrl: tag.icon.url,
-						updatedAt: new Date(),
+					await this.prismaService.client.emoji.update({
+						where: { name_host: { host, name } },
+						data: {
+							uri: tag.id,
+							originalUrl: tag.icon.url,
+							publicUrl: tag.icon.url,
+							updatedAt: new Date(),
+						},
 					});
 
-					const emoji = await this.emojisRepository.findOneBy({ host, name });
+					const emoji = await this.prismaService.client.emoji.findUnique({ where: { name_host: { host, name } } });
 					if (emoji == null) throw new Error('emoji update failed');
 					return emoji;
 				}
@@ -368,16 +366,18 @@ export class ApNoteService {
 
 			this.logger.info(`register emoji host=${host}, name=${name}`);
 
-			return await this.emojisRepository.insert({
-				id: this.idService.genId(),
-				host,
-				name,
-				uri: tag.id,
-				originalUrl: tag.icon.url,
-				publicUrl: tag.icon.url,
-				updatedAt: new Date(),
-				aliases: [],
-			}).then(x => this.emojisRepository.findOneByOrFail(x.identifiers[0]));
+			return await this.prismaService.client.emoji.create({
+				data: {
+					id: this.idService.genId(),
+					host,
+					name,
+					uri: tag.id,
+					originalUrl: tag.icon.url,
+					publicUrl: tag.icon.url,
+					updatedAt: new Date(),
+					aliases: [],
+				},
+			});
 		}));
 	}
 }

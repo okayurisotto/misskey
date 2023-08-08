@@ -1,10 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { HashtagsRepository } from '@/models/index.js';
 import { HashtagEntityService } from '@/core/entities/HashtagEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { HashtagSchema } from '@/models/zod/HashtagSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(HashtagSchema);
 export const meta = {
@@ -42,72 +42,54 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.hashtagsRepository)
-		private hashtagsRepository: HashtagsRepository,
-
-		private hashtagEntityService: HashtagEntityService,
+		private readonly hashtagEntityService: HashtagEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.hashtagsRepository.createQueryBuilder('tag');
+			const orderBy = ((): Prisma.hashtagOrderByWithRelationInput => {
+				switch (ps.sort) {
+					case '+mentionedUsers':
+						return { mentionedUsersCount: 'desc' };
+					case '-mentionedUsers':
+						return { mentionedUsersCount: 'asc' };
+					case '+mentionedLocalUsers':
+						return { mentionedLocalUsersCount: 'desc' };
+					case '-mentionedLocalUsers':
+						return { mentionedLocalUsersCount: 'asc' };
+					case '+mentionedRemoteUsers':
+						return { mentionedRemoteUsersCount: 'desc' };
+					case '-mentionedRemoteUsers':
+						return { mentionedRemoteUsersCount: 'asc' };
+					case '+attachedUsers':
+						return { attachedUsersCount: 'desc' };
+					case '-attachedUsers':
+						return { attachedUsersCount: 'asc' };
+					case '+attachedLocalUsers':
+						return { attachedLocalUsersCount: 'desc' };
+					case '-attachedLocalUsers':
+						return { attachedLocalUsersCount: 'asc' };
+					case '+attachedRemoteUsers':
+						return { attachedRemoteUsersCount: 'desc' };
+					case '-attachedRemoteUsers':
+						return { attachedRemoteUsersCount: 'asc' };
+				}
+			})();
 
-			if (ps.attachedToUserOnly) query.andWhere('tag.attachedUsersCount != 0');
-			if (ps.attachedToLocalUserOnly) {
-				query.andWhere('tag.attachedLocalUsersCount != 0');
-			}
-			if (ps.attachedToRemoteUserOnly) {
-				query.andWhere('tag.attachedRemoteUsersCount != 0');
-			}
-
-			switch (ps.sort) {
-				case '+mentionedUsers':
-					query.orderBy('tag.mentionedUsersCount', 'DESC');
-					break;
-				case '-mentionedUsers':
-					query.orderBy('tag.mentionedUsersCount', 'ASC');
-					break;
-				case '+mentionedLocalUsers':
-					query.orderBy('tag.mentionedLocalUsersCount', 'DESC');
-					break;
-				case '-mentionedLocalUsers':
-					query.orderBy('tag.mentionedLocalUsersCount', 'ASC');
-					break;
-				case '+mentionedRemoteUsers':
-					query.orderBy('tag.mentionedRemoteUsersCount', 'DESC');
-					break;
-				case '-mentionedRemoteUsers':
-					query.orderBy('tag.mentionedRemoteUsersCount', 'ASC');
-					break;
-				case '+attachedUsers':
-					query.orderBy('tag.attachedUsersCount', 'DESC');
-					break;
-				case '-attachedUsers':
-					query.orderBy('tag.attachedUsersCount', 'ASC');
-					break;
-				case '+attachedLocalUsers':
-					query.orderBy('tag.attachedLocalUsersCount', 'DESC');
-					break;
-				case '-attachedLocalUsers':
-					query.orderBy('tag.attachedLocalUsersCount', 'ASC');
-					break;
-				case '+attachedRemoteUsers':
-					query.orderBy('tag.attachedRemoteUsersCount', 'DESC');
-					break;
-				case '-attachedRemoteUsers':
-					query.orderBy('tag.attachedRemoteUsersCount', 'ASC');
-					break;
-			}
-
-			query.select([
-				'tag.name',
-				'tag.mentionedUsersCount',
-				'tag.mentionedLocalUsersCount',
-				'tag.mentionedRemoteUsersCount',
-				'tag.attachedUsersCount',
-				'tag.attachedLocalUsersCount',
-				'tag.attachedRemoteUsersCount',
-			]);
-
-			const tags = await query.limit(ps.limit).getMany();
+			const tags = await this.prismaService.client.hashtag.findMany({
+				where: {
+					AND: [
+						{ attachedUsersCount: { not: 0 } },
+						ps.attachedToLocalUserOnly
+							? { attachedLocalUsersCount: { not: 0 } }
+							: {},
+						ps.attachedToRemoteUserOnly
+							? { attachedRemoteUsersCount: { not: 0 } }
+							: {},
+					],
+				},
+				orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				tags.map((tag) => this.hashtagEntityService.pack(tag)),

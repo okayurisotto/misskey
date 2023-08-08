@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -31,53 +30,42 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const day = 1000 * 60 * 60 * 24 * 3; // 3日前まで
 
-			const query = this.notesRepository
-				.createQueryBuilder('note')
-				.addSelect('note.score')
-				.where('note.userHost IS NULL')
-				.andWhere('note.score > 0')
-				.andWhere('note.createdAt > :date', {
-					date: new Date(Date.now() - day),
-				})
-				.andWhere("note.visibility = 'public'")
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
-
-			if (ps.channelId) {
-				query.andWhere('note.channelId = :channelId', {
-					channelId: ps.channelId,
-				});
-			}
-
-			if (me) this.queryService.generateMutedUserQuery(query, me);
-			if (me) this.queryService.generateBlockedUserQuery(query, me);
-
-			let notes = await query
-				.orderBy('note.score', 'DESC')
-				.limit(100)
-				.getMany();
+			const notes = await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						{
+							userHost: null,
+							score: { gt: 0 },
+							createdAt: { gt: new Date(Date.now() - day) },
+							visibility: 'public',
+							channelId: ps.channelId,
+						},
+						me
+							? await this.prismaQueryService.getMutingWhereForNote(
+									me?.id ?? null,
+							  )
+							: {},
+						me ? this.prismaQueryService.getBlockedWhereForNote(me.id) : {},
+					],
+				},
+				orderBy: { score: 'desc' },
+				take: 100,
+			});
 
 			notes.sort(
 				(a, b) =>
 					new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 			);
 
-			notes = notes.slice(ps.offset, ps.offset + ps.limit);
-
 			return (await this.noteEntityService.packMany(
-				notes,
+				notes.slice(ps.offset, ps.offset + ps.limit),
 				me,
 			)) satisfies z.infer<typeof res>;
 		});

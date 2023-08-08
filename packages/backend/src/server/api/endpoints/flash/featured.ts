@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { FlashsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { FlashSchema } from '@/models/zod/FlashSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(FlashSchema);
 export const meta = {
@@ -23,18 +22,15 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.flashsRepository)
-		private flashsRepository: FlashsRepository,
-
-		private flashEntityService: FlashEntityService,
+		private readonly flashEntityService: FlashEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.flashsRepository
-				.createQueryBuilder('flash')
-				.andWhere('flash.likedCount > 0')
-				.orderBy('flash.likedCount', 'DESC');
-
-			const flashs = await query.limit(10).getMany();
+			const flashs = await this.prismaService.client.flash.findMany({
+				where: { likedCount: { gt: 0 } },
+				orderBy: { likedCount: 'desc' },
+				take: 10,
+			});
 
 			return (await Promise.all(
 				flashs.map((flash) => this.flashEntityService.pack(flash, me)),

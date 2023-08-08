@@ -44,9 +44,8 @@ const TYPE_SVG = {
 @Injectable()
 export class FileInfoService {
 	constructor(
-		private aiService: AiService,
-	) {
-	}
+		private readonly aiService: AiService,
+	) {}
 
 	/**
 	 * Get file information

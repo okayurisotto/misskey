@@ -1,13 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull, In, MoreThan, Not } from 'typeorm';
-
+import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import type { LocalUser, RemoteUser, User } from '@/models/entities/User.js';
-import type { BlockingsRepository, FollowingsRepository, InstancesRepository, Muting, MutingsRepository, UserListJoiningsRepository, UsersRepository } from '@/models/index.js';
 import type { RelationshipJobData, ThinUser } from '@/queue/types.js';
-
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { QueueService } from '@/core/QueueService.js';
@@ -22,47 +16,29 @@ import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { MetaService } from '@/core/MetaService.js';
 import InstanceChart from '@/core/chart/charts/instance.js';
 import PerUserFollowingChart from '@/core/chart/charts/per-user-following.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
 
 @Injectable()
 export class AccountMoveService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		@Inject(DI.userListJoiningsRepository)
-		private userListJoiningsRepository: UserListJoiningsRepository,
-
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		private userEntityService: UserEntityService,
-		private idService: IdService,
-		private apPersonService: ApPersonService,
-		private apRendererService: ApRendererService,
-		private apDeliverManagerService: ApDeliverManagerService,
-		private globalEventService: GlobalEventService,
-		private proxyAccountService: ProxyAccountService,
-		private perUserFollowingChart: PerUserFollowingChart,
-		private federatedInstanceService: FederatedInstanceService,
-		private instanceChart: InstanceChart,
-		private metaService: MetaService,
-		private relayService: RelayService,
-		private cacheService: CacheService,
-		private queueService: QueueService,
-	) {
-	}
+		private readonly userEntityService: UserEntityService,
+		private readonly idService: IdService,
+		private readonly apPersonService: ApPersonService,
+		private readonly apRendererService: ApRendererService,
+		private readonly apDeliverManagerService: ApDeliverManagerService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly proxyAccountService: ProxyAccountService,
+		private readonly perUserFollowingChart: PerUserFollowingChart,
+		private readonly federatedInstanceService: FederatedInstanceService,
+		private readonly instanceChart: InstanceChart,
+		private readonly metaService: MetaService,
+		private readonly relayService: RelayService,
+		private readonly cacheService: CacheService,
+		private readonly queueService: QueueService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	/**
 	 * Move a local account to a new account.
@@ -75,11 +51,19 @@ export class AccountMoveService {
 		const dstUri = this.userEntityService.getUserUri(dst);
 
 		// add movedToUri to indicate that the user has moved
-		const update = {} as Partial<LocalUser>;
-		update.alsoKnownAs = src.alsoKnownAs?.includes(dstUri) ? src.alsoKnownAs : src.alsoKnownAs?.concat([dstUri]) ?? [dstUri];
-		update.movedToUri = dstUri;
-		update.movedAt = new Date();
-		await this.usersRepository.update(src.id, update);
+		const alsoKnownAs = typeof src.alsoKnownAs === 'string' ? src.alsoKnownAs.split(',') : src.alsoKnownAs;
+		const update: Omit<Partial<LocalUser>, 'alsoKnownAs'> & { alsoKnownAs: string[] } = {
+			alsoKnownAs: alsoKnownAs?.includes(dstUri) ? alsoKnownAs : alsoKnownAs?.concat([dstUri]) ?? [dstUri],
+			movedToUri: dstUri,
+			movedAt: new Date(),
+		};
+		await this.prismaService.client.user.update({
+			where: { id: src.id },
+			data: {
+				...update,
+				alsoKnownAs: update.alsoKnownAs.join(','),
+			},
+		});
 		Object.assign(src, update);
 
 		// Update cache
@@ -88,7 +72,7 @@ export class AccountMoveService {
 		const srcPerson = await this.apRendererService.renderPerson(src);
 		const updateAct = this.apRendererService.addContext(this.apRendererService.renderUpdate(srcPerson, src));
 		await this.apDeliverManagerService.deliverToFollowers(src, updateAct);
-		this.relayService.deliverToRelays(src, updateAct);
+		await this.relayService.deliverToRelays(src, updateAct);
 
 		// Deliver Move activity to the followers of the old account
 		const moveAct = this.apRendererService.addContext(this.apRendererService.renderMove(src, dst));
@@ -99,10 +83,8 @@ export class AccountMoveService {
 		this.globalEventService.publishMainStream(src.id, 'meUpdated', iObj);
 
 		// Unfollow after 24 hours
-		const followings = await this.followingsRepository.findBy({
-			followerId: src.id,
-		});
-		this.queueService.createDelayedUnfollowJob(followings.map(following => ({
+		const followings = await this.prismaService.client.following.findMany({ where: { followerId: src.id } });
+		await this.queueService.createDelayedUnfollowJob(followings.map(following => ({
 			from: { id: src.id },
 			to: { id: following.followeeId },
 		})), process.env.NODE_ENV === 'test' ? 10000 : 1000 * 60 * 60 * 24);
@@ -113,7 +95,7 @@ export class AccountMoveService {
 	}
 
 	@bindThis
-	public async postMoveProcess(src: User, dst: User): Promise<void> {
+	public async postMoveProcess(src: T2P<User, user>, dst: T2P<User, user>): Promise<void> {
 		// Copy blockings and mutings, and update lists
 		try {
 			await Promise.all([
@@ -127,10 +109,12 @@ export class AccountMoveService {
 
 		// follow the new account
 		const proxy = await this.proxyAccountService.fetch();
-		const followings = await this.followingsRepository.findBy({
-			followeeId: src.id,
-			followerHost: IsNull(), // follower is local
-			followerId: proxy ? Not(proxy.id) : undefined,
+		const followings = await this.prismaService.client.following.findMany({
+			where: {
+				followeeId: src.id,
+				followerHost: null, // follower is local
+				followerId: { not: proxy?.id },
+			},
 		});
 		const followJobs = followings.map(following => ({
 			from: { id: following.followerId },
@@ -145,15 +129,15 @@ export class AccountMoveService {
 		}
 
 		// Should be queued because this can cause a number of follow per one move.
-		this.queueService.createFollowJob(followJobs);
+		await this.queueService.createFollowJob(followJobs);
 	}
 
 	@bindThis
 	public async copyBlocking(src: ThinUser, dst: ThinUser): Promise<void> {
 		// Followers shouldn't overlap with blockers, but the destination account, different from the blockee (i.e., old account), may have followed the local user before moving.
 		// So block the destination account here.
-		const srcBlockings = await this.blockingsRepository.findBy({ blockeeId: src.id });
-		const dstBlockings = await this.blockingsRepository.findBy({ blockeeId: dst.id });
+		const srcBlockings = await this.prismaService.client.blocking.findMany({ where: { blockeeId: src.id } });
+		const dstBlockings = await this.prismaService.client.blocking.findMany({ where: { blockeeId: dst.id } });
 		const blockerIds = dstBlockings.map(blocking => blocking.blockerId);
 		// reblock the destination account
 		const blockJobs: RelationshipJobData[] = [];
@@ -162,22 +146,26 @@ export class AccountMoveService {
 			blockJobs.push({ from: { id: blocking.blockerId }, to: { id: dst.id } });
 		}
 		// no need to unblock the old account because it may be still functional
-		this.queueService.createBlockJob(blockJobs);
+		await this.queueService.createBlockJob(blockJobs);
 	}
 
 	@bindThis
 	public async copyMutings(src: ThinUser, dst: ThinUser): Promise<void> {
 		// Insert new mutings with the same values except mutee
-		const oldMutings = await this.mutingsRepository.findBy([
-			{ muteeId: src.id, expiresAt: IsNull() },
-			{ muteeId: src.id, expiresAt: MoreThan(new Date()) },
-		]);
+		const oldMutings = await this.prismaService.client.muting.findMany({
+			where: {
+				OR: [
+					{ muteeId: src.id, expiresAt: null },
+					{ muteeId: src.id, expiresAt: { gt: new Date() } },
+				]
+			},
+		});
 		if (oldMutings.length === 0) return;
 
 		// Check if the destination account is already indefinitely muted by the muter
-		const existingMutingsMuterUserIds = await this.mutingsRepository.findBy(
-			{ muteeId: dst.id, expiresAt: IsNull() },
-		).then(mutings => mutings.map(muting => muting.muterId));
+		const existingMutingsMuterUserIds = await this.prismaService.client.muting.findMany({
+			where: { muteeId: dst.id, expiresAt: null },
+		}).then(mutings => mutings.map(muting => muting.muterId));
 
 		const newMutings: Map<string, { muterId: string; muteeId: string; createdAt: Date; expiresAt: Date | null; }> = new Map();
 
@@ -199,7 +187,7 @@ export class AccountMoveService {
 		}
 
 		const arrayToInsert = Array.from(newMutings.entries()).map(entry => ({ ...entry[1], id: entry[0] }));
-		await this.mutingsRepository.insert(arrayToInsert);
+		await this.prismaService.client.muting.createMany({ data: arrayToInsert });
 	}
 
 	/**
@@ -212,19 +200,15 @@ export class AccountMoveService {
 	 * @returns Promise<void>
 	 */
 	@bindThis
-	public async updateLists(src: ThinUser, dst: User): Promise<void> {
+	public async updateLists(src: ThinUser, dst: T2P<User, user>): Promise<void> {
 		// Return if there is no list to be updated.
-		const oldJoinings = await this.userListJoiningsRepository.find({
-			where: {
-				userId: src.id,
-			},
+		const oldJoinings = await this.prismaService.client.user_list_joining.findMany({
+			where: { userId: src.id },
 		});
 		if (oldJoinings.length === 0) return;
 
-		const existingUserListIds = await this.userListJoiningsRepository.find({
-			where: {
-				userId: dst.id,
-			},
+		const existingUserListIds = await this.prismaService.client.user_list_joining.findMany({
+			where: { userId: dst.id },
 		}).then(joinings => joinings.map(joining => joining.userListId));
 
 		const newJoinings: Map<string, { createdAt: Date; userId: string; userListId: string; }> = new Map();
@@ -247,46 +231,60 @@ export class AccountMoveService {
 		}
 
 		const arrayToInsert = Array.from(newJoinings.entries()).map(entry => ({ ...entry[1], id: entry[0] }));
-		await this.userListJoiningsRepository.insert(arrayToInsert);
+		await this.prismaService.client.user_list_joining.createMany({ data: arrayToInsert });
 
 		// Have the proxy account follow the new account in the same way as UserListService.push
 		if (this.userEntityService.isRemoteUser(dst)) {
 			const proxy = await this.proxyAccountService.fetch();
 			if (proxy) {
-				this.queueService.createFollowJob([{ from: { id: proxy.id }, to: { id: dst.id } }]);
+				await this.queueService.createFollowJob([{ from: { id: proxy.id }, to: { id: dst.id } }]);
 			}
 		}
 	}
 
 	@bindThis
-	private async adjustFollowingCounts(localFollowerIds: string[], oldAccount: User): Promise<void> {
+	private async adjustFollowingCounts(localFollowerIds: string[], oldAccount: T2P<User, user>): Promise<void> {
 		if (localFollowerIds.length === 0) return;
 
 		// Set the old account's following and followers counts to 0.
-		await this.usersRepository.update({ id: oldAccount.id }, { followersCount: 0, followingCount: 0 });
+		await this.prismaService.client.user.update({
+			where: { id: oldAccount.id },
+			data: { followersCount: 0, followingCount: 0 },
+		});
 
 		// Decrease following counts of local followers by 1.
-		await this.usersRepository.decrement({ id: In(localFollowerIds) }, 'followingCount', 1);
+		await this.prismaService.client.user.updateMany({
+			where: { id: { in: localFollowerIds } },
+			data: { followingCount: { decrement: 1 } },
+		});
 
 		// Decrease follower counts of local followees by 1.
-		const oldFollowings = await this.followingsRepository.findBy({ followerId: oldAccount.id });
+		const oldFollowings = await this.prismaService.client.following.findMany({
+			where: { followerId: oldAccount.id },
+		});
 		if (oldFollowings.length > 0) {
-			await this.usersRepository.decrement({ id: In(oldFollowings.map(following => following.followeeId)) }, 'followersCount', 1);
+			await this.prismaService.client.user.updateMany({
+				where: { id: { in: oldFollowings.map((following) => following.followeeId) } },
+				data: { followersCount: { decrement: 1 } }
+			});
 		}
 
 		// Update instance stats by decreasing remote followers count by the number of local followers who were following the old account.
 		if (this.userEntityService.isRemoteUser(oldAccount)) {
-			this.federatedInstanceService.fetch(oldAccount.host).then(async i => {
-				this.instancesRepository.decrement({ id: i.id }, 'followersCount', localFollowerIds.length);
+			await this.federatedInstanceService.fetch(oldAccount.host).then(async i => {
+				await this.prismaService.client.instance.update({
+					where: { id: i.id },
+					data: { followersCount: { decrement: localFollowerIds.length } },
+				});
 				if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
-					this.instanceChart.updateFollowers(i.host, false);
+					await this.instanceChart.updateFollowers(i.host, false);
 				}
 			});
 		}
 
 		// FIXME: expensive?
 		for (const followerId of localFollowerIds) {
-			this.perUserFollowingChart.update({ id: followerId, host: null }, oldAccount, false);
+			await this.perUserFollowingChart.update({ id: followerId, host: null }, oldAccount, false);
 		}
 	}
 
@@ -313,11 +311,13 @@ export class AccountMoveService {
 			dst = await this.apPersonService.fetchPerson(dst.uri) ?? dst;
 		}
 
-		if (!dst.alsoKnownAs || dst.alsoKnownAs.length === 0) return null;
+		if (!dst.alsoKnownAs) return null;
+		if (Array.isArray(dst.alsoKnownAs) && dst.alsoKnownAs.length === 0) return null;
+		if (typeof dst.alsoKnownAs === 'string' && dst.alsoKnownAs.split(',').length === 0) return null;
 
 		const dstUri = this.userEntityService.getUserUri(dst);
 
-		for (const srcUri of dst.alsoKnownAs) {
+		for (const srcUri of typeof dst.alsoKnownAs === 'string' ? dst.alsoKnownAs.split(',') : dst.alsoKnownAs) {
 			try {
 				let src = await this.apPersonService.fetchPerson(srcUri);
 				if (!src) continue; // oldAccountを探してもこのサーバーに存在しない場合はフォロー関係もないということなのでスルー

@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { SigninsRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { SigninEntityService } from '@/core/entities/SigninEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -28,26 +27,24 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.signinsRepository)
-		private signinsRepository: SigninsRepository,
-
-		private signinEntityService: SigninEntityService,
-		private queryService: QueryService,
+		private readonly signinEntityService: SigninEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.signinsRepository.createQueryBuilder('signin'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('signin.userId = :meId', { meId: me.id });
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
+			const history = await this.prismaService.client.signin.findMany({
+				where: { AND: [paginationQuery.where, { userId: me.id }] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
-			const history = await query.limit(ps.limit).getMany();
-
-			return await Promise.all(
+			return (await Promise.all(
 				history.map((record) => this.signinEntityService.pack(record)),
-			) satisfies z.infer<typeof res>;
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

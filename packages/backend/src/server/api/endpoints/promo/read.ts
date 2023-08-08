@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { PromoReadsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -32,11 +31,9 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.promoReadsRepository)
-		private promoReadsRepository: PromoReadsRepository,
-
-		private idService: IdService,
-		private getterService: GetterService,
+		private readonly idService: IdService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
@@ -46,22 +43,26 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			const exist = await this.promoReadsRepository.exist({
-				where: {
-					noteId: note.id,
-					userId: me.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.promo_read.count({
+					where: {
+						noteId: note.id,
+						userId: me.id,
+					},
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				return;
 			}
 
-			await this.promoReadsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				noteId: note.id,
-				userId: me.id,
+			await this.prismaService.client.promo_read.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					noteId: note.id,
+					userId: me.id,
+				},
 			});
 		});
 	}

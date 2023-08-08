@@ -1,15 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	InstancesRepository,
-	NoteReactionsRepository,
-	NotesRepository,
-	UsersRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import NotesChart from '@/core/chart/charts/notes.js';
 import UsersChart from '@/core/chart/charts/users.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	notesCount: z.number(),
@@ -37,20 +31,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		@Inject(DI.noteReactionsRepository)
-		private noteReactionsRepository: NoteReactionsRepository,
-
-		private notesChart: NotesChart,
-		private usersChart: UsersChart,
+		private readonly notesChart: NotesChart,
+		private readonly usersChart: UsersChart,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async () => {
 			const notesChart = await this.notesChart.getChart('hour', 1, null);
@@ -61,14 +44,9 @@ export default class extends Endpoint<
 			const usersCount = usersChart.local.total[0] + usersChart.remote.total[0];
 			const originalUsersCount = usersChart.local.total[0];
 
-			const [
-				reactionsCount,
-				//originalReactionsCount,
-				instances,
-			] = await Promise.all([
-				this.noteReactionsRepository.count({ cache: 3600000 }), // 1 hour
-				//this.noteReactionsRepository.count({ where: { userHost: IsNull() }, cache: 3600000 }),
-				this.instancesRepository.count({ cache: 3600000 }),
+			const [reactionsCount, instances] = await Promise.all([
+				this.prismaService.client.note.count(),
+				this.prismaService.client.instance.count(),
 			]);
 
 			return {
@@ -77,7 +55,6 @@ export default class extends Endpoint<
 				usersCount,
 				originalUsersCount,
 				reactionsCount,
-				//originalReactionsCount,
 				instances,
 				driveUsageLocal: 0,
 				driveUsageRemote: 0,

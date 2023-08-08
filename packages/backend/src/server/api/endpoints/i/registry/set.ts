@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RegistryItemsRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	requireCredential: true,
@@ -28,37 +27,41 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.registryItemsRepository)
-		private registryItemsRepository: RegistryItemsRepository,
-
-		private idService: IdService,
-		private globalEventService: GlobalEventService,
+		private readonly idService: IdService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.registryItemsRepository
-				.createQueryBuilder('item')
-				.where('item.domain IS NULL')
-				.andWhere('item.userId = :userId', { userId: me.id })
-				.andWhere('item.key = :key', { key: ps.key })
-				.andWhere('item.scope = :scope', { scope: ps.scope });
-
-			const existingItem = await query.getOne();
+			const existingItem =
+				await this.prismaService.client.registry_item.findFirst({
+					where: {
+						domain: null,
+						userId: me.id,
+						key: ps.key,
+						scope: { equals: ps.scope },
+					},
+				});
 
 			if (existingItem) {
-				await this.registryItemsRepository.update(existingItem.id, {
-					updatedAt: new Date(),
-					value: ps.value,
+				await this.prismaService.client.registry_item.update({
+					where: { id: existingItem.id },
+					data: {
+						updatedAt: new Date(),
+						value: ps.value,
+					},
 				});
 			} else {
-				await this.registryItemsRepository.insert({
-					id: this.idService.genId(),
-					createdAt: new Date(),
-					updatedAt: new Date(),
-					userId: me.id,
-					domain: null,
-					scope: ps.scope,
-					key: ps.key,
-					value: ps.value,
+				await this.prismaService.client.registry_item.create({
+					data: {
+						id: this.idService.genId(),
+						createdAt: new Date(),
+						updatedAt: new Date(),
+						userId: me.id,
+						domain: null,
+						scope: ps.scope,
+						key: ps.key,
+						value: ps.value,
+					},
 				});
 			}
 

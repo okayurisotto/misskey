@@ -1,17 +1,13 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
-import type {
-	NotesRepository,
-	NoteThreadMutingsRepository,
-} from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -42,15 +38,10 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.noteThreadMutingsRepository)
-		private noteThreadMutingsRepository: NoteThreadMutingsRepository,
-
-		private getterService: GetterService,
-		private noteReadService: NoteReadService,
-		private idService: IdService,
+		private readonly getterService: GetterService,
+		private readonly noteReadService: NoteReadService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
@@ -60,24 +51,24 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			const mutedNotes = await this.notesRepository.find({
-				where: [
-					{
-						id: note.threadId ?? note.id,
-					},
-					{
-						threadId: note.threadId ?? note.id,
-					},
-				],
+			const mutedNotes = await this.prismaService.client.note.findMany({
+				where: {
+					OR: [
+						{ id: note.threadId ?? note.id },
+						{ threadId: note.threadId ?? note.id },
+					],
+				},
 			});
 
 			await this.noteReadService.read(me.id, mutedNotes);
 
-			await this.noteThreadMutingsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				threadId: note.threadId ?? note.id,
-				userId: me.id,
+			await this.prismaService.client.note_thread_muting.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					threadId: note.threadId ?? note.id,
+					userId: me.id,
+				},
 			});
 		});
 	}

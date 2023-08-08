@@ -1,26 +1,20 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { AccessTokensRepository, AppsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type { AppSchema } from '@/models/zod/AppSchema.js';
 import type { App } from '@/models/entities/App.js';
 import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
 import type { z } from 'zod';
+import type { app } from '@prisma/client';
 
 @Injectable()
 export class AppEntityService {
-	constructor(
-		@Inject(DI.appsRepository)
-		private appsRepository: AppsRepository,
-
-		@Inject(DI.accessTokensRepository)
-		private accessTokensRepository: AccessTokensRepository,
-	) {
-	}
+	constructor(private readonly prismaService: PrismaService) {}
 
 	@bindThis
 	public async pack(
-		src: App['id'] | App,
+		src: App['id'] | T2P<App, app>,
 		me?: { id: User['id'] } | null | undefined,
 		options?: {
 			detail?: boolean,
@@ -34,7 +28,9 @@ export class AppEntityService {
 			includeProfileImageIds: false,
 		}, options);
 
-		const app = typeof src === 'object' ? src : await this.appsRepository.findOneByOrFail({ id: src });
+		const app = typeof src === 'object'
+			? src
+			: await this.prismaService.client.app.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: app.id,
@@ -43,9 +39,12 @@ export class AppEntityService {
 			permission: app.permission,
 			...(opts.includeSecret ? { secret: app.secret } : {}),
 			...(me ? {
-				isAuthorized: await this.accessTokensRepository.countBy({
-					appId: app.id,
-					userId: me.id,
+				isAuthorized: await this.prismaService.client.access_token.count({
+					where: {
+						appId: app.id,
+						userId: me.id,
+					},
+					take: 1,
 				}).then(count => count > 0),
 			} : {}),
 		};

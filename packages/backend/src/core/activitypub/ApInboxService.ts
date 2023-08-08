@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { In } from 'typeorm';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
@@ -13,17 +12,15 @@ import { concat, toArray, toSingle, unique } from '@/misc/prelude/array.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import type Logger from '@/logger.js';
 import { MetaService } from '@/core/MetaService.js';
-import { AccountMoveService } from '@/core/AccountMoveService.js';
 import { IdService } from '@/core/IdService.js';
 import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { QueueService } from '@/core/QueueService.js';
-import type { UsersRepository, NotesRepository, FollowingsRepository, AbuseUserReportsRepository, FollowRequestsRepository } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
 import type { RemoteUser } from '@/models/entities/User.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { getApHrefNullable, getApId, getApIds, getApType, isAccept, isActor, isAdd, isAnnounce, isBlock, isCollection, isCollectionOrOrderedCollection, isCreate, isDelete, isFlag, isFollow, isLike, isMove, isPost, isReject, isRemove, isTombstone, isUndo, isUpdate, validActor, validPost } from './type.js';
 import { ApNoteService } from './models/ApNoteService.js';
 import { ApLoggerService } from './ApLoggerService.js';
@@ -43,44 +40,28 @@ export class ApInboxService {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		@Inject(DI.abuseUserReportsRepository)
-		private abuseUserReportsRepository: AbuseUserReportsRepository,
-
-		@Inject(DI.followRequestsRepository)
-		private followRequestsRepository: FollowRequestsRepository,
-
-		private userEntityService: UserEntityService,
-		private noteEntityService: NoteEntityService,
-		private utilityService: UtilityService,
-		private idService: IdService,
-		private metaService: MetaService,
-		private userFollowingService: UserFollowingService,
-		private apAudienceService: ApAudienceService,
-		private reactionService: ReactionService,
-		private relayService: RelayService,
-		private notePiningService: NotePiningService,
-		private userBlockingService: UserBlockingService,
-		private noteCreateService: NoteCreateService,
-		private noteDeleteService: NoteDeleteService,
-		private appLockService: AppLockService,
-		private apResolverService: ApResolverService,
-		private apDbResolverService: ApDbResolverService,
-		private apLoggerService: ApLoggerService,
-		private apNoteService: ApNoteService,
-		private apPersonService: ApPersonService,
-		private apQuestionService: ApQuestionService,
-		private accountMoveService: AccountMoveService,
-		private cacheService: CacheService,
-		private queueService: QueueService,
+		private readonly userEntityService: UserEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly utilityService: UtilityService,
+		private readonly idService: IdService,
+		private readonly metaService: MetaService,
+		private readonly userFollowingService: UserFollowingService,
+		private readonly apAudienceService: ApAudienceService,
+		private readonly reactionService: ReactionService,
+		private readonly relayService: RelayService,
+		private readonly notePiningService: NotePiningService,
+		private readonly userBlockingService: UserBlockingService,
+		private readonly noteCreateService: NoteCreateService,
+		private readonly noteDeleteService: NoteDeleteService,
+		private readonly appLockService: AppLockService,
+		private readonly apResolverService: ApResolverService,
+		private readonly apDbResolverService: ApDbResolverService,
+		private readonly apLoggerService: ApLoggerService,
+		private readonly apNoteService: ApNoteService,
+		private readonly apPersonService: ApPersonService,
+		private readonly apQuestionService: ApQuestionService,
+		private readonly queueService: QueueService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.apLoggerService.logger;
 	}
@@ -332,7 +313,10 @@ export class ApInboxService {
 			return 'skip: ブロックしようとしているユーザーはローカルユーザーではありません';
 		}
 
-		await this.userBlockingService.block(await this.usersRepository.findOneByOrFail({ id: actor.id }), await this.usersRepository.findOneByOrFail({ id: blockee.id }));
+		await this.userBlockingService.block(
+			await this.prismaService.client.user.findUniqueOrThrow({ where: { id: actor.id } }),
+			await this.prismaService.client.user.findUniqueOrThrow({ where: { id: blockee.id } }),
+		);
 		return 'ok';
 	}
 
@@ -457,7 +441,7 @@ export class ApInboxService {
 			return `skip: delete actor ${actor.uri} !== ${uri}`;
 		}
 
-		const user = await this.usersRepository.findOneBy({ id: actor.id });
+		const user = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: actor.id } });
 		if (user == null) {
 			return 'skip: actor not found';
 		} else if (user.isDeleted) {
@@ -466,8 +450,9 @@ export class ApInboxService {
 
 		const job = await this.queueService.createDeleteAccountJob(actor);
 
-		await this.usersRepository.update(actor.id, {
-			isDeleted: true,
+		await this.prismaService.client.user.update({
+			where: { id: actor.id },
+			data: { isDeleted: true },
 		});
 
 		return `ok: queued ${job.name} ${job.id}`;
@@ -507,19 +492,21 @@ export class ApInboxService {
 			.filter(uri => uri.startsWith(this.config.url + '/users/'))
 			.map(uri => uri.split('/').at(-1))
 			.filter((userId): userId is string => userId !== undefined);
-		const users = await this.usersRepository.findBy({
-			id: In(userIds),
+		const users = await this.prismaService.client.user.findMany({
+			where: { id: { in: userIds } },
 		});
 		if (users.length < 1) return 'skip';
 
-		await this.abuseUserReportsRepository.insert({
-			id: this.idService.genId(),
-			createdAt: new Date(),
-			targetUserId: users[0].id,
-			targetUserHost: users[0].host,
-			reporterId: actor.id,
-			reporterHost: actor.host,
-			comment: `${activity.content}\n${JSON.stringify(uris, null, 2)}`,
+		await this.prismaService.client.abuse_user_report.create({
+			data: {
+				id: this.idService.genId(),
+				createdAt: new Date(),
+				targetUserId: users[0].id,
+				targetUserHost: users[0].host,
+				reporterId: actor.id,
+				reporterHost: actor.host,
+				comment: `${activity.content}\n${JSON.stringify(uris, null, 2)}`,
+			},
 		});
 
 		return 'ok';
@@ -621,12 +608,13 @@ export class ApInboxService {
 			return 'skip: follower not found';
 		}
 
-		const isFollowing = await this.followingsRepository.exist({
+		const isFollowing = (await this.prismaService.client.following.count({
 			where: {
 				followerId: follower.id,
 				followeeId: actor.id,
 			},
-		});
+			take: 1,
+		})) > 0;
 
 		if (isFollowing) {
 			await this.userFollowingService.unfollow(follower, actor);
@@ -640,9 +628,11 @@ export class ApInboxService {
 	private async undoAnnounce(actor: RemoteUser, activity: IAnnounce): Promise<string> {
 		const uri = getApId(activity);
 
-		const note = await this.notesRepository.findOneBy({
-			uri,
-			userId: actor.id,
+		const note = await this.prismaService.client.note.findFirst({
+			where: {
+				uri,
+				userId: actor.id,
+			},
 		});
 
 		if (!note) return 'skip: no such Announce';
@@ -663,7 +653,10 @@ export class ApInboxService {
 			return 'skip: ブロック解除しようとしているユーザーはローカルユーザーではありません';
 		}
 
-		await this.userBlockingService.unblock(await this.usersRepository.findOneByOrFail({ id: actor.id }), blockee);
+		await this.userBlockingService.unblock(
+			await this.prismaService.client.user.findUniqueOrThrow({ where: { id: actor.id } }),
+			blockee,
+		);
 		return 'ok';
 	}
 
@@ -678,19 +671,21 @@ export class ApInboxService {
 			return 'skip: フォロー解除しようとしているユーザーはローカルユーザーではありません';
 		}
 
-		const requestExist = await this.followRequestsRepository.exist({
+		const requestExist = (await this.prismaService.client.follow_request.count({
 			where: {
 				followerId: actor.id,
 				followeeId: followee.id,
 			},
-		});
+			take: 1,
+		})) > 0;
 
-		const isFollowing = await this.followingsRepository.exist({
+		const isFollowing = (await this.prismaService.client.following.count({
 			where: {
 				followerId: actor.id,
 				followeeId: followee.id,
 			},
-		});
+			take: 1,
+		})) > 0;
 
 		if (requestExist) {
 			await this.userFollowingService.cancelFollowRequest(followee, actor);

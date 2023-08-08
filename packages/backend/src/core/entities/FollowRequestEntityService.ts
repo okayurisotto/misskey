@@ -1,28 +1,28 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { FollowRequestsRepository } from '@/models/index.js';
-import type { } from '@/models/entities/Blocking.js';
+import { Injectable } from '@nestjs/common';
 import type { User } from '@/models/entities/User.js';
 import type { FollowRequest } from '@/models/entities/FollowRequest.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
+import type { follow_request } from '@prisma/client';
 
 @Injectable()
 export class FollowRequestEntityService {
 	constructor(
-		@Inject(DI.followRequestsRepository)
-		private followRequestsRepository: FollowRequestsRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly userEntityService: UserEntityService,
 	) {
 	}
 
 	@bindThis
 	public async pack(
-		src: FollowRequest['id'] | FollowRequest,
+		src: FollowRequest['id'] | T2P<FollowRequest, follow_request>,
 		me?: { id: User['id'] } | null | undefined,
 	) {
-		const request = typeof src === 'object' ? src : await this.followRequestsRepository.findOneByOrFail({ id: src });
+		const request = typeof src === 'object'
+			? src
+			: await this.prismaService.client.follow_request.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: request.id,
@@ -31,4 +31,3 @@ export class FollowRequestEntityService {
 		};
 	}
 }
-

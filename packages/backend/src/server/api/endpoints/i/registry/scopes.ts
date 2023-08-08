@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RegistryItemsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -20,20 +19,13 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.registryItemsRepository)
-		private registryItemsRepository: RegistryItemsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.registryItemsRepository
-				.createQueryBuilder('item')
-				.select('item.scope')
-				.where('item.domain IS NULL')
-				.andWhere('item.userId = :userId', { userId: me.id });
+			const items = await this.prismaService.client.registry_item.findMany({
+				where: { domain: null, userId: me.id },
+			});
 
-			const items = await query.getMany();
-
-			const res_ = [] as string[][];
+			const res_: string[][] = [];
 
 			for (const item of items) {
 				if (res_.some((scope) => scope.join('.') === item.scope.join('.'))) {

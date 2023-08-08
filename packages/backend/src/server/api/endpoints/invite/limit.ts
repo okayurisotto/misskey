@@ -1,10 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { MoreThan } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RegistrationTicketsRepository } from '@/models/index.js';
 import { RoleService } from '@/core/RoleService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	remaining: z.number().int().nullable(),
@@ -26,20 +24,22 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.registrationTicketsRepository)
-		private registrationTicketsRepository: RegistrationTicketsRepository,
-
-		private roleService: RoleService,
+		private readonly roleService: RoleService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const policies = await this.roleService.getUserPolicies(me.id);
 
 			const count = policies.inviteLimit
-				? await this.registrationTicketsRepository.countBy({
-						createdAt: MoreThan(
-							new Date(Date.now() - policies.inviteExpirationTime * 60 * 1000),
-						),
-						createdById: me.id,
+				? await this.prismaService.client.registration_ticket.count({
+						where: {
+							createdAt: {
+								gt: new Date(
+									Date.now() - policies.inviteExpirationTime * 60 * 1000,
+								),
+							},
+							createdById: me.id,
+						},
 				  })
 				: null;
 

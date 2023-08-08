@@ -1,40 +1,27 @@
 import * as fs from 'node:fs';
-import { Inject, Injectable } from '@nestjs/common';
-import { In, MoreThan, Not } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
-import { DI } from '@/di-symbols.js';
-import type { UsersRepository, FollowingsRepository, MutingsRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import type { Following } from '@/models/entities/Following.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbExportFollowingData } from '../types.js';
+import type { following } from '@prisma/client';
 
 @Injectable()
 export class ExportFollowingProcessorService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		private utilityService: UtilityService,
-		private driveService: DriveService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly utilityService: UtilityService,
+		private readonly driveService: DriveService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('export-following');
 	}
@@ -43,7 +30,7 @@ export class ExportFollowingProcessorService {
 	public async process(job: Bull.Job<DbExportFollowingData>): Promise<void> {
 		this.logger.info(`Exporting following of ${job.data.user.id} ...`);
 
-		const user = await this.usersRepository.findOneBy({ id: job.data.user.id });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
 		if (user == null) {
 			return;
 		}
@@ -58,22 +45,24 @@ export class ExportFollowingProcessorService {
 
 			let cursor: Following['id'] | null = null;
 
-			const mutings = job.data.excludeMuting ? await this.mutingsRepository.findBy({
-				muterId: user.id,
-			}) : [];
+			const mutings = job.data.excludeMuting
+				? await this.prismaService.client.muting.findMany({
+					where: {
+						muterId: user.id,
+					},
+				})
+				: [];
 
 			while (true) {
-				const followings = await this.followingsRepository.find({
+				const followings: following[] = await this.prismaService.client.following.findMany({
 					where: {
 						followerId: user.id,
-						...(mutings.length > 0 ? { followeeId: Not(In(mutings.map(x => x.muteeId))) } : {}),
-						...(cursor ? { id: MoreThan(cursor) } : {}),
+						...(mutings.length > 0 ? { followeeId: { notIn: mutings.map(x => x.muteeId) } } : {}),
+						...(cursor ? { id: { gt: cursor } } : {}),
 					},
 					take: 100,
-					order: {
-						id: 1,
-					},
-				}) as Following[];
+					orderBy: { id: 'asc' },
+				});
 
 				if (followings.length === 0) {
 					break;
@@ -82,7 +71,7 @@ export class ExportFollowingProcessorService {
 				cursor = followings.at(-1)?.id ?? null;
 
 				for (const following of followings) {
-					const u = await this.usersRepository.findOneBy({ id: following.followeeId });
+					const u = await this.prismaService.client.user.findUnique({ where: { id: following.followeeId } });
 					if (u == null) {
 						continue;
 					}

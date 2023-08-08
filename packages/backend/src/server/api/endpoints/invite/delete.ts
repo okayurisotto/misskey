@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RegistrationTicketsRepository } from '@/models/index.js';
 import { RoleService } from '@/core/RoleService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -42,15 +41,14 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.registrationTicketsRepository)
-		private registrationTicketsRepository: RegistrationTicketsRepository,
-
-		private roleService: RoleService,
+		private readonly roleService: RoleService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const ticket = await this.registrationTicketsRepository.findOneBy({
-				id: ps.inviteId,
-			});
+			const ticket =
+				await this.prismaService.client.registration_ticket.findUnique({
+					where: { id: ps.inviteId },
+				});
 			const isModerator = await this.roleService.isModerator(me);
 
 			if (ticket == null) {
@@ -65,7 +63,9 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.cantDelete);
 			}
 
-			await this.registrationTicketsRepository.delete(ticket.id);
+			await this.prismaService.client.registration_ticket.delete({
+				where: { id: ticket.id },
+			});
 		});
 	}
 }

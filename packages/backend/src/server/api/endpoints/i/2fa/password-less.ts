@@ -1,13 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import type {
-	UserProfilesRepository,
-	UserSecurityKeysRepository,
-} from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -34,40 +30,31 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.userSecurityKeysRepository)
-		private userSecurityKeysRepository: UserSecurityKeysRepository,
-
-		private userEntityService: UserEntityService,
-		private globalEventService: GlobalEventService,
+		private readonly userEntityService: UserEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			if (ps.value === true) {
 				// セキュリティキーがなければパスワードレスを有効にはできない
-				const keyCount = await this.userSecurityKeysRepository.count({
-					where: {
-						userId: me.id,
-					},
-					select: {
-						id: true,
-						name: true,
-						lastUsed: true,
-					},
-				});
+				const keyCount =
+					await this.prismaService.client.user_security_key.count({
+						where: { userId: me.id },
+					});
 
 				if (keyCount === 0) {
-					await this.userProfilesRepository.update(me.id, {
-						usePasswordLessLogin: false,
+					await this.prismaService.client.user_profile.update({
+						where: { userId: me.id },
+						data: { usePasswordLessLogin: false },
 					});
 
 					throw new ApiError(meta.errors.noKey);
 				}
 			}
 
-			await this.userProfilesRepository.update(me.id, {
-				usePasswordLessLogin: ps.value,
+			await this.prismaService.client.user_profile.update({
+				where: { userId: me.id },
+				data: { usePasswordLessLogin: ps.value },
 			});
 
 			// Publish meUpdated event

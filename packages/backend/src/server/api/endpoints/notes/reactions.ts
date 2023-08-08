@@ -1,13 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import z from 'zod';
-import type { NoteReactionsRepository } from '@/models/index.js';
-import type { NoteReaction } from '@/models/entities/NoteReaction.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteReactionEntityService } from '@/core/entities/NoteReactionEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import type { FindOptionsWhere } from 'typeorm';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { Prisma } from '@prisma/client';
 
 const res = z.array(NoteReactionSchema);
 export const meta = {
@@ -42,15 +40,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.noteReactionsRepository)
-		private noteReactionsRepository: NoteReactionsRepository,
-
-		private noteReactionEntityService: NoteReactionEntityService,
+		private readonly noteReactionEntityService: NoteReactionEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = {
+			const query: Prisma.note_reactionWhereInput = {
 				noteId: ps.noteId,
-			} as FindOptionsWhere<NoteReaction>;
+			};
 
 			if (ps.type) {
 				// ローカルリアクションはホスト名が . とされているが
@@ -62,14 +58,11 @@ export default class extends Endpoint<
 				query.reaction = type;
 			}
 
-			const reactions = await this.noteReactionsRepository.find({
+			const reactions = await this.prismaService.client.note_reaction.findMany({
 				where: query,
 				take: ps.limit,
 				skip: ps.offset,
-				order: {
-					id: -1,
-				},
-				relations: ['user', 'note'],
+				orderBy: { id: 'desc' },
 			});
 
 			return (await Promise.all(

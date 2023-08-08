@@ -1,31 +1,24 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { NotesRepository, UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import type { LocalUser, RemoteUser, User } from '@/models/entities/User.js';
 import type { Note } from '@/models/entities/Note.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 @Injectable()
 export class GetterService {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private userEntityService: UserEntityService,
-	) {
-	}
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	/**
 	 * Get note for API processing
 	 */
 	@bindThis
 	public async getNote(noteId: Note['id']) {
-		const note = await this.notesRepository.findOneBy({ id: noteId });
+		const note = await this.prismaService.client.note.findUnique({ where: { id: noteId } });
 
 		if (note == null) {
 			throw new IdentifiableError('9725d0ce-ba28-4dde-95a7-2cbb2c15de24', 'No such note.');
@@ -39,7 +32,7 @@ export class GetterService {
 	 */
 	@bindThis
 	public async getUser(userId: User['id']) {
-		const user = await this.usersRepository.findOneBy({ id: userId });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: userId } });
 
 		if (user == null) {
 			throw new IdentifiableError('15348ddd-432d-49c2-8a5a-8069753becff', 'No such user.');
@@ -76,4 +69,3 @@ export class GetterService {
 		return user;
 	}
 }
-

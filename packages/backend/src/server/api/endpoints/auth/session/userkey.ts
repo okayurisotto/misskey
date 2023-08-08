@@ -1,15 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	UsersRepository,
-	AppsRepository,
-	AccessTokensRepository,
-	AuthSessionsRepository,
-} from '@/models/index.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.object({
@@ -52,24 +46,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.appsRepository)
-		private appsRepository: AppsRepository,
-
-		@Inject(DI.authSessionsRepository)
-		private authSessionsRepository: AuthSessionsRepository,
-
-		@Inject(DI.accessTokensRepository)
-		private accessTokensRepository: AccessTokensRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Lookup app
-			const app = await this.appsRepository.findOneBy({
-				secret: ps.appSecret,
+			const app = await this.prismaService.client.app.findFirst({
+				where: { secret: ps.appSecret },
 			});
 
 			if (app == null) {
@@ -77,9 +60,11 @@ export default class extends Endpoint<
 			}
 
 			// Fetch token
-			const session = await this.authSessionsRepository.findOneBy({
-				token: ps.token,
-				appId: app.id,
+			const session = await this.prismaService.client.auth_session.findFirst({
+				where: {
+					token: ps.token,
+					appId: app.id,
+				},
 			});
 
 			if (session == null) {
@@ -91,13 +76,18 @@ export default class extends Endpoint<
 			}
 
 			// Lookup access token
-			const accessToken = await this.accessTokensRepository.findOneByOrFail({
-				appId: app.id,
-				userId: session.userId,
-			});
+			const accessToken =
+				await this.prismaService.client.access_token.findFirstOrThrow({
+					where: {
+						appId: app.id,
+						userId: session.userId,
+					},
+				});
 
 			// Delete session
-			this.authSessionsRepository.delete(session.id);
+			await this.prismaService.client.auth_session.delete({
+				where: { id: session.id },
+			});
 
 			return {
 				accessToken: accessToken.token,

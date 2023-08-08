@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { ChannelsRepository } from '@/models/index.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = ChannelSchema;
@@ -34,14 +33,12 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		private channelEntityService: ChannelEntityService,
+		private readonly channelEntityService: ChannelEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const channel = await this.channelsRepository.findOneBy({
-				id: ps.channelId,
+			const channel = await this.prismaService.client.channel.findUnique({
+				where: { id: ps.channelId },
 			});
 
 			if (channel == null) {

@@ -1,14 +1,12 @@
 import { z } from 'zod';
-import { In } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { ClipNotesRepository, ClipsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(ClipSchema);
 export const meta = {
@@ -36,14 +34,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		@Inject(DI.clipNotesRepository)
-		private clipNotesRepository: ClipNotesRepository,
-
-		private clipEntityService: ClipEntityService,
-		private getterService: GetterService,
+		private readonly clipEntityService: ClipEntityService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
@@ -52,13 +45,15 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			const clipNotes = await this.clipNotesRepository.findBy({
-				noteId: note.id,
+			const clipNotes = await this.prismaService.client.clip_note.findMany({
+				where: { noteId: note.id },
 			});
 
-			const clips = await this.clipsRepository.findBy({
-				id: In(clipNotes.map((x) => x.clipId)),
-				isPublic: true,
+			const clips = await this.prismaService.client.clip.findMany({
+				where: {
+					id: { in: clipNotes.map((x) => x.clipId) },
+					isPublic: true,
+				},
 			});
 
 			return (await Promise.all(

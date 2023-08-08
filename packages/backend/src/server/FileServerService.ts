@@ -6,7 +6,7 @@ import rename from 'rename';
 import sharp from 'sharp';
 import { sharpBmp } from 'sharp-read-bmp';
 import type { Config } from '@/config.js';
-import type { DriveFile, DriveFilesRepository } from '@/models/index.js';
+import type { DriveFile } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { FILE_TYPE_BROWSERSAFE } from '@/const.js';
@@ -23,6 +23,9 @@ import { bindThis } from '@/decorators.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { correctFilename } from '@/misc/correct-filename.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
+import type { drive_file } from '@prisma/client';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -37,15 +40,13 @@ export class FileServerService {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private fileInfoService: FileInfoService,
-		private downloadService: DownloadService,
-		private imageProcessingService: ImageProcessingService,
-		private videoProcessingService: VideoProcessingService,
-		private internalStorageService: InternalStorageService,
-		private loggerService: LoggerService,
+		private readonly fileInfoService: FileInfoService,
+		private readonly downloadService: DownloadService,
+		private readonly imageProcessingService: ImageProcessingService,
+		private readonly videoProcessingService: VideoProcessingService,
+		private readonly internalStorageService: InternalStorageService,
+		private readonly loggerService: LoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.loggerService.getLogger('server', 'gray', false);
 
@@ -367,8 +368,8 @@ export class FileServerService {
 
 	@bindThis
 	private async getStreamAndTypeFromUrl(url: string): Promise<
-		{ state: 'remote'; fileRole?: 'thumbnail' | 'webpublic' | 'original'; file?: DriveFile; mime: string; ext: string | null; path: string; cleanup: () => void; filename: string; }
-		| { state: 'stored_internal'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: DriveFile; filename: string; mime: string; ext: string | null; path: string; }
+		{ state: 'remote'; fileRole?: 'thumbnail' | 'webpublic' | 'original'; file?: T2P<DriveFile, drive_file>; mime: string; ext: string | null; path: string; cleanup: () => void; filename: string; }
+		| { state: 'stored_internal'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: T2P<DriveFile, drive_file>; filename: string; mime: string; ext: string | null; path: string; }
 		| '404'
 		| '204'
 	> {
@@ -406,17 +407,19 @@ export class FileServerService {
 
 	@bindThis
 	private async getFileFromKey(key: string): Promise<
-		{ state: 'remote'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: DriveFile; filename: string; url: string; mime: string; ext: string | null; path: string; cleanup: () => void; }
-		| { state: 'stored_internal'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: DriveFile; filename: string; mime: string; ext: string | null; path: string; }
+		{ state: 'remote'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: T2P<DriveFile, drive_file>; filename: string; url: string; mime: string; ext: string | null; path: string; cleanup: () => void; }
+		| { state: 'stored_internal'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: T2P<DriveFile, drive_file>; filename: string; mime: string; ext: string | null; path: string; }
 		| '404'
 		| '204'
 	> {
 		// Fetch drive file
-		const file = await this.driveFilesRepository.createQueryBuilder('file')
-			.where('file.accessKey = :accessKey', { accessKey: key })
-			.orWhere('file.thumbnailAccessKey = :thumbnailAccessKey', { thumbnailAccessKey: key })
-			.orWhere('file.webpublicAccessKey = :webpublicAccessKey', { webpublicAccessKey: key })
-			.getOne();
+		const file = await this.prismaService.client.drive_file.findFirst({
+			where: { OR: [
+				{ accessKey: key },
+				{ thumbnailAccessKey: key },
+				{ webpublicAccessKey: key },
+			]},
+		});
 
 		if (file == null) return '404';
 

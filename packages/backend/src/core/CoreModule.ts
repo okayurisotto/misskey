@@ -31,7 +31,6 @@ import { NoteReadService } from './NoteReadService.js';
 import { NotificationService } from './NotificationService.js';
 import { PollService } from './PollService.js';
 import { PushNotificationService } from './PushNotificationService.js';
-import { QueryService } from './QueryService.js';
 import { ReactionService } from './ReactionService.js';
 import { RelayService } from './RelayService.js';
 import { RoleService } from './RoleService.js';
@@ -119,6 +118,7 @@ import { QueueModule } from './QueueModule.js';
 import { QueueService } from './QueueService.js';
 import { LoggerService } from './LoggerService.js';
 import { PrismaService } from './PrismaService.js';
+import { PrismaQueryService } from './PrismaQueryService.js';
 import type { Provider } from '@nestjs/common';
 
 //#region 文字列ベースでのinjection用(循環参照対応のため)
@@ -156,7 +156,6 @@ const $NotificationService: Provider = { provide: 'NotificationService', useExis
 const $PollService: Provider = { provide: 'PollService', useExisting: PollService };
 const $ProxyAccountService: Provider = { provide: 'ProxyAccountService', useExisting: ProxyAccountService };
 const $PushNotificationService: Provider = { provide: 'PushNotificationService', useExisting: PushNotificationService };
-const $QueryService: Provider = { provide: 'QueryService', useExisting: QueryService };
 const $ReactionService: Provider = { provide: 'ReactionService', useExisting: ReactionService };
 const $RelayService: Provider = { provide: 'RelayService', useExisting: RelayService };
 const $RoleService: Provider = { provide: 'RoleService', useExisting: RoleService };
@@ -283,7 +282,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		PollService,
 		ProxyAccountService,
 		PushNotificationService,
-		QueryService,
 		ReactionService,
 		RelayService,
 		RoleService,
@@ -368,6 +366,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		ApQuestionService,
 		QueueService,
 		PrismaService,
+		PrismaQueryService,
 
 		//#region 文字列ベースでのinjection用(循環参照対応のため)
 		$LoggerService,
@@ -404,7 +403,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$PollService,
 		$ProxyAccountService,
 		$PushNotificationService,
-		$QueryService,
 		$ReactionService,
 		$RelayService,
 		$RoleService,
@@ -525,7 +523,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		PollService,
 		ProxyAccountService,
 		PushNotificationService,
-		QueryService,
 		ReactionService,
 		RelayService,
 		RoleService,
@@ -609,6 +606,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		ApQuestionService,
 		QueueService,
 		PrismaService,
+		PrismaQueryService,
 
 		//#region 文字列ベースでのinjection用(循環参照対応のため)
 		$LoggerService,
@@ -645,7 +643,6 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		$PollService,
 		$ProxyAccountService,
 		$PushNotificationService,
-		$QueryService,
 		$ReactionService,
 		$RelayService,
 		$RoleService,

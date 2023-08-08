@@ -1,42 +1,34 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import type { DriveFilesRepository, FollowingsRepository, UsersRepository, NotesRepository } from '@/models/index.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import type { Note } from '@/models/entities/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/instance.js';
 import type { KVs } from '../core.js';
+import type { drive_file, note } from '@prisma/client';
 
 /**
  * インスタンスごとのチャート
  */
-// eslint-disable-next-line import/no-default-export
 @Injectable()
+// eslint-disable-next-line import/no-default-export
 export default class InstanceChart extends Chart<typeof schema> {
 	constructor(
 		@Inject(DI.db)
-		private db: DataSource,
+		private readonly db: DataSource,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
+		private readonly utilityService: UtilityService,
+		private readonly appLockService: AppLockService,
+		private readonly chartLoggerService: ChartLoggerService,
 
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private utilityService: UtilityService,
-		private appLockService: AppLockService,
-		private chartLoggerService: ChartLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
 	}
@@ -49,11 +41,11 @@ export default class InstanceChart extends Chart<typeof schema> {
 			followersCount,
 			driveFiles,
 		] = await Promise.all([
-			this.notesRepository.countBy({ userHost: group }),
-			this.usersRepository.countBy({ host: group }),
-			this.followingsRepository.countBy({ followerHost: group }),
-			this.followingsRepository.countBy({ followeeHost: group }),
-			this.driveFilesRepository.countBy({ userHost: group }),
+			this.prismaService.client.note.count({ where: { userHost: group } }),
+			this.prismaService.client.user.count({ where: { host: group } }),
+			this.prismaService.client.following.count({ where: { followerHost: group } }),
+			this.prismaService.client.following.count({ where: { followeeHost: group } }),
+			this.prismaService.client.drive_file.count({ where: { userHost: group } }),
 		]);
 
 		return {
@@ -93,7 +85,7 @@ export default class InstanceChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async updateNote(host: string, note: Note, isAdditional: boolean): Promise<void> {
+	public async updateNote(host: string, note: T2P<Note, note>, isAdditional: boolean): Promise<void> {
 		await this.commit({
 			'notes.total': isAdditional ? 1 : -1,
 			'notes.inc': isAdditional ? 1 : 0,
@@ -124,7 +116,7 @@ export default class InstanceChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async updateDrive(file: DriveFile, isAdditional: boolean): Promise<void> {
+	public async updateDrive(file: T2P<DriveFile, drive_file>, isAdditional: boolean): Promise<void> {
 		const fileSizeKb = file.size / 1000;
 		await this.commit({
 			'drive.totalFiles': isAdditional ? 1 : -1,

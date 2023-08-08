@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown(); // TODO
 export const meta = {
@@ -21,30 +20,32 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async () => {
-			const sizes = await this.db
-				.query(
-					`
-			SELECT relname AS "table", reltuples as "count", pg_total_relation_size(C.oid) AS "size"
-			FROM pg_class C LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
-			WHERE nspname NOT IN ('pg_catalog', 'information_schema')
-				AND C.relkind <> 'i'
-				AND nspname !~ '^pg_toast';`,
+			const result = await this.prismaService.client.$queryRaw`
+				SELECT relname AS "table", reltuples as "count", pg_total_relation_size(C.oid) AS "size"
+				FROM pg_class C LEFT JOIN pg_namespace N ON (N.oid = C.relnamespace)
+				WHERE nspname NOT IN ('pg_catalog', 'information_schema')
+					AND C.relkind <> 'i'
+					AND nspname !~ '^pg_toast';
+			`;
+
+			const sizes = z
+				.array(
+					z.object({
+						table: z.string(),
+						count: z.union([z.number(), z.bigint()]),
+						size: z.union([z.number(), z.bigint()]),
+					}),
 				)
-				.then((recs) => {
-					const res = {} as Record<string, { count: number; size: number }>;
-					for (const rec of recs) {
-						res[rec.table] = {
-							count: parseInt(rec.count, 10),
-							size: parseInt(rec.size, 10),
-						};
-					}
-					return res;
-				});
+				.parse(result)
+				.reduce<Record<string, { count: number; size: number }>>((acc, cur) => {
+					acc[cur.table] = {
+						count: Number(cur.count),
+						size: Number(cur.size),
+					};
+					return acc;
+				}, {});
 
 			return sizes satisfies z.infer<typeof res>;
 		});

@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { SwSubscriptionsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['account'],
@@ -21,14 +20,13 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.swSubscriptionsRepository)
-		private swSubscriptionsRepository: SwSubscriptionsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			await this.swSubscriptionsRepository.delete({
-				...(me ? { userId: me.id } : {}),
-				endpoint: ps.endpoint,
+			await this.prismaService.client.sw_subscription.deleteMany({
+				where: {
+					...(me ? { userId: me.id } : {}),
+					endpoint: ps.endpoint,
+				},
 			});
 		});
 	}

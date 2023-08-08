@@ -9,6 +9,8 @@ import { isMention } from '../type.js';
 import { ApResolverService, Resolver } from '../ApResolverService.js';
 import { ApPersonService } from './ApPersonService.js';
 import type { IObject, IApMention } from '../type.js';
+import type { T2P } from '@/types.js';
+import type { user } from '@prisma/client';
 
 @Injectable()
 export class ApMentionService {
@@ -25,7 +27,7 @@ export class ApMentionService {
 	public async extractApMentions(tags: IObject | IObject[] | null | undefined, resolver: Resolver): Promise<User[]> {
 		const hrefs = unique(this.extractApMentionObjects(tags).map(x => x.href));
 
-		const limit = promiseLimit<User | null>(2);
+		const limit = promiseLimit<T2P<User, user> | null>(2);
 		const mentionedUsers = (await Promise.all(
 			hrefs.map(x => limit(() => this.apPersonService.resolvePerson(x, resolver).catch(() => null))),
 		)).filter((x): x is User => x != null);

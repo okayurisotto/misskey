@@ -1,13 +1,9 @@
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UsersRepository,
-	UserProfilesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DeleteAccountService } from '@/core/DeleteAccountService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	requireCredential: true,
@@ -26,21 +22,18 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		private deleteAccountService: DeleteAccountService,
+		private readonly deleteAccountService: DeleteAccountService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: me.id,
-			});
-			const userDetailed = await this.usersRepository.findOneByOrFail({
-				id: me.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: me.id },
+				});
+			const userDetailed =
+				await this.prismaService.client.user.findUniqueOrThrow({
+					where: { id: me.id },
+				});
 			if (userDetailed.isDeleted) {
 				return;
 			}

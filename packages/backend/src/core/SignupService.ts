@@ -1,45 +1,26 @@
 import { generateKeyPair } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { DataSource, IsNull } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { UsedUsernamesRepository, UsersRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
 import { User } from '@/models/entities/User.js';
 import { UserProfile } from '@/models/entities/UserProfile.js';
 import { IdService } from '@/core/IdService.js';
-import { UserKeypair } from '@/models/entities/UserKeypair.js';
-import { UsedUsername } from '@/models/entities/UsedUsername.js';
 import generateUserToken from '@/misc/generate-native-user-token.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import UsersChart from '@/core/chart/charts/users.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { LocalUsernameSchema, PasswordSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 @Injectable()
 export class SignupService {
 	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
-
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.usedUsernamesRepository)
-		private usedUsernamesRepository: UsedUsernamesRepository,
-
-		private utilityService: UtilityService,
-		private userEntityService: UserEntityService,
-		private idService: IdService,
-		private metaService: MetaService,
-		private usersChart: UsersChart,
-	) {
-	}
+		private readonly utilityService: UtilityService,
+		private readonly idService: IdService,
+		private readonly metaService: MetaService,
+		private readonly usersChart: UsersChart,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
 	public async signup(opts: {
@@ -72,16 +53,16 @@ export class SignupService {
 		const secret = generateUserToken();
 
 		// Check username duplication
-		if (await this.usersRepository.exist({ where: { usernameLower: username.toLowerCase(), host: IsNull() } })) {
+		if ((await this.prismaService.client.user.count({ where: { usernameLower: username.toLowerCase(), host: null }, take: 1 })) > 0) {
 			throw new Error('DUPLICATED_USERNAME');
 		}
 
 		// Check deleted username duplication
-		if (await this.usedUsernamesRepository.exist({ where: { username: username.toLowerCase() } })) {
+		if ((await this.prismaService.client.used_username.count({ where: { username: username.toLowerCase() }, take: 1 })) > 0) {
 			throw new Error('USED_USERNAME');
 		}
 
-		const isTheFirstUser = (await this.usersRepository.countBy({ host: IsNull() })) === 0;
+		const isTheFirstUser = (await this.prismaService.client.user.count({ where: { host: null } })) === 0;
 
 		if (!opts.ignorePreservedUsernames && !isTheFirstUser) {
 			const instance = await this.metaService.fetch(true);
@@ -108,43 +89,50 @@ export class SignupService {
 				err ? rej(err) : res([publicKey, privateKey]),
 			));
 
-		let account!: User;
-
-		// Start transaction
-		await this.db.transaction(async transactionalEntityManager => {
-			const exist = await transactionalEntityManager.findOneBy(User, {
-				usernameLower: username.toLowerCase(),
-				host: IsNull(),
+		const account = await this.prismaService.client.$transaction(async (client) => {
+			const exist = await client.user.findFirst({
+				where: {
+					usernameLower: username.toLowerCase(),
+					host: null,
+				},
 			});
 
-			if (exist) throw new Error(' the username is already used');
+			if (exist) throw new Error('the username is already used');
 
-			account = await transactionalEntityManager.save(new User({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				username: username,
-				usernameLower: username.toLowerCase(),
-				host: this.utilityService.toPunyNullable(host),
-				token: secret,
-				isRoot: isTheFirstUser,
-			}));
+			const account = await client.user.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					username: username,
+					usernameLower: username.toLowerCase(),
+					host: this.utilityService.toPunyNullable(host),
+					token: secret,
+					isRoot: isTheFirstUser,
 
-			await transactionalEntityManager.save(new UserKeypair({
-				publicKey: keyPair[0],
-				privateKey: keyPair[1],
-				userId: account.id,
-			}));
+					user_keypair: {
+						create: {
+							publicKey: keyPair[0],
+							privateKey: keyPair[1],
+						},
+					},
 
-			await transactionalEntityManager.save(new UserProfile({
-				userId: account.id,
-				autoAcceptFollowed: true,
-				password: hash,
-			}));
+					user_profile: {
+						create: {
+							autoAcceptFollowed: true,
+							password: hash,
+						},
+					},
+				},
+			});
 
-			await transactionalEntityManager.save(new UsedUsername({
-				createdAt: new Date(),
-				username: username.toLowerCase(),
-			}));
+			await client.used_username.create({
+				data: {
+					createdAt: new Date(),
+					username: username.toLowerCase(),
+				},
+			});
+
+			return account;
 		});
 
 		this.usersChart.update(account, true);
@@ -152,4 +140,3 @@ export class SignupService {
 		return { account, secret };
 	}
 }
-

@@ -1,26 +1,24 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { EmojisRepository } from '@/models/index.js';
-import type { } from '@/models/entities/Blocking.js';
+import { Injectable } from '@nestjs/common';
 import type { Emoji } from '@/models/entities/Emoji.js';
 import { bindThis } from '@/decorators.js';
 import type { EmojiSimpleSchema } from '@/models/zod/EmojiSimpleSchema.js';
 import type { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
+import type { emoji } from '@prisma/client';
 
 @Injectable()
 export class EmojiEntityService {
-	constructor(
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-	) {
-	}
+	constructor(private readonly prismaService: PrismaService) {}
 
 	@bindThis
 	public async packSimple(
-		src: Emoji['id'] | Emoji,
+		src: Emoji['id'] | T2P<Emoji, emoji>,
 	): Promise<z.infer<typeof EmojiSimpleSchema>> {
-		const emoji = typeof src === 'object' ? src : await this.emojisRepository.findOneByOrFail({ id: src });
+		const emoji = typeof src === 'object'
+			? src
+			: await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			aliases: emoji.aliases,
@@ -35,9 +33,11 @@ export class EmojiEntityService {
 
 	@bindThis
 	public async packDetailed(
-		src: Emoji['id'] | Emoji,
+		src: Emoji['id'] | T2P<Emoji, emoji>,
 	): Promise<z.infer<typeof EmojiDetailedSchema>> {
-		const emoji = typeof src === 'object' ? src : await this.emojisRepository.findOneByOrFail({ id: src });
+		const emoji = typeof src === 'object'
+			? src
+			: await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: emoji.id,

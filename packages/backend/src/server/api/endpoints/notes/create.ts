@@ -1,26 +1,20 @@
 import ms from 'ms';
-import { In } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import z from 'zod';
 import type { User } from '@/models/entities/User.js';
-import type {
-	UsersRepository,
-	NotesRepository,
-	BlockingsRepository,
-	DriveFilesRepository,
-	ChannelsRepository,
-	Note,
-} from '@/models/index.js';
+import type { Note } from '@/models/index.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import type { Channel } from '@/models/entities/Channel.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
-import { DI } from '@/di-symbols.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
+import type { channel, drive_file, note, user } from '@prisma/client';
 
 const res = z.object({ createdNote: NoteSchema });
 export const meta = {
@@ -132,33 +126,19 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		private noteEntityService: NoteEntityService,
-		private noteCreateService: NoteCreateService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly noteCreateService: NoteCreateService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			let visibleUsers: User[] = [];
+			let visibleUsers: T2P<User, user>[] = [];
 			if (ps.visibleUserIds) {
-				visibleUsers = await this.usersRepository.findBy({
-					id: In(ps.visibleUserIds),
+				visibleUsers = await this.prismaService.client.user.findMany({
+					where: { id: { in: ps.visibleUserIds } },
 				});
 			}
 
-			let files: DriveFile[] = [];
+			let files: T2P<DriveFile, drive_file>[] = [];
 			const fileIds =
 				ps.fileIds != null
 					? ps.fileIds
@@ -166,25 +146,28 @@ export default class extends Endpoint<
 					? ps.mediaIds
 					: null;
 			if (fileIds != null) {
-				files = await this.driveFilesRepository
-					.createQueryBuilder('file')
-					.where('file.userId = :userId AND file.id IN (:...fileIds)', {
-						userId: me.id,
-						fileIds,
+				files = (
+					await this.prismaService.client.drive_file.findMany({
+						where: { userId: me.id, id: { in: fileIds } },
 					})
-					.orderBy('array_position(ARRAY[:...fileIds], "id"::text)')
-					.setParameters({ fileIds })
-					.getMany();
+				).sort(({ id: a }, { id: b }) => {
+					return (
+						fileIds.findIndex((id) => id === a) -
+						fileIds.findIndex((id) => id === b)
+					);
+				});
 
 				if (files.length !== fileIds.length) {
 					throw new ApiError(meta.errors.noSuchFile);
 				}
 			}
 
-			let renote: Note | null = null;
+			let renote: T2P<Note, note> | null = null;
 			if (ps.renoteId != null) {
 				// Fetch renote to note
-				renote = await this.notesRepository.findOneBy({ id: ps.renoteId });
+				renote = await this.prismaService.client.note.findUnique({
+					where: { id: ps.renoteId },
+				});
 
 				if (renote == null) {
 					throw new ApiError(meta.errors.noSuchRenoteTarget);
@@ -199,22 +182,23 @@ export default class extends Endpoint<
 
 				// Check blocking
 				if (renote.userId !== me.id) {
-					const blockExist = await this.blockingsRepository.exist({
-						where: {
-							blockerId: renote.userId,
-							blockeeId: me.id,
-						},
-					});
+					const blockExist =
+						(await this.prismaService.client.blocking.count({
+							where: { blockerId: renote.userId, blockeeId: me.id },
+							take: 1,
+						})) > 0;
 					if (blockExist) {
 						throw new ApiError(meta.errors.youHaveBeenBlocked);
 					}
 				}
 			}
 
-			let reply: Note | null = null;
+			let reply: T2P<Note, note> | null = null;
 			if (ps.replyId != null) {
 				// Fetch reply
-				reply = await this.notesRepository.findOneBy({ id: ps.replyId });
+				reply = await this.prismaService.client.note.findUnique({
+					where: { id: ps.replyId },
+				});
 
 				if (reply == null) {
 					throw new ApiError(meta.errors.noSuchReplyTarget);
@@ -229,12 +213,14 @@ export default class extends Endpoint<
 
 				// Check blocking
 				if (reply.userId !== me.id) {
-					const blockExist = await this.blockingsRepository.exist({
-						where: {
-							blockerId: reply.userId,
-							blockeeId: me.id,
-						},
-					});
+					const blockExist =
+						(await this.prismaService.client.blocking.count({
+							where: {
+								blockerId: reply.userId,
+								blockeeId: me.id,
+							},
+							take: 1,
+						})) > 0;
 					if (blockExist) {
 						throw new ApiError(meta.errors.youHaveBeenBlocked);
 					}
@@ -251,11 +237,13 @@ export default class extends Endpoint<
 				}
 			}
 
-			let channel: Channel | null = null;
+			let channel: T2P<Channel, channel> | null = null;
 			if (ps.channelId != null) {
-				channel = await this.channelsRepository.findOneBy({
-					id: ps.channelId,
-					isArchived: false,
+				channel = await this.prismaService.client.channel.findUnique({
+					where: {
+						id: ps.channelId,
+						isArchived: false,
+					},
 				});
 
 				if (channel == null) {

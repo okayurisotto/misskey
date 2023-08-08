@@ -1,5 +1,4 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import { DataSource, In, IsNull } from 'typeorm';
 import * as Redis from 'ioredis';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
@@ -7,45 +6,38 @@ import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import type { Emoji } from '@/models/entities/Emoji.js';
-import type { EmojisRepository, Role } from '@/models/index.js';
+import type { Role } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
 import { MemoryKVCache, RedisSingleCache } from '@/misc/cache.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import type { Config } from '@/config.js';
-import { query } from '@/misc/prelude/url.js';
 import type { Serialized } from '@/server/api/stream/types.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { Prisma, drive_file, emoji } from '@prisma/client';
 
 const parseEmojiStrRegexp = /^(\w+)(?:@([\w.-]+))?$/;
 
 @Injectable()
 export class CustomEmojiService implements OnApplicationShutdown {
-	private cache: MemoryKVCache<Emoji | null>;
-	public localEmojisCache: RedisSingleCache<Map<string, Emoji>>;
+	private cache: MemoryKVCache<T2P<Emoji, emoji> | null>;
+	public localEmojisCache: RedisSingleCache<Map<string, T2P<Emoji, emoji>>>;
 
 	constructor(
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
 
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.db)
-		private db: DataSource,
-
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
-		private utilityService: UtilityService,
-		private idService: IdService,
-		private emojiEntityService: EmojiEntityService,
-		private globalEventService: GlobalEventService,
+		private readonly utilityService: UtilityService,
+		private readonly idService: IdService,
+		private readonly emojiEntityService: EmojiEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
-		this.cache = new MemoryKVCache<Emoji | null>(1000 * 60 * 60 * 12);
+		this.cache = new MemoryKVCache<T2P<Emoji, emoji> | null>(1000 * 60 * 60 * 12);
 
-		this.localEmojisCache = new RedisSingleCache<Map<string, Emoji>>(this.redisClient, 'localEmojis', {
+		this.localEmojisCache = new RedisSingleCache<Map<string, T2P<Emoji, emoji>>>(this.redisClient, 'localEmojis', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60 * 3, // 3m
-			fetcher: () => this.emojisRepository.find({ where: { host: IsNull() } }).then(emojis => new Map(emojis.map(emoji => [emoji.name, emoji]))),
+			fetcher: () => this.prismaService.client.emoji.findMany({ where: { host: null } }).then(emojis => new Map(emojis.map(emoji => [emoji.name, emoji]))),
 			toRedisConverter: (value) => JSON.stringify(Array.from(value.values())),
 			fromRedisConverter: (value) => {
 				if (!Array.isArray(JSON.parse(value))) return undefined; // 古いバージョンの壊れたキャッシュが残っていることがある(そのうち消す)
@@ -59,7 +51,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async add(data: {
-		driveFile: DriveFile;
+		driveFile: T2P<DriveFile, drive_file>;
 		name: string;
 		category: string | null;
 		aliases: string[];
@@ -68,22 +60,24 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		isSensitive: boolean;
 		localOnly: boolean;
 		roleIdsThatCanBeUsedThisEmojiAsReaction: Role['id'][];
-	}): Promise<Emoji> {
-		const emoji = await this.emojisRepository.insert({
-			id: this.idService.genId(),
-			updatedAt: new Date(),
-			name: data.name,
-			category: data.category,
-			host: data.host,
-			aliases: data.aliases,
-			originalUrl: data.driveFile.url,
-			publicUrl: data.driveFile.webpublicUrl ?? data.driveFile.url,
-			type: data.driveFile.webpublicType ?? data.driveFile.type,
-			license: data.license,
-			isSensitive: data.isSensitive,
-			localOnly: data.localOnly,
-			roleIdsThatCanBeUsedThisEmojiAsReaction: data.roleIdsThatCanBeUsedThisEmojiAsReaction,
-		}).then(x => this.emojisRepository.findOneByOrFail(x.identifiers[0]));
+	}): Promise<T2P<Emoji, emoji>> {
+		const emoji = await this.prismaService.client.emoji.create({
+			data: {
+				id: this.idService.genId(),
+				updatedAt: new Date(),
+				name: data.name,
+				category: data.category,
+				host: data.host,
+				aliases: data.aliases,
+				originalUrl: data.driveFile.url,
+				publicUrl: data.driveFile.webpublicUrl ?? data.driveFile.url,
+				type: data.driveFile.webpublicType ?? data.driveFile.type,
+				license: data.license,
+				isSensitive: data.isSensitive,
+				localOnly: data.localOnly,
+				roleIdsThatCanBeUsedThisEmojiAsReaction: data.roleIdsThatCanBeUsedThisEmojiAsReaction,
+			},
+		});
 
 		if (data.host == null) {
 			this.localEmojisCache.refresh();
@@ -98,7 +92,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async update(id: Emoji['id'], data: {
-		driveFile?: DriveFile;
+		driveFile?: T2P<DriveFile, drive_file>;
 		name?: string;
 		category?: string | null;
 		aliases?: string[];
@@ -107,22 +101,25 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		localOnly?: boolean;
 		roleIdsThatCanBeUsedThisEmojiAsReaction?: Role['id'][];
 	}): Promise<void> {
-		const emoji = await this.emojisRepository.findOneByOrFail({ id: id });
-		const sameNameEmoji = await this.emojisRepository.findOneBy({ name: data.name, host: IsNull() });
+		const emoji = await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: id } });
+		const sameNameEmoji = await this.prismaService.client.emoji.findFirst({ where: { name: data.name, host: null } });
 		if (sameNameEmoji != null && sameNameEmoji.id !== id) throw new Error('name already exists');
 
-		await this.emojisRepository.update(emoji.id, {
-			updatedAt: new Date(),
-			name: data.name,
-			category: data.category,
-			aliases: data.aliases,
-			license: data.license,
-			isSensitive: data.isSensitive,
-			localOnly: data.localOnly,
-			originalUrl: data.driveFile != null ? data.driveFile.url : undefined,
-			publicUrl: data.driveFile != null ? (data.driveFile.webpublicUrl ?? data.driveFile.url) : undefined,
-			type: data.driveFile != null ? (data.driveFile.webpublicType ?? data.driveFile.type) : undefined,
-			roleIdsThatCanBeUsedThisEmojiAsReaction: data.roleIdsThatCanBeUsedThisEmojiAsReaction ?? undefined,
+		await this.prismaService.client.emoji.update({
+			where: { id: emoji.id },
+			data: {
+				updatedAt: new Date(),
+				name: data.name,
+				category: data.category,
+				aliases: data.aliases,
+				license: data.license,
+				isSensitive: data.isSensitive,
+				localOnly: data.localOnly,
+				originalUrl: data.driveFile != null ? data.driveFile.url : undefined,
+				publicUrl: data.driveFile != null ? (data.driveFile.webpublicUrl ?? data.driveFile.url) : undefined,
+				type: data.driveFile != null ? (data.driveFile.webpublicType ?? data.driveFile.type) : undefined,
+				roleIdsThatCanBeUsedThisEmojiAsReaction: data.roleIdsThatCanBeUsedThisEmojiAsReaction ?? undefined,
+			},
 		});
 
 		this.localEmojisCache.refresh();
@@ -146,14 +143,15 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async addAliasesBulk(ids: Emoji['id'][], aliases: string[]) {
-		const emojis = await this.emojisRepository.findBy({
-			id: In(ids),
-		});
+		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
 		for (const emoji of emojis) {
-			await this.emojisRepository.update(emoji.id, {
-				updatedAt: new Date(),
-				aliases: [...new Set(emoji.aliases.concat(aliases))],
+			await this.prismaService.client.emoji.update({
+				where: { id: emoji.id },
+				data: {
+					updatedAt: new Date(),
+					aliases: [...new Set(emoji.aliases.concat(aliases))],
+				},
 			});
 		}
 
@@ -166,11 +164,12 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async setAliasesBulk(ids: Emoji['id'][], aliases: string[]) {
-		await this.emojisRepository.update({
-			id: In(ids),
-		}, {
-			updatedAt: new Date(),
-			aliases: aliases,
+		await this.prismaService.client.emoji.updateMany({
+			where: { id: { in: ids } },
+			data: {
+				updatedAt: new Date(),
+				aliases: aliases,
+			},
 		});
 
 		this.localEmojisCache.refresh();
@@ -182,14 +181,15 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async removeAliasesBulk(ids: Emoji['id'][], aliases: string[]) {
-		const emojis = await this.emojisRepository.findBy({
-			id: In(ids),
-		});
+		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
 		for (const emoji of emojis) {
-			await this.emojisRepository.update(emoji.id, {
-				updatedAt: new Date(),
-				aliases: emoji.aliases.filter(x => !aliases.includes(x)),
+			await this.prismaService.client.emoji.update({
+				where: { id: emoji.id },
+				data: {
+					updatedAt: new Date(),
+					aliases: emoji.aliases.filter(x => !aliases.includes(x)),
+				},
 			});
 		}
 
@@ -202,11 +202,12 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async setCategoryBulk(ids: Emoji['id'][], category: string | null) {
-		await this.emojisRepository.update({
-			id: In(ids),
-		}, {
-			updatedAt: new Date(),
-			category: category,
+		await this.prismaService.client.emoji.updateMany({
+			where: { id: { in: ids } },
+			data: {
+				updatedAt: new Date(),
+				category: category,
+			},
 		});
 
 		this.localEmojisCache.refresh();
@@ -218,11 +219,12 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async setLicenseBulk(ids: Emoji['id'][], license: string | null) {
-		await this.emojisRepository.update({
-			id: In(ids),
-		}, {
-			updatedAt: new Date(),
-			license: license,
+		await this.prismaService.client.emoji.updateMany({
+			where: { id: { in: ids } },
+			data: {
+				updatedAt: new Date(),
+				license: license,
+			},
 		});
 
 		this.localEmojisCache.refresh();
@@ -234,9 +236,9 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async delete(id: Emoji['id']) {
-		const emoji = await this.emojisRepository.findOneByOrFail({ id: id });
+		const emoji = await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: id } });
 
-		await this.emojisRepository.delete(emoji.id);
+		await this.prismaService.client.emoji.delete({ where: { id: emoji.id } });
 
 		this.localEmojisCache.refresh();
 
@@ -247,12 +249,10 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async deleteBulk(ids: Emoji['id'][]) {
-		const emojis = await this.emojisRepository.findBy({
-			id: In(ids),
-		});
+		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
 		for (const emoji of emojis) {
-			await this.emojisRepository.delete(emoji.id);
+			await this.prismaService.client.emoji.delete({ where: { id: emoji.id } });
 		}
 
 		this.localEmojisCache.refresh();
@@ -300,9 +300,8 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		if (name == null) return null;
 		if (host == null) return null;
 
-		const queryOrNull = async () => (await this.emojisRepository.findOneBy({
-			name,
-			host: host ?? IsNull(),
+		const queryOrNull = async () => (await this.prismaService.client.emoji.findFirst({
+			where: { name, host: host ?? null },
 		})) ?? null;
 
 		const emoji = await this.cache.fetch(`${name} ${host}`, queryOrNull);
@@ -332,18 +331,17 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	@bindThis
 	public async prefetchEmojis(emojis: { name: string; host: string | null; }[]): Promise<void> {
 		const notCachedEmojis = emojis.filter(emoji => this.cache.get(`${emoji.name} ${emoji.host}`) == null);
-		const emojisQuery: any[] = [];
+		const emojisQuery: Prisma.emojiWhereInput[] = [];
 		const hosts = new Set(notCachedEmojis.map(e => e.host));
 		for (const host of hosts) {
 			if (host == null) continue;
 			emojisQuery.push({
-				name: In(notCachedEmojis.filter(e => e.host === host).map(e => e.name)),
+				name: { in: notCachedEmojis.filter(e => e.host === host).map(e => e.name) },
 				host: host,
 			});
 		}
-		const _emojis = emojisQuery.length > 0 ? await this.emojisRepository.find({
-			where: emojisQuery,
-			select: ['name', 'host', 'originalUrl', 'publicUrl'],
+		const _emojis = emojisQuery.length > 0 ? await this.prismaService.client.emoji.findMany({
+			where: { OR: emojisQuery },
 		}) : [];
 		for (const emoji of _emojis) {
 			this.cache.set(`${emoji.name} ${emoji.host}`, emoji);

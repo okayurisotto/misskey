@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { NoteUnreadsRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['account'],
@@ -21,15 +20,13 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.noteUnreadsRepository)
-		private noteUnreadsRepository: NoteUnreadsRepository,
-
-		private globalEventService: GlobalEventService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Remove documents
-			await this.noteUnreadsRepository.delete({
-				userId: me.id,
+			await this.prismaService.client.note_unread.deleteMany({
+				where: { userId: me.id },
 			});
 
 			// 全て既読になったイベントを発行

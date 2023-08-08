@@ -1,8 +1,6 @@
 import { z } from 'zod';
-import { IsNull, LessThanOrEqual, MoreThan, Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
 import JSON5 from 'json5';
-import type { AdsRepository, UsersRepository } from '@/models/index.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -10,6 +8,7 @@ import { MetaService } from '@/core/MetaService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	maintainerName: z.string().nullable(),
@@ -89,33 +88,25 @@ export default class extends Endpoint<
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.adsRepository)
-		private adsRepository: AdsRepository,
-
-		private userEntityService: UserEntityService,
-		private metaService: MetaService,
+		private readonly userEntityService: UserEntityService,
+		private readonly metaService: MetaService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const instance = await this.metaService.fetch(true);
 
-			const ads = await this.adsRepository
-				.createQueryBuilder('ads')
-				.where('ads.expiresAt > :now', { now: new Date() })
-				.andWhere('ads.startsAt <= :now', { now: new Date() })
-				.andWhere(
-					new Brackets((qb) => {
-						// 曜日のビットフラグを確認する
-						qb.where('ads.dayOfWeek & :dayOfWeek > 0', {
-							dayOfWeek: 1 << new Date().getDay(),
-						}).orWhere('ads.dayOfWeek = 0');
-					}),
-				)
-				.getMany();
+			const now = new Date();
+			const dayOfWeek = 1 << now.getDay();
+			const ads = (
+				await this.prismaService.client.ad.findMany({
+					where: {
+						expiresAt: { gt: now },
+						startsAt: { lte: now },
+					},
+				})
+			).filter((ad) => ad.dayOfWeek === 0 || (ad.dayOfWeek & dayOfWeek) > 0);
 
-			const response: any = {
+			const response: z.infer<typeof res> = {
 				maintainerName: instance.maintainerName,
 				maintainerEmail: instance.maintainerEmail,
 
@@ -169,7 +160,10 @@ export default class extends Endpoint<
 
 				serverRules: instance.serverRules,
 
-				policies: { ...DEFAULT_POLICIES, ...instance.policies },
+				policies: {
+					...DEFAULT_POLICIES,
+					...z.record(z.string(), z.any()).parse(instance.policies),
+				},
 
 				mediaProxy: this.config.mediaProxy,
 
@@ -178,8 +172,8 @@ export default class extends Endpoint<
 							cacheRemoteFiles: instance.cacheRemoteFiles,
 							cacheRemoteSensitiveFiles: instance.cacheRemoteSensitiveFiles,
 							requireSetup:
-								(await this.usersRepository.countBy({
-									host: IsNull(),
+								(await this.prismaService.client.user.count({
+									where: { host: null },
 								})) === 0,
 					  }
 					: {}),

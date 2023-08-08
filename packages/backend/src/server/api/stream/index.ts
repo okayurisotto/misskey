@@ -5,26 +5,28 @@ import type { NoteReadService } from '@/core/NoteReadService.js';
 import type { NotificationService } from '@/core/NotificationService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
-import { UserProfile } from '@/models/index.js';
+import type { UserProfile } from '@/models/index.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { ChannelsService } from './ChannelsService.js';
 import type { EventEmitter } from 'events';
 import type Channel from './channel.js';
 import type { StreamEventEmitter, StreamMessages } from './types.js';
 import type { z } from 'zod';
+import type { T2P } from '@/types.js';
+import type { access_token, user, user_profile } from '@prisma/client';
 
 /**
  * Main stream connection
  */
 export default class Connection {
-	public user?: User;
-	public token?: AccessToken;
+	public user?: T2P<User, user>;
+	public token?: T2P<AccessToken, access_token>;
 	private wsConnection: WebSocket.WebSocket;
 	public subscriber: StreamEventEmitter;
 	private channels: Channel[] = [];
 	private subscribingNotes: any = {};
 	private cachedNotes: z.infer<typeof NoteSchema>[] = [];
-	public userProfile: UserProfile | null = null;
+	public userProfile: T2P<UserProfile, user_profile> | null = null;
 	public following: Set<string> = new Set();
 	public followingChannels: Set<string> = new Set();
 	public userIdsWhoMeMuting: Set<string> = new Set();
@@ -38,8 +40,8 @@ export default class Connection {
 		private notificationService: NotificationService,
 		private cacheService: CacheService,
 
-		user: User | null | undefined,
-		token: AccessToken | null | undefined,
+		user: T2P<User, user> | null | undefined,
+		token: T2P<AccessToken, access_token> | null | undefined,
 	) {
 		if (user) this.user = user;
 		if (token) this.token = token;

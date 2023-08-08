@@ -1,12 +1,10 @@
 import { z } from 'zod';
 import * as OTPAuth from 'otpauth';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import type { UserProfilesRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	requireCredential: true,
@@ -25,21 +23,17 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		private userEntityService: UserEntityService,
-		private globalEventService: GlobalEventService,
+		private readonly userEntityService: UserEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const token = ps.token.replace(/\s/g, '');
 
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: me.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: me.id },
+				});
 
 			if (profile.twoFactorTempSecret == null) {
 				throw new Error('二段階認証の設定が開始されていません');
@@ -56,9 +50,12 @@ export default class extends Endpoint<
 				throw new Error('not verified');
 			}
 
-			await this.userProfilesRepository.update(me.id, {
-				twoFactorSecret: profile.twoFactorTempSecret,
-				twoFactorEnabled: true,
+			await this.prismaService.client.user_profile.update({
+				where: { userId: me.id },
+				data: {
+					twoFactorSecret: profile.twoFactorTempSecret,
+					twoFactorEnabled: true,
+				},
 			});
 
 			// Publish meUpdated event

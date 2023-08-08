@@ -1,32 +1,31 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { MutingsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { Muting } from '@/models/entities/Muting.js';
 import { bindThis } from '@/decorators.js';
 import type { MutingSchema } from '@/models/zod/MutingSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
+import type { muting } from '@prisma/client';
 
 @Injectable()
 export class MutingEntityService {
 	constructor(
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly userEntityService: UserEntityService,
 	) {}
 
 	@bindThis
 	public async pack(
-		src: Muting['id'] | Muting,
+		src: Muting['id'] | T2P<Muting, muting>,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof MutingSchema>> {
 		const muting =
 			typeof src === 'object'
 				? src
-				: await this.mutingsRepository.findOneByOrFail({ id: src });
+				: await this.prismaService.client.muting.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: muting.id,

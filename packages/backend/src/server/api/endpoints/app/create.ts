@@ -1,14 +1,13 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AppsRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { unique } from '@/misc/prelude/array.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { AppSchema } from '@/models/zod/AppSchema.js';
 import { uniqueItems } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = AppSchema;
 export const meta = {
@@ -32,11 +31,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.appsRepository)
-		private appsRepository: AppsRepository,
-
-		private appEntityService: AppEntityService,
-		private idService: IdService,
+		private readonly appEntityService: AppEntityService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Generate secret
@@ -50,8 +47,8 @@ export default class extends Endpoint<
 			);
 
 			// Create account
-			const app = await this.appsRepository
-				.insert({
+			const app = await this.prismaService.client.app.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
 					userId: me ? me.id : null,
@@ -60,8 +57,8 @@ export default class extends Endpoint<
 					permission,
 					callbackUrl: ps.callbackUrl,
 					secret: secret,
-				})
-				.then((x) => this.appsRepository.findOneByOrFail(x.identifiers[0]));
+				},
+			});
 
 			return (await this.appEntityService.pack(app, null, {
 				detail: true,

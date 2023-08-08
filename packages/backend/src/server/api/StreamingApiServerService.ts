@@ -3,10 +3,8 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import * as WebSocket from 'ws';
 import { DI } from '@/di-symbols.js';
-import type { UsersRepository, AccessToken } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import type { AccessToken } from '@/models/index.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
-import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
@@ -15,6 +13,9 @@ import { AuthenticateService, AuthenticationError } from './AuthenticateService.
 import MainStreamConnection from './stream/index.js';
 import { ChannelsService } from './stream/ChannelsService.js';
 import type * as http from 'node:http';
+import { T2P } from '@/types.js';
+import { access_token } from '@prisma/client';
+import { PrismaService } from '@/core/PrismaService.js';
 
 @Injectable()
 export class StreamingApiServerService {
@@ -23,22 +24,16 @@ export class StreamingApiServerService {
 	#cleanConnectionsIntervalId: NodeJS.Timeout | null = null;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
 		@Inject(DI.redisForSub)
 		private redisForSub: Redis.Redis,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
 
 		private cacheService: CacheService,
 		private noteReadService: NoteReadService,
 		private authenticateService: AuthenticateService,
 		private channelsService: ChannelsService,
 		private notificationService: NotificationService,
-	) {
-	}
+		private prismaService: PrismaService,
+	) {}
 
 	@bindThis
 	public attach(server: http.Server): void {
@@ -56,7 +51,7 @@ export class StreamingApiServerService {
 			const q = new URL(request.url, `http://${request.headers.host}`).searchParams;
 
 			let user: LocalUser | null = null;
-			let app: AccessToken | null = null;
+			let app: T2P<AccessToken, access_token> | null = null;
 
 			// https://datatracker.ietf.org/doc/html/rfc6750.html#section-2.1
 			// Note that the standard WHATWG WebSocket API does not support setting any headers,
@@ -130,13 +125,15 @@ export class StreamingApiServerService {
 			this.#connections.set(connection, Date.now());
 
 			const userUpdateIntervalId = user ? setInterval(() => {
-				this.usersRepository.update(user.id, {
-					lastActiveDate: new Date(),
+				this.prismaService.client.user.update({
+					where: { id: user.id },
+					data: { lastActiveDate: new Date() },
 				});
 			}, 1000 * 60 * 5) : null;
 			if (user) {
-				this.usersRepository.update(user.id, {
-					lastActiveDate: new Date(),
+				this.prismaService.client.user.update({
+					where: { id: user.id },
+					data: { lastActiveDate: new Date() },
 				});
 			}
 

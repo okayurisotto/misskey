@@ -1,28 +1,23 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { InstancesRepository } from '@/models/index.js';
-import type {} from '@/models/entities/Blocking.js';
+import { Injectable } from '@nestjs/common';
 import type { Instance } from '@/models/entities/Instance.js';
 import { MetaService } from '@/core/MetaService.js';
 import { bindThis } from '@/decorators.js';
 import type { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
+import type { T2P } from '@/types.js';
 import { UtilityService } from '../UtilityService.js';
 import type { z } from 'zod';
+import type { instance } from '@prisma/client';
 
 @Injectable()
 export class InstanceEntityService {
 	constructor(
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		private metaService: MetaService,
-
-		private utilityService: UtilityService,
+		private readonly metaService: MetaService,
+		private readonly utilityService: UtilityService,
 	) {}
 
 	@bindThis
 	public async pack(
-		instance: Instance,
+		instance: T2P<Instance, instance>,
 	): Promise<z.infer<typeof FederationInstanceSchema>> {
 		const meta = await this.metaService.fetch();
 		return {

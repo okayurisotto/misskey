@@ -1,31 +1,22 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { MoreThan } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { UsersRepository, DriveFilesRepository, DriveFile } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
+import { drive_file } from '@prisma/client';
+import type { DriveFile } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbJobDataWithUser } from '../types.js';
 
 @Injectable()
 export class DeleteDriveFilesProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private driveService: DriveService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly driveService: DriveService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('delete-drive-files');
 	}
@@ -34,7 +25,7 @@ export class DeleteDriveFilesProcessorService {
 	public async process(job: Bull.Job<DbJobDataWithUser>): Promise<void> {
 		this.logger.info(`Deleting drive files of ${job.data.user.id} ...`);
 
-		const user = await this.usersRepository.findOneBy({ id: job.data.user.id });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
 		if (user == null) {
 			return;
 		}
@@ -43,15 +34,13 @@ export class DeleteDriveFilesProcessorService {
 		let cursor: DriveFile['id'] | null = null;
 
 		while (true) {
-			const files = await this.driveFilesRepository.find({
+			const files: drive_file[] = await this.prismaService.client.drive_file.findMany({
 				where: {
 					userId: user.id,
-					...(cursor ? { id: MoreThan(cursor) } : {}),
+					...(cursor ? { id: { gt: cursor } } : {}),
 				},
 				take: 100,
-				order: {
-					id: 1,
-				},
+				orderBy: { id: 'asc' },
 			});
 
 			if (files.length === 0) {
@@ -66,8 +55,8 @@ export class DeleteDriveFilesProcessorService {
 				deletedCount++;
 			}
 
-			const total = await this.driveFilesRepository.countBy({
-				userId: user.id,
+			const total = await this.prismaService.client.drive_file.count({
+				where: { userId: user.id },
 			});
 
 			job.updateProgress(deletedCount / total);

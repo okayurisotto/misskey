@@ -1,15 +1,13 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { InstanceActorService } from '@/core/InstanceActorService.js';
-import type { NotesRepository, PollsRepository, NoteReactionsRepository, UsersRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { DI } from '@/di-symbols.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
-import { LoggerService } from '@/core/LoggerService.js';
-import type Logger from '@/logger.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { isCollectionOrOrderedCollection } from './type.js';
 import { ApDbResolverService } from './ApDbResolverService.js';
 import { ApRendererService } from './ApRendererService.js';
@@ -19,26 +17,21 @@ import type { IObject, ICollection, IOrderedCollection } from './type.js';
 export class Resolver {
 	private history: Set<string>;
 	private user?: LocalUser;
-	private logger: Logger;
 
 	constructor(
 		private config: Config,
-		private usersRepository: UsersRepository,
-		private notesRepository: NotesRepository,
-		private pollsRepository: PollsRepository,
-		private noteReactionsRepository: NoteReactionsRepository,
-		private utilityService: UtilityService,
-		private instanceActorService: InstanceActorService,
-		private metaService: MetaService,
-		private apRequestService: ApRequestService,
-		private httpRequestService: HttpRequestService,
-		private apRendererService: ApRendererService,
-		private apDbResolverService: ApDbResolverService,
-		private loggerService: LoggerService,
-		private recursionLimit = 100,
+
+		private readonly utilityService: UtilityService,
+		private readonly instanceActorService: InstanceActorService,
+		private readonly metaService: MetaService,
+		private readonly apRequestService: ApRequestService,
+		private readonly httpRequestService: HttpRequestService,
+		private readonly apRendererService: ApRendererService,
+		private readonly apDbResolverService: ApDbResolverService,
+		private readonly prismaService: PrismaService,
+		private readonly recursionLimit = 100,
 	) {
 		this.history = new Set();
-		this.logger = this.loggerService.getLogger('ap-resolve');
 	}
 
 	@bindThis
@@ -118,7 +111,7 @@ export class Resolver {
 
 		switch (parsed.type) {
 			case 'notes':
-				return this.notesRepository.findOneByOrFail({ id: parsed.id })
+				return this.prismaService.client.note.findUniqueOrThrow({ where: { id: parsed.id } })
 					.then(async note => {
 						if (parsed.rest === 'activity') {
 							// this refers to the create activity and not the note itself
@@ -128,24 +121,24 @@ export class Resolver {
 						}
 					});
 			case 'users':
-				return this.usersRepository.findOneByOrFail({ id: parsed.id })
+				return this.prismaService.client.user.findUniqueOrThrow({ where: { id: parsed.id } })
 					.then(user => this.apRendererService.renderPerson(user as LocalUser));
 			case 'questions':
 				// Polls are indexed by the note they are attached to.
 				return Promise.all([
-					this.notesRepository.findOneByOrFail({ id: parsed.id }),
-					this.pollsRepository.findOneByOrFail({ noteId: parsed.id }),
+					this.prismaService.client.note.findUniqueOrThrow({ where: { id: parsed.id } }),
+					this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: parsed.id } }),
 				])
 					.then(([note, poll]) => this.apRendererService.renderQuestion({ id: note.userId }, note, poll));
 			case 'likes':
-				return this.noteReactionsRepository.findOneByOrFail({ id: parsed.id }).then(async reaction =>
-					this.apRendererService.addContext(await this.apRendererService.renderLike(reaction, { uri: null })));
+				return this.prismaService.client.note_reaction.findUniqueOrThrow({ where: { id: parsed.id } })
+					.then(async reaction => this.apRendererService.addContext(await this.apRendererService.renderLike(reaction, { uri: null })));
 			case 'follows':
 				// rest should be <followee id>
 				if (parsed.rest == null || !/^\w+$/.test(parsed.rest)) throw new Error('resolveLocal: invalid follow URI');
 
 				return Promise.all(
-					[parsed.id, parsed.rest].map(id => this.usersRepository.findOneByOrFail({ id })),
+					[parsed.id, parsed.rest].map(id => this.prismaService.client.user.findUniqueOrThrow({ where: { id } })),
 				)
 					.then(([follower, followee]) => this.apRendererService.addContext(this.apRendererService.renderFollow(follower as LocalUser | RemoteUser, followee as LocalUser | RemoteUser, url)));
 			default:
@@ -160,37 +153,20 @@ export class ApResolverService {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.pollsRepository)
-		private pollsRepository: PollsRepository,
-
-		@Inject(DI.noteReactionsRepository)
-		private noteReactionsRepository: NoteReactionsRepository,
-
-		private utilityService: UtilityService,
-		private instanceActorService: InstanceActorService,
-		private metaService: MetaService,
-		private apRequestService: ApRequestService,
-		private httpRequestService: HttpRequestService,
-		private apRendererService: ApRendererService,
-		private apDbResolverService: ApDbResolverService,
-		private loggerService: LoggerService,
-	) {
-	}
+		private readonly utilityService: UtilityService,
+		private readonly instanceActorService: InstanceActorService,
+		private readonly metaService: MetaService,
+		private readonly apRequestService: ApRequestService,
+		private readonly httpRequestService: HttpRequestService,
+		private readonly apRendererService: ApRendererService,
+		private readonly apDbResolverService: ApDbResolverService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
 	public createResolver(): Resolver {
 		return new Resolver(
 			this.config,
-			this.usersRepository,
-			this.notesRepository,
-			this.pollsRepository,
-			this.noteReactionsRepository,
 			this.utilityService,
 			this.instanceActorService,
 			this.metaService,
@@ -198,7 +174,7 @@ export class ApResolverService {
 			this.httpRequestService,
 			this.apRendererService,
 			this.apDbResolverService,
-			this.loggerService,
+			this.prismaService,
 		);
 	}
 }

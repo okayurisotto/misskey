@@ -1,11 +1,10 @@
 import { z } from 'zod';
 import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
-import type { FlashsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -36,15 +35,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.flashsRepository)
-		private flashsRepository: FlashsRepository,
-
-		private flashEntityService: FlashEntityService,
-		private idService: IdService,
+		private readonly flashEntityService: FlashEntityService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const flash = await this.flashsRepository
-				.insert({
+			const flash = await this.prismaService.client.flash.create({
+				data: {
 					id: this.idService.genId(),
 					userId: me.id,
 					createdAt: new Date(),
@@ -53,10 +50,12 @@ export default class extends Endpoint<
 					summary: ps.summary,
 					script: ps.script,
 					permissions: ps.permissions,
-				})
-				.then((x) => this.flashsRepository.findOneByOrFail(x.identifiers[0]));
+				},
+			});
 
-			return await this.flashEntityService.pack(flash) satisfies z.infer<typeof res>;
+			return (await this.flashEntityService.pack(flash)) satisfies z.infer<
+				typeof res
+			>;
 		});
 	}
 }

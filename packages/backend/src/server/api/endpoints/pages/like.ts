@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { PagesRepository, PageLikesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { ApiError } from '../../error.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['pages'],
@@ -43,16 +42,13 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		@Inject(DI.pageLikesRepository)
-		private pageLikesRepository: PageLikesRepository,
-
-		private idService: IdService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const page = await this.pagesRepository.findOneBy({ id: ps.pageId });
+			const page = await this.prismaService.client.page.findUnique({
+				where: { id: ps.pageId },
+			});
 			if (page == null) {
 				throw new ApiError(meta.errors.noSuchPage);
 			}
@@ -62,26 +58,33 @@ export default class extends Endpoint<
 			}
 
 			// if already liked
-			const exist = await this.pageLikesRepository.exist({
-				where: {
-					pageId: page.id,
-					userId: me.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.page_like.count({
+					where: {
+						pageId: page.id,
+						userId: me.id,
+					},
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyLiked);
 			}
 
 			// Create like
-			await this.pageLikesRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				pageId: page.id,
-				userId: me.id,
+			await this.prismaService.client.page_like.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					pageId: page.id,
+					userId: me.id,
+				},
 			});
 
-			this.pagesRepository.increment({ id: page.id }, 'likedCount', 1);
+			this.prismaService.client.page.update({
+				where: { id: page.id },
+				data: { likedCount: { increment: 1 } },
+			});
 		});
 	}
 }

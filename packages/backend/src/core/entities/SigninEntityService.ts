@@ -1,26 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { SigninsRepository } from '@/models/index.js';
-import type { } from '@/models/entities/Blocking.js';
+import { Injectable } from '@nestjs/common';
 import type { Signin } from '@/models/entities/Signin.js';
 import { bindThis } from '@/decorators.js';
-import { UserEntityService } from './UserEntityService.js';
+import type { T2P } from '@/types.js';
+import type { signin } from '@prisma/client';
 
 @Injectable()
 export class SigninEntityService {
-	constructor(
-		@Inject(DI.signinsRepository)
-		private signinsRepository: SigninsRepository,
-
-		private userEntityService: UserEntityService,
-	) {
-	}
+	constructor() {}
 
 	@bindThis
-	public async pack(
-		src: Signin,
-	) {
+	public async pack(src: T2P<Signin, signin>) {
 		return src;
 	}
 }
-

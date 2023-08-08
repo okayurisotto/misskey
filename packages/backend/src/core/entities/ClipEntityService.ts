@@ -1,51 +1,45 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type {
-	ClipFavoritesRepository,
-	ClipsRepository,
-	User,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
+import type { User } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type {} from '@/models/entities/Blocking.js';
 import type { Clip } from '@/models/entities/Clip.js';
 import { bindThis } from '@/decorators.js';
 import type { ClipSchema } from '@/models/zod/ClipSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
+import type { clip } from '@prisma/client';
 
 @Injectable()
 export class ClipEntityService {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		@Inject(DI.clipFavoritesRepository)
-		private clipFavoritesRepository: ClipFavoritesRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
 	) {}
 
 	@bindThis
 	public async pack(
-		src: Clip['id'] | Clip,
+		src: Clip['id'] | T2P<Clip, clip>,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof ClipSchema>> {
 		const meId = me ? me.id : null;
 		const clip =
 			typeof src === 'object'
 				? src
-				: await this.clipsRepository.findOneByOrFail({ id: src });
+				: await this.prismaService.client.clip.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.pack(clip.user ?? clip.userId),
+			user: () => this.userEntityService.pack(clip.userId),
 			favoritedCount: () =>
-				this.clipFavoritesRepository.countBy({ clipId: clip.id }),
-			isFavorited: () =>
+				this.prismaService.client.clip_favorite.count({ where: { clipId: clip.id } }),
+			isFavorited: async () =>
 				meId
-					? this.clipFavoritesRepository.exist({
-							where: { clipId: clip.id, userId: meId },
-					  })
-					: Promise.resolve(undefined),
+					? (await this.prismaService.client.clip_favorite.count({
+						where: { clipId: clip.id, userId: meId },
+						take: 1,
+					})) > 0
+					: undefined,
 		});
 
 		return {

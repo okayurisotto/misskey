@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { FlashsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -35,12 +34,11 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.flashsRepository)
-		private flashsRepository: FlashsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const flash = await this.flashsRepository.findOneBy({ id: ps.flashId });
+			const flash = await this.prismaService.client.flash.findUnique({
+				where: { id: ps.flashId },
+			});
 			if (flash == null) {
 				throw new ApiError(meta.errors.noSuchFlash);
 			}
@@ -48,7 +46,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.accessDenied);
 			}
 
-			await this.flashsRepository.delete(flash.id);
+			await this.prismaService.client.flash.delete({ where: { id: flash.id } });
 		});
 	}
 }

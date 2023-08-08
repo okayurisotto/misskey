@@ -1,8 +1,6 @@
-import { Brackets, In } from 'typeorm';
 import { Injectable, Inject } from '@nestjs/common';
 import type { User, LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { Note, IMentionedRemoteUsers } from '@/models/entities/Note.js';
-import type { InstancesRepository, NotesRepository, UsersRepository } from '@/models/index.js';
 import { RelayService } from '@/core/RelayService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { DI } from '@/di-symbols.js';
@@ -18,34 +16,29 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { note, user } from '@prisma/client';
 
 @Injectable()
 export class NoteDeleteService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		private userEntityService: UserEntityService,
-		private noteEntityService: NoteEntityService,
-		private globalEventService: GlobalEventService,
-		private relayService: RelayService,
-		private federatedInstanceService: FederatedInstanceService,
-		private apRendererService: ApRendererService,
-		private apDeliverManagerService: ApDeliverManagerService,
-		private metaService: MetaService,
-		private searchService: SearchService,
-		private notesChart: NotesChart,
-		private perUserNotesChart: PerUserNotesChart,
-		private instanceChart: InstanceChart,
+		private readonly userEntityService: UserEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly relayService: RelayService,
+		private readonly federatedInstanceService: FederatedInstanceService,
+		private readonly apRendererService: ApRendererService,
+		private readonly apDeliverManagerService: ApDeliverManagerService,
+		private readonly metaService: MetaService,
+		private readonly searchService: SearchService,
+		private readonly notesChart: NotesChart,
+		private readonly perUserNotesChart: PerUserNotesChart,
+		private readonly instanceChart: InstanceChart,
+		private readonly prismaService: PrismaService,
 	) {}
 
 	/**
@@ -53,18 +46,27 @@ export class NoteDeleteService {
 	 * @param user 投稿者
 	 * @param note 投稿
 	 */
-	async delete(user: { id: User['id']; uri: User['uri']; host: User['host']; isBot: User['isBot']; }, note: Note, quiet = false) {
+	async delete(user: { id: User['id']; uri: User['uri']; host: User['host']; isBot: User['isBot']; }, note: T2P<Note, note>, quiet = false) {
 		const deletedAt = new Date();
 		const cascadingNotes = await this.findCascadingNotes(note);
 
 		// この投稿を除く指定したユーザーによる指定したノートのリノートが存在しないとき
 		if (note.renoteId && (await this.noteEntityService.countSameRenotes(user.id, note.renoteId, note.id)) === 0) {
-			this.notesRepository.decrement({ id: note.renoteId }, 'renoteCount', 1);
-			if (!user.isBot) this.notesRepository.decrement({ id: note.renoteId }, 'score', 1);
+			this.prismaService.client.note.update({
+				where: { id: note.renoteId },
+				data: { renoteCount: { decrement: 1 } },
+			});
+			if (!user.isBot) this.prismaService.client.note.update({
+				where: { id: note.renoteId },
+				data: { score: { decrement: 1 } },
+			});
 		}
 
 		if (note.replyId) {
-			await this.notesRepository.decrement({ id: note.replyId }, 'repliesCount', 1);
+			await this.prismaService.client.note.update({
+				where: { id: note.replyId },
+				data: { repliesCount: { decrement: 1 } },
+			});
 		}
 
 		if (!quiet) {
@@ -74,13 +76,11 @@ export class NoteDeleteService {
 
 			//#region ローカルの投稿なら削除アクティビティを配送
 			if (this.userEntityService.isLocalUser(user) && !note.localOnly) {
-				let renote: Note | null = null;
+				let renote: T2P<Note, note> | null = null;
 
 				// if deletd note is renote
 				if (note.renoteId && note.text == null && !note.hasPoll && (note.fileIds == null || note.fileIds.length === 0)) {
-					renote = await this.notesRepository.findOneBy({
-						id: note.renoteId,
-					});
+					renote = await this.prismaService.client.note.findUnique({ where: { id: note.renoteId } });
 				}
 
 				const content = this.apRendererService.addContext(renote
@@ -91,7 +91,7 @@ export class NoteDeleteService {
 			}
 
 			// also deliever delete activity to cascaded notes
-			const federatedLocalCascadingNotes = (cascadingNotes).filter(note => !note.localOnly && note.userHost == null); // filter out local-only notes
+			const federatedLocalCascadingNotes = cascadingNotes.filter(note => !note.localOnly && note.userHost == null); // filter out local-only notes
 			for (const cascadingNote of federatedLocalCascadingNotes) {
 				if (!cascadingNote.user) continue;
 				if (!this.userEntityService.isLocalUser(cascadingNote.user)) continue;
@@ -109,7 +109,10 @@ export class NoteDeleteService {
 
 			if (this.userEntityService.isRemoteUser(user)) {
 				this.federatedInstanceService.fetch(user.host).then(async i => {
-					this.instancesRepository.decrement({ id: i.id }, 'notesCount', 1);
+					this.prismaService.client.instance.update({
+						where: { id: i.id },
+						data: { notesCount: { decrement: 1 } },
+					});
 					if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
 						this.instanceChart.updateNote(i.host, note, false);
 					}
@@ -122,23 +125,26 @@ export class NoteDeleteService {
 		}
 		this.searchService.unindexNote(note);
 
-		await this.notesRepository.delete({
-			id: note.id,
-			userId: user.id,
+		await this.prismaService.client.note.delete({
+			where: {
+				id: note.id,
+				userId: user.id,
+			},
 		});
 	}
 
 	@bindThis
-	private async findCascadingNotes(note: Note): Promise<Note[]> {
-		const recursive = async (noteId: string): Promise<Note[]> => {
-			const query = this.notesRepository.createQueryBuilder('note')
-				.where('note.replyId = :noteId', { noteId })
-				.orWhere(new Brackets(q => {
-					q.where('note.renoteId = :noteId', { noteId })
-						.andWhere('note.text IS NOT NULL');
-				}))
-				.leftJoinAndSelect('note.user', 'user');
-			const replies = await query.getMany();
+	private async findCascadingNotes(note: T2P<Note, note>): Promise<(T2P<Note, note> & { user: T2P<User, user> | null })[]> {
+		const recursive = async (noteId: string): Promise<(T2P<Note, note> & { user: T2P<User, user> | null })[]> => {
+			const replies = await this.prismaService.client.note.findMany({
+				where: {
+					OR: [
+						{ replyId: noteId },
+						{ renoteId: noteId, text: { not: null } },
+					],
+				},
+				include: { user: true },
+			});
 
 			return [
 				replies,
@@ -146,39 +152,33 @@ export class NoteDeleteService {
 			].flat();
 		};
 
-		const cascadingNotes: Note[] = await recursive(note.id);
+		const cascadingNotes = await recursive(note.id);
 
 		return cascadingNotes;
 	}
 
 	@bindThis
-	private async getMentionedRemoteUsers(note: Note) {
-		const where = [] as any[];
+	private async getMentionedRemoteUsers(note: T2P<Note, note>) {
+		const where = [];
 
 		// mention / reply / dm
 		const uris = (JSON.parse(note.mentionedRemoteUsers) as IMentionedRemoteUsers).map(x => x.uri);
 		if (uris.length > 0) {
-			where.push(
-				{ uri: In(uris) },
-			);
+			where.push({ uri: { in: uris } });
 		}
 
 		// renote / quote
 		if (note.renoteUserId) {
-			where.push({
-				id: note.renoteUserId,
-			});
+			where.push({ id: note.renoteUserId });
 		}
 
 		if (where.length === 0) return [];
 
-		return await this.usersRepository.find({
-			where,
-		}) as RemoteUser[];
+		return await this.prismaService.client.user.findMany({ where: { OR: where } }) as RemoteUser[];
 	}
 
 	@bindThis
-	private async deliverToConcerned(user: { id: LocalUser['id']; host: null; }, note: Note, content: any) {
+	private async deliverToConcerned(user: { id: LocalUser['id']; host: null; }, note: T2P<Note, note>, content: any) {
 		this.apDeliverManagerService.deliverToFollowers(user, content);
 		this.relayService.deliverToRelays(user, content);
 		const remoteUsers = await this.getMentionedRemoteUsers(note);

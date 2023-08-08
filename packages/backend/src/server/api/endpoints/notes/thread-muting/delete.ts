@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { NoteThreadMutingsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -32,10 +31,8 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.noteThreadMutingsRepository)
-		private noteThreadMutingsRepository: NoteThreadMutingsRepository,
-
-		private getterService: GetterService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
@@ -45,9 +42,13 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			await this.noteThreadMutingsRepository.delete({
-				threadId: note.threadId ?? note.id,
-				userId: me.id,
+			await this.prismaService.client.note_thread_muting.delete({
+				where: {
+					userId_threadId: {
+						threadId: note.threadId ?? note.id,
+						userId: me.id,
+					},
+				},
 			});
 		});
 	}

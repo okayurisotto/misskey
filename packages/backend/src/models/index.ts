@@ -64,9 +64,8 @@ import { RoleAssignment } from '@/models/entities/RoleAssignment.js';
 import { Flash } from '@/models/entities/Flash.js';
 import { FlashLike } from '@/models/entities/FlashLike.js';
 import { UserListFavorite } from './entities/UserListFavorite.js';
-import type { Repository } from 'typeorm';
 
-export {
+export type {
 	AbuseUserReport,
 	AccessToken,
 	Ad,
@@ -134,70 +133,3 @@ export {
 	FlashLike,
 	UserMemo,
 };
-
-export type AbuseUserReportsRepository = Repository<AbuseUserReport>;
-export type AccessTokensRepository = Repository<AccessToken>;
-export type AdsRepository = Repository<Ad>;
-export type AnnouncementsRepository = Repository<Announcement>;
-export type AnnouncementReadsRepository = Repository<AnnouncementRead>;
-export type AntennasRepository = Repository<Antenna>;
-export type AppsRepository = Repository<App>;
-export type AttestationChallengesRepository = Repository<AttestationChallenge>;
-export type AuthSessionsRepository = Repository<AuthSession>;
-export type BlockingsRepository = Repository<Blocking>;
-export type ChannelFollowingsRepository = Repository<ChannelFollowing>;
-export type ChannelFavoritesRepository = Repository<ChannelFavorite>;
-export type ClipsRepository = Repository<Clip>;
-export type ClipNotesRepository = Repository<ClipNote>;
-export type ClipFavoritesRepository = Repository<ClipFavorite>;
-export type DriveFilesRepository = Repository<DriveFile>;
-export type DriveFoldersRepository = Repository<DriveFolder>;
-export type EmojisRepository = Repository<Emoji>;
-export type FollowingsRepository = Repository<Following>;
-export type FollowRequestsRepository = Repository<FollowRequest>;
-export type GalleryLikesRepository = Repository<GalleryLike>;
-export type GalleryPostsRepository = Repository<GalleryPost>;
-export type HashtagsRepository = Repository<Hashtag>;
-export type InstancesRepository = Repository<Instance>;
-export type MetasRepository = Repository<Meta>;
-export type ModerationLogsRepository = Repository<ModerationLog>;
-export type MutedNotesRepository = Repository<MutedNote>;
-export type MutingsRepository = Repository<Muting>;
-export type RenoteMutingsRepository = Repository<RenoteMuting>;
-export type NotesRepository = Repository<Note>;
-export type NoteFavoritesRepository = Repository<NoteFavorite>;
-export type NoteReactionsRepository = Repository<NoteReaction>;
-export type NoteThreadMutingsRepository = Repository<NoteThreadMuting>;
-export type NoteUnreadsRepository = Repository<NoteUnread>;
-export type PagesRepository = Repository<Page>;
-export type PageLikesRepository = Repository<PageLike>;
-export type PasswordResetRequestsRepository = Repository<PasswordResetRequest>;
-export type PollsRepository = Repository<Poll>;
-export type PollVotesRepository = Repository<PollVote>;
-export type PromoNotesRepository = Repository<PromoNote>;
-export type PromoReadsRepository = Repository<PromoRead>;
-export type RegistrationTicketsRepository = Repository<RegistrationTicket>;
-export type RegistryItemsRepository = Repository<RegistryItem>;
-export type RelaysRepository = Repository<Relay>;
-export type SigninsRepository = Repository<Signin>;
-export type SwSubscriptionsRepository = Repository<SwSubscription>;
-export type UsedUsernamesRepository = Repository<UsedUsername>;
-export type UsersRepository = Repository<User>;
-export type UserIpsRepository = Repository<UserIp>;
-export type UserKeypairsRepository = Repository<UserKeypair>;
-export type UserListsRepository = Repository<UserList>;
-export type UserListFavoritesRepository = Repository<UserListFavorite>;
-export type UserListJoiningsRepository = Repository<UserListJoining>;
-export type UserNotePiningsRepository = Repository<UserNotePining>;
-export type UserPendingsRepository = Repository<UserPending>;
-export type UserProfilesRepository = Repository<UserProfile>;
-export type UserPublickeysRepository = Repository<UserPublickey>;
-export type UserSecurityKeysRepository = Repository<UserSecurityKey>;
-export type WebhooksRepository = Repository<Webhook>;
-export type ChannelsRepository = Repository<Channel>;
-export type RetentionAggregationsRepository = Repository<RetentionAggregation>;
-export type RolesRepository = Repository<Role>;
-export type RoleAssignmentsRepository = Repository<RoleAssignment>;
-export type FlashsRepository = Repository<Flash>;
-export type FlashLikesRepository = Repository<FlashLike>;
-export type UserMemoRepository = Repository<UserMemo>;

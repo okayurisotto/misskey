@@ -11,7 +11,7 @@ import type { Signin } from '@/models/entities/Signin.js';
 import type { Page } from '@/models/entities/Page.js';
 import type { Webhook } from '@/models/entities/Webhook.js';
 import type { Meta } from '@/models/entities/Meta.js';
-import { Role, RoleAssignment } from '@/models/index.js';
+import type { Role, RoleAssignment } from '@/models/index.js';
 import type { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
@@ -22,6 +22,8 @@ import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import type { z } from 'zod';
 import type { EventEmitter } from 'events';
 import type Emitter from 'strict-event-emitter-types';
+import type { T2P } from '@/types.js';
+import type { antenna, meta, note, role, role_assignment, signin, user_profile, webhook } from '@prisma/client';
 
 //#region Stream type-body definitions
 export interface InternalStreamTypes {
@@ -33,21 +35,21 @@ export interface InternalStreamTypes {
 	blockingCreated: { blockerId: User['id']; blockeeId: User['id']; };
 	blockingDeleted: { blockerId: User['id']; blockeeId: User['id']; };
 	policiesUpdated: Role['policies'];
-	roleCreated: Role;
-	roleDeleted: Role;
-	roleUpdated: Role;
-	userRoleAssigned: RoleAssignment;
-	userRoleUnassigned: RoleAssignment;
-	webhookCreated: Webhook;
-	webhookDeleted: Webhook;
-	webhookUpdated: Webhook;
-	antennaCreated: Antenna;
-	antennaDeleted: Antenna;
-	antennaUpdated: Antenna;
-	metaUpdated: Meta;
+	roleCreated: T2P<Role, role>;
+	roleDeleted: T2P<Role, role>;
+	roleUpdated: T2P<Role, role>;
+	userRoleAssigned: T2P<RoleAssignment, role_assignment>;
+	userRoleUnassigned: T2P<RoleAssignment, role_assignment>;
+	webhookCreated: T2P<Webhook, webhook>;
+	webhookDeleted: T2P<Webhook, webhook>;
+	webhookUpdated: T2P<Webhook, webhook>;
+	antennaCreated: T2P<Antenna, antenna>;
+	antennaDeleted: T2P<Antenna, antenna>;
+	antennaUpdated: T2P<Antenna, antenna>;
+	metaUpdated: T2P<Meta, meta>;
 	followChannel: { userId: User['id']; channelId: Channel['id']; };
 	unfollowChannel: { userId: User['id']; channelId: Channel['id']; };
-	updateUserProfile: UserProfile;
+	updateUserProfile: T2P<UserProfile, user_profile>;
 	mute: { muterId: User['id']; muteeId: User['id']; };
 	unmute: { muterId: User['id']; muteeId: User['id']; };
 }
@@ -98,14 +100,14 @@ export interface MainStreamTypes {
 	unreadAntenna: Antenna;
 	readAllAnnouncements: undefined;
 	myTokenRegenerated: undefined;
-	signin: Signin;
+	signin: T2P<Signin, signin>;
 	registryUpdated: {
 		scope?: string[];
 		key: string;
 		value: any | null;
 	};
 	driveFileCreated: z.infer<typeof DriveFileSchema>;
-	readAntenna: Antenna;
+	readAntenna: T2P<Antenna, antenna>;
 	receiveFollowRequest: z.infer<typeof UserSchema>;
 }
 
@@ -152,7 +154,7 @@ export interface UserListStreamTypes {
 }
 
 export interface AntennaStreamTypes {
-	note: Note;
+	note: T2P<Note, note>;
 }
 
 export interface RoleTimelineStreamTypes {

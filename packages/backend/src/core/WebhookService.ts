@@ -1,23 +1,24 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import type { WebhooksRepository } from '@/models/index.js';
 import type { Webhook } from '@/models/entities/Webhook.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
+import type { webhook } from '@prisma/client';
 
 @Injectable()
 export class WebhookService implements OnApplicationShutdown {
 	private webhooksFetched = false;
-	private webhooks: Webhook[] = [];
+	private webhooks: T2P<Webhook, webhook>[] = [];
 
 	constructor(
 		@Inject(DI.redisForSub)
 		private redisForSub: Redis.Redis,
 
-		@Inject(DI.webhooksRepository)
-		private webhooksRepository: WebhooksRepository,
+		private readonly prismaService: PrismaService,
 	) {
 		//this.onMessage = this.onMessage.bind(this);
 		this.redisForSub.on('message', this.onMessage);
@@ -26,8 +27,8 @@ export class WebhookService implements OnApplicationShutdown {
 	@bindThis
 	public async getActiveWebhooks() {
 		if (!this.webhooksFetched) {
-			this.webhooks = await this.webhooksRepository.findBy({
-				active: true,
+			this.webhooks = await this.prismaService.client.webhook.findMany({
+				where: { active: true },
 			});
 			this.webhooksFetched = true;
 		}

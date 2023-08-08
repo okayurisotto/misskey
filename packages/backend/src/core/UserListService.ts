@@ -1,54 +1,48 @@
-import { Inject, Injectable } from '@nestjs/common';
-import type { UserListJoiningsRepository, UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type { User } from '@/models/entities/User.js';
 import type { UserList } from '@/models/entities/UserList.js';
-import type { UserListJoining } from '@/models/entities/UserListJoining.js';
 import { IdService } from '@/core/IdService.js';
-import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ProxyAccountService } from '@/core/ProxyAccountService.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { QueueService } from '@/core/QueueService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { user, user_list } from '@prisma/client';
 
 @Injectable()
 export class UserListService {
 	public static TooManyUsersError = class extends Error {};
 
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userListJoiningsRepository)
-		private userListJoiningsRepository: UserListJoiningsRepository,
-
-		private userEntityService: UserEntityService,
-		private idService: IdService,
-		private userFollowingService: UserFollowingService,
-		private roleService: RoleService,
-		private globalEventService: GlobalEventService,
-		private proxyAccountService: ProxyAccountService,
-		private queueService: QueueService,
-	) {
-	}
+		private readonly userEntityService: UserEntityService,
+		private readonly idService: IdService,
+		private readonly roleService: RoleService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly proxyAccountService: ProxyAccountService,
+		private readonly queueService: QueueService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
-	public async push(target: User, list: UserList, me: User) {
-		const currentCount = await this.userListJoiningsRepository.countBy({
-			userListId: list.id,
+	public async push(target: T2P<User, user>, list: T2P<UserList, user_list>, me: T2P<User, user>) {
+		const currentCount = await this.prismaService.client.user_list_joining.count({
+			where: { userListId: list.id },
 		});
 		if (currentCount > (await this.roleService.getUserPolicies(me.id)).userEachUserListsLimit) {
 			throw new UserListService.TooManyUsersError();
 		}
 
-		await this.userListJoiningsRepository.insert({
-			id: this.idService.genId(),
-			createdAt: new Date(),
-			userId: target.id,
-			userListId: list.id,
-		} as UserListJoining);
+		await this.prismaService.client.user_list_joining.create({
+			data: {
+				id: this.idService.genId(),
+				createdAt: new Date(),
+				userId: target.id,
+				userListId: list.id,
+			},
+		});
 
 		this.globalEventService.publishUserListStream(list.id, 'userAdded', await this.userEntityService.pack(target));
 

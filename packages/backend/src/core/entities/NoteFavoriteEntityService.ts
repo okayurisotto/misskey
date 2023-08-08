@@ -1,39 +1,35 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { NoteFavoritesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { NoteFavorite } from '@/models/entities/NoteFavorite.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { NoteEntityService } from './NoteEntityService.js';
+import type { note_favorite } from '@prisma/client';
 
 @Injectable()
 export class NoteFavoriteEntityService {
 	constructor(
-		@Inject(DI.noteFavoritesRepository)
-		private noteFavoritesRepository: NoteFavoritesRepository,
-
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly prismaService: PrismaService,
 	) {}
 
 	@bindThis
 	public async pack(
-		src: NoteFavorite['id'] | NoteFavorite,
+		src: NoteFavorite['id'] | T2P<NoteFavorite, note_favorite>,
 		me?: { id: User['id'] } | null | undefined,
 	) {
 		const favorite =
 			typeof src === 'object'
 				? src
-				: await this.noteFavoritesRepository.findOneByOrFail({ id: src });
+				: await this.prismaService.client.note_favorite.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: favorite.id,
 			createdAt: favorite.createdAt.toISOString(),
 			noteId: favorite.noteId,
-			note: await this.noteEntityService.pack(
-				favorite.note ?? favorite.noteId,
-				me,
-			),
+			note: await this.noteEntityService.pack(favorite.noteId, me),
 		};
 	}
 }

@@ -1,19 +1,18 @@
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
+import type { note } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	ChannelsRepository,
-	Note,
-	NotesRepository,
-} from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
+import type { Note } from '@/models/index.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import type { T2P } from '@/types.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -50,27 +49,22 @@ export default class extends Endpoint<
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
 
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		private idService: IdService,
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
-		private activeUsersChart: ActiveUsersChart,
+		private readonly idService: IdService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly activeUsersChart: ActiveUsersChart,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const channel = await this.channelsRepository.findOneBy({
-				id: ps.channelId,
+			const channel = await this.prismaService.client.channel.findUnique({
+				where: { id: ps.channelId },
 			});
 
 			if (channel == null) {
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			let timeline: Note[] = [];
+			let timeline: T2P<Note, note>[] = [];
 
 			const limit = ps.limit + (ps.untilId ? 1 : 0); // untilIdに指定したものも含まれるため+1
 			let noteIdsRes: [string, string[]][] = [];
@@ -89,31 +83,28 @@ export default class extends Endpoint<
 
 			// redis から取得していないとき・取得数が足りないとき
 			if (noteIdsRes.length < limit) {
-				//#region Construct query
-				const query = this.queryService
-					.makePaginationQuery(
-						this.notesRepository.createQueryBuilder('note'),
-						ps.sinceId,
-						ps.untilId,
-						ps.sinceDate,
-						ps.untilDate,
-					)
-					.andWhere('note.channelId = :channelId', { channelId: channel.id })
-					.innerJoinAndSelect('note.user', 'user')
-					.leftJoinAndSelect('note.reply', 'reply')
-					.leftJoinAndSelect('note.renote', 'renote')
-					.leftJoinAndSelect('reply.user', 'replyUser')
-					.leftJoinAndSelect('renote.user', 'renoteUser')
-					.leftJoinAndSelect('note.channel', 'channel');
+				const paginationQuery = this.prismaQueryService.getPaginationQuery({
+					sinceId: ps.sinceId,
+					untilId: ps.untilId,
+					sinceDate: ps.sinceDate,
+					untilDate: ps.untilDate,
+				});
 
-				if (me) {
-					this.queryService.generateMutedUserQuery(query, me);
-					this.queryService.generateMutedNoteQuery(query, me);
-					this.queryService.generateBlockedUserQuery(query, me);
-				}
-				//#endregion
-
-				timeline = await query.limit(ps.limit).getMany();
+				timeline = await this.prismaService.client.note.findMany({
+					where: {
+						AND: [
+							paginationQuery.where,
+							{ channelId: channel.id },
+							await this.prismaQueryService.getMutingWhereForNote(me?.id ?? null),
+							await this.prismaQueryService.getNoteThreadMutingWhereForNote(
+								me?.id ?? null,
+							),
+							this.prismaQueryService.getBlockedWhereForNote(me?.id ?? null),
+						],
+					},
+					orderBy: paginationQuery.orderBy,
+					take: ps.limit,
+				});
 			} else {
 				const noteIds = noteIdsRes
 					.map((x) => x[1][1])
@@ -123,26 +114,19 @@ export default class extends Endpoint<
 					return [];
 				}
 
-				//#region Construct query
-				const query = this.notesRepository
-					.createQueryBuilder('note')
-					.where('note.id IN (:...noteIds)', { noteIds: noteIds })
-					.innerJoinAndSelect('note.user', 'user')
-					.leftJoinAndSelect('note.reply', 'reply')
-					.leftJoinAndSelect('note.renote', 'renote')
-					.leftJoinAndSelect('reply.user', 'replyUser')
-					.leftJoinAndSelect('renote.user', 'renoteUser')
-					.leftJoinAndSelect('note.channel', 'channel');
-
-				if (me) {
-					this.queryService.generateMutedUserQuery(query, me);
-					this.queryService.generateMutedNoteQuery(query, me);
-					this.queryService.generateBlockedUserQuery(query, me);
-				}
-				//#endregion
-
-				timeline = await query.getMany();
-				timeline.sort((a, b) => (a.id > b.id ? -1 : 1));
+				timeline = await this.prismaService.client.note.findMany({
+					where: {
+						AND: [
+							{ id: { in: noteIds } },
+							await this.prismaQueryService.getMutingWhereForNote(me?.id ?? null),
+							await this.prismaQueryService.getNoteThreadMutingWhereForNote(
+								me?.id ?? null,
+							),
+							this.prismaQueryService.getBlockedWhereForNote(me?.id ?? null),
+						],
+					},
+					orderBy: { id: 'desc' },
+				});
 			}
 
 			if (me) this.activeUsersChart.read(me);

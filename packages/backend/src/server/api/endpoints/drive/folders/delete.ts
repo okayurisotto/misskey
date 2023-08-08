@@ -1,13 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	DriveFoldersRepository,
-	DriveFilesRepository,
-} from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -40,19 +36,16 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.driveFoldersRepository)
-		private driveFoldersRepository: DriveFoldersRepository,
-
-		private globalEventService: GlobalEventService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Get folder
-			const folder = await this.driveFoldersRepository.findOneBy({
-				id: ps.folderId,
-				userId: me.id,
+			const folder = await this.prismaService.client.drive_folder.findUnique({
+				where: {
+					id: ps.folderId,
+					userId: me.id,
+				},
 			});
 
 			if (folder == null) {
@@ -60,15 +53,21 @@ export default class extends Endpoint<
 			}
 
 			const [childFoldersCount, childFilesCount] = await Promise.all([
-				this.driveFoldersRepository.countBy({ parentId: folder.id }),
-				this.driveFilesRepository.countBy({ folderId: folder.id }),
+				this.prismaService.client.drive_folder.count({
+					where: { parentId: folder.id },
+				}),
+				this.prismaService.client.drive_file.count({
+					where: { folderId: folder.id },
+				}),
 			]);
 
 			if (childFoldersCount !== 0 || childFilesCount !== 0) {
 				throw new ApiError(meta.errors.hasChildFilesOrFolders);
 			}
 
-			await this.driveFoldersRepository.delete(folder.id);
+			await this.prismaService.client.drive_folder.delete({
+				where: { id: folder.id },
+			});
 
 			// Publish folderCreated event
 			this.globalEventService.publishDriveStream(

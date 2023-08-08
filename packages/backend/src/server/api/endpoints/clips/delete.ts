@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { ClipsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -30,21 +29,20 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const clip = await this.clipsRepository.findOneBy({
-				id: ps.clipId,
-				userId: me.id,
+			const clip = await this.prismaService.client.clip.findUnique({
+				where: {
+					id: ps.clipId,
+					userId: me.id,
+				},
 			});
 
 			if (clip == null) {
 				throw new ApiError(meta.errors.noSuchClip);
 			}
 
-			await this.clipsRepository.delete(clip.id);
+			await this.prismaService.client.clip.delete({ where: { id: clip.id } });
 		});
 	}
 }

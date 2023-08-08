@@ -4,7 +4,6 @@ import multipart from '@fastify/multipart';
 import fastifyCookie from '@fastify/cookie';
 import { ModuleRef } from '@nestjs/core';
 import type { Config } from '@/config.js';
-import type { UsersRepository, InstancesRepository, AccessTokensRepository } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
@@ -13,6 +12,7 @@ import { ApiCallService } from './ApiCallService.js';
 import { SignupApiService } from './SignupApiService.js';
 import { SigninApiService } from './SigninApiService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
+import { PrismaService } from '@/core/PrismaService.js';
 
 @Injectable()
 export class ApiServerService {
@@ -22,19 +22,11 @@ export class ApiServerService {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		@Inject(DI.accessTokensRepository)
-		private accessTokensRepository: AccessTokensRepository,
-
-		private userEntityService: UserEntityService,
-		private apiCallService: ApiCallService,
-		private signupApiService: SignupApiService,
-		private signinApiService: SigninApiService,
+		private readonly userEntityService: UserEntityService,
+		private readonly apiCallService: ApiCallService,
+		private readonly signupApiService: SignupApiService,
+		private readonly signinApiService: SigninApiService,
+		private readonly prismaService: PrismaService,
 	) {
 		//this.createServer = this.createServer.bind(this);
 	}
@@ -132,8 +124,7 @@ export class ApiServerService {
 		fastify.post<{ Body: { code: string; } }>('/signup-pending', (request, reply) => this.signupApiService.signupPending(request, reply));
 
 		fastify.get('/v1/instance/peers', async (request, reply) => {
-			const instances = await this.instancesRepository.find({
-				select: ['host'],
+			const instances = await this.prismaService.client.instance.findMany({
 				where: {
 					isSuspended: false,
 				},
@@ -143,13 +134,16 @@ export class ApiServerService {
 		});
 
 		fastify.post<{ Params: { session: string; } }>('/miauth/:session/check', async (request, reply) => {
-			const token = await this.accessTokensRepository.findOneBy({
-				session: request.params.session,
+			const token = await this.prismaService.client.access_token.findFirst({
+				where: {
+					session: request.params.session,
+				},
 			});
 
 			if (token && token.session != null && !token.fetched) {
-				this.accessTokensRepository.update(token.id, {
-					fetched: true,
+				this.prismaService.client.access_token.update({
+					where: { id: token.id },
+					data: { fetched: true },
 				});
 
 				return {

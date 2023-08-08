@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { NoteFavoritesRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteFavoriteEntityService } from '@/core/entities/NoteFavoriteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { NoteFavoriteSchema } from '@/models/zod/NoteFavoriteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteFavoriteSchema);
 export const meta = {
@@ -30,23 +29,21 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.noteFavoritesRepository)
-		private noteFavoritesRepository: NoteFavoritesRepository,
-
-		private noteFavoriteEntityService: NoteFavoriteEntityService,
-		private queryService: QueryService,
+		private readonly noteFavoriteEntityService: NoteFavoriteEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.noteFavoritesRepository.createQueryBuilder('favorite'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('favorite.userId = :meId', { meId: me.id })
-				.leftJoinAndSelect('favorite.note', 'note');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const favorites = await query.limit(ps.limit).getMany();
+			const favorites = await this.prismaService.client.note_favorite.findMany({
+				where: { AND: [paginationQuery.where, { userId: me.id }] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				favorites.map((favorite) =>

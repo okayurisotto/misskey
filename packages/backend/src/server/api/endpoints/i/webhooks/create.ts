@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import type { WebhooksRepository } from '@/models/index.js';
 import { webhookEventTypes } from '@/models/entities/Webhook.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ApiError } from '@/server/api/error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -41,17 +40,16 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.webhooksRepository)
-		private webhooksRepository: WebhooksRepository,
-
-		private idService: IdService,
-		private globalEventService: GlobalEventService,
-		private roleService: RoleService,
+		private readonly idService: IdService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly roleService: RoleService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const currentWebhooksCount = await this.webhooksRepository.countBy({
-				userId: me.id,
-			});
+			const currentWebhooksCount =
+				await this.prismaService.client.webhook.count({
+					where: { userId: me.id },
+				});
 			if (
 				currentWebhooksCount >
 				(await this.roleService.getUserPolicies(me.id)).webhookLimit
@@ -59,8 +57,8 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.tooManyWebhooks);
 			}
 
-			const webhook = await this.webhooksRepository
-				.insert({
+			const webhook = await this.prismaService.client.webhook.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
 					userId: me.id,
@@ -68,8 +66,8 @@ export default class extends Endpoint<
 					url: ps.url,
 					secret: ps.secret,
 					on: ps.on,
-				})
-				.then((x) => this.webhooksRepository.findOneByOrFail(x.identifiers[0]));
+				},
+			});
 
 			this.globalEventService.publishInternalEvent('webhookCreated', webhook);
 

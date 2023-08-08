@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AdsRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -31,24 +30,24 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.adsRepository)
-		private adsRepository: AdsRepository,
-
-		private idService: IdService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			await this.adsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				expiresAt: new Date(ps.expiresAt),
-				startsAt: new Date(ps.startsAt),
-				dayOfWeek: ps.dayOfWeek,
-				url: ps.url,
-				imageUrl: ps.imageUrl,
-				priority: ps.priority,
-				ratio: ps.ratio,
-				place: ps.place,
-				memo: ps.memo,
+		super(meta, paramDef, async (ps) => {
+			await this.prismaService.client.ad.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					expiresAt: new Date(ps.expiresAt),
+					startsAt: new Date(ps.startsAt),
+					dayOfWeek: ps.dayOfWeek,
+					url: ps.url,
+					imageUrl: ps.imageUrl,
+					priority: ps.priority,
+					ratio: ps.ratio,
+					place: ps.place,
+					memo: ps.memo,
+				},
 			});
 		});
 	}

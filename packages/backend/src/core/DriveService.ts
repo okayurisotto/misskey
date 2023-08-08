@@ -3,10 +3,9 @@ import * as fs from 'node:fs';
 import { Inject, Injectable } from '@nestjs/common';
 import sharp from 'sharp';
 import { sharpBmp } from 'sharp-read-bmp';
-import { IsNull } from 'typeorm';
-import { DeleteObjectCommandInput, PutObjectCommandInput, NoSuchKey } from '@aws-sdk/client-s3';
+import { DeleteObjectCommandInput, PutObjectCommandInput } from '@aws-sdk/client-s3';
+import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
-import type { DriveFilesRepository, UsersRepository, DriveFoldersRepository, UserProfilesRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import Logger from '@/logger.js';
 import type { RemoteUser, User } from '@/models/entities/User.js';
@@ -37,6 +36,9 @@ import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { correctFilename } from '@/misc/correct-filename.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { drive_file } from '@prisma/client';
 
 type AddFileArgs = {
 	/** User who wish to add file */
@@ -87,36 +89,25 @@ export class DriveService {
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.driveFoldersRepository)
-		private driveFoldersRepository: DriveFoldersRepository,
-
-		private fileInfoService: FileInfoService,
-		private userEntityService: UserEntityService,
-		private driveFileEntityService: DriveFileEntityService,
-		private idService: IdService,
-		private metaService: MetaService,
-		private downloadService: DownloadService,
-		private internalStorageService: InternalStorageService,
-		private s3Service: S3Service,
-		private imageProcessingService: ImageProcessingService,
-		private videoProcessingService: VideoProcessingService,
-		private globalEventService: GlobalEventService,
-		private queueService: QueueService,
-		private roleService: RoleService,
-		private driveChart: DriveChart,
-		private perUserDriveChart: PerUserDriveChart,
-		private instanceChart: InstanceChart,
+		private readonly fileInfoService: FileInfoService,
+		private readonly userEntityService: UserEntityService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly idService: IdService,
+		private readonly metaService: MetaService,
+		private readonly downloadService: DownloadService,
+		private readonly internalStorageService: InternalStorageService,
+		private readonly s3Service: S3Service,
+		private readonly imageProcessingService: ImageProcessingService,
+		private readonly videoProcessingService: VideoProcessingService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly queueService: QueueService,
+		private readonly roleService: RoleService,
+		private readonly driveChart: DriveChart,
+		private readonly perUserDriveChart: PerUserDriveChart,
+		private readonly instanceChart: InstanceChart,
+		private readonly prismaService: PrismaService,
 	) {
 		const logger = new Logger('drive', 'blue');
 		this.registerLogger = logger.createSubLogger('register', 'yellow');
@@ -133,14 +124,21 @@ export class DriveService {
 	 * @param size Size for original
 	 */
 	@bindThis
-	private async save(file: DriveFile, path: string, name: string, type: string, hash: string, size: number): Promise<DriveFile> {
-	// thunbnail, webpublic を必要なら生成
+	private async save(
+		file: Omit<T2P<DriveFile, drive_file>, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null },
+		path: string,
+		name: string,
+		type: string,
+		hash: string,
+		size: number,
+	): Promise<Omit<T2P<DriveFile, drive_file>, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null }> {
+		// thunbnail, webpublic を必要なら生成
 		const alts = await this.generateAlts(path, type, !file.uri);
 
 		const meta = await this.metaService.fetch();
 
 		if (meta.useObjectStorage) {
-		//#region ObjectStorage params
+			//#region ObjectStorage params
 			let [ext] = (name.match(/\.([a-zA-Z0-9_-]+)$/) ?? ['']);
 
 			if (ext === '') {
@@ -210,7 +208,22 @@ export class DriveService {
 			file.size = size;
 			file.storedInternal = false;
 
-			return await this.driveFilesRepository.insert(file).then(x => this.driveFilesRepository.findOneByOrFail(x.identifiers[0]));
+			const result = await this.prismaService.client.drive_file.create({
+				data: {
+					...file,
+					requestHeaders: file.requestHeaders ?? undefined,
+				},
+			});
+			return {
+				...result,
+				properties: z.object({
+					width: z.number().optional(),
+					height: z.number().optional(),
+					orientation: z.number().optional(),
+					avgColor: z.string().optional(),
+				}).parse(result.properties),
+				requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
+			};
 		} else { // use internal storage
 			const accessKey = randomUUID();
 			const thumbnailAccessKey = 'thumbnail-' + randomUUID();
@@ -244,7 +257,22 @@ export class DriveService {
 			file.md5 = hash;
 			file.size = size;
 
-			return await this.driveFilesRepository.insert(file).then(x => this.driveFilesRepository.findOneByOrFail(x.identifiers[0]));
+			const result = await this.prismaService.client.drive_file.create({
+				data: {
+					...file,
+					requestHeaders: file.requestHeaders ?? undefined,
+				},
+			});
+			return {
+				...result,
+				properties: z.object({
+					width: z.number().optional(),
+					height: z.number().optional(),
+					orientation: z.number().optional(),
+					avgColor: z.string().optional(),
+				}).parse(result.properties),
+				requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
+			};
 		}
 	}
 
@@ -401,27 +429,36 @@ export class DriveService {
 	// Expire oldest file (without avatar or banner) of remote user
 	@bindThis
 	private async expireOldFile(user: RemoteUser, driveCapacity: number) {
-		const q = this.driveFilesRepository.createQueryBuilder('file')
-			.where('file.userId = :userId', { userId: user.id })
-			.andWhere('file.isLink = FALSE');
+		const fileList = await this.prismaService.client.drive_file.findMany({
+			where: {
+				userId: user.id,
+				isLink: false,
+				AND: [
+					...(user.avatarId === null ? [] : [
+						{ id: { not: user.avatarId } },
+					]),
+					...(user.bannerId === null ? [] : [
+						{ id: { not: user.bannerId } },
+					]),
+				],
+			},
+			orderBy: { id: 'desc' },
+		});
 
-		if (user.avatarId) {
-			q.andWhere('file.id != :avatarId', { avatarId: user.avatarId });
+		let acc_usage = 0;
+		let index = -1;
+
+		for (const file of fileList) {
+			if (acc_usage > driveCapacity) break;
+
+			acc_usage += file.size;
+			index++;
 		}
 
-		if (user.bannerId) {
-			q.andWhere('file.id != :bannerId', { bannerId: user.bannerId });
-		}
-
-		//This selete is hard coded, be careful if change database schema
-		q.addSelect('SUM("file"."size") OVER (ORDER BY "file"."id" DESC ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)', 'acc_usage');
-		q.orderBy('file.id', 'ASC');
-
-		const fileList = await q.getRawMany();
-		const exceedFileIds = fileList.filter((x: any) => x.acc_usage > driveCapacity).map((x: any) => x.file_id);
+		const exceedFileIds = fileList.slice(index).map((file) => file.id);
 
 		for (const fileId of exceedFileIds) {
-			const file = await this.driveFilesRepository.findOneBy({ id: fileId });
+			const file = await this.prismaService.client.drive_file.findUnique({ where: { id: fileId } });
 			if (file == null) continue;
 			this.deleteFile(file, true);
 		}
@@ -429,7 +466,6 @@ export class DriveService {
 
 	/**
 	 * Add file to drive
-	 *
 	 */
 	@bindThis
 	public async addFile({
@@ -446,7 +482,7 @@ export class DriveService {
 		requestIp = null,
 		requestHeaders = null,
 		ext = null,
-	}: AddFileArgs): Promise<DriveFile> {
+	}: AddFileArgs): Promise<T2P<DriveFile, drive_file>> {
 		let skipNsfwCheck = false;
 		const instance = await this.metaService.fetch();
 		const userRoleNSFW = user && (await this.roleService.getUserPolicies(user.id)).alwaysMarkNsfw;
@@ -487,9 +523,8 @@ export class DriveService {
 
 		if (user && !force) {
 		// Check if there is a file with the same hash
-			const much = await this.driveFilesRepository.findOneBy({
-				md5: info.md5,
-				userId: user.id,
+			const much = await this.prismaService.client.drive_file.findFirst({
+				where: { md5: info.md5, userId: user.id },
 			});
 
 			if (much) {
@@ -515,7 +550,10 @@ export class DriveService {
 				if (isLocalUser) {
 					throw new IdentifiableError('c6244ed2-a39a-4e1c-bf93-f0fbd7764fa6', 'No free space.');
 				}
-				await this.expireOldFile(await this.usersRepository.findOneByOrFail({ id: user.id }) as RemoteUser, driveCapacity - info.size);
+				await this.expireOldFile(
+					await this.prismaService.client.user.findUniqueOrThrow({ where: { id: user.id } }) as RemoteUser,
+					driveCapacity - info.size,
+				);
 			}
 		}
 		//#endregion
@@ -525,9 +563,11 @@ export class DriveService {
 				return null;
 			}
 
-			const driveFolder = await this.driveFoldersRepository.findOneBy({
-				id: folderId,
-				userId: user ? user.id : IsNull(),
+			const driveFolder = await this.prismaService.client.drive_folder.findUnique({
+				where: {
+					id: folderId,
+					userId: user ? user.id : null,
+				},
 			});
 
 			if (driveFolder == null) throw new Error('folder-not-found');
@@ -549,11 +589,11 @@ export class DriveService {
 			properties['orientation'] = info.orientation;
 		}
 
-		const profile = user ? await this.userProfilesRepository.findOneBy({ userId: user.id }) : null;
+		const profile = user ? await this.prismaService.client.user_profile.findUnique({ where: { userId: user.id } }) : null;
 
 		const folder = await fetchFolder();
 
-		let file = new DriveFile();
+		let file: Omit<T2P<DriveFile, drive_file>, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null } = new DriveFile();
 		file.id = this.idService.genId();
 		file.createdAt = new Date();
 		file.userId = user ? user.id : null;
@@ -602,16 +642,43 @@ export class DriveService {
 				file.type = info.type.mime;
 				file.storedInternal = false;
 
-				file = await this.driveFilesRepository.insert(file).then(x => this.driveFilesRepository.findOneByOrFail(x.identifiers[0]));
+				const result = await this.prismaService.client.drive_file.create({
+					data: {
+						...file,
+						requestHeaders: file.requestHeaders ?? undefined,
+					},
+				});
+				file = {
+					...result,
+					properties: z.object({
+						width: z.number().optional(),
+						height: z.number().optional(),
+						orientation: z.number().optional(),
+						avgColor: z.string().optional(),
+					}).parse(result.properties),
+					requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
+				};
 			} catch (err) {
 			// duplicate key error (when already registered)
 				if (isDuplicateKeyValueError(err)) {
 					this.registerLogger.info(`already registered ${file.uri}`);
 
-					file = await this.driveFilesRepository.findOneBy({
-						uri: file.uri!,
-						userId: user ? user.id : IsNull(),
-					}) as DriveFile;
+					const result = await this.prismaService.client.drive_file.findFirstOrThrow({
+						where: {
+							uri: file.uri!,
+							userId: user ? user.id : null,
+						},
+					});
+					file = {
+						...result,
+						properties: z.object({
+							width: z.number().optional(),
+							height: z.number().optional(),
+							orientation: z.number().optional(),
+							avgColor: z.string().optional(),
+						}).parse(result.properties),
+						requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
+					};
 				} else {
 					this.registerLogger.error(err as Error);
 					throw err;
@@ -645,7 +712,7 @@ export class DriveService {
 	}
 
 	@bindThis
-	public async deleteFile(file: DriveFile, isExpired = false) {
+	public async deleteFile(file: T2P<DriveFile, drive_file>, isExpired = false) {
 		if (file.storedInternal) {
 			this.internalStorageService.del(file.accessKey!);
 
@@ -672,7 +739,7 @@ export class DriveService {
 	}
 
 	@bindThis
-	public async deleteFileSync(file: DriveFile, isExpired = false) {
+	public async deleteFileSync(file: T2P<DriveFile, drive_file>, isExpired = false) {
 		if (file.storedInternal) {
 			this.internalStorageService.del(file.accessKey!);
 
@@ -703,22 +770,25 @@ export class DriveService {
 	}
 
 	@bindThis
-	private async deletePostProcess(file: DriveFile, isExpired = false) {
+	private async deletePostProcess(file: T2P<DriveFile, drive_file>, isExpired = false) {
 		// リモートファイル期限切れ削除後は直リンクにする
 		if (isExpired && file.userHost !== null && file.uri != null) {
-			this.driveFilesRepository.update(file.id, {
-				isLink: true,
-				url: file.uri,
-				thumbnailUrl: null,
-				webpublicUrl: null,
-				storedInternal: false,
-				// ローカルプロキシ用
-				accessKey: randomUUID(),
-				thumbnailAccessKey: 'thumbnail-' + randomUUID(),
-				webpublicAccessKey: 'webpublic-' + randomUUID(),
+			this.prismaService.client.drive_file.update({
+				where: { id: file.id },
+				data: {
+					isLink: true,
+					url: file.uri,
+					thumbnailUrl: null,
+					webpublicUrl: null,
+					storedInternal: false,
+					// ローカルプロキシ用
+					accessKey: randomUUID(),
+					thumbnailAccessKey: 'thumbnail-' + randomUUID(),
+					webpublicAccessKey: 'webpublic-' + randomUUID(),
+				},
 			});
 		} else {
-			this.driveFilesRepository.delete(file.id);
+			this.prismaService.client.drive_file.delete({ where: { id: file.id } });
 		}
 
 		this.driveChart.update(file, false);
@@ -766,7 +836,7 @@ export class DriveService {
 		comment = null,
 		requestIp = null,
 		requestHeaders = null,
-	}: UploadFromUrlArgs): Promise<DriveFile> {
+	}: UploadFromUrlArgs): Promise<T2P<DriveFile, drive_file>> {
 		// Create temp file
 		const [path, cleanup] = await createTemp();
 

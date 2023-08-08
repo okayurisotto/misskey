@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { GalleryPostsRepository } from '@/models/index.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = GalleryPostSchema;
@@ -34,14 +33,14 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.galleryPostsRepository)
-		private galleryPostsRepository: GalleryPostsRepository,
-
-		private galleryPostEntityService: GalleryPostEntityService,
+		private readonly galleryPostEntityService: GalleryPostEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const post = await this.galleryPostsRepository.findOneBy({
-				id: ps.postId,
+			const post = await this.prismaService.client.gallery_post.findUnique({
+				where: {
+					id: ps.postId,
+				},
 			});
 
 			if (post == null) {

@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFilesRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.unknown(); // TODO
@@ -39,8 +38,6 @@ export const paramDef = z.object({
 	roleIdsThatCanBeUsedThisEmojiAsReaction: z.array(z.string()).optional(),
 });
 
-// TODO: ロジックをサービスに切り出す
-
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
@@ -49,19 +46,16 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private customEmojiService: CustomEmojiService,
-
-		private emojiEntityService: EmojiEntityService,
-		private moderationLogService: ModerationLogService,
+		private readonly customEmojiService: CustomEmojiService,
+		private readonly emojiEntityService: EmojiEntityService,
+		private readonly moderationLogService: ModerationLogService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const driveFile = await this.driveFilesRepository.findOneBy({
-				id: ps.fileId,
+			const driveFile = await this.prismaService.client.drive_file.findUnique({
+				where: { id: ps.fileId },
 			});
-			if (driveFile == null) throw new ApiError(meta.errors.noSuchFile);
+			if (driveFile === null) throw new ApiError(meta.errors.noSuchFile);
 
 			const emoji = await this.customEmojiService.add({
 				driveFile,

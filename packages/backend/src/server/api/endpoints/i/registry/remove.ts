@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RegistryItemsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -32,25 +31,24 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.registryItemsRepository)
-		private registryItemsRepository: RegistryItemsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.registryItemsRepository
-				.createQueryBuilder('item')
-				.where('item.domain IS NULL')
-				.andWhere('item.userId = :userId', { userId: me.id })
-				.andWhere('item.key = :key', { key: ps.key })
-				.andWhere('item.scope = :scope', { scope: ps.scope });
-
-			const item = await query.getOne();
+			const item = await this.prismaService.client.registry_item.findFirst({
+				where: {
+					domain: null,
+					userId: me.id,
+					key: ps.key,
+					scope: { equals: ps.scope },
+				},
+			});
 
 			if (item == null) {
 				throw new ApiError(meta.errors.noSuchKey);
 			}
 
-			await this.registryItemsRepository.remove(item);
+			await this.prismaService.client.registry_item.delete({
+				where: { id: item.id },
+			});
 		});
 	}
 }

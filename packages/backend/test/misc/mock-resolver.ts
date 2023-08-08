@@ -8,9 +8,9 @@ import type { HttpRequestService } from '@/core/HttpRequestService.js';
 import type { InstanceActorService } from '@/core/InstanceActorService.js';
 import type { LoggerService } from '@/core/LoggerService.js';
 import type { MetaService } from '@/core/MetaService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import type { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
-import type { NoteReactionsRepository, NotesRepository, PollsRepository, UsersRepository } from '@/models/index.js';
 
 type MockResponse = {
 	type: string;
@@ -24,10 +24,6 @@ export class MockResolver extends Resolver {
 	constructor(loggerService: LoggerService) {
 		super(
 			{} as Config,
-			{} as UsersRepository,
-			{} as NotesRepository,
-			{} as PollsRepository,
-			{} as NoteReactionsRepository,
 			{} as UtilityService,
 			{} as InstanceActorService,
 			{} as MetaService,
@@ -35,7 +31,7 @@ export class MockResolver extends Resolver {
 			{} as HttpRequestService,
 			{} as ApRendererService,
 			{} as ApDbResolverService,
-			loggerService,
+			{} as PrismaService,
 		);
 	}
 

@@ -1,26 +1,29 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import * as Redis from 'ioredis';
+import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
 import { Meta } from '@/models/entities/Meta.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
+import type { T2P } from '@/types.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
+import type { meta } from '@prisma/client';
 
 @Injectable()
 export class MetaService implements OnApplicationShutdown {
-	private cache: Meta | undefined;
+	private cache: T2P<Meta, meta> | undefined;
 	private intervalId: NodeJS.Timer;
 
 	constructor(
 		@Inject(DI.redisForSub)
-		private redisForSub: Redis.Redis,
+		private readonly redisForSub: Redis.Redis,
 
 		@Inject(DI.db)
-		private db: DataSource,
+		private readonly db: DataSource,
 
-		private globalEventService: GlobalEventService,
+		private readonly globalEventService: GlobalEventService,
 	) {
 		//this.onMessage = this.onMessage.bind(this);
 
@@ -54,7 +57,7 @@ export class MetaService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async fetch(noCache = false): Promise<Meta> {
+	public async fetch(noCache = false): Promise<T2P<Meta, meta>> {
 		if (!noCache && this.cache) return this.cache;
 
 		return await this.db.transaction(async transactionalEntityManager => {
@@ -89,7 +92,7 @@ export class MetaService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async update(data: Partial<Meta>): Promise<Meta> {
+	public async update(data: Partial<T2P<Meta, meta>>): Promise<Meta> {
 		const updated = await this.db.transaction(async transactionalEntityManager => {
 			const metas = await transactionalEntityManager.find(Meta, {
 				order: {
@@ -100,7 +103,10 @@ export class MetaService implements OnApplicationShutdown {
 			const meta = metas[0];
 
 			if (meta) {
-				await transactionalEntityManager.update(Meta, meta.id, data);
+				await transactionalEntityManager.update(Meta, meta.id, {
+					...data,
+					policies: z.record(z.string(), z.any()).optional().parse(data.policies),
+				});
 
 				const metas = await transactionalEntityManager.find(Meta, {
 					order: {
@@ -110,7 +116,10 @@ export class MetaService implements OnApplicationShutdown {
 
 				return metas[0];
 			} else {
-				return await transactionalEntityManager.save(Meta, data);
+				return await transactionalEntityManager.save(Meta, {
+					...data,
+					policies: z.record(z.string(), z.any()).optional().parse(data.policies),
+				});
 			}
 		});
 

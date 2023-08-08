@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { SwSubscriptionsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z
 	.object({
@@ -29,15 +28,14 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.swSubscriptionsRepository)
-		private swSubscriptionsRepository: SwSubscriptionsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
 			// if already subscribed
-			const exist = await this.swSubscriptionsRepository.findOneBy({
-				userId: me.id,
-				endpoint: ps.endpoint,
+			const exist = await this.prismaService.client.sw_subscription.findFirst({
+				where: {
+					userId: me.id,
+					endpoint: ps.endpoint,
+				},
 			});
 
 			if (exist != null) {

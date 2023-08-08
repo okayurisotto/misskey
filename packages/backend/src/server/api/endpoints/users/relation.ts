@@ -1,9 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
 const resBase = z.object({
@@ -37,12 +35,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private userEntityService: UserEntityService,
-	) {
+	constructor(private userEntityService: UserEntityService) {
 		super(meta, paramDef, async (ps, me) => {
 			const ids = Array.isArray(ps.userId) ? ps.userId : [ps.userId];
 
@@ -50,9 +43,9 @@ export default class extends Endpoint<
 				ids.map((id) => this.userEntityService.getRelation(me.id, id)),
 			);
 
-			return Array.isArray(ps.userId)
-				? relations
-				: (relations[0] satisfies z.infer<typeof res>);
+			return (
+				Array.isArray(ps.userId) ? relations : relations[0]
+			) satisfies z.infer<typeof res>;
 		});
 	}
 }

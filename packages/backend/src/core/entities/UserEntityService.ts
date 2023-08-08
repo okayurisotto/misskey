@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { In, Not } from 'typeorm';
 import * as Redis from 'ioredis';
 import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
@@ -7,7 +6,7 @@ import type { Config } from '@/config.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { USER_ACTIVE_THRESHOLD, USER_ONLINE_THRESHOLD } from '@/const.js';
 import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser, User } from '@/models/entities/User.js';
-import type { UsersRepository, UserSecurityKeysRepository, FollowingsRepository, FollowRequestsRepository, BlockingsRepository, MutingsRepository, DriveFilesRepository, NoteUnreadsRepository, ChannelFollowingsRepository, UserNotePiningsRepository, UserProfilesRepository, InstancesRepository, AnnouncementReadsRepository, AnnouncementsRepository, PagesRepository, UserProfile, RenoteMutingsRepository, UserMemoRepository } from '@/models/index.js';
+import type { UserProfile } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
@@ -17,15 +16,16 @@ import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import type { UserSchema } from '@/models/zod/UserSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
 import type { OnModuleInit } from '@nestjs/common';
-import type { AntennaService } from '../AntennaService.js';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
 import type { DriveFileEntityService } from './DriveFileEntityService.js';
 import type { PageEntityService } from './PageEntityService.js';
 import type { z } from 'zod';
+import type { user, user_profile } from '@prisma/client';
 
-type IsUserDetailed<Detailed extends boolean> = Detailed extends true ? z.infer<typeof UserDetailedSchema> : z.infer<typeof UserLiteSchema>;
 type IsMeAndIsUserDetailed<ExpectsMe extends boolean | null, Detailed extends boolean> =
 	Detailed extends true ?
 		ExpectsMe extends true ? z.infer<typeof MeDetailedSchema> :
@@ -33,15 +33,15 @@ type IsMeAndIsUserDetailed<ExpectsMe extends boolean | null, Detailed extends bo
 		z.infer<typeof UserDetailedSchema> :
 	z.infer<typeof UserLiteSchema>;
 
-function isLocalUser(user: User): user is LocalUser;
+function isLocalUser(user: T2P<User, user>): user is LocalUser;
 function isLocalUser<T extends { host: User['host'] }>(user: T): user is (T & { host: null; });
-function isLocalUser(user: User | { host: User['host'] }): boolean {
+function isLocalUser(user: T2P<User, user> | { host: User['host'] }): boolean {
 	return user.host == null;
 }
 
-function isRemoteUser(user: User): user is RemoteUser;
+function isRemoteUser(user: T2P<User, user>): user is RemoteUser;
 function isRemoteUser<T extends { host: User['host'] }>(user: T): user is (T & { host: string; });
-function isRemoteUser(user: User | { host: User['host'] }): boolean {
+function isRemoteUser(user: T2P<User, user> | { host: User['host'] }): boolean {
 	return !isLocalUser(user);
 }
 
@@ -52,86 +52,28 @@ export class UserEntityService implements OnModuleInit {
 	private driveFileEntityService: DriveFileEntityService;
 	private pageEntityService: PageEntityService;
 	private customEmojiService: CustomEmojiService;
-	private antennaService: AntennaService;
 	private roleService: RoleService;
 	private federatedInstanceService: FederatedInstanceService;
 
 	constructor(
-		private moduleRef: ModuleRef,
+		private readonly moduleRef: ModuleRef,
 
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
 		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private readonly redisClient: Redis.Redis,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userSecurityKeysRepository)
-		private userSecurityKeysRepository: UserSecurityKeysRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		@Inject(DI.followRequestsRepository)
-		private followRequestsRepository: FollowRequestsRepository,
-
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		@Inject(DI.renoteMutingsRepository)
-		private renoteMutingsRepository: RenoteMutingsRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.noteUnreadsRepository)
-		private noteUnreadsRepository: NoteUnreadsRepository,
-
-		@Inject(DI.channelFollowingsRepository)
-		private channelFollowingsRepository: ChannelFollowingsRepository,
-
-		@Inject(DI.userNotePiningsRepository)
-		private userNotePiningsRepository: UserNotePiningsRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		@Inject(DI.announcementReadsRepository)
-		private announcementReadsRepository: AnnouncementReadsRepository,
-
-		@Inject(DI.announcementsRepository)
-		private announcementsRepository: AnnouncementsRepository,
-
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		@Inject(DI.userMemosRepository)
-		private userMemosRepository: UserMemoRepository,
-
-		//private noteEntityService: NoteEntityService,
-		//private driveFileEntityService: DriveFileEntityService,
-		//private pageEntityService: PageEntityService,
-		//private customEmojiService: CustomEmojiService,
-		//private antennaService: AntennaService,
-		//private roleService: RoleService,
+		private readonly prismaService: PrismaService,
 	) {
 	}
 
-	onModuleInit() {
+	onModuleInit(): void {
 		this.apPersonService = this.moduleRef.get('ApPersonService');
 		this.noteEntityService = this.moduleRef.get('NoteEntityService');
 		this.driveFileEntityService = this.moduleRef.get('DriveFileEntityService');
 		this.pageEntityService = this.moduleRef.get('PageEntityService');
 		this.customEmojiService = this.moduleRef.get('CustomEmojiService');
-		this.antennaService = this.moduleRef.get('AntennaService');
 		this.roleService = this.moduleRef.get('RoleService');
 		this.federatedInstanceService = this.moduleRef.get('FederatedInstanceService');
 	}
@@ -142,43 +84,43 @@ export class UserEntityService implements OnModuleInit {
 	@bindThis
 	public async getRelation(me: User['id'], target: User['id']) {
 		const result = await awaitAll({
-			isFollowing: () =>
-				this.followingsRepository.count({
+			isFollowing: (): Promise<boolean> =>
+				this.prismaService.client.following.count({
 					where: { followerId: me, followeeId: target },
 					take: 1,
 				}).then(n => n > 0),
-			isFollowed: () =>
-				this.followingsRepository.count({
+			isFollowed: (): Promise<boolean> =>
+				this.prismaService.client.following.count({
 					where: { followerId: target, followeeId: me },
 					take: 1,
 				}).then(n => n > 0),
-			hasPendingFollowRequestFromYou: () =>
-				this.followRequestsRepository.count({
+			hasPendingFollowRequestFromYou: (): Promise<boolean> =>
+				this.prismaService.client.follow_request.count({
 					where: { followerId: me, followeeId: target },
 					take: 1,
 				}).then(n => n > 0),
-			hasPendingFollowRequestToYou: () =>
-				this.followRequestsRepository.count({
+			hasPendingFollowRequestToYou: (): Promise<boolean> =>
+				this.prismaService.client.follow_request.count({
 					where: { followerId: target, followeeId: me },
 					take: 1,
 				}).then(n => n > 0),
-			isBlocking: () =>
-				this.blockingsRepository.count({
+			isBlocking: (): Promise<boolean> =>
+				this.prismaService.client.blocking.count({
 					where: { blockerId: me, blockeeId: target },
 					take: 1,
 				}).then(n => n > 0),
-			isBlocked: () =>
-				this.blockingsRepository.count({
+			isBlocked: (): Promise<boolean> =>
+				this.prismaService.client.blocking.count({
 					where: { blockerId: target, blockeeId: me },
 					take: 1,
 				}).then(n => n > 0),
-			isMuted: () =>
-				this.mutingsRepository.count({
+			isMuted: (): Promise<boolean> =>
+				this.prismaService.client.muting.count({
 					where: { muterId: me, muteeId: target },
 					take: 1,
 				}).then(n => n > 0),
-			isRenoteMuted: () =>
-				this.renoteMutingsRepository.count({
+			isRenoteMuted: (): Promise<boolean> =>
+				this.prismaService.client.renote_muting.count({
 					where: { muterId: me, muteeId: target },
 					take: 1,
 				}).then(n => n > 0),
@@ -192,31 +134,22 @@ export class UserEntityService implements OnModuleInit {
 
 	@bindThis
 	public async getHasUnreadAnnouncement(userId: User['id']): Promise<boolean> {
-		const reads = await this.announcementReadsRepository.findBy({
-			userId: userId,
+		const reads = await this.prismaService.client.announcement_read.findMany({
+			where: { userId: userId },
 		});
 
-		const count = await this.announcementsRepository.countBy(reads.length > 0 ? {
-			id: Not(In(reads.map(read => read.announcementId))),
-		} : {});
+		const count = await this.prismaService.client.announcement.count({
+			where: reads.length > 0
+				? { id: { notIn: reads.map((read) => read.announcementId) } }
+				: {},
+			take: 1,
+		});
 
 		return count > 0;
 	}
 
 	@bindThis
 	public async getHasUnreadAntenna(userId: User['id']): Promise<boolean> {
-		/*
-		const myAntennas = (await this.antennaService.getAntennas()).filter(a => a.userId === userId);
-
-		const isUnread = (myAntennas.length > 0 ? await this.antennaNotesRepository.exist({
-			where: {
-				antennaId: In(myAntennas.map(x => x.id)),
-				read: false,
-			},
-		}) : false);
-
-		return isUnread;
-		*/
 		return false; // TODO
 	}
 
@@ -236,15 +169,16 @@ export class UserEntityService implements OnModuleInit {
 
 	@bindThis
 	public async getHasPendingReceivedFollowRequest(userId: User['id']): Promise<boolean> {
-		const count = await this.followRequestsRepository.countBy({
-			followeeId: userId,
+		const count = await this.prismaService.client.follow_request.count({
+			where: { followeeId: userId },
+			take: 1,
 		});
 
 		return count > 0;
 	}
 
 	@bindThis
-	public getOnlineStatus(user: User): 'unknown' | 'online' | 'active' | 'offline' {
+	public getOnlineStatus(user: T2P<User, user>): 'unknown' | 'online' | 'active' | 'offline' {
 		if (user.hideOnlineStatus) return 'unknown';
 		if (user.lastActiveDate == null) return 'unknown';
 		const elapsed = Date.now() - user.lastActiveDate.getTime();
@@ -256,7 +190,7 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public getIdenticonUrl(user: User): string {
+	public getIdenticonUrl(user: T2P<User, user>): string {
 		return `${this.config.url}/identicon/${user.username.toLowerCase()}@${user.host ?? this.config.host}`;
 	}
 
@@ -272,12 +206,12 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	public async pack<ExpectsMe extends boolean | null = null, D extends boolean = false>(
-		src: User['id'] | User,
+		src: User['id'] | T2P<User, user>,
 		me?: { id: User['id']; } | null | undefined,
 		options?: {
 			detail?: D,
 			includeSecrets?: boolean,
-			userProfile?: UserProfile,
+			userProfile?: T2P<UserProfile, user_profile>,
 		},
 	): Promise<IsMeAndIsUserDetailed<ExpectsMe, D>> {
 		const opts = Object.assign({
@@ -285,23 +219,29 @@ export class UserEntityService implements OnModuleInit {
 			includeSecrets: false,
 		}, options);
 
-		const user = typeof src === 'object' ? src : await this.usersRepository.findOneByOrFail({ id: src });
+		const user = typeof src === 'object' ? src : await this.prismaService.client.user.findUniqueOrThrow({ where: { id: src } });
 
 		// migration
 		if (user.avatarId != null && user.avatarUrl === null) {
-			const avatar = await this.driveFilesRepository.findOneByOrFail({ id: user.avatarId });
+			const avatar = await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: user.avatarId } });
 			user.avatarUrl = this.driveFileEntityService.getPublicUrl(avatar, 'avatar');
-			this.usersRepository.update(user.id, {
-				avatarUrl: user.avatarUrl,
-				avatarBlurhash: avatar.blurhash,
+			this.prismaService.client.user.update({
+				where: { id: user.id },
+				data: {
+					avatarUrl: user.avatarUrl,
+					avatarBlurhash: avatar.blurhash,
+				},
 			});
 		}
 		if (user.bannerId != null && user.bannerUrl === null) {
-			const banner = await this.driveFilesRepository.findOneByOrFail({ id: user.bannerId });
+			const banner = await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: user.bannerId } });
 			user.bannerUrl = this.driveFileEntityService.getPublicUrl(banner);
-			this.usersRepository.update(user.id, {
-				bannerUrl: user.bannerUrl,
-				bannerBlurhash: banner.blurhash,
+			this.prismaService.client.user.update({
+				where: { id: user.id },
+				data: {
+					bannerUrl: user.bannerUrl,
+					bannerBlurhash: banner.blurhash,
+				},
 			});
 		}
 
@@ -310,12 +250,12 @@ export class UserEntityService implements OnModuleInit {
 		const iAmModerator = me ? await this.roleService.isModerator(me as User) : false;
 
 		const relation = meId && !isMe && opts.detail ? await this.getRelation(meId, user.id) : null;
-		const pins = opts.detail ? await this.userNotePiningsRepository.createQueryBuilder('pin')
-			.where('pin.userId = :userId', { userId: user.id })
-			.innerJoinAndSelect('pin.note', 'note')
-			.orderBy('pin.id', 'DESC')
-			.getMany() : [];
-		const profile = opts.detail ? (opts.userProfile ?? await this.userProfilesRepository.findOneByOrFail({ userId: user.id })) : null;
+		const pins = opts.detail ? await this.prismaService.client.user_note_pining.findMany({
+			where: { userId: user.id },
+			include: { note: true },
+			orderBy: { id: 'desc' },
+		}) : [];
+		const profile = opts.detail ? (opts.userProfile ?? await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } })) : null;
 
 		const followingCount = profile == null ? null :
 			(profile.ffVisibility === 'public') || isMe ? user.followingCount :
@@ -342,20 +282,20 @@ export class UserEntityService implements OnModuleInit {
 						: Promise.resolve(null),
 				alsoKnownAs: () =>
 					user.alsoKnownAs
-						? Promise.all(user.alsoKnownAs.map(uri => this.apPersonService.fetchPerson(uri).then(user => user?.id).catch(() => null)))
+						? Promise.all((typeof user.alsoKnownAs === 'string' ? user.alsoKnownAs.split(',') : user.alsoKnownAs).map(uri => this.apPersonService.fetchPerson(uri).then(user => user?.id).catch(() => null)))
 							.then(xs => xs.length === 0 ? null : xs.filter((x): x is string => x != null))
 						: Promise.resolve(null),
 				isSilenced: () =>
 					this.roleService.getUserPolicies(user.id).then(r => !r.canPublicNote),
 				pinnedNotes: () =>
-					this.noteEntityService.packMany(pins.map(pin => pin.note!), me, { detail: true }),
+					this.noteEntityService.packMany(pins.map(pin => pin.note), me, { detail: true }),
 				pinnedPage: () =>
 					profile!.pinnedPageId
 						? this.pageEntityService.pack(profile!.pinnedPageId, me)
 						: Promise.resolve(null),
 				securityKeys: () =>
 					profile!.twoFactorEnabled
-						? this.userSecurityKeysRepository.countBy({ userId: user.id }).then(result => result >= 1)
+						? this.prismaService.client.user_security_key.count({ where: { userId: user.id }, take: 1 }).then(result => result > 0)
 						: Promise.resolve(false),
 				roles: () =>
 					this.roleService.getUserRoles(user.id).then(roles =>
@@ -376,7 +316,7 @@ export class UserEntityService implements OnModuleInit {
 				memos: () =>
 					meId == null
 						? Promise.resolve(null)
-						: this.userMemosRepository.findOneBy({ userId: meId, targetUserId: user.id }).then(row => row?.memo ?? null),
+						: this.prismaService.client.user_memo.findUnique({ where: { userId_targetUserId: { userId: meId, targetUserId: user.id } } }).then(row => row?.memo ?? null),
 			});
 
 			return {
@@ -423,9 +363,9 @@ export class UserEntityService implements OnModuleInit {
 				isModerator: () => Promise.resolve(isModerator),
 				isAdmin: () => Promise.resolve(isAdmin),
 				hasUnreadSpecifiedNotes: () =>
-					this.noteUnreadsRepository.count({ where: { userId: user.id, isSpecified: true }, take: 1 }).then(count => count > 0),
+					this.prismaService.client.note_unread.count({ where: { userId: user.id, isSpecified: true }, take: 1 }).then(count => count > 0),
 				hasUnreadMentions: () =>
-					this.noteUnreadsRepository.count({ where: { userId: user.id, isMentioned: true }, take: 1 }).then(count => count > 0),
+					this.prismaService.client.note_unread.count({ where: { userId: user.id, isMentioned: true }, take: 1 }).then(count => count > 0),
 				hasUnreadAnnouncement: () =>
 					this.getHasUnreadAnnouncement(user.id),
 				hasUnreadAntenna: () =>
@@ -478,7 +418,7 @@ export class UserEntityService implements OnModuleInit {
 				email: profile!.email,
 				emailVerified: profile!.emailVerified,
 				securityKeysList: profile!.twoFactorEnabled
-					? await this.userSecurityKeysRepository.find({
+					? await this.prismaService.client.user_security_key.findMany({
 						where: { userId: user.id },
 						select: { id: true, name: true, lastUsed: true },
 					})

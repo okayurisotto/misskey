@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AntennasRepository } from '@/models/index.js';
 import { AntennaEntityService } from '@/core/entities/AntennaEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { AntennaSchema } from '@/models/zod/AntennaSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(AntennaSchema);
 export const meta = {
@@ -24,14 +23,12 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.antennasRepository)
-		private antennasRepository: AntennasRepository,
-
-		private antennaEntityService: AntennaEntityService,
+		private readonly antennaEntityService: AntennaEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const antennas = await this.antennasRepository.findBy({
-				userId: me.id,
+			const antennas = await this.prismaService.client.antenna.findMany({
+				where: { userId: me.id },
 			});
 
 			return (await Promise.all(

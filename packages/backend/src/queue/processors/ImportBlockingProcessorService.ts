@@ -1,7 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { UsersRepository, DriveFilesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
+import type { User } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import * as Acct from '@/misc/acct.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
@@ -9,26 +7,24 @@ import { DownloadService } from '@/core/DownloadService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { QueueService } from '@/core/QueueService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbUserImportJobData, DbUserImportToDbJobData } from '../types.js';
+import type { user } from '@prisma/client';
 
 @Injectable()
 export class ImportBlockingProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private queueService: QueueService,
-		private utilityService: UtilityService,
-		private remoteUserResolveService: RemoteUserResolveService,
-		private downloadService: DownloadService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly queueService: QueueService,
+		private readonly utilityService: UtilityService,
+		private readonly remoteUserResolveService: RemoteUserResolveService,
+		private readonly downloadService: DownloadService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('import-blocking');
 	}
@@ -37,13 +33,13 @@ export class ImportBlockingProcessorService {
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		this.logger.info(`Importing blocking of ${job.data.user.id} ...`);
 
-		const user = await this.usersRepository.findOneBy({ id: job.data.user.id });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
 		if (user == null) {
 			return;
 		}
 
-		const file = await this.driveFilesRepository.findOneBy({
-			id: job.data.fileId,
+		const file = await this.prismaService.client.drive_file.findUnique({
+			where: { id: job.data.fileId }
 		});
 		if (file == null) {
 			return;
@@ -67,13 +63,21 @@ export class ImportBlockingProcessorService {
 
 			if (!host) return;
 
-			let target = this.utilityService.isSelfHost(host) ? await this.usersRepository.findOneBy({
-				host: IsNull(),
-				usernameLower: username.toLowerCase(),
-			}) : await this.usersRepository.findOneBy({
-				host: this.utilityService.toPuny(host),
-				usernameLower: username.toLowerCase(),
-			});
+			let target: T2P<User, user> | null = this.utilityService.isSelfHost(host)
+				? await this.prismaService.client.user.findFirst({
+					where: {
+						host: null,
+						usernameLower: username.toLowerCase(),
+					},
+				})
+				: await this.prismaService.client.user.findUnique({
+					where: {
+						usernameLower_host: {
+							host: this.utilityService.toPuny(host),
+							usernameLower: username.toLowerCase(),
+						},
+					},
+				});
 
 			if (host == null && target == null) return;
 

@@ -1,14 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import z from 'zod';
-import type { NotesRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -39,12 +38,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
-		private getterService: GetterService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
@@ -54,24 +51,28 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			const query = this.queryService
-				.makePaginationQuery(
-					this.notesRepository.createQueryBuilder('note'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('note.renoteId = :renoteId', { renoteId: note.id })
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			this.queryService.generateVisibilityQuery(query, me);
-			if (me) this.queryService.generateMutedUserQuery(query, me);
-			if (me) this.queryService.generateBlockedUserQuery(query, me);
-
-			const renotes = await query.limit(ps.limit).getMany();
+			const renotes = await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{ renoteId: note.id },
+						this.prismaQueryService.getVisibilityWhereForNote(me?.id ?? null),
+						...(me
+							? [
+									await this.prismaQueryService.getMutingWhereForNote(me.id),
+									this.prismaQueryService.getBlockedWhereForNote(me.id),
+							  ]
+							: []),
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await this.noteEntityService.packMany(
 				renotes,

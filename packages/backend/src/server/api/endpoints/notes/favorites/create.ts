@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
-import type { NoteFavoritesRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
-import { DI } from '@/di-symbols.js';
 import { AchievementService } from '@/core/AchievementService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -45,12 +44,10 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.noteFavoritesRepository)
-		private noteFavoritesRepository: NoteFavoritesRepository,
-
-		private idService: IdService,
-		private getterService: GetterService,
-		private achievementService: AchievementService,
+		private readonly idService: IdService,
+		private readonly getterService: GetterService,
+		private readonly achievementService: AchievementService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Get favoritee
@@ -62,23 +59,27 @@ export default class extends Endpoint<
 			});
 
 			// if already favorited
-			const exist = await this.noteFavoritesRepository.exist({
-				where: {
-					noteId: note.id,
-					userId: me.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.note_favorite.count({
+					where: {
+						noteId: note.id,
+						userId: me.id,
+					},
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyFavorited);
 			}
 
 			// Create favorite
-			await this.noteFavoritesRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				noteId: note.id,
-				userId: me.id,
+			await this.prismaService.client.note_favorite.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					noteId: note.id,
+					userId: me.id,
+				},
 			});
 
 			if (note.userHost == null && note.userId !== me.id) {

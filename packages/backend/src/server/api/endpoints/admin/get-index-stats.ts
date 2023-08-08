@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown(); // TODO
 export const meta = {
@@ -21,20 +20,14 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async () => {
-			const stats = await this.db
-				.query('SELECT * FROM pg_indexes;')
-				.then((recs) => {
-					const res = [] as { tablename: string; indexname: string }[];
-					for (const rec of recs) {
-						res.push(rec);
-					}
-					return res;
-				});
+			const result = await this.prismaService.client
+				.$queryRaw`SELECT * FROM pg_indexes;`;
+
+			const stats = z
+				.array(z.object({ tablename: z.string(), indexname: z.string() }))
+				.parse(result);
 
 			return stats satisfies z.infer<typeof res>;
 		});

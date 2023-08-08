@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UserListsRepository, UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserListEntityService } from '@/core/entities/UserListEntityService.js';
 import { ApiError } from '@/server/api/error.js';
-import { DI } from '@/di-symbols.js';
 import { UserListSchema } from '@/models/zod/UserListSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(UserListSchema);
 export const meta = {
@@ -46,28 +45,26 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-
-		private userListEntityService: UserListEntityService,
+		private readonly userListEntityService: UserListEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			if (typeof ps.userId !== 'undefined') {
-				const user = await this.usersRepository.findOneBy({ id: ps.userId });
+				const user = await this.prismaService.client.user.findUnique({
+					where: { id: ps.userId },
+				});
 				if (user === null) throw new ApiError(meta.errors.noSuchUser);
 				if (user.host !== null) throw new ApiError(meta.errors.remoteUser);
 			} else if (me === null) {
 				throw new ApiError(meta.errors.invalidParam);
 			}
 
-			const userLists = await this.userListsRepository.findBy(
-				typeof ps.userId === 'undefined' && me !== null
-					? { userId: me.id }
-					: { userId: ps.userId, isPublic: true },
-			);
+			const userLists = await this.prismaService.client.user_list.findMany({
+				where:
+					typeof ps.userId === 'undefined' && me !== null
+						? { userId: me.id }
+						: { userId: ps.userId, isPublic: true },
+			});
 
 			return (await Promise.all(
 				userLists.map((x) => this.userListEntityService.pack(x)),

@@ -1,31 +1,22 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Not, IsNull } from 'typeorm';
-import type { FollowingsRepository, UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type { User } from '@/models/entities/User.js';
 import { QueueService } from '@/core/QueueService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
 
 @Injectable()
 export class UserSuspendService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private userEntityService: UserEntityService,
-		private queueService: QueueService,
-		private globalEventService: GlobalEventService,
-		private apRendererService: ApRendererService,
+		private readonly userEntityService: UserEntityService,
+		private readonly queueService: QueueService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly apRendererService: ApRendererService,
+		private readonly prismaService: PrismaService,
 	) {
 	}
 
@@ -39,12 +30,13 @@ export class UserSuspendService {
 
 			const queue: string[] = [];
 
-			const followings = await this.followingsRepository.find({
-				where: [
-					{ followerSharedInbox: Not(IsNull()) },
-					{ followeeSharedInbox: Not(IsNull()) },
-				],
-				select: ['followerSharedInbox', 'followeeSharedInbox'],
+			const followings = await this.prismaService.client.following.findMany({
+				where: {
+					OR: [
+						{ followerSharedInbox: { not: null } },
+						{ followeeSharedInbox: { not: null } },
+					],
+				},
 			});
 
 			const inboxes = followings.map(x => x.followerSharedInbox ?? x.followeeSharedInbox);
@@ -60,7 +52,7 @@ export class UserSuspendService {
 	}
 
 	@bindThis
-	public async doPostUnsuspend(user: User): Promise<void> {
+	public async doPostUnsuspend(user: T2P<User, user>): Promise<void> {
 		this.globalEventService.publishInternalEvent('userChangeSuspendedState', { id: user.id, isSuspended: false });
 
 		if (this.userEntityService.isLocalUser(user)) {
@@ -69,12 +61,13 @@ export class UserSuspendService {
 
 			const queue: string[] = [];
 
-			const followings = await this.followingsRepository.find({
-				where: [
-					{ followerSharedInbox: Not(IsNull()) },
-					{ followeeSharedInbox: Not(IsNull()) },
-				],
-				select: ['followerSharedInbox', 'followeeSharedInbox'],
+			const followings = await this.prismaService.client.following.findMany({
+				where: {
+					OR:[
+						{ followerSharedInbox: { not: null } },
+						{ followeeSharedInbox: { not: null } },
+					]
+				},
 			});
 
 			const inboxes = followings.map(x => x.followerSharedInbox ?? x.followeeSharedInbox);
@@ -84,7 +77,7 @@ export class UserSuspendService {
 			}
 
 			for (const inbox of queue) {
-				this.queueService.deliver(user as any, content, inbox, true);
+				this.queueService.deliver(user, content, inbox, true);
 			}
 		}
 	}

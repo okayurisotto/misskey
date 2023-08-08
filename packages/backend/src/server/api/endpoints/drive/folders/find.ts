@@ -1,12 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFoldersRepository } from '@/models/index.js';
 import { DriveFolderEntityService } from '@/core/entities/DriveFolderEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(DriveFolderSchema);
 export const meta = {
@@ -29,16 +27,16 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFoldersRepository)
-		private driveFoldersRepository: DriveFoldersRepository,
-
-		private driveFolderEntityService: DriveFolderEntityService,
+		private readonly driveFolderEntityService: DriveFolderEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const folders = await this.driveFoldersRepository.findBy({
-				name: ps.name,
-				userId: me.id,
-				parentId: ps.parentId ?? IsNull(),
+			const folders = await this.prismaService.client.drive_folder.findMany({
+				where: {
+					name: ps.name,
+					userId: me.id,
+					parentId: ps.parentId ?? null,
+				},
 			});
 
 			return (await Promise.all(

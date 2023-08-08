@@ -1,27 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { DriveFilesRepository, DriveFoldersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { } from '@/models/entities/Blocking.js';
 import type { DriveFolder } from '@/models/entities/DriveFolder.js';
 import { bindThis } from '@/decorators.js';
 import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
+import type { drive_folder } from '@prisma/client';
 
 @Injectable()
 export class DriveFolderEntityService {
-	constructor(
-		@Inject(DI.driveFoldersRepository)
-		private driveFoldersRepository: DriveFoldersRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-	) {
-	}
+	constructor(private readonly prismaService: PrismaService) {}
 
 	@bindThis
 	public async pack(
-		src: DriveFolder['id'] | DriveFolder,
+		src: DriveFolder['id'] | T2P<DriveFolder, drive_folder>,
 		options?: {
 			detail: boolean
 		},
@@ -30,16 +24,18 @@ export class DriveFolderEntityService {
 			detail: false,
 		}, options);
 
-		const folder = typeof src === 'object' ? src : await this.driveFoldersRepository.findOneByOrFail({ id: src });
+		const folder = typeof src === 'object'
+			? src
+			: await this.prismaService.client.drive_folder.findUniqueOrThrow({ where: { id: src } });
 
 		const getDetail = async () => {
 			if (!opts.detail) return {};
 
 			const result = await awaitAll({
 				foldersCount: () =>
-					this.driveFoldersRepository.countBy({ parentId: folder.id }),
+					this.prismaService.client.drive_folder.count({ where: { parentId: folder.id } }),
 				filesCount: () =>
-					this.driveFilesRepository.countBy({ folderId: folder.id }),
+					this.prismaService.client.drive_file.count({ where: { folderId: folder.id } }),
 			});
 
 			return {
@@ -58,4 +54,3 @@ export class DriveFolderEntityService {
 		};
 	}
 }
-

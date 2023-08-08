@@ -1,36 +1,27 @@
 import * as fs from 'node:fs';
-import { Inject, Injectable } from '@nestjs/common';
-import { MoreThan } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
-import { DI } from '@/di-symbols.js';
-import type { UsersRepository, BlockingsRepository, Blocking } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import type { Blocking } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbJobDataWithUser } from '../types.js';
+import type { blocking } from '@prisma/client';
 
 @Injectable()
 export class ExportBlockingProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		private utilityService: UtilityService,
-		private driveService: DriveService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly utilityService: UtilityService,
+		private readonly driveService: DriveService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('export-blocking');
 	}
@@ -39,7 +30,7 @@ export class ExportBlockingProcessorService {
 	public async process(job: Bull.Job<DbJobDataWithUser>): Promise<void> {
 		this.logger.info(`Exporting blocking of ${job.data.user.id} ...`);
 
-		const user = await this.usersRepository.findOneBy({ id: job.data.user.id });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
 		if (user == null) {
 			return;
 		}
@@ -56,15 +47,13 @@ export class ExportBlockingProcessorService {
 			let cursor: Blocking['id'] | null = null;
 
 			while (true) {
-				const blockings = await this.blockingsRepository.find({
+				const blockings: blocking[] = await this.prismaService.client.blocking.findMany({
 					where: {
 						blockerId: user.id,
-						...(cursor ? { id: MoreThan(cursor) } : {}),
+						...(cursor ? { id: { gt: cursor } } : {}),
 					},
 					take: 100,
-					order: {
-						id: 1,
-					},
+					orderBy: { id: 'asc' },
 				});
 
 				if (blockings.length === 0) {
@@ -75,7 +64,7 @@ export class ExportBlockingProcessorService {
 				cursor = blockings.at(-1)?.id ?? null;
 
 				for (const block of blockings) {
-					const u = await this.usersRepository.findOneBy({ id: block.blockeeId });
+					const u = await this.prismaService.client.user.findUnique({ where: { id: block.blockeeId } });
 					if (u == null) {
 						exportedCount++; continue;
 					}
@@ -94,8 +83,10 @@ export class ExportBlockingProcessorService {
 					exportedCount++;
 				}
 
-				const total = await this.blockingsRepository.countBy({
-					blockerId: user.id,
+				const total = await this.prismaService.client.blocking.count({
+					where: {
+						blockerId: user.id,
+					},
 				});
 
 				job.updateProgress(exportedCount / total);

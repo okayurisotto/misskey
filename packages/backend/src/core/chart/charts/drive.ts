@@ -8,6 +8,8 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/drive.js';
 import type { KVs } from '../core.js';
+import type { T2P } from '@/types.js';
+import type { drive_file } from '@prisma/client';
 
 /**
  * ドライブに関するチャート
@@ -34,7 +36,7 @@ export default class DriveChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async update(file: DriveFile, isAdditional: boolean): Promise<void> {
+	public async update(file: T2P<DriveFile, drive_file>, isAdditional: boolean): Promise<void> {
 		const fileSizeKb = file.size / 1000;
 		await this.commit(file.userHost === null ? {
 			'local.incCount': isAdditional ? 1 : 0,

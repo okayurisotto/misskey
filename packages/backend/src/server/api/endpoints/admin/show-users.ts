@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
 import { RoleService } from '@/core/RoleService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { Prisma } from '@prisma/client';
 
 const res = z.array(UserDetailedSchema);
 export const meta = {
@@ -59,109 +58,72 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private userEntityService: UserEntityService,
-		private roleService: RoleService,
+		private readonly userEntityService: UserEntityService,
+		private readonly roleService: RoleService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.usersRepository.createQueryBuilder('user');
-
-			switch (ps.state) {
-				case 'available':
-					query.where('user.isSuspended = FALSE');
-					break;
-				case 'alive':
-					query.where('user.updatedAt > :date', {
-						date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
-					});
-					break;
-				case 'suspended':
-					query.where('user.isSuspended = TRUE');
-					break;
-				case 'admin': {
-					const adminIds = await this.roleService.getAdministratorIds();
-					if (adminIds.length === 0) return [];
-					query.where('user.id IN (:...adminIds)', { adminIds: adminIds });
-					break;
+			const orderBy: Prisma.userOrderByWithRelationInput = (() => {
+				switch (ps.sort) {
+					case '+follower':
+						return { followersCount: 'desc' };
+					case '-follower':
+						return { followersCount: 'asc' };
+					case '+createdAt':
+						return { createdAt: 'desc' };
+					case '-createdAt':
+						return { createdAt: 'asc' };
+					case '+updatedAt':
+						return { updatedAt: { sort: 'desc', nulls: 'last' } };
+					case '-updatedAt':
+						return { updatedAt: { sort: 'asc', nulls: 'first' } };
+					case '+lastActiveDate':
+						return { lastActiveDate: { sort: 'desc', nulls: 'last' } };
+					case '-lastActiveDate':
+						return { lastActiveDate: { sort: 'asc', nulls: 'first' } };
+					default:
+						return { id: 'asc' };
 				}
-				case 'moderator': {
-					const moderatorIds = await this.roleService.getModeratorIds(false);
-					if (moderatorIds.length === 0) return [];
-					query.where('user.id IN (:...moderatorIds)', {
-						moderatorIds: moderatorIds,
-					});
-					break;
-				}
-				case 'adminOrModerator': {
-					const adminOrModeratorIds = await this.roleService.getModeratorIds();
-					if (adminOrModeratorIds.length === 0) return [];
-					query.where('user.id IN (:...adminOrModeratorIds)', {
-						adminOrModeratorIds: adminOrModeratorIds,
-					});
-					break;
-				}
-			}
+			})();
 
-			switch (ps.origin) {
-				case 'local':
-					query.andWhere('user.host IS NULL');
-					break;
-				case 'remote':
-					query.andWhere('user.host IS NOT NULL');
-					break;
-			}
-
-			if (ps.username) {
-				query.andWhere('user.usernameLower like :username', {
-					username: sqlLikeEscape(ps.username.toLowerCase()) + '%',
-				});
-			}
-
-			if (ps.hostname) {
-				query.andWhere('user.host = :hostname', {
-					hostname: ps.hostname.toLowerCase(),
-				});
-			}
-
-			switch (ps.sort) {
-				case '+follower':
-					query.orderBy('user.followersCount', 'DESC');
-					break;
-				case '-follower':
-					query.orderBy('user.followersCount', 'ASC');
-					break;
-				case '+createdAt':
-					query.orderBy('user.createdAt', 'DESC');
-					break;
-				case '-createdAt':
-					query.orderBy('user.createdAt', 'ASC');
-					break;
-				case '+updatedAt':
-					query.orderBy('user.updatedAt', 'DESC', 'NULLS LAST');
-					break;
-				case '-updatedAt':
-					query.orderBy('user.updatedAt', 'ASC', 'NULLS FIRST');
-					break;
-				case '+lastActiveDate':
-					query.orderBy('user.lastActiveDate', 'DESC', 'NULLS LAST');
-					break;
-				case '-lastActiveDate':
-					query.orderBy('user.lastActiveDate', 'ASC', 'NULLS FIRST');
-					break;
-				default:
-					query.orderBy('user.id', 'ASC');
-					break;
-			}
-
-			query.limit(ps.limit);
-			query.offset(ps.offset);
-
-			const users = await query.getMany();
+			const users = await this.prismaService.client.user.findMany({
+				where: {
+					AND: [
+						ps.state === 'available' ? { isSuspended: false } : {},
+						ps.state === 'alive'
+							? {
+									updatedAt: {
+										gt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+									},
+							  }
+							: {},
+						ps.state === 'suspended' ? { isSuspended: true } : {},
+						ps.state === 'admin'
+							? { id: { in: await this.roleService.getAdministratorIds() } }
+							: {},
+						ps.state === 'moderator'
+							? { id: { in: await this.roleService.getModeratorIds(false) } }
+							: {},
+						ps.state === 'adminOrModerator'
+							? { id: { in: await this.roleService.getModeratorIds(true) } }
+							: {},
+						ps.origin === 'local' ? { host: null } : {},
+						ps.origin === 'remote' ? { host: { not: null } } : {},
+						ps.username === null
+							? {}
+							: { usernameLower: { startsWith: ps.username.toLowerCase() } },
+						ps.hostname ? { host: ps.hostname.toLowerCase() } : {},
+					],
+				},
+				orderBy,
+				take: ps.limit,
+				skip: ps.offset,
+			});
 
 			return (await Promise.all(
-				users.map((user) => this.userEntityService.pack(user, me, { detail: true })),
+				users.map((user) =>
+					this.userEntityService.pack(user, me, { detail: true }),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

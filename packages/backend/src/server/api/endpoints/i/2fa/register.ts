@@ -3,10 +3,10 @@ import bcrypt from 'bcryptjs';
 import * as OTPAuth from 'otpauth';
 import * as QRCode from 'qrcode';
 import { Inject, Injectable } from '@nestjs/common';
-import type { UserProfilesRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -30,13 +30,13 @@ export default class extends Endpoint<
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: me.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: me.id },
+				});
 
 			// Compare password
 			const same = await bcrypt.compare(ps.password, profile.password!);
@@ -48,8 +48,9 @@ export default class extends Endpoint<
 			// Generate user's secret key
 			const secret = new OTPAuth.Secret();
 
-			await this.userProfilesRepository.update(me.id, {
-				twoFactorTempSecret: secret.base32,
+			await this.prismaService.client.user_profile.update({
+				where: { userId: me.id },
+				data: { twoFactorTempSecret: secret.base32 },
 			});
 
 			// Get the data URL of the authenticator URL

@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { DriveFilesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
-import { DI } from '@/di-symbols.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(DriveFileSchema);
 export const meta = {
@@ -42,46 +41,38 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private driveFileEntityService: DriveFileEntityService,
-		private queryService: QueryService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(
-				this.driveFilesRepository.createQueryBuilder('file'),
-				ps.sinceId,
-				ps.untilId,
-			);
-
-			if (ps.userId) {
-				query.andWhere('file.userId = :userId', { userId: ps.userId });
-			} else {
-				if (ps.origin === undefined || ps.origin === 'local') {
-					query.andWhere('file.userHost IS NULL');
-				} else if (ps.origin === 'remote') {
-					query.andWhere('file.userHost IS NOT NULL');
-				}
-
-				if (ps.hostname) {
-					query.andWhere('file.userHost = :hostname', {
-						hostname: ps.hostname,
-					});
-				}
-			}
-
-			if (ps.type) {
-				if (ps.type.endsWith('/*')) {
-					query.andWhere('file.type like :type', {
-						type: ps.type.replace('/*', '/') + '%',
-					});
-				} else {
-					query.andWhere('file.type = :type', { type: ps.type });
-				}
-			}
-
-			const files = await query.limit(ps.limit ?? 10).getMany();
+		super(meta, paramDef, async (ps) => {
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
+			const files = await this.prismaService.client.drive_file.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						ps.userId
+							? { userId: ps.userId }
+							: {
+									AND: [
+										ps.origin === 'local' ? { userHost: null } : {},
+										ps.origin === 'remote' ? { userHost: { not: null } } : {},
+										ps.hostname ? { userHost: ps.hostname } : {},
+									],
+							  },
+						ps.type
+							? ps.type.endsWith('/*')
+								? { type: { endsWith: ps.type.replace(/\/\*$/, '/') } }
+								: { type: ps.type }
+							: {},
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await this.driveFileEntityService.packMany(files, {
 				detail: true,

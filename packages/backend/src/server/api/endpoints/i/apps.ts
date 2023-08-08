@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AccessTokensRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -24,37 +24,29 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.accessTokensRepository)
-		private accessTokensRepository: AccessTokensRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.accessTokensRepository
-				.createQueryBuilder('token')
-				.where('token.userId = :userId', { userId: me.id })
-				.leftJoinAndSelect('token.app', 'app');
+			const orderBy = ((): Prisma.access_tokenOrderByWithRelationInput => {
+				switch (ps.sort) {
+					case '+createdAt':
+						return { createdAt: 'desc' };
+					case '-createdAt':
+						return { createdAt: 'asc' };
+					case '+lastUsedAt':
+						return { lastUsedAt: 'desc' };
+					case '-lastUsedAt':
+						return { lastUsedAt: 'asc' };
+					default:
+						return { id: 'asc' };
+				}
+			})();
 
-			switch (ps.sort) {
-				case '+createdAt':
-					query.orderBy('token.createdAt', 'DESC');
-					break;
-				case '-createdAt':
-					query.orderBy('token.createdAt', 'ASC');
-					break;
-				case '+lastUsedAt':
-					query.orderBy('token.lastUsedAt', 'DESC');
-					break;
-				case '-lastUsedAt':
-					query.orderBy('token.lastUsedAt', 'ASC');
-					break;
-				default:
-					query.orderBy('token.id', 'ASC');
-					break;
-			}
+			const tokens = await this.prismaService.client.access_token.findMany({
+				where: { userId: me.id },
+				orderBy,
+			});
 
-			const tokens = await query.getMany();
-
-			return await Promise.all(
+			return (await Promise.all(
 				tokens.map((token) => ({
 					id: token.id,
 					name: token.name ?? token.app?.name,
@@ -62,7 +54,7 @@ export default class extends Endpoint<
 					lastUsedAt: token.lastUsedAt,
 					permission: token.permission,
 				})),
-			) satisfies z.infer<typeof res>;
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

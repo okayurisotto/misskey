@@ -6,7 +6,6 @@ import { MeiliSearch } from 'meilisearch';
 import { DI } from './di-symbols.js';
 import { Config, loadConfig } from './config.js';
 import { createPostgresDataSource } from './postgres.js';
-import { RepositoryModule } from './models/RepositoryModule.js';
 import type { Provider, OnApplicationShutdown } from '@nestjs/common';
 
 const $config: Provider = {
@@ -67,9 +66,9 @@ const $redisForSub: Provider = {
 
 @Global()
 @Module({
-	imports: [RepositoryModule],
+	imports: [],
 	providers: [$config, $db, $meilisearch, $redis, $redisForPub, $redisForSub],
-	exports: [$config, $db, $meilisearch, $redis, $redisForPub, $redisForSub, RepositoryModule],
+	exports: [$config, $db, $meilisearch, $redis, $redisForPub, $redisForSub],
 })
 export class GlobalModule implements OnApplicationShutdown {
 	constructor(

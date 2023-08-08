@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import { DI } from '@/di-symbols.js';
-import type { ClipNotesRepository, ClipsRepository } from '@/models/index.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -56,20 +55,17 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		@Inject(DI.clipNotesRepository)
-		private clipNotesRepository: ClipNotesRepository,
-
-		private idService: IdService,
-		private roleService: RoleService,
-		private getterService: GetterService,
+		private readonly idService: IdService,
+		private readonly roleService: RoleService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const clip = await this.clipsRepository.findOneBy({
-				id: ps.clipId,
-				userId: me.id,
+			const clip = await this.prismaService.client.clip.findUnique({
+				where: {
+					id: ps.clipId,
+					userId: me.id,
+				},
 			});
 
 			if (clip == null) {
@@ -83,19 +79,21 @@ export default class extends Endpoint<
 				throw e;
 			});
 
-			const exist = await this.clipNotesRepository.exist({
-				where: {
-					noteId: note.id,
-					clipId: clip.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.clip_note.count({
+					where: {
+						noteId: note.id,
+						clipId: clip.id,
+					},
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyClipped);
 			}
 
-			const currentCount = await this.clipNotesRepository.countBy({
-				clipId: clip.id,
+			const currentCount = await this.prismaService.client.clip_note.count({
+				where: { clipId: clip.id },
 			});
 			if (
 				currentCount >
@@ -104,14 +102,17 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.tooManyClipNotes);
 			}
 
-			await this.clipNotesRepository.insert({
-				id: this.idService.genId(),
-				noteId: note.id,
-				clipId: clip.id,
+			await this.prismaService.client.clip_note.create({
+				data: {
+					id: this.idService.genId(),
+					noteId: note.id,
+					clipId: clip.id,
+				},
 			});
 
-			await this.clipsRepository.update(clip.id, {
-				lastClippedAt: new Date(),
+			await this.prismaService.client.clip.update({
+				where: { id: clip.id },
+				data: { lastClippedAt: new Date() },
 			});
 		});
 	}

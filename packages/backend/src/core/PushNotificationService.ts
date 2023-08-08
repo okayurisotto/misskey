@@ -1,15 +1,18 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import push from 'web-push';
 import * as Redis from 'ioredis';
+import type { sw_subscription } from '@prisma/client';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
-import type { SwSubscription, SwSubscriptionsRepository } from '@/models/index.js';
+import type { SwSubscription } from '@/models/index.js';
 import { MetaService } from '@/core/MetaService.js';
 import { bindThis } from '@/decorators.js';
 import { RedisKVCache } from '@/misc/cache.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
 import type { z } from 'zod';
 
 // Defined also packages/sw/types.ts#L13
@@ -45,7 +48,7 @@ function truncateBody<T extends keyof PushNotificationsTypes>(type: T, body: Pus
 
 @Injectable()
 export class PushNotificationService implements OnApplicationShutdown {
-	private subscriptionsCache: RedisKVCache<SwSubscription[]>;
+	private subscriptionsCache: RedisKVCache<T2P<SwSubscription, sw_subscription>[]>;
 
 	constructor(
 		@Inject(DI.config)
@@ -54,15 +57,13 @@ export class PushNotificationService implements OnApplicationShutdown {
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
 
-		@Inject(DI.swSubscriptionsRepository)
-		private swSubscriptionsRepository: SwSubscriptionsRepository,
-
-		private metaService: MetaService,
+		private readonly metaService: MetaService,
+		private readonly prismaService: PrismaService,
 	) {
-		this.subscriptionsCache = new RedisKVCache<SwSubscription[]>(this.redisClient, 'userSwSubscriptions', {
+		this.subscriptionsCache = new RedisKVCache<T2P<SwSubscription, sw_subscription>[]>(this.redisClient, 'userSwSubscriptions', {
 			lifetime: 1000 * 60 * 60 * 1, // 1h
 			memoryCacheLifetime: 1000 * 60 * 3, // 3m
-			fetcher: (key) => this.swSubscriptionsRepository.findBy({ userId: key }),
+			fetcher: (key) => this.prismaService.client.sw_subscription.findMany({ where: { userId: key } }),
 			toRedisConverter: (value) => JSON.stringify(value),
 			fromRedisConverter: (value) => JSON.parse(value),
 		});
@@ -101,18 +102,23 @@ export class PushNotificationService implements OnApplicationShutdown {
 				dateTime: (new Date()).getTime(),
 			}), {
 				proxy: this.config.proxy,
-			}).catch((err: any) => {
+			}).catch(async (err: any) => {
 				//swLogger.info(err.statusCode);
 				//swLogger.info(err.headers);
 				//swLogger.info(err.body);
 
 				if (err.statusCode === 410) {
-					this.swSubscriptionsRepository.delete({
-						userId: userId,
-						endpoint: subscription.endpoint,
-						auth: subscription.auth,
-						publickey: subscription.publickey,
+					const result = await this.prismaService.client.sw_subscription.findFirst({
+						where: {
+							userId: userId,
+							endpoint: subscription.endpoint,
+							auth: subscription.auth,
+							publickey: subscription.publickey,
+						},
 					});
+					if (result) {
+						this.prismaService.client.sw_subscription.delete({ where: { id: result.id } });
+					}
 				}
 			});
 		}

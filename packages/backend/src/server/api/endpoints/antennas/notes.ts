@@ -2,14 +2,14 @@ import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { NotesRepository, AntennasRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { DI } from '@/di-symbols.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -47,30 +47,30 @@ export default class extends Endpoint<
 		@Inject(DI.redis)
 		private redisClient: Redis.Redis,
 
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.antennasRepository)
-		private antennasRepository: AntennasRepository,
-
-		private idService: IdService,
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
-		private noteReadService: NoteReadService,
+		private readonly idService: IdService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly noteReadService: NoteReadService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const antenna = await this.antennasRepository.findOneBy({
-				id: ps.antennaId,
-				userId: me.id,
+			const antenna = await this.prismaService.client.antenna.findUnique({
+				where: {
+					id: ps.antennaId,
+					userId: me.id,
+				},
 			});
 
 			if (antenna == null) {
 				throw new ApiError(meta.errors.noSuchAntenna);
 			}
 
-			this.antennasRepository.update(antenna.id, {
-				isActive: true,
-				lastUsedAt: new Date(),
+			this.prismaService.client.antenna.update({
+				where: { id: antenna.id },
+				data: {
+					isActive: true,
+					lastUsedAt: new Date(),
+				},
 			});
 
 			const limit = ps.limit + (ps.untilId ? 1 : 0) + (ps.sinceId ? 1 : 0); // untilIdに指定したものも含まれるため+1
@@ -98,21 +98,25 @@ export default class extends Endpoint<
 				return [];
 			}
 
-			const query = this.notesRepository
-				.createQueryBuilder('note')
-				.where('note.id IN (:...noteIds)', { noteIds: noteIds })
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceDate: ps.sinceDate,
+				sinceId: ps.sinceId,
+				untilDate: ps.untilDate,
+				untilId: ps.untilId,
+			});
 
-			this.queryService.generateVisibilityQuery(query, me);
-			this.queryService.generateMutedUserQuery(query, me);
-			this.queryService.generateBlockedUserQuery(query, me);
-
-			const notes = await query.getMany();
-			notes.sort((a, b) => (a.id > b.id ? -1 : 1));
+			const notes = await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						{ id: { in: noteIds } },
+						paginationQuery.where,
+						this.prismaQueryService.getVisibilityWhereForNote(me.id),
+						await this.prismaQueryService.getMutingWhereForNote(me.id),
+						this.prismaQueryService.getBlockedWhereForNote(me.id),
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+			});
 
 			if (notes.length > 0) {
 				this.noteReadService.read(me.id, notes);

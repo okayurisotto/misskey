@@ -1,16 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UserListsRepository,
-	UserListJoiningsRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['lists', 'users'],
@@ -45,21 +41,18 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-
-		@Inject(DI.userListJoiningsRepository)
-		private userListJoiningsRepository: UserListJoiningsRepository,
-
-		private userEntityService: UserEntityService,
-		private getterService: GetterService,
-		private globalEventService: GlobalEventService,
+		private readonly userEntityService: UserEntityService,
+		private readonly getterService: GetterService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch the list
-			const userList = await this.userListsRepository.findOneBy({
-				id: ps.listId,
-				userId: me.id,
+			const userList = await this.prismaService.client.user_list.findUnique({
+				where: {
+					id: ps.listId,
+					userId: me.id,
+				},
 			});
 
 			if (userList == null) {
@@ -75,9 +68,13 @@ export default class extends Endpoint<
 			});
 
 			// Pull the user
-			await this.userListJoiningsRepository.delete({
-				userListId: userList.id,
-				userId: user.id,
+			await this.prismaService.client.user_list_joining.delete({
+				where: {
+					userId_userListId: {
+						userListId: userList.id,
+						userId: user.id,
+					},
+				},
 			});
 
 			this.globalEventService.publishUserListStream(

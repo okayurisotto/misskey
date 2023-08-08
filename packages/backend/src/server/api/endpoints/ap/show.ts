@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UsersRepository, NotesRepository } from '@/models/index.js';
 import type { Note } from '@/models/entities/Note.js';
 import type { LocalUser, User } from '@/models/entities/User.js';
 import { isActor, isPost, getApId } from '@/core/activitypub/type.js';
@@ -14,11 +13,12 @@ import { ApNoteService } from '@/core/activitypub/models/ApNoteService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import type { T2P } from '@/types.js';
 import { ApiError } from '../../error.js';
+import type { note, user } from '@prisma/client';
 
 const res = z
 	.union([
@@ -55,12 +55,6 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
 		private utilityService: UtilityService,
 		private userEntityService: UserEntityService,
 		private noteEntityService: NoteEntityService,
@@ -139,8 +133,8 @@ export default class extends Endpoint<
 	@bindThis
 	private async mergePack(
 		me: LocalUser | null | undefined,
-		user: User | null | undefined,
-		note: Note | null | undefined,
+		user: T2P<User, user> | null | undefined,
+		note: T2P<Note, note> | null | undefined,
 	): Promise<z.infer<typeof res> | null> {
 		if (user != null) {
 			return {

@@ -1,32 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull, MoreThan } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
-import type { RetentionAggregationsRepository, UsersRepository } from '@/models/index.js';
 import { deepClone } from '@/misc/clone.js';
 import { IdService } from '@/core/IdService.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
-import type * as Bull from 'bullmq';
 
 @Injectable()
 export class AggregateRetentionProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.retentionAggregationsRepository)
-		private retentionAggregationsRepository: RetentionAggregationsRepository,
-
-		private idService: IdService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly idService: IdService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('aggregate-retention');
 	}
@@ -39,25 +28,31 @@ export class AggregateRetentionProcessorService {
 		const dateKey = `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
 
 		// 過去(だいたい)30日分のレコードを取得
-		const pastRecords = await this.retentionAggregationsRepository.findBy({
-			createdAt: MoreThan(new Date(Date.now() - (1000 * 60 * 60 * 24 * 31))),
+		const pastRecords = await this.prismaService.client.retention_aggregation.findMany({
+			where: {
+				createdAt: { gt: new Date(Date.now() - (1000 * 60 * 60 * 24 * 31)) },
+			},
 		});
 
 		// 今日登録したユーザーを全て取得
-		const targetUsers = await this.usersRepository.findBy({
-			host: IsNull(),
-			createdAt: MoreThan(new Date(Date.now() - (1000 * 60 * 60 * 24))),
+		const targetUsers = await this.prismaService.client.user.findMany({
+			where: {
+				host: null,
+				createdAt: { gt: new Date(Date.now() - (1000 * 60 * 60 * 24)) },
+			},
 		});
 		const targetUserIds = targetUsers.map(u => u.id);
 
 		try {
-			await this.retentionAggregationsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: now,
-				updatedAt: now,
-				dateKey,
-				userIds: targetUserIds,
-				usersCount: targetUserIds.length,
+			await this.prismaService.client.retention_aggregation.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: now,
+					updatedAt: now,
+					dateKey,
+					userIds: targetUserIds,
+					usersCount: targetUserIds.length,
+				},
 			});
 		} catch (err) {
 			if (isDuplicateKeyValueError(err)) {
@@ -68,21 +63,26 @@ export class AggregateRetentionProcessorService {
 		}
 
 		// 今日活動したユーザーを全て取得
-		const activeUsers = await this.usersRepository.findBy({
-			host: IsNull(),
-			lastActiveDate: MoreThan(new Date(Date.now() - (1000 * 60 * 60 * 24))),
+		const activeUsers = await this.prismaService.client.user.findMany({
+			where: {
+				host: null,
+				lastActiveDate: { gt: new Date(Date.now() - (1000 * 60 * 60 * 24)) },
+			},
 		});
 		const activeUsersIds = activeUsers.map(u => u.id);
 
 		for (const record of pastRecords) {
 			const retention = record.userIds.filter(id => activeUsersIds.includes(id)).length;
 
-			const data = deepClone(record.data);
-			data[dateKey] = retention;
-
-			this.retentionAggregationsRepository.update(record.id, {
-				updatedAt: now,
-				data,
+			this.prismaService.client.retention_aggregation.update({
+				where: { id: record.id },
+				data: {
+					updatedAt: now,
+					data: {
+						...deepClone(z.record(z.string(), z.number()).parse(record.data)),
+						[dateKey]: retention,
+					},
+				},
 			});
 		}
 

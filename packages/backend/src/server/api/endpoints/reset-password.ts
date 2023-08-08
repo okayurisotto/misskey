@@ -1,12 +1,8 @@
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UserProfilesRepository,
-	PasswordResetRequestsRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['reset password'],
@@ -27,17 +23,12 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.passwordResetRequestsRepository)
-		private passwordResetRequestsRepository: PasswordResetRequestsRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const req = await this.passwordResetRequestsRepository.findOneByOrFail({
-				token: ps.token,
-			});
+			const req =
+				await this.prismaService.client.password_reset_request.findUniqueOrThrow(
+					{ where: { token: ps.token } },
+				);
 
 			// 発行してから30分以上経過していたら無効
 			if (Date.now() - req.createdAt.getTime() > 1000 * 60 * 30) {
@@ -48,11 +39,14 @@ export default class extends Endpoint<
 			const salt = await bcrypt.genSalt(8);
 			const hash = await bcrypt.hash(ps.password, salt);
 
-			await this.userProfilesRepository.update(req.userId, {
-				password: hash,
+			await this.prismaService.client.user_profile.update({
+				where: { userId: req.userId },
+				data: { password: hash },
 			});
 
-			this.passwordResetRequestsRepository.delete(req.id);
+			this.prismaService.client.password_reset_request.delete({
+				where: { id: req.id },
+			});
 		});
 	}
 }

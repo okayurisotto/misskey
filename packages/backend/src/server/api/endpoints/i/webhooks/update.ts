@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { WebhooksRepository } from '@/models/index.js';
 import { webhookEventTypes } from '@/models/entities/Webhook.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -30,8 +29,6 @@ export const paramDef = z.object({
 	active: z.boolean(),
 });
 
-// TODO: ロジックをサービスに切り出す
-
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
@@ -40,32 +37,35 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.webhooksRepository)
-		private webhooksRepository: WebhooksRepository,
-
-		private globalEventService: GlobalEventService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const webhook = await this.webhooksRepository.findOneBy({
-				id: ps.webhookId,
-				userId: me.id,
+			const webhook = await this.prismaService.client.webhook.findFirst({
+				where: {
+					id: ps.webhookId,
+					userId: me.id,
+				},
 			});
 
 			if (webhook == null) {
 				throw new ApiError(meta.errors.noSuchWebhook);
 			}
 
-			await this.webhooksRepository.update(webhook.id, {
-				name: ps.name,
-				url: ps.url,
-				secret: ps.secret,
-				on: ps.on,
-				active: ps.active,
+			await this.prismaService.client.webhook.update({
+				where: { id: webhook.id },
+				data: {
+					name: ps.name,
+					url: ps.url,
+					secret: ps.secret,
+					on: ps.on,
+					active: ps.active,
+				},
 			});
 
-			const updated = await this.webhooksRepository.findOneByOrFail({
-				id: ps.webhookId,
-			});
+			const updated = await this.prismaService.client.webhook.findUniqueOrThrow(
+				{ where: { id: ps.webhookId } },
+			);
 
 			this.globalEventService.publishInternalEvent('webhookUpdated', updated);
 		});

@@ -1,15 +1,13 @@
 import { z } from 'zod';
-import { Brackets } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -47,12 +45,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
-		private getterService: GetterService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Lookup user
@@ -63,74 +59,62 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			//#region Construct query
-			const query = this.queryService
-				.makePaginationQuery(
-					this.notesRepository.createQueryBuilder('note'),
-					ps.sinceId,
-					ps.untilId,
-					ps.sinceDate,
-					ps.untilDate,
-				)
-				.andWhere('note.userId = :userId', { userId: user.id })
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+				sinceDate: ps.sinceDate,
+				untilDate: ps.untilDate,
+			});
 
-			this.queryService.generateVisibilityQuery(query, me);
-			if (me) {
-				this.queryService.generateMutedUserQuery(query, me, user);
-				this.queryService.generateBlockedUserQuery(query, me);
-			}
+			const sensitiveDriveFileIds = (
+				await this.prismaService.client.drive_file.findMany({
+					where: { isSensitive: true },
+					select: { id: true },
+				})
+			).map(({ id }) => id);
 
-			if (ps.withFiles) {
-				query.andWhere("note.fileIds != '{}'");
-			}
-
-			if (ps.fileType != null) {
-				query.andWhere("note.fileIds != '{}'");
-				query.andWhere(
-					new Brackets((qb) => {
-						for (const type of ps.fileType!) {
-							const i = ps.fileType!.indexOf(type);
-							qb.orWhere(`:type${i} = ANY(note.attachedFileTypes)`, {
-								[`type${i}`]: type,
-							});
-						}
-					}),
-				);
-
-				if (ps.excludeNsfw) {
-					query.andWhere('note.cw IS NULL');
-					query.andWhere(
-						'0 = (SELECT COUNT(*) FROM drive_file df WHERE df.id = ANY(note."fileIds") AND df."isSensitive" = TRUE)',
-					);
-				}
-			}
-
-			if (!ps.includeReplies) {
-				query.andWhere('note.replyId IS NULL');
-			}
-
-			if (ps.includeMyRenotes === false) {
-				query.andWhere(
-					new Brackets((qb) => {
-						qb.orWhere('note.userId != :userId', { userId: user.id });
-						qb.orWhere('note.renoteId IS NULL');
-						qb.orWhere('note.text IS NOT NULL');
-						qb.orWhere("note.fileIds != '{}'");
-						qb.orWhere(
-							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
-						);
-					}),
-				);
-			}
-
-			//#endregion
-
-			const timeline = await query.limit(ps.limit).getMany();
+			const timeline = await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{ userId: user.id },
+						this.prismaQueryService.getVisibilityWhereForNote(me?.id ?? null),
+						...(me
+							? [
+									await this.prismaQueryService.getMutingWhereForNote(me.id),
+									this.prismaQueryService.getBlockedWhereForNote(me.id),
+							  ]
+							: []),
+						ps.withFiles ? { fileIds: { isEmpty: false } } : {},
+						ps.fileType != null
+							? {
+									fileIds: { isEmpty: false },
+									attachedFileTypes: { hasSome: ps.fileType },
+									...(ps.excludeNsfw
+										? {
+												cw: null,
+												NOT: { fileIds: { hasSome: sensitiveDriveFileIds } },
+										  }
+										: {}),
+							  }
+							: {},
+						ps.includeMyRenotes ? { replyId: null } : {},
+						ps.includeMyRenotes
+							? {
+									OR: [
+										{ userId: user.id },
+										{ renoteId: null },
+										{ text: { not: null } },
+										{ fileIds: { isEmpty: false } },
+										{ hasPoll: true },
+									],
+							  }
+							: {},
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await this.noteEntityService.packMany(
 				timeline,

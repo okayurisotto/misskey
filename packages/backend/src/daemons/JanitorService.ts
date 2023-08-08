@@ -1,8 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { LessThan } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { AttestationChallengesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 
 const interval = 30 * 60 * 1000;
@@ -11,11 +9,7 @@ const interval = 30 * 60 * 1000;
 export class JanitorService implements OnApplicationShutdown {
 	private intervalId: NodeJS.Timer;
 
-	constructor(
-		@Inject(DI.attestationChallengesRepository)
-		private attestationChallengesRepository: AttestationChallengesRepository,
-	) {
-	}
+	constructor(private readonly prismaService: PrismaService) {}
 
 	/**
 	 * Clean up database occasionally
@@ -23,8 +17,10 @@ export class JanitorService implements OnApplicationShutdown {
 	@bindThis
 	public start(): void {
 		const tick = async () => {
-			await this.attestationChallengesRepository.delete({
-				createdAt: LessThan(new Date(new Date().getTime() - 5 * 60 * 1000)),
+			await this.prismaService.client.attestation_challenge.deleteMany({
+				where: {
+					createdAt: { lt: new Date(new Date().getTime() - 5 * 60 * 1000) },
+				},
 			});
 		};
 

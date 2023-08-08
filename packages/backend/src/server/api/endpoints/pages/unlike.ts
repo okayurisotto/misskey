@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { PagesRepository, PageLikesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['pages'],
@@ -36,22 +35,22 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		@Inject(DI.pageLikesRepository)
-		private pageLikesRepository: PageLikesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const page = await this.pagesRepository.findOneBy({ id: ps.pageId });
+			const page = await this.prismaService.client.page.findUnique({
+				where: { id: ps.pageId },
+			});
 			if (page == null) {
 				throw new ApiError(meta.errors.noSuchPage);
 			}
 
-			const exist = await this.pageLikesRepository.findOneBy({
-				pageId: page.id,
-				userId: me.id,
+			const exist = await this.prismaService.client.page_like.findUnique({
+				where: {
+					userId_pageId: {
+						pageId: page.id,
+						userId: me.id,
+					},
+				},
 			});
 
 			if (exist == null) {
@@ -59,9 +58,14 @@ export default class extends Endpoint<
 			}
 
 			// Delete like
-			await this.pageLikesRepository.delete(exist.id);
+			await this.prismaService.client.page_like.delete({
+				where: { id: exist.id },
+			});
 
-			this.pagesRepository.decrement({ id: page.id }, 'likedCount', 1);
+			this.prismaService.client.page.update({
+				where: { id: page.id },
+				data: { likedCount: { decrement: 1 } },
+			});
 		});
 	}
 }

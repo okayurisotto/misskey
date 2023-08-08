@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RolesRepository, UsersRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { ApiError } from '@/server/api/error.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -48,17 +47,14 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.rolesRepository)
-		private rolesRepository: RolesRepository,
-
-		private roleService: RoleService,
+		private readonly roleService: RoleService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const role = await this.rolesRepository.findOneBy({ id: ps.roleId });
-			if (role == null) {
+			const role = await this.prismaService.client.role.findUnique({
+				where: { id: ps.roleId },
+			});
+			if (role === null) {
 				throw new ApiError(meta.errors.noSuchRole);
 			}
 
@@ -69,8 +65,10 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.accessDenied);
 			}
 
-			const user = await this.usersRepository.findOneBy({ id: ps.userId });
-			if (user == null) {
+			const user = await this.prismaService.client.user.findUnique({
+				where: { id: ps.userId },
+			});
+			if (user === null) {
 				throw new ApiError(meta.errors.noSuchUser);
 			}
 

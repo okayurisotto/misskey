@@ -1,10 +1,8 @@
 import { z } from 'zod';
-import { MoreThan } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { USER_ONLINE_THRESHOLD } from '@/const.js';
-import type { UsersRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -24,13 +22,12 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async () => {
-			const count = await this.usersRepository.countBy({
-				lastActiveDate: MoreThan(new Date(Date.now() - USER_ONLINE_THRESHOLD)),
+			const count = await this.prismaService.client.user.count({
+				where: {
+					lastActiveDate: { gt: new Date(Date.now() - USER_ONLINE_THRESHOLD) },
+				},
 			});
 
 			return {

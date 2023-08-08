@@ -1,18 +1,13 @@
 import { z } from 'zod';
 import ms from 'ms';
-import { IsNull } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-	PasswordResetRequestsRepository,
-	UserProfilesRepository,
-	UsersRepository,
-} from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { EmailService } from '@/core/EmailService.js';
 import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['reset password'],
@@ -39,24 +34,18 @@ export default class extends Endpoint<
 > {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.passwordResetRequestsRepository)
-		private passwordResetRequestsRepository: PasswordResetRequestsRepository,
-
-		private idService: IdService,
-		private emailService: EmailService,
+		private readonly idService: IdService,
+		private readonly emailService: EmailService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const user = await this.usersRepository.findOneBy({
-				usernameLower: ps.username.toLowerCase(),
-				host: IsNull(),
+			const user = await this.prismaService.client.user.findFirst({
+				where: {
+					usernameLower: ps.username.toLowerCase(),
+					host: null,
+				},
 			});
 
 			// 合致するユーザーが登録されていなかったら無視
@@ -64,9 +53,10 @@ export default class extends Endpoint<
 				return;
 			}
 
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: user.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: user.id },
+				});
 
 			// 合致するメアドが登録されていなかったら無視
 			if (profile.email !== ps.email) {
@@ -80,11 +70,13 @@ export default class extends Endpoint<
 
 			const token = secureRndstr(64, { chars: L_CHARS });
 
-			await this.passwordResetRequestsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				userId: profile.userId,
-				token,
+			await this.prismaService.client.password_reset_request.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					userId: profile.userId,
+					token,
+				},
 			});
 
 			const link = `${this.config.url}/reset-password/${token}`;

@@ -1,29 +1,23 @@
 import { URL } from 'node:url';
 import * as http from 'node:http';
 import * as https from 'node:https';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { NodeHttpHandler, NodeHttpHandlerOptions } from '@aws-sdk/node-http-handler';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import type { Meta } from '@/models/entities/Meta.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
 import type { DeleteObjectCommandInput, PutObjectCommandInput } from '@aws-sdk/client-s3';
+import type { meta } from '@prisma/client';
 
 @Injectable()
 export class S3Service {
-	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		private httpRequestService: HttpRequestService,
-	) {
-	}
+	constructor(private readonly httpRequestService: HttpRequestService) {}
 
 	@bindThis
-	public getS3Client(meta: Meta): S3Client {
+	public getS3Client(meta: T2P<Meta, meta>): S3Client {
 		const u = meta.objectStorageEndpoint
 			? `${meta.objectStorageUseSSL ? 'https' : 'http'}://${meta.objectStorageEndpoint}`
 			: `${meta.objectStorageUseSSL ? 'https' : 'http'}://example.net`; // dummy url to select http(s) agent
@@ -50,7 +44,7 @@ export class S3Service {
 	}
 
 	@bindThis
-	public async upload(meta: Meta, input: PutObjectCommandInput) {
+	public async upload(meta: T2P<Meta, meta>, input: PutObjectCommandInput) {
 		const client = this.getS3Client(meta);
 		return new Upload({
 			client,
@@ -62,7 +56,7 @@ export class S3Service {
 	}
 
 	@bindThis
-	public delete(meta: Meta, input: DeleteObjectCommandInput) {
+	public delete(meta: T2P<Meta, meta>, input: DeleteObjectCommandInput) {
 		const client = this.getS3Client(meta);
 		return client.send(new DeleteObjectCommand(input));
 	}

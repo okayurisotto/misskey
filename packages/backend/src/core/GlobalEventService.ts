@@ -19,7 +19,7 @@ import type {
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
-import { Role } from '@/models/index.js';
+import type { Role } from '@/models/index.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { z } from 'zod';
 
@@ -27,10 +27,10 @@ import type { z } from 'zod';
 export class GlobalEventService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
 		@Inject(DI.redisForPub)
-		private redisForPub: Redis.Redis,
+		private readonly redisForPub: Redis.Redis,
 	) {
 	}
 

@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { ClipFavoritesRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(ClipSchema);
 export const meta = {
@@ -24,22 +23,18 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.clipFavoritesRepository)
-		private clipFavoritesRepository: ClipFavoritesRepository,
-
-		private clipEntityService: ClipEntityService,
+		private readonly clipEntityService: ClipEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.clipFavoritesRepository
-				.createQueryBuilder('favorite')
-				.andWhere('favorite.userId = :meId', { meId: me.id })
-				.leftJoinAndSelect('favorite.clip', 'clip');
-
-			const favorites = await query.getMany();
+			const favorites = await this.prismaService.client.clip_favorite.findMany({
+				where: { userId: me.id },
+				include: { clip: true },
+			});
 
 			return (await Promise.all(
 				favorites.map((favorite) =>
-					this.clipEntityService.pack(favorite.clip!, me),
+					this.clipEntityService.pack(favorite.clip, me),
 				),
 			)) satisfies z.infer<typeof res>;
 		});

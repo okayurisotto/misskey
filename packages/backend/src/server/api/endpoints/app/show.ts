@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AppsRepository } from '@/models/index.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { AppSchema } from '@/models/zod/AppSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = AppSchema;
@@ -33,16 +32,16 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.appsRepository)
-		private appsRepository: AppsRepository,
-
-		private appEntityService: AppEntityService,
+		private readonly appEntityService: AppEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, user, token) => {
 			const isSecure = user != null && token == null;
 
 			// Lookup app
-			const ap = await this.appsRepository.findOneBy({ id: ps.appId });
+			const ap = await this.prismaService.client.app.findUnique({
+				where: { id: ps.appId },
+			});
 
 			if (ap == null) {
 				throw new ApiError(meta.errors.noSuchApp);
@@ -50,7 +49,7 @@ export default class extends Endpoint<
 
 			return (await this.appEntityService.pack(ap, user, {
 				detail: true,
-				includeSecret: isSecure && ap.userId === user!.id,
+				includeSecret: isSecure && ap.userId === user.id,
 			})) satisfies z.infer<typeof res>;
 		});
 	}

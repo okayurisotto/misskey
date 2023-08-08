@@ -1,10 +1,8 @@
 import { z } from 'zod';
-import { IsNull } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFilesRepository } from '@/models/index.js';
 import { DriveService } from '@/core/DriveService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -22,18 +20,16 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private driveService: DriveService,
+		private readonly driveService: DriveService,
+		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const files = await this.driveFilesRepository.findBy({
-				userId: IsNull(),
+		super(meta, paramDef, async () => {
+			const files = await this.prismaService.client.drive_file.findMany({
+				where: { userId: null },
 			});
 
 			for (const file of files) {
-				this.driveService.deleteFile(file);
+				await this.driveService.deleteFile(file);
 			}
 		});
 	}

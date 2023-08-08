@@ -1,9 +1,7 @@
 import { URL } from 'node:url';
 import { Inject, Injectable } from '@nestjs/common';
 import chalk from 'chalk';
-import { IsNull } from 'typeorm';
 import { DI } from '@/di-symbols.js';
-import type { UsersRepository } from '@/models/index.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { Config } from '@/config.js';
 import type Logger from '@/logger.js';
@@ -13,6 +11,7 @@ import { RemoteLoggerService } from '@/core/RemoteLoggerService.js';
 import { ApDbResolverService } from '@/core/activitypub/ApDbResolverService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 @Injectable()
 export class RemoteUserResolveService {
@@ -22,14 +21,12 @@ export class RemoteUserResolveService {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private utilityService: UtilityService,
-		private webfingerService: WebfingerService,
-		private remoteLoggerService: RemoteLoggerService,
-		private apDbResolverService: ApDbResolverService,
-		private apPersonService: ApPersonService,
+		private readonly utilityService: UtilityService,
+		private readonly webfingerService: WebfingerService,
+		private readonly remoteLoggerService: RemoteLoggerService,
+		private readonly apDbResolverService: ApDbResolverService,
+		private readonly apPersonService: ApPersonService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.remoteLoggerService.logger.createSubLogger('resolve-user');
 	}
@@ -40,7 +37,9 @@ export class RemoteUserResolveService {
 
 		if (host == null) {
 			this.logger.info(`return local user: ${usernameLower}`);
-			return await this.usersRepository.findOneBy({ usernameLower, host: IsNull() }).then(u => {
+			return await this.prismaService.client.user.findFirst({
+				where: { usernameLower, host: null },
+			}).then(u => {
 				if (u == null) {
 					throw new Error('user not found');
 				} else {
@@ -53,7 +52,9 @@ export class RemoteUserResolveService {
 
 		if (this.config.host === host) {
 			this.logger.info(`return local user: ${usernameLower}`);
-			return await this.usersRepository.findOneBy({ usernameLower, host: IsNull() }).then(u => {
+			return await this.prismaService.client.user.findFirst({
+				where: { usernameLower, host: null },
+			}).then(u => {
 				if (u == null) {
 					throw new Error('user not found');
 				} else {
@@ -62,7 +63,7 @@ export class RemoteUserResolveService {
 			}) as LocalUser;
 		}
 
-		const user = await this.usersRepository.findOneBy({ usernameLower, host }) as RemoteUser | null;
+		const user = await this.prismaService.client.user.findFirst({ where: { usernameLower, host } }) as RemoteUser | null;
 
 		const acctLower = `${usernameLower}@${host}`;
 
@@ -92,8 +93,9 @@ export class RemoteUserResolveService {
 		// ユーザー情報が古い場合は、WebFingerからやりなおして返す
 		if (user.lastFetchedAt == null || Date.now() - user.lastFetchedAt.getTime() > 1000 * 60 * 60 * 24) {
 			// 繋がらないインスタンスに何回も試行するのを防ぐ, 後続の同様処理の連続試行を防ぐ ため 試行前にも更新する
-			await this.usersRepository.update(user.id, {
-				lastFetchedAt: new Date(),
+			await this.prismaService.client.user.update({
+				where: { id: user.id },
+				data: { lastFetchedAt: new Date() },
 			});
 
 			this.logger.info(`try resync: ${acctLower}`);
@@ -110,11 +112,9 @@ export class RemoteUserResolveService {
 					throw new Error('Invalid uri');
 				}
 
-				await this.usersRepository.update({
-					usernameLower,
-					host: host,
-				}, {
-					uri: self.href,
+				await this.prismaService.client.user.update({
+					where: { usernameLower_host: { usernameLower, host } },
+					data: { uri: self.href },
 				});
 			} else {
 				this.logger.info(`uri is fine: ${acctLower}`);
@@ -123,7 +123,7 @@ export class RemoteUserResolveService {
 			await this.apPersonService.updatePerson(self.href);
 
 			this.logger.info(`return resynced remote user: ${acctLower}`);
-			return await this.usersRepository.findOneBy({ uri: self.href }).then(u => {
+			return await this.prismaService.client.user.findFirst({ where: { uri: self.href } }).then(u => {
 				if (u == null) {
 					throw new Error('user not found');
 				} else {

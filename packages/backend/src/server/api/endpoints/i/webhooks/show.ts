@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { WebhooksRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.unknown();
@@ -32,14 +31,13 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.webhooksRepository)
-		private webhooksRepository: WebhooksRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const webhook = await this.webhooksRepository.findOneBy({
-				id: ps.webhookId,
-				userId: me.id,
+			const webhook = await this.prismaService.client.webhook.findUnique({
+				where: {
+					id: ps.webhookId,
+					userId: me.id,
+				},
 			});
 
 			if (webhook == null) {

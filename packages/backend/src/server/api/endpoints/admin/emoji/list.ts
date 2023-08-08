@@ -1,13 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { EmojisRepository } from '@/models/index.js';
-import type { Emoji } from '@/models/entities/Emoji.js';
-import { QueryService } from '@/core/QueryService.js';
-import { DI } from '@/di-symbols.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-//import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(
 	z.object({
@@ -46,46 +42,31 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
-		private emojiEntityService: EmojiEntityService,
-		private queryService: QueryService,
+		private readonly emojiEntityService: EmojiEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const q = this.queryService
-				.makePaginationQuery(
-					this.emojisRepository.createQueryBuilder('emoji'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('emoji.host IS NULL');
-
-			let emojis: Emoji[];
-
-			if (ps.query) {
-				//q.andWhere('emoji.name ILIKE :q', { q: `%${ sqlLikeEscape(ps.query) }%` });
-				//const emojis = await q.limit(ps.limit).getMany();
-
-				emojis = await q.getMany();
-				const queryarry = ps.query.match(/\:([a-z0-9_]*)\:/g);
-
-				if (queryarry) {
-					emojis = emojis.filter((emoji) =>
-						queryarry.includes(`:${emoji.name}:`),
-					);
-				} else {
-					emojis = emojis.filter(
-						(emoji) =>
-							emoji.name.includes(ps.query!) ||
-							emoji.aliases.some((a) => a.includes(ps.query!)) ||
-							emoji.category?.includes(ps.query!),
-					);
-				}
-				emojis.splice(ps.limit + 1);
-			} else {
-				emojis = await q.limit(ps.limit).getMany();
-			}
+			const emojis = await this.prismaService.client.emoji.findMany({
+				where: {
+					AND: [
+						ps.sinceId ? { id: { gt: ps.sinceId } } : {},
+						ps.untilId ? { id: { lt: ps.untilId } } : {},
+						{ host: null },
+						ps.query
+							? /\:([a-z0-9_]*)\:/g.test(ps.query)
+								? { name: ps.query.substring(1, ps.query.length - 1) }
+								: {
+										OR: [
+											{ name: { contains: ps.query } },
+											{ aliases: { has: ps.query } }, // TOOD: 配列の各要素でcontainsしたいが、Prismaにそのような機能はなさそう
+											{ category: { contains: ps.query } },
+										],
+								  }
+							: {},
+					],
+				},
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji)),

@@ -1,14 +1,12 @@
 import { z } from 'zod';
-import { Brackets } from 'typeorm';
 import { Inject, Injectable } from '@nestjs/common';
-import type { UsersRepository, FollowingsRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
-import type { User } from '@/models/entities/User.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DI } from '@/di-symbols.js';
-import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { Prisma, user } from '@prisma/client';
 
 const res = z.array(UserSchema);
 export const meta = {
@@ -38,95 +36,88 @@ export default class extends Endpoint<
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const setUsernameAndHostQuery = (
-				query = this.usersRepository.createQueryBuilder('user'),
-			) => {
-				if ('username' in ps && ps.username !== null) {
-					query.andWhere('user.usernameLower LIKE :username', {
-						username: sqlLikeEscape(ps.username.toLowerCase()) + '%',
-					});
-				}
-
-				if ('host' in ps && ps.host !== null) {
-					if (ps.host === this.config.hostname || ps.host === '.') {
-						query.andWhere('user.host IS NULL');
-					} else {
-						query.andWhere('user.host LIKE :host', {
-							host: sqlLikeEscape(ps.host.toLowerCase()) + '%',
-						});
-					}
-				}
-
-				return query;
-			};
-
 			const activeThreshold = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30); // 30日
 
-			let users: User[] = [];
+			const where: Prisma.userWhereInput = {
+				AND: [
+					'username' in ps && ps.username !== null
+						? {
+								username: {
+									startsWith: ps.username.toLowerCase(),
+									mode: 'insensitive',
+								},
+						  }
+						: {},
+					'host' in ps && ps.host !== null
+						? ps.host === this.config.hostname || ps.host === '.'
+							? { host: null }
+							: { host: { startsWith: ps.host.toLowerCase() } }
+						: {},
+				],
+			};
+
+			let users: user[];
 
 			if (me) {
-				const followingQuery = this.followingsRepository
-					.createQueryBuilder('following')
-					.select('following.followeeId')
-					.where('following.followerId = :followerId', { followerId: me.id });
-
-				const query = setUsernameAndHostQuery()
-					.andWhere(`user.id IN (${followingQuery.getQuery()})`)
-					.andWhere('user.id != :meId', { meId: me.id })
-					.andWhere('user.isSuspended = FALSE')
-					.andWhere(
-						new Brackets((qb) => {
-							qb.where('user.updatedAt IS NULL').orWhere(
-								'user.updatedAt > :activeThreshold',
-								{ activeThreshold: activeThreshold },
-							);
-						}),
-					);
-
-				query.setParameters(followingQuery.getParameters());
-
-				users = await query
-					.orderBy('user.usernameLower', 'ASC')
-					.limit(ps.limit)
-					.getMany();
+				users = await this.prismaService.client.user.findMany({
+					where: {
+						AND: [
+							where,
+							{
+								following_following_followeeIdTouser: {
+									some: { followerId: me.id },
+								},
+								id: { not: me.id },
+								isSuspended: false,
+								OR: [
+									{ updatedAt: null },
+									{ updatedAt: { gt: activeThreshold } },
+								],
+							},
+						],
+					},
+					orderBy: { usernameLower: 'asc' },
+					take: ps.limit,
+				});
 
 				if (users.length < ps.limit) {
-					const otherQuery = setUsernameAndHostQuery()
-						.andWhere(`user.id NOT IN (${followingQuery.getQuery()})`)
-						.andWhere('user.isSuspended = FALSE')
-						.andWhere('user.updatedAt IS NOT NULL');
-
-					otherQuery.setParameters(followingQuery.getParameters());
-
-					const otherUsers = await otherQuery
-						.orderBy('user.updatedAt', 'DESC')
-						.limit(ps.limit - users.length)
-						.getMany();
+					const otherUsers = await this.prismaService.client.user.findMany({
+						where: {
+							AND: [
+								where,
+								{
+									following_following_followeeIdTouser: {
+										none: { followerId: me.id },
+									},
+									isSuspended: false,
+									updatedAt: { not: null },
+								},
+							],
+						},
+						orderBy: { updatedAt: 'desc' },
+						take: ps.limit - users.length,
+					});
 
 					users = users.concat(otherUsers);
 				}
 			} else {
-				const query = setUsernameAndHostQuery()
-					.andWhere('user.isSuspended = FALSE')
-					.andWhere('user.updatedAt IS NOT NULL');
-
-				users = await query
-					.orderBy('user.updatedAt', 'DESC')
-					.limit(ps.limit - users.length)
-					.getMany();
+				users = await this.prismaService.client.user.findMany({
+					where: {
+						AND: [where, { isSuspended: false, updatedAt: { not: null } }],
+					},
+					orderBy: { updatedAt: 'desc' },
+					take: ps.limit,
+				});
 			}
 
 			return (await Promise.all(
-				users.map((user) => this.userEntityService.pack(user, me, { detail: ps.detail })),
+				users.map((user) =>
+					this.userEntityService.pack(user, me, { detail: ps.detail }),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

@@ -1,14 +1,14 @@
 import { z } from 'zod';
-import { IsNull } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UsersRepository, PagesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type { Page } from '@/models/entities/Page.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { PageSchema } from '@/models/zod/PageSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
+import type { page } from '@prisma/client';
 
 const res = PageSchema;
 export const meta = {
@@ -42,28 +42,31 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		private pageEntityService: PageEntityService,
+		private readonly pageEntityService: PageEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			let page: Page | null = null;
+			let page: T2P<Page, page> | null = null;
 
 			if ('pageId' in ps) {
-				page = await this.pagesRepository.findOneBy({ id: ps.pageId });
+				page = await this.prismaService.client.page.findUnique({
+					where: { id: ps.pageId },
+				});
 			} else if (ps.name && ps.username) {
-				const author = await this.usersRepository.findOneBy({
-					host: IsNull(),
-					usernameLower: ps.username.toLowerCase(),
+				const author = await this.prismaService.client.user.findFirst({
+					where: {
+						host: null,
+						usernameLower: ps.username.toLowerCase(),
+					},
 				});
 				if (author) {
-					page = await this.pagesRepository.findOneBy({
-						name: ps.name,
-						userId: author.id,
+					page = await this.prismaService.client.page.findUnique({
+						where: {
+							userId_name: {
+								name: ps.name,
+								userId: author.id,
+							},
+						},
 					});
 				}
 			}

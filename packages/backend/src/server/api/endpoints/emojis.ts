@@ -1,12 +1,9 @@
 import { z } from 'zod';
-import { IsNull } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { EmojisRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { EmojiSimpleSchema } from '@/models/zod/EmojiSimpleSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	emojis: z.array(EmojiSimpleSchema),
@@ -29,23 +26,15 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
-		private emojiEntityService: EmojiEntityService,
+		private readonly emojiEntityService: EmojiEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const emojis = await this.emojisRepository.find({
+			const emojis = await this.prismaService.client.emoji.findMany({
 				where: {
-					host: IsNull(),
+					host: null,
 				},
-				order: {
-					category: 'ASC',
-					name: 'ASC',
-				},
+				orderBy: [{ category: 'asc' }, { name: 'asc' }],
 			});
 
 			return {

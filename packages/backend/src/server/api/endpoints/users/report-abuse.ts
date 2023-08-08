@@ -1,20 +1,16 @@
 import { z } from 'zod';
 import sanitizeHtml from 'sanitize-html';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UsersRepository,
-	AbuseUserReportsRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { EmailService } from '@/core/EmailService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 // const res = z.unknown();
 export const meta = {
@@ -53,18 +49,13 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.abuseUserReportsRepository)
-		private abuseUserReportsRepository: AbuseUserReportsRepository,
-
-		private idService: IdService,
-		private metaService: MetaService,
-		private emailService: EmailService,
-		private getterService: GetterService,
-		private roleService: RoleService,
-		private globalEventService: GlobalEventService,
+		private readonly idService: IdService,
+		private readonly metaService: MetaService,
+		private readonly emailService: EmailService,
+		private readonly getterService: GetterService,
+		private readonly roleService: RoleService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Lookup user
@@ -83,8 +74,8 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.cannotReportAdmin);
 			}
 
-			const report = await this.abuseUserReportsRepository
-				.insert({
+			const report = await this.prismaService.client.abuse_user_report.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
 					targetUserId: user.id,
@@ -92,10 +83,8 @@ export default class extends Endpoint<
 					reporterId: me.id,
 					reporterHost: null,
 					comment: ps.comment,
-				})
-				.then((x) =>
-					this.abuseUserReportsRepository.findOneByOrFail(x.identifiers[0]),
-				);
+				},
+			});
 
 			// Publish event to moderators
 			setImmediate(async () => {

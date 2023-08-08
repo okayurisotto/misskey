@@ -1,13 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	NotesRepository,
-	NoteThreadMutingsRepository,
-	NoteFavoritesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	isFavorited: z.boolean(),
@@ -30,30 +25,21 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.noteThreadMutingsRepository)
-		private noteThreadMutingsRepository: NoteThreadMutingsRepository,
-
-		@Inject(DI.noteFavoritesRepository)
-		private noteFavoritesRepository: NoteFavoritesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const note = await this.notesRepository.findOneByOrFail({
-				id: ps.noteId,
+			const note = await this.prismaService.client.note.findUniqueOrThrow({
+				where: { id: ps.noteId },
 			});
 
 			const [favorite, threadMuting] = await Promise.all([
-				this.noteFavoritesRepository.count({
+				this.prismaService.client.note_favorite.count({
 					where: {
 						userId: me.id,
 						noteId: note.id,
 					},
 					take: 1,
 				}),
-				this.noteThreadMutingsRepository.count({
+				this.prismaService.client.note_thread_muting.count({
 					where: {
 						userId: me.id,
 						threadId: note.threadId ?? note.id,

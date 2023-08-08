@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { InstancesRepository } from '@/models/index.js';
 import { InstanceEntityService } from '@/core/entities/InstanceEntityService.js';
 import { MetaService } from '@/core/MetaService.js';
-import { DI } from '@/di-symbols.js';
-import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
 import { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { Prisma } from '@prisma/client';
 
 const res = z.array(FederationInstanceSchema);
 export const meta = {
@@ -38,146 +37,123 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		private instanceEntityService: InstanceEntityService,
-		private metaService: MetaService,
+		private readonly instanceEntityService: InstanceEntityService,
+		private readonly metaService: MetaService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.instancesRepository.createQueryBuilder('instance');
+			const where_blocked =
+				await (async (): Promise<Prisma.instanceWhereInput> => {
+					if (ps.blocked == null) return {};
+					const meta = await this.metaService.fetch(true);
 
-			switch (ps.sort) {
-				case '+pubSub':
-					query
-						.orderBy('instance.followingCount', 'DESC')
-						.orderBy('instance.followersCount', 'DESC');
-					break;
-				case '-pubSub':
-					query
-						.orderBy('instance.followingCount', 'ASC')
-						.orderBy('instance.followersCount', 'ASC');
-					break;
-				case '+notes':
-					query.orderBy('instance.notesCount', 'DESC');
-					break;
-				case '-notes':
-					query.orderBy('instance.notesCount', 'ASC');
-					break;
-				case '+users':
-					query.orderBy('instance.usersCount', 'DESC');
-					break;
-				case '-users':
-					query.orderBy('instance.usersCount', 'ASC');
-					break;
-				case '+following':
-					query.orderBy('instance.followingCount', 'DESC');
-					break;
-				case '-following':
-					query.orderBy('instance.followingCount', 'ASC');
-					break;
-				case '+followers':
-					query.orderBy('instance.followersCount', 'DESC');
-					break;
-				case '-followers':
-					query.orderBy('instance.followersCount', 'ASC');
-					break;
-				case '+firstRetrievedAt':
-					query.orderBy('instance.firstRetrievedAt', 'DESC');
-					break;
-				case '-firstRetrievedAt':
-					query.orderBy('instance.firstRetrievedAt', 'ASC');
-					break;
-				case '+latestRequestReceivedAt':
-					query.orderBy(
-						'instance.latestRequestReceivedAt',
-						'DESC',
-						'NULLS LAST',
-					);
-					break;
-				case '-latestRequestReceivedAt':
-					query.orderBy(
-						'instance.latestRequestReceivedAt',
-						'ASC',
-						'NULLS FIRST',
-					);
-					break;
+					if (ps.blocked) {
+						return { host: { in: meta.blockedHosts } };
+					} else {
+						return { host: { notIn: meta.blockedHosts } };
+					}
+				})();
 
-				default:
-					query.orderBy('instance.id', 'DESC');
-					break;
-			}
+			const where_notResponding = ((): Prisma.instanceWhereInput => {
+				if (ps.notResponding == null) return {};
+				return { isNotResponding: ps.notResponding };
+			})();
 
-			if (typeof ps.blocked === 'boolean') {
-				const meta = await this.metaService.fetch(true);
-				if (ps.blocked) {
-					query.andWhere(
-						meta.blockedHosts.length === 0
-							? '1=0'
-							: 'instance.host IN (:...blocks)',
-						{ blocks: meta.blockedHosts },
-					);
-				} else {
-					query.andWhere(
-						meta.blockedHosts.length === 0
-							? '1=1'
-							: 'instance.host NOT IN (:...blocks)',
-						{ blocks: meta.blockedHosts },
-					);
-				}
-			}
+			const where_suspended = ((): Prisma.instanceWhereInput => {
+				if (ps.suspended == null) return {};
+				return { isSuspended: ps.suspended };
+			})();
 
-			if (typeof ps.notResponding === 'boolean') {
-				if (ps.notResponding) {
-					query.andWhere('instance.isNotResponding = TRUE');
-				} else {
-					query.andWhere('instance.isNotResponding = FALSE');
-				}
-			}
+			const where_federating = ((): Prisma.instanceWhereInput => {
+				if (ps.federating == null) return {};
 
-			if (typeof ps.suspended === 'boolean') {
-				if (ps.suspended) {
-					query.andWhere('instance.isSuspended = TRUE');
-				} else {
-					query.andWhere('instance.isSuspended = FALSE');
-				}
-			}
-
-			if (typeof ps.federating === 'boolean') {
 				if (ps.federating) {
-					query.andWhere(
-						'((instance.followingCount > 0) OR (instance.followersCount > 0))',
-					);
+					return {
+						OR: [{ followersCount: { gt: 0 } }, { followingCount: { gt: 0 } }],
+					};
 				} else {
-					query.andWhere(
-						'((instance.followingCount = 0) AND (instance.followersCount = 0))',
-					);
+					return { followersCount: 0, followingCount: 0 };
 				}
-			}
+			})();
 
-			if (typeof ps.subscribing === 'boolean') {
+			const where_subscribing = ((): Prisma.instanceWhereInput => {
+				if (ps.subscribing == null) return {};
+
 				if (ps.subscribing) {
-					query.andWhere('instance.followersCount > 0');
+					return { followersCount: { gt: 0 } };
 				} else {
-					query.andWhere('instance.followersCount = 0');
+					return { followersCount: 0 };
 				}
-			}
+			})();
 
-			if (typeof ps.publishing === 'boolean') {
+			const where_publishing = ((): Prisma.instanceWhereInput => {
+				if (ps.publishing == null) return {};
+
 				if (ps.publishing) {
-					query.andWhere('instance.followingCount > 0');
+					return { followingCount: { gt: 0 } };
 				} else {
-					query.andWhere('instance.followingCount = 0');
+					return { followingCount: 0 };
 				}
-			}
+			})();
 
-			if (ps.host) {
-				query.andWhere('instance.host like :host', {
-					host: '%' + sqlLikeEscape(ps.host.toLowerCase()) + '%',
-				});
-			}
+			const where_host = ((): Prisma.instanceWhereInput => {
+				if (ps.host == null) return {};
+				return { host: { contains: ps.host.toLowerCase() } };
+			})();
 
-			const instances = await query.limit(ps.limit).offset(ps.offset).getMany();
+			const orderBy = (():
+				| Prisma.instanceOrderByWithRelationInput
+				| Prisma.instanceOrderByWithRelationInput[] => {
+				switch (ps.sort) {
+					case '+pubSub':
+						return [{ followingCount: 'desc' }, { followersCount: 'desc' }];
+					case '-pubSub':
+						return [{ followingCount: 'asc' }, { followersCount: 'asc' }];
+					case '+notes':
+						return { notesCount: 'desc' };
+					case '-notes':
+						return { notesCount: 'asc' };
+					case '+users':
+						return { usersCount: 'desc' };
+					case '-users':
+						return { usersCount: 'asc' };
+					case '+following':
+						return { followingCount: 'desc' };
+					case '-following':
+						return { followingCount: 'asc' };
+					case '+followers':
+						return { followersCount: 'desc' };
+					case '-followers':
+						return { followersCount: 'asc' };
+					case '+firstRetrievedAt':
+						return { firstRetrievedAt: 'desc' };
+					case '-firstRetrievedAt':
+						return { firstRetrievedAt: 'asc' };
+					case '+latestRequestReceivedAt':
+						return { latestRequestReceivedAt: { sort: 'desc', nulls: 'last' } };
+					case '-latestRequestReceivedAt':
+						return { latestRequestReceivedAt: { sort: 'asc', nulls: 'first' } };
+					default:
+						return { id: 'desc' };
+				}
+			})();
+
+			const instances = await this.prismaService.client.instance.findMany({
+				where: {
+					AND: [
+						where_blocked,
+						where_federating,
+						where_host,
+						where_notResponding,
+						where_publishing,
+						where_subscribing,
+						where_suspended,
+					],
+				},
+				orderBy,
+				take: ps.limit,
+				skip: ps.offset,
+			});
 
 			return (await Promise.all(
 				instances.map((instance) => this.instanceEntityService.pack(instance)),

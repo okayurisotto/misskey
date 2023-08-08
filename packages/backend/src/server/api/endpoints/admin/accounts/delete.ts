@@ -1,13 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UsersRepository } from '@/models/index.js';
 import { QueueService } from '@/core/QueueService.js';
-import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
-import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -15,9 +13,7 @@ export const meta = {
 	requireAdmin: true,
 } as const;
 
-export const paramDef = z.object({
-	userId: MisskeyIdSchema,
-});
+export const paramDef = z.object({ userId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -27,16 +23,15 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private userEntityService: UserEntityService,
-		private queueService: QueueService,
-		private globalEventService: GlobalEventService,
-		private userSuspendService: UserSuspendService,
+		private readonly userEntityService: UserEntityService,
+		private readonly queueService: QueueService,
+		private readonly userSuspendService: UserSuspendService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const user = await this.usersRepository.findOneBy({ id: ps.userId });
+			const user = await this.prismaService.client.user.findUnique({
+				where: { id: ps.userId },
+			});
 
 			if (user == null) {
 				throw new Error('user not found');
@@ -48,19 +43,16 @@ export default class extends Endpoint<
 
 			if (this.userEntityService.isLocalUser(user)) {
 				// 物理削除する前にDelete activityを送信する
-				await this.userSuspendService.doPostSuspend(user).catch((err) => {});
-
-				this.queueService.createDeleteAccountJob(user, {
-					soft: false,
-				});
+				await this.userSuspendService.doPostSuspend(user);
+				await this.queueService.createDeleteAccountJob(user, { soft: false });
 			} else {
-				this.queueService.createDeleteAccountJob(user, {
-					soft: true, // リモートユーザーの削除は、完全にDBから物理削除してしまうと再度連合してきてアカウントが復活する可能性があるため、soft指定する
-				});
+				// リモートユーザーの削除は、完全にDBから物理削除してしまうと再度連合してきてアカウントが復活する可能性があるため、soft指定する
+				await this.queueService.createDeleteAccountJob(user, { soft: true });
 			}
 
-			await this.usersRepository.update(user.id, {
-				isDeleted: true,
+			await this.prismaService.client.user.update({
+				where: { id: user.id },
+				data: { isDeleted: true },
 			});
 		});
 	}

@@ -1,15 +1,11 @@
 import { z } from 'zod';
-import { Brackets } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository } from '@/models/index.js';
-import { safeForSql } from '@/misc/safe-for-sql.js';
-import { normalizeForSearch } from '@/misc/normalize-for-search.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -55,90 +51,48 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.notesRepository.createQueryBuilder('note'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			this.queryService.generateVisibilityQuery(query, me);
-			if (me) this.queryService.generateMutedUserQuery(query, me);
-			if (me) this.queryService.generateBlockedUserQuery(query, me);
-
-			try {
-				if ('tag' in ps) {
-					if (!safeForSql(normalizeForSearch(ps.tag))) {
-						throw new Error('Injection');
-					}
-					query.andWhere(`'{"${normalizeForSearch(ps.tag)}"}' <@ note.tags`);
-				} else {
-					query.andWhere(
-						new Brackets((qb) => {
-							for (const tags of ps.query!) {
-								qb.orWhere(
-									new Brackets((qb) => {
-										for (const tag of tags) {
-											if (!safeForSql(normalizeForSearch(tag))) {
-												throw new Error('Injection');
-											}
-											qb.andWhere(
-												`'{"${normalizeForSearch(tag)}"}' <@ note.tags`,
-											);
-										}
-									}),
-								);
-							}
-						}),
-					);
-				}
-			} catch (e) {
-				if (e === 'Injection') return [];
-				throw e;
-			}
-
-			if (ps.reply != null) {
-				if (ps.reply) {
-					query.andWhere('note.replyId IS NOT NULL');
-				} else {
-					query.andWhere('note.replyId IS NULL');
-				}
-			}
-
-			if (ps.renote != null) {
-				if (ps.renote) {
-					query.andWhere('note.renoteId IS NOT NULL');
-				} else {
-					query.andWhere('note.renoteId IS NULL');
-				}
-			}
-
-			if (ps.withFiles) {
-				query.andWhere("note.fileIds != '{}'");
-			}
-
-			if (ps.poll != null) {
-				if (ps.poll) {
-					query.andWhere('note.hasPoll = TRUE');
-				} else {
-					query.andWhere('note.hasPoll = FALSE');
-				}
-			}
-
-			// Search notes
-			const notes = await query.limit(ps.limit).getMany();
+			const notes = await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						this.prismaQueryService.getVisibilityWhereForNote(me?.id ?? null),
+						...(me
+							? [
+									await this.prismaQueryService.getMutingWhereForNote(me.id),
+									this.prismaQueryService.getBlockedWhereForNote(me.id),
+							  ]
+							: []),
+						'tag' in ps ? { tags: { has: ps.tag } } : {},
+						'query' in ps
+							? { OR: ps.query.map((q) => ({ tags: { hasEvery: q } })) }
+							: {},
+						ps.reply !== null
+							? ps.reply
+								? { replyId: { not: null } }
+								: { replyId: null }
+							: {},
+						ps.renote !== null
+							? ps.renote
+								? { renoteId: { not: null } }
+								: { renoteId: null }
+							: {},
+						ps.withFiles ? { fileIds: { isEmpty: false } } : {},
+						ps.poll !== null ? { hasPoll: ps.poll } : {},
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await this.noteEntityService.packMany(
 				notes,

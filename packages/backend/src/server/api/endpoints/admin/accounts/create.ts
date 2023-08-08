@@ -1,29 +1,15 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UsersRepository } from '@/models/index.js';
 import { SignupService } from '@/core/SignupService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { PasswordSchema, LocalUsernameSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
-const res = UserDetailedSchema; // TODO
-// {
-// 		type: 'object',
-// 		optional: false, nullable: false,
-// 		ref: 'User',
-// 		properties: {
-// 			token: {
-// 				type: 'string',
-// 				optional: false, nullable: false,
-// 			},
-// 		},
-// 	}
+const res = UserDetailedSchema;
 export const meta = {
 	tags: ['admin'],
-
 	res,
 } as const;
 
@@ -40,21 +26,38 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private userEntityService: UserEntityService,
-		private signupService: SignupService,
+		private readonly userEntityService: UserEntityService,
+		private readonly signupService: SignupService,
+		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, _me) => {
-			const me = _me
-				? await this.usersRepository.findOneByOrFail({ id: _me.id })
-				: null;
+		super(meta, paramDef, async (ps, me) => {
 			const noUsers =
-				(await this.usersRepository.countBy({
-					host: IsNull(),
+				(await this.prismaService.client.user.count({
+					where: { host: null },
+					take: 1,
 				})) === 0;
-			if (!noUsers && !me?.isRoot) throw new Error('access denied');
+
+			if (noUsers) {
+				// ok
+			} else {
+				if (me === null) {
+					throw new Error('access denied');
+				} else {
+					const me_ = await this.prismaService.client.user.findUnique({
+						where: { id: me.id },
+					});
+
+					if (me_ === null) {
+						throw new Error();
+					} else {
+						if (me_.isRoot) {
+							// ok
+						} else {
+							throw new Error('access denied');
+						}
+					}
+				}
+			}
 
 			const { account, secret } = await this.signupService.signup({
 				username: ps.username,
@@ -62,14 +65,15 @@ export default class extends Endpoint<
 				ignorePreservedUsernames: true,
 			});
 
-			const res_ = await this.userEntityService.pack(account, account, {
+			const packed = await this.userEntityService.pack(account, account, {
 				detail: true,
 				includeSecrets: true,
 			});
 
-			(res_ as any).token = secret;
-
-			return res_ satisfies z.infer<typeof res>;
+			return {
+				...packed,
+				token: secret,
+			} satisfies z.infer<typeof res>;
 		});
 	}
 }

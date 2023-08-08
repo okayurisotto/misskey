@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
-import type { FollowRequestsRepository } from '@/models/index.js';
 import { FollowRequestEntityService } from '@/core/entities/FollowRequestEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(
 	z.object({
@@ -36,22 +35,20 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.followRequestsRepository)
-		private followRequestsRepository: FollowRequestsRepository,
-
-		private followRequestEntityService: FollowRequestEntityService,
-		private queryService: QueryService,
+		private readonly followRequestEntityService: FollowRequestEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.followRequestsRepository.createQueryBuilder('request'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('request.followeeId = :meId', { meId: me.id });
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const requests = await query.limit(ps.limit).getMany();
+			const requests = await this.prismaService.client.follow_request.findMany({
+				where: { AND: [paginationQuery.where, { followeeId: me.id }] },
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				requests.map((req) => this.followRequestEntityService.pack(req)),

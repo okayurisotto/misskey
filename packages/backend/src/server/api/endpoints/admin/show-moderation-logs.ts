@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { ModerationLogsRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
-import { DI } from '@/di-symbols.js';
 import { ModerationLogEntityService } from '@/core/entities/ModerationLogEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(
 	z.object({
@@ -39,20 +38,21 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.moderationLogsRepository)
-		private moderationLogsRepository: ModerationLogsRepository,
-
-		private moderationLogEntityService: ModerationLogEntityService,
-		private queryService: QueryService,
+		private readonly moderationLogEntityService: ModerationLogEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(
-				this.moderationLogsRepository.createQueryBuilder('report'),
-				ps.sinceId,
-				ps.untilId,
-			);
+		super(meta, paramDef, async (ps) => {
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const reports = await query.limit(ps.limit).getMany();
+			const reports = await this.prismaService.client.moderation_log.findMany({
+				where: { AND: [paginationQuery.where] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				reports.map((report) => this.moderationLogEntityService.pack(report)),

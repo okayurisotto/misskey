@@ -3,16 +3,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
 import bcrypt from 'bcryptjs';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	UsersRepository,
-	UserProfilesRepository,
-} from '@/models/index.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { EmailService } from '@/core/EmailService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = z.unknown();
@@ -52,22 +49,18 @@ export default class extends Endpoint<
 > {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		private userEntityService: UserEntityService,
-		private emailService: EmailService,
-		private globalEventService: GlobalEventService,
+		private readonly userEntityService: UserEntityService,
+		private readonly emailService: EmailService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: me.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: me.id },
+				});
 
 			// Compare password
 			const same = await bcrypt.compare(ps.password, profile.password!);
@@ -83,10 +76,13 @@ export default class extends Endpoint<
 				}
 			}
 
-			await this.userProfilesRepository.update(me.id, {
-				email: ps.email,
-				emailVerified: false,
-				emailVerifyCode: null,
+			await this.prismaService.client.user_profile.update({
+				where: { userId: me.id },
+				data: {
+					email: ps.email,
+					emailVerified: false,
+					emailVerifyCode: null,
+				},
 			});
 
 			const iObj = await this.userEntityService.pack(me.id, me, {
@@ -100,8 +96,9 @@ export default class extends Endpoint<
 			if (ps.email != null) {
 				const code = secureRndstr(16, { chars: L_CHARS });
 
-				await this.userProfilesRepository.update(me.id, {
-					emailVerifyCode: code,
+				await this.prismaService.client.user_profile.update({
+					where: { userId: me.id },
+					data: { emailVerifyCode: code },
 				});
 
 				const link = `${this.config.url}/verify-email/${code}`;

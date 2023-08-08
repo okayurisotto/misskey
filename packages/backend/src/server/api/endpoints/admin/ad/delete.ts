@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AdsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -19,9 +18,7 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = z.object({
-	id: MisskeyIdSchema,
-});
+export const paramDef = z.object({ id: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -30,16 +27,14 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.adsRepository)
-		private adsRepository: AdsRepository,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const ad = await this.adsRepository.findOneBy({ id: ps.id });
+	constructor(private readonly prismaService: PrismaService) {
+		super(meta, paramDef, async (ps) => {
+			const ad = await this.prismaService.client.ad.findUnique({
+				where: { id: ps.id },
+			});
+			if (ad === null) throw new ApiError(meta.errors.noSuchAd);
 
-			if (ad == null) throw new ApiError(meta.errors.noSuchAd);
-
-			await this.adsRepository.delete(ad.id);
+			await this.prismaService.client.ad.delete({ where: { id: ad.id } });
 		});
 	}
 }

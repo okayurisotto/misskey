@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { RetentionAggregationsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -22,17 +21,13 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.retentionAggregationsRepository)
-		private retentionAggregationsRepository: RetentionAggregationsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const records = await this.retentionAggregationsRepository.find({
-				order: {
-					id: 'DESC',
-				},
-				take: 30,
-			});
+			const records =
+				await this.prismaService.client.retention_aggregation.findMany({
+					orderBy: { id: 'desc' },
+					take: 30,
+				});
 
 			return records.map((record) => ({
 				createdAt: record.createdAt.toISOString(),

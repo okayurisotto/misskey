@@ -1,52 +1,44 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Brackets } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type {
-	RoleAssignmentsRepository,
-	RolesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import type { User } from '@/models/entities/User.js';
 import type { Role } from '@/models/entities/Role.js';
 import { bindThis } from '@/decorators.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
-import { UserEntityService } from './UserEntityService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { role } from '@prisma/client';
 
 @Injectable()
 export class RoleEntityService {
-	constructor(
-		@Inject(DI.rolesRepository)
-		private rolesRepository: RolesRepository,
-
-		@Inject(DI.roleAssignmentsRepository)
-		private roleAssignmentsRepository: RoleAssignmentsRepository,
-
-		private userEntityService: UserEntityService,
-	) {}
+	constructor(private readonly prismaService: PrismaService) {}
 
 	@bindThis
 	public async pack(
-		src: Role['id'] | Role,
+		src: Role['id'] | T2P<Role, role>,
 		me?: { id: User['id'] } | null | undefined,
 	) {
 		const role =
 			typeof src === 'object'
 				? src
-				: await this.rolesRepository.findOneByOrFail({ id: src });
+				: await this.prismaService.client.role.findUniqueOrThrow({ where: { id: src } });
 
-		const assignedCount = await this.roleAssignmentsRepository
-			.createQueryBuilder('assign')
-			.where('assign.roleId = :roleId', { roleId: role.id })
-			.andWhere(
-				new Brackets((qb) => {
-					qb.where('assign.expiresAt IS NULL').orWhere(
-						'assign.expiresAt > :now',
-						{ now: new Date() },
-					);
-				}),
-			)
-			.getCount();
+		const assignedCount = await this.prismaService.client.role_assignment.count({
+			where: {
+				roleId: role.id,
+				OR: [
+					{ expiresAt: null },
+					{ expiresAt: { gt: new Date() } }
+				],
+			}
+		});
 
-		const policies = { ...role.policies };
+		const policies = {
+			...z.record(z.string(), z.object({
+				useDefault: z.boolean(),
+				priority: z.number(),
+				value: z.any(),
+			})).parse(role.policies),
+		};
 		for (const [k, v] of Object.entries(DEFAULT_POLICIES)) {
 			if (policies[k] == null)
 				policies[k] = {

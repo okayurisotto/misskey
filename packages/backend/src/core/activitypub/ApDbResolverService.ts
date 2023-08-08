@@ -1,6 +1,6 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import type { note, user_publickey } from '@prisma/client';
 import { DI } from '@/di-symbols.js';
-import type { NotesRepository, UserPublickeysRepository, UsersRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import { MemoryKVCache } from '@/misc/cache.js';
 import type { UserPublickey } from '@/models/entities/UserPublickey.js';
@@ -8,6 +8,8 @@ import { CacheService } from '@/core/CacheService.js';
 import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
 import { LocalUser, RemoteUser } from '@/models/entities/User.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
 import { getApId } from './type.js';
 import { ApPersonService } from './models/ApPersonService.js';
 import type { IObject } from './type.js';
@@ -30,27 +32,19 @@ export type UriParseResult = {
 
 @Injectable()
 export class ApDbResolverService implements OnApplicationShutdown {
-	private publicKeyCache: MemoryKVCache<UserPublickey | null>;
-	private publicKeyByUserIdCache: MemoryKVCache<UserPublickey | null>;
+	private publicKeyCache: MemoryKVCache<T2P<UserPublickey, user_publickey> | null>;
+	private publicKeyByUserIdCache: MemoryKVCache<T2P<UserPublickey, user_publickey> | null>;
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.userPublickeysRepository)
-		private userPublickeysRepository: UserPublickeysRepository,
-
-		private cacheService: CacheService,
-		private apPersonService: ApPersonService,
+		private readonly cacheService: CacheService,
+		private readonly apPersonService: ApPersonService,
+		private readonly prismaService: PrismaService,
 	) {
-		this.publicKeyCache = new MemoryKVCache<UserPublickey | null>(Infinity);
-		this.publicKeyByUserIdCache = new MemoryKVCache<UserPublickey | null>(Infinity);
+		this.publicKeyCache = new MemoryKVCache<T2P<UserPublickey, user_publickey> | null>(Infinity);
+		this.publicKeyByUserIdCache = new MemoryKVCache<T2P<UserPublickey, user_publickey> | null>(Infinity);
 	}
 
 	@bindThis
@@ -73,18 +67,18 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	 * AP Note => Misskey Note in DB
 	 */
 	@bindThis
-	public async getNoteFromApId(value: string | IObject): Promise<Note | null> {
+	public async getNoteFromApId(value: string | IObject): Promise<T2P<Note, note> | null> {
 		const parsed = this.parseUri(value);
 
 		if (parsed.local) {
 			if (parsed.type !== 'notes') return null;
 
-			return await this.notesRepository.findOneBy({
-				id: parsed.id,
+			return await this.prismaService.client.note.findUnique({
+				where: { id: parsed.id },
 			});
 		} else {
-			return await this.notesRepository.findOneBy({
-				uri: parsed.uri,
+			return await this.prismaService.client.note.findFirst({
+				where: { uri: parsed.uri },
 			});
 		}
 	}
@@ -101,12 +95,12 @@ export class ApDbResolverService implements OnApplicationShutdown {
 
 			return await this.cacheService.userByIdCache.fetchMaybe(
 				parsed.id,
-				() => this.usersRepository.findOneBy({ id: parsed.id }).then(x => x ?? undefined),
+				() => this.prismaService.client.user.findUnique({ where: { id: parsed.id } }).then(x => x ?? undefined),
 			) as LocalUser | undefined ?? null;
 		} else {
 			return await this.cacheService.uriPersonCache.fetch(
 				parsed.uri,
-				() => this.usersRepository.findOneBy({ uri: parsed.uri }),
+				() => this.prismaService.client.user.findFirst({ where: { uri: parsed.uri } }),
 			) as RemoteUser | null;
 		}
 	}
@@ -117,17 +111,21 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	@bindThis
 	public async getAuthUserFromKeyId(keyId: string): Promise<{
 		user: RemoteUser;
-		key: UserPublickey;
+		key: T2P<UserPublickey, user_publickey>;
 	} | null> {
-		const key = await this.publicKeyCache.fetch(keyId, async () => {
-			const key = await this.userPublickeysRepository.findOneBy({
-				keyId,
-			});
+		const key = await this.publicKeyCache.fetch(
+			keyId,
+			async () => {
+				const key = await this.prismaService.client.user_publickey.findUnique({
+					where: { keyId },
+				});
 
-			if (key == null) return null;
+				if (key == null) return null;
 
-			return key;
-		}, key => key != null);
+				return key;
+			},
+			key => key != null,
+		);
 
 		if (key == null) return null;
 
@@ -143,13 +141,13 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	@bindThis
 	public async getAuthUserFromApId(uri: string): Promise<{
 		user: RemoteUser;
-		key: UserPublickey | null;
+		key: T2P<UserPublickey, user_publickey> | null;
 	} | null> {
 		const user = await this.apPersonService.resolvePerson(uri) as RemoteUser;
 
 		const key = await this.publicKeyByUserIdCache.fetch(
 			user.id,
-			() => this.userPublickeysRepository.findOneBy({ userId: user.id }),
+			() => this.prismaService.client.user_publickey.findUnique({ where: { userId: user.id } }),
 			v => v != null,
 		);
 

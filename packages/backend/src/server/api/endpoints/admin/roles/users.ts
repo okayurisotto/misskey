@@ -1,15 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { Brackets } from 'typeorm';
-import type {
-	RoleAssignmentsRepository,
-	RolesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
-import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.unknown(); // TODO
@@ -42,48 +37,41 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.rolesRepository)
-		private rolesRepository: RolesRepository,
-
-		@Inject(DI.roleAssignmentsRepository)
-		private roleAssignmentsRepository: RoleAssignmentsRepository,
-
-		private queryService: QueryService,
-		private userEntityService: UserEntityService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const role = await this.rolesRepository.findOneBy({
-				id: ps.roleId,
+			const role = await this.prismaService.client.role.findUnique({
+				where: { id: ps.roleId },
 			});
-
-			if (role == null) {
+			if (role === null) {
 				throw new ApiError(meta.errors.noSuchRole);
 			}
 
-			const query = this.queryService
-				.makePaginationQuery(
-					this.roleAssignmentsRepository.createQueryBuilder('assign'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('assign.roleId = :roleId', { roleId: role.id })
-				.andWhere(
-					new Brackets((qb) => {
-						qb.where('assign.expiresAt IS NULL').orWhere(
-							'assign.expiresAt > :now',
-							{ now: new Date() },
-						);
-					}),
-				)
-				.innerJoinAndSelect('assign.user', 'user');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const assigns = await query.limit(ps.limit).getMany();
+			const assigns = await this.prismaService.client.role_assignment.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{ roleId: role.id },
+						{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+					],
+				},
+				include: { user: true },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				assigns.map(async (assign) => ({
 					id: assign.id,
 					createdAt: assign.createdAt,
-					user: await this.userEntityService.pack(assign.user!, me, {
+					user: await this.userEntityService.pack(assign.user, me, {
 						detail: true,
 					}),
 					expiresAt: assign.expiresAt,

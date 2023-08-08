@@ -10,7 +10,9 @@ import { LoggerService } from '@/core/LoggerService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { bindThis } from '@/decorators.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
+import type { T2P } from '@/types.js';
 import type { DOMWindow } from 'jsdom';
+import type { instance } from '@prisma/client';
 
 type NodeInfo = {
 	openRegistrations?: unknown;
@@ -36,11 +38,11 @@ export class FetchInstanceMetadataService {
 	private logger: Logger;
 
 	constructor(
-		private httpRequestService: HttpRequestService,
-		private loggerService: LoggerService,
-		private federatedInstanceService: FederatedInstanceService,
+		private readonly httpRequestService: HttpRequestService,
+		private readonly loggerService: LoggerService,
+		private readonly federatedInstanceService: FederatedInstanceService,
 		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private readonly redisClient: Redis.Redis,
 	) {
 		this.logger = this.loggerService.getLogger('metadata', 'cyan');
 	}
@@ -57,7 +59,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	public async fetchInstanceMetadata(instance: Instance, force = false): Promise<void> {
+	public async fetchInstanceMetadata(instance: T2P<Instance, instance>, force = false): Promise<void> {
 		const host = instance.host;
 		// Acquire mutex to ensure no parallel runs
 		if (!await this.tryLock(host)) return;
@@ -70,9 +72,9 @@ export class FetchInstanceMetadataService {
 					return;
 				}
 			}
-	
+
 			this.logger.info(`Fetching metadata of ${instance.host} ...`);
- 
+
 			const [info, dom, manifest] = await Promise.all([
 				this.fetchNodeinfo(instance).catch(() => null),
 				this.fetchDom(instance).catch(() => null),
@@ -118,7 +120,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchNodeinfo(instance: Instance): Promise<NodeInfo> {
+	private async fetchNodeinfo(instance: T2P<Instance, instance>): Promise<NodeInfo> {
 		this.logger.info(`Fetching nodeinfo of ${instance.host} ...`);
 
 		try {
@@ -162,7 +164,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchDom(instance: Instance): Promise<DOMWindow['document']> {
+	private async fetchDom(instance: T2P<Instance, instance>): Promise<DOMWindow['document']> {
 		this.logger.info(`Fetching HTML of ${instance.host} ...`);
 
 		const url = 'https://' + instance.host;
@@ -176,7 +178,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchManifest(instance: Instance): Promise<Record<string, unknown> | null> {
+	private async fetchManifest(instance: T2P<Instance, instance>): Promise<Record<string, unknown> | null> {
 		const url = 'https://' + instance.host;
 
 		const manifestUrl = url + '/manifest.json';
@@ -187,7 +189,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchFaviconUrl(instance: Instance, doc: DOMWindow['document'] | null): Promise<string | null> {
+	private async fetchFaviconUrl(instance: T2P<Instance, instance>, doc: DOMWindow['document'] | null): Promise<string | null> {
 		const url = 'https://' + instance.host;
 
 		if (doc) {
@@ -213,7 +215,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchIconUrl(instance: Instance, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
+	private async fetchIconUrl(instance: T2P<Instance, instance>, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
 		if (manifest && manifest.icons && manifest.icons.length > 0 && manifest.icons[0].src) {
 			const url = 'https://' + instance.host;
 			return (new URL(manifest.icons[0].src, url)).href;

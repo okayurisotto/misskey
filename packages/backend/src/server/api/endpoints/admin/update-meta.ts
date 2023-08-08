@@ -1,10 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import type { Meta } from '@/models/entities/Meta.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MetaService } from '@/core/MetaService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
@@ -108,14 +106,11 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
-
-		private metaService: MetaService,
-		private moderationLogService: ModerationLogService,
+		private readonly metaService: MetaService,
+		private readonly moderationLogService: ModerationLogService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const set = {} as Partial<Meta>;
+			const set: Partial<Meta> = {};
 
 			if (typeof ps.disableRegistration === 'boolean') {
 				set.disableRegistration = ps.disableRegistration;

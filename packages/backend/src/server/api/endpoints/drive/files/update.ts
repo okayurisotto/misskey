@@ -1,16 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	DriveFilesRepository,
-	DriveFoldersRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = DriveFileSchema;
@@ -65,18 +61,15 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.driveFoldersRepository)
-		private driveFoldersRepository: DriveFoldersRepository,
-
-		private driveFileEntityService: DriveFileEntityService,
-		private roleService: RoleService,
-		private globalEventService: GlobalEventService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly roleService: RoleService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
+			const file = await this.prismaService.client.drive_file.findUnique({
+				where: { id: ps.fileId },
+			});
 			const alwaysMarkNsfw = (await this.roleService.getUserPolicies(me.id))
 				.alwaysMarkNsfw;
 			if (file == null) {
@@ -109,9 +102,11 @@ export default class extends Endpoint<
 				if (ps.folderId === null) {
 					file.folderId = null;
 				} else {
-					const folder = await this.driveFoldersRepository.findOneBy({
-						id: ps.folderId,
-						userId: me.id,
+					const folder = await this.prismaService.client.drive_folder.findUnique({
+						where: {
+							id: ps.folderId,
+							userId: me.id,
+						},
 					});
 
 					if (folder == null) {
@@ -122,11 +117,14 @@ export default class extends Endpoint<
 				}
 			}
 
-			await this.driveFilesRepository.update(file.id, {
-				name: file.name,
-				comment: file.comment,
-				folderId: file.folderId,
-				isSensitive: file.isSensitive,
+			await this.prismaService.client.drive_file.update({
+				where: { id: file.id },
+				data: {
+					name: file.name,
+					comment: file.comment,
+					folderId: file.folderId,
+					isSensitive: file.isSensitive,
+				},
 			});
 
 			const fileObj = await this.driveFileEntityService.pack(file, {

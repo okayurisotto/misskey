@@ -9,11 +9,7 @@ import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { TwoFactorAuthenticationService } from '@/core/TwoFactorAuthenticationService.js';
-import type {
-	AttestationChallengesRepository,
-	UserProfilesRepository,
-	UserSecurityKeysRepository,
-} from '@/models/index.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const cborDecodeFirst = promisify(cbor.decodeFirst) as any;
 
@@ -43,27 +39,20 @@ export default class extends Endpoint<
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.userSecurityKeysRepository)
-		private userSecurityKeysRepository: UserSecurityKeysRepository,
-
-		@Inject(DI.attestationChallengesRepository)
-		private attestationChallengesRepository: AttestationChallengesRepository,
-
-		private userEntityService: UserEntityService,
-		private globalEventService: GlobalEventService,
-		private twoFactorAuthenticationService: TwoFactorAuthenticationService,
+		private readonly userEntityService: UserEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly twoFactorAuthenticationService: TwoFactorAuthenticationService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const rpIdHashReal = this.twoFactorAuthenticationService.hash(
 				Buffer.from(this.config.hostname, 'utf-8'),
 			);
 
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: me.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: me.id },
+				});
 
 			// Compare password
 			const same = await bcrypt.compare(ps.password, profile.password!);
@@ -133,22 +122,30 @@ export default class extends Endpoint<
 			if (!verificationData.valid) throw new Error('signature invalid');
 
 			const attestationChallenge =
-				await this.attestationChallengesRepository.findOneBy({
-					userId: me.id,
-					id: ps.challengeId,
-					registrationChallenge: true,
-					challenge: this.twoFactorAuthenticationService
-						.hash(clientData.challenge)
-						.toString('hex'),
+				await this.prismaService.client.attestation_challenge.findUnique({
+					where: {
+						id_userId: {
+							userId: me.id,
+							id: ps.challengeId,
+						},
+						registrationChallenge: true,
+						challenge: this.twoFactorAuthenticationService
+							.hash(clientData.challenge)
+							.toString('hex'),
+					},
 				});
 
 			if (!attestationChallenge) {
 				throw new Error('non-existent challenge');
 			}
 
-			await this.attestationChallengesRepository.delete({
-				userId: me.id,
-				id: ps.challengeId,
+			await this.prismaService.client.attestation_challenge.delete({
+				where: {
+					id_userId: {
+						userId: me.id,
+						id: ps.challengeId,
+					},
+				},
 			});
 
 			// Expired challenge (> 5min old)
@@ -161,12 +158,14 @@ export default class extends Endpoint<
 
 			const credentialIdString = credentialId.toString('hex');
 
-			await this.userSecurityKeysRepository.insert({
-				userId: me.id,
-				id: credentialIdString,
-				lastUsed: new Date(),
-				name: ps.name,
-				publicKey: verificationData.publicKey.toString('hex'),
+			await this.prismaService.client.user_security_key.create({
+				data: {
+					userId: me.id,
+					id: credentialIdString,
+					lastUsed: new Date(),
+					name: ps.name,
+					publicKey: verificationData.publicKey.toString('hex'),
+				},
 			});
 
 			// Publish meUpdated event

@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueueService } from '@/core/QueueService.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';
-import type { DriveFilesRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -53,17 +52,17 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private queueService: QueueService,
-		private accountMoveService: AccountMoveService,
+		private readonly queueService: QueueService,
+		private readonly accountMoveService: AccountMoveService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
+			const file = await this.prismaService.client.drive_file.findUnique({
+				where: { id: ps.fileId },
+			});
 
 			if (file == null) throw new ApiError(meta.errors.noSuchFile);
-			//if (!file.type.endsWith('/csv')) throw new ApiError(meta.errors.unexpectedFileType);
+			// if (!file.type.endsWith('/csv')) throw new ApiError(meta.errors.unexpectedFileType);
 			if (file.size === 0) throw new ApiError(meta.errors.emptyFile);
 
 			const checkMoving = await this.accountMoveService.validateAlsoKnownAs(

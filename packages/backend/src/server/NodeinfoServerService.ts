@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
-import type { NotesRepository, UsersRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import { MetaService } from '@/core/MetaService.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
@@ -11,6 +10,7 @@ import NotesChart from '@/core/chart/charts/notes.js';
 import UsersChart from '@/core/chart/charts/users.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
+import { z } from 'zod';
 
 const nodeinfo2_1path = '/nodeinfo/2.1';
 const nodeinfo2_0path = '/nodeinfo/2.0';
@@ -20,12 +20,6 @@ export class NodeinfoServerService {
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
 
 		private userEntityService: UserEntityService,
 		private metaService: MetaService,
@@ -73,7 +67,7 @@ export class NodeinfoServerService {
 
 			const proxyAccount = meta.proxyAccountId ? await this.userEntityService.pack(meta.proxyAccountId).catch(() => null) : null;
 
-			const basePolicies = { ...DEFAULT_POLICIES, ...meta.policies };
+			const basePolicies = { ...DEFAULT_POLICIES, ...z.record(z.string(), z.any()).parse(meta.policies) };
 
 			return {
 				software: {

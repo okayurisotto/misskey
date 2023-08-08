@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RolesRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown(); // TODO
 export const meta = {
@@ -40,17 +39,15 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.rolesRepository)
-		private rolesRepository: RolesRepository,
-
-		private globalEventService: GlobalEventService,
-		private idService: IdService,
-		private roleEntityService: RoleEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly idService: IdService,
+		private readonly roleEntityService: RoleEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const date = new Date();
-			const created = await this.rolesRepository
-				.insert({
+			const created = await this.prismaService.client.role.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt: date,
 					updatedAt: date,
@@ -69,8 +66,8 @@ export default class extends Endpoint<
 					canEditMembersByModerator: ps.canEditMembersByModerator,
 					displayOrder: ps.displayOrder,
 					policies: ps.policies,
-				})
-				.then((x) => this.rolesRepository.findOneByOrFail(x.identifiers[0]));
+				},
+			});
 
 			this.globalEventService.publishInternalEvent('roleCreated', created);
 

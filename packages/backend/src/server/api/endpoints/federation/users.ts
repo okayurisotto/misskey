@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UsersRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(UserDetailedNotMeSchema);
 export const meta = {
@@ -30,25 +29,26 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private userEntityService: UserEntityService,
-		private queryService: QueryService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.usersRepository.createQueryBuilder('user'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('user.host = :host', { host: ps.host });
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const users = await query.limit(ps.limit).getMany();
+			const users = await this.prismaService.client.user.findMany({
+				where: { AND: [paginationQuery.where, { host: ps.host }] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
-				users.map((user) => this.userEntityService.pack(user, me, { detail: true }))
+				users.map((user) =>
+					this.userEntityService.pack(user, me, { detail: true }),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

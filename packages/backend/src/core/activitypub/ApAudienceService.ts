@@ -7,6 +7,8 @@ import { getApIds } from './type.js';
 import { ApPersonService } from './models/ApPersonService.js';
 import type { ApObject } from './type.js';
 import type { Resolver } from './ApResolverService.js';
+import type { T2P } from '@/types.js';
+import type { user } from '@prisma/client';
 
 type Visibility = 'public' | 'home' | 'followers' | 'specified';
 
@@ -22,8 +24,7 @@ type GroupedAudience = Record<'public' | 'followers' | 'other', string[]>;
 export class ApAudienceService {
 	constructor(
 		private apPersonService: ApPersonService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async parseAudience(actor: RemoteUser, to?: ApObject, cc?: ApObject, resolver?: Resolver): Promise<AudienceInfo> {
@@ -32,7 +33,7 @@ export class ApAudienceService {
 
 		const others = unique(concat([toGroups.other, ccGroups.other]));
 
-		const limit = promiseLimit<User | null>(2);
+		const limit = promiseLimit<T2P<User, user> | null>(2);
 		const mentionedUsers = (await Promise.all(
 			others.map(id => limit(() => this.apPersonService.resolvePerson(id, resolver).catch(() => null))),
 		)).filter((x): x is User => x != null);

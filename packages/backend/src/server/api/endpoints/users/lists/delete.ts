@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UserListsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 // const res = z.unknown();
 export const meta = {
@@ -32,21 +31,22 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const userList = await this.userListsRepository.findOneBy({
-				id: ps.listId,
-				userId: me.id,
+			const userList = await this.prismaService.client.user_list.findUnique({
+				where: {
+					id: ps.listId,
+					userId: me.id,
+				},
 			});
 
 			if (userList == null) {
 				throw new ApiError(meta.errors.noSuchList);
 			}
 
-			await this.userListsRepository.delete(userList.id);
+			await this.prismaService.client.user_list.delete({
+				where: { id: userList.id },
+			});
 		});
 	}
 }

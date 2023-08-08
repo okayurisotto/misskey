@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { MutedNotesRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	count: z.number(),
@@ -23,15 +22,11 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.mutedNotesRepository)
-		private mutedNotesRepository: MutedNotesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
 			return {
-				count: await this.mutedNotesRepository.countBy({
-					userId: me.id,
-					reason: 'word',
+				count: await this.prismaService.client.muted_note.count({
+					where: { userId: me.id, reason: 'word' },
 				}),
 			} satisfies z.infer<typeof res>;
 		});

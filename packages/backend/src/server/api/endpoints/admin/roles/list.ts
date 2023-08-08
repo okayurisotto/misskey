@@ -1,10 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RolesRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
-import { satisfies } from 'semver';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown(); // TODO
 export const meta = {
@@ -24,15 +22,14 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.rolesRepository)
-		private rolesRepository: RolesRepository,
-
-		private roleEntityService: RoleEntityService,
+		private readonly roleEntityService: RoleEntityService,
+		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const roles = await this.rolesRepository.find({
-				order: { lastUsedAt: 'DESC' },
+		super(meta, paramDef, async (_, me) => {
+			const roles = await this.prismaService.client.role.findMany({
+				orderBy: { lastUsedAt: 'desc' },
 			});
+
 			return (await Promise.all(
 				roles.map((role) => this.roleEntityService.pack(role, me)),
 			)) satisfies z.infer<typeof res>;

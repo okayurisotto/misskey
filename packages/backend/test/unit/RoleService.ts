@@ -6,51 +6,51 @@ import { Test } from '@nestjs/testing';
 import * as lolex from '@sinonjs/fake-timers';
 import { GlobalModule } from '@/GlobalModule.js';
 import { RoleService } from '@/core/RoleService.js';
-import type { Role, RolesRepository, RoleAssignmentsRepository, UsersRepository, User } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MetaService } from '@/core/MetaService.js';
 import { genAid } from '@/misc/id/aid.js';
 import { CacheService } from '@/core/CacheService.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { sleep } from '../utils.js';
 import type { TestingModule } from '@nestjs/testing';
 import type { MockFunctionMetadata } from 'jest-mock';
+import type { Prisma } from '@prisma/client';
 
 const moduleMocker = new ModuleMocker(global);
 
 describe('RoleService', () => {
 	let app: TestingModule;
 	let roleService: RoleService;
-	let usersRepository: UsersRepository;
-	let rolesRepository: RolesRepository;
-	let roleAssignmentsRepository: RoleAssignmentsRepository;
+	let prismaService: PrismaService;
 	let metaService: jest.Mocked<MetaService>;
 	let clock: lolex.InstalledClock;
 
-	function createUser(data: Partial<User> = {}) {
+	function createUser(data: Partial<Prisma.userCreateInput> = {}) {
 		const un = secureRndstr(16);
-		return usersRepository.insert({
-			id: genAid(new Date()),
-			createdAt: new Date(),
-			username: un,
-			usernameLower: un,
-			...data,
-		})
-			.then(x => usersRepository.findOneByOrFail(x.identifiers[0]));
+		return prismaService.client.user.create({
+			data: {
+				id: genAid(new Date()),
+				createdAt: new Date(),
+				username: un,
+				usernameLower: un,
+				...data,
+			},
+		});
 	}
 
-	function createRole(data: Partial<Role> = {}) {
-		return rolesRepository.insert({
-			id: genAid(new Date()),
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			lastUsedAt: new Date(),
-			description: '',
-			...data,
-		})
-			.then(x => rolesRepository.findOneByOrFail(x.identifiers[0]));
+	function createRole(data: Partial<Omit<Prisma.roleCreateInput, 'name'>> & Pick<Prisma.roleCreateInput, 'name'>) {
+		return prismaService.client.role.create({
+			data: {
+				id: genAid(new Date()),
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				lastUsedAt: new Date(),
+				description: '',
+				...data,
+			},
+		});
 	}
 
 	beforeEach(async () => {
@@ -68,6 +68,7 @@ describe('RoleService', () => {
 				CacheService,
 				IdService,
 				GlobalEventService,
+				PrismaService,
 			],
 		})
 			.useMocker((token) => {
@@ -85,9 +86,7 @@ describe('RoleService', () => {
 		app.enableShutdownHooks();
 
 		roleService = app.get<RoleService>(RoleService);
-		usersRepository = app.get<UsersRepository>(DI.usersRepository);
-		rolesRepository = app.get<RolesRepository>(DI.rolesRepository);
-		roleAssignmentsRepository = app.get<RoleAssignmentsRepository>(DI.roleAssignmentsRepository);
+		prismaService = app.get(PrismaService);
 
 		metaService = app.get<MetaService>(MetaService) as jest.Mocked<MetaService>;
 	});
@@ -96,10 +95,10 @@ describe('RoleService', () => {
 		clock.uninstall();
 
 		await Promise.all([
-			app.get(DI.metasRepository).delete({}),
-			usersRepository.delete({}),
-			rolesRepository.delete({}),
-			roleAssignmentsRepository.delete({}),
+			prismaService.client.meta.deleteMany({}),
+			prismaService.client.user.deleteMany({}),
+			prismaService.client.role.deleteMany({}),
+			prismaService.client.role_assignment.deleteMany({}),
 		]);
 
 		await app.close();

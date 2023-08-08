@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { ClipsRepository } from '@/models/index.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = ClipSchema;
@@ -35,15 +34,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
 		private clipEntityService: ClipEntityService,
+		private prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch the clip
-			const clip = await this.clipsRepository.findOneBy({
-				id: ps.clipId,
+			const clip = await this.prismaService.client.clip.findUnique({
+				where: { id: ps.clipId },
 			});
 
 			if (clip == null) {

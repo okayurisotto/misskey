@@ -1,7 +1,7 @@
 import { createPublicKey, randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { In } from 'typeorm';
 import * as mfm from 'mfm-js';
+import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import type { PartialLocalUser, LocalUser, PartialRemoteUser, RemoteUser, User } from '@/models/entities/User.js';
@@ -18,47 +18,31 @@ import { MfmService } from '@/core/MfmService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import type { UserKeypair } from '@/models/entities/UserKeypair.js';
-import type { UsersRepository, UserProfilesRepository, NotesRepository, DriveFilesRepository, EmojisRepository, PollsRepository } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { LdSignatureService } from './LdSignatureService.js';
 import { ApMfmService } from './ApMfmService.js';
 import type { IAccept, IActivity, IAdd, IAnnounce, IApDocument, IApEmoji, IApHashtag, IApImage, IApMention, IBlock, ICreate, IDelete, IFlag, IFollow, IKey, ILike, IMove, IObject, IPost, IQuestion, IReject, IRemove, ITombstone, IUndo, IUpdate } from './type.js';
+import type { blocking, drive_file, note, poll, poll_vote, user, user_keypair } from '@prisma/client';
 
 @Injectable()
 export class ApRendererService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
-		@Inject(DI.pollsRepository)
-		private pollsRepository: PollsRepository,
-
-		private customEmojiService: CustomEmojiService,
-		private userEntityService: UserEntityService,
-		private driveFileEntityService: DriveFileEntityService,
-		private ldSignatureService: LdSignatureService,
-		private userKeypairService: UserKeypairService,
-		private apMfmService: ApMfmService,
-		private mfmService: MfmService,
-	) {
-	}
+		private readonly customEmojiService: CustomEmojiService,
+		private readonly userEntityService: UserEntityService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly ldSignatureService: LdSignatureService,
+		private readonly userKeypairService: UserKeypairService,
+		private readonly apMfmService: ApMfmService,
+		private readonly mfmService: MfmService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
 	public renderAccept(object: string | IObject, user: { id: User['id']; host: null }): IAccept {
@@ -80,7 +64,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderAnnounce(object: string | IObject, note: Note): IAnnounce {
+	public renderAnnounce(object: string | IObject, note: T2P<Note, note>): IAnnounce {
 		const attributedTo = this.userEntityService.genLocalUserUri(note.userId);
 
 		let to: string[] = [];
@@ -116,8 +100,8 @@ export class ApRendererService {
 	 * @param block The block to be rendered. The blockee relation must be loaded.
 	 */
 	@bindThis
-	public renderBlock(block: Blocking): IBlock {
-		if (block.blockee?.uri == null) {
+	public renderBlock(block: T2P<Blocking, blocking> & { blockee: T2P<User, user> }): IBlock {
+		if (block.blockee.uri == null) {
 			throw new Error('renderBlock: missing blockee uri');
 		}
 
@@ -130,7 +114,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderCreate(object: IObject, note: Note): ICreate {
+	public renderCreate(object: IObject, note: T2P<Note, note>): ICreate {
 		const activity: ICreate = {
 			id: `${this.config.url}/notes/${note.id}/activity`,
 			actor: this.userEntityService.genLocalUserUri(note.userId),
@@ -208,7 +192,7 @@ export class ApRendererService {
 	 */
 	@bindThis
 	public async renderFollowUser(id: User['id']): Promise<string> {
-		const user = await this.usersRepository.findOneByOrFail({ id: id }) as PartialLocalUser | PartialRemoteUser;
+		const user = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: id } }) as PartialLocalUser | PartialRemoteUser;
 		return this.userEntityService.getUserUri(user);
 	}
 
@@ -236,7 +220,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderImage(file: DriveFile): IApImage {
+	public renderImage(file: T2P<DriveFile, drive_file>): IApImage {
 		return {
 			type: 'Image',
 			url: this.driveFileEntityService.getPublicUrl(file),
@@ -246,7 +230,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderKey(user: LocalUser, key: UserKeypair, postfix?: string): IKey {
+	public renderKey(user: LocalUser, key: T2P<UserKeypair, user_keypair>, postfix?: string): IKey {
 		return {
 			id: `${this.config.url}/users/${user.id}${postfix ?? '/publickey'}`,
 			type: 'Key',
@@ -307,21 +291,24 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public async renderNote(note: Note, dive = true): Promise<IPost> {
+	public async renderNote(note: T2P<Note, note>, dive = true): Promise<IPost> {
 		const getPromisedFiles = async (ids: string[]): Promise<DriveFile[]> => {
 			if (ids.length === 0) return [];
-			const items = await this.driveFilesRepository.findBy({ id: In(ids) });
+			const items = await this.prismaService.client.drive_file.findMany({ where: { id: { in: ids } } });
 			return ids.map(id => items.find(item => item.id === id)).filter((item): item is DriveFile => item != null);
 		};
 
 		let inReplyTo;
-		let inReplyToNote: Note | null;
+		let inReplyToNote: T2P<Note, note> | null;
 
 		if (note.replyId) {
-			inReplyToNote = await this.notesRepository.findOneBy({ id: note.replyId });
+			inReplyToNote = await this.prismaService.client.note.findUnique({ where: { id: note.replyId } });
 
 			if (inReplyToNote != null) {
-				const inReplyToUserExist = await this.usersRepository.exist({ where: { id: inReplyToNote.userId } });
+				const inReplyToUserExist = (await this.prismaService.client.user.count({
+					where: { id: inReplyToNote.userId },
+					take: 1,
+				})) > 0;
 
 				if (inReplyToUserExist) {
 					if (inReplyToNote.uri) {
@@ -342,7 +329,7 @@ export class ApRendererService {
 		let quote;
 
 		if (note.renoteId) {
-			const renote = await this.notesRepository.findOneBy({ id: note.renoteId });
+			const renote = await this.prismaService.client.note.findUnique({ where: { id: note.renoteId } });
 
 			if (renote) {
 				quote = renote.uri ? renote.uri : `${this.config.url}/notes/${renote.id}`;
@@ -369,9 +356,9 @@ export class ApRendererService {
 			to = mentions;
 		}
 
-		const mentionedUsers = note.mentions.length > 0 ? await this.usersRepository.findBy({
-			id: In(note.mentions),
-		}) : [];
+		const mentionedUsers = note.mentions.length > 0
+			? await this.prismaService.client.user.findMany({ where: { id: { in: note.mentions } } })
+			: [];
 
 		const hashtagTags = note.tags.map(tag => this.renderHashtag(tag));
 		const mentionTags = mentionedUsers.map(u => this.renderMention(u as LocalUser | RemoteUser));
@@ -379,10 +366,10 @@ export class ApRendererService {
 		const files = await getPromisedFiles(note.fileIds);
 
 		const text = note.text ?? '';
-		let poll: Poll | null = null;
+		let poll: T2P<Poll, poll> | null = null;
 
 		if (note.hasPoll) {
-			poll = await this.pollsRepository.findOneBy({ noteId: note.id });
+			poll = await this.prismaService.client.poll.findUnique({ where: { noteId: note.id } });
 		}
 
 		let apText = text;
@@ -452,12 +439,12 @@ export class ApRendererService {
 		const isSystem = user.username.includes('.');
 
 		const [avatar, banner, profile] = await Promise.all([
-			user.avatarId ? this.driveFilesRepository.findOneBy({ id: user.avatarId }) : undefined,
-			user.bannerId ? this.driveFilesRepository.findOneBy({ id: user.bannerId }) : undefined,
-			this.userProfilesRepository.findOneByOrFail({ userId: user.id }),
+			user.avatarId ? this.prismaService.client.drive_file.findUnique({ where: { id: user.avatarId } }) : undefined,
+			user.bannerId ? this.prismaService.client.drive_file.findUnique({ where: { id: user.bannerId } }) : undefined,
+			this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } }),
 		]);
 
-		const attachment = profile.fields.map(field => ({
+		const attachment = z.array(z.object({ name: z.string(), value: z.string() })).parse(profile.fields).map(field => ({
 			type: 'PropertyValue',
 			name: field.name,
 			value: /^https?:/.test(field.value)
@@ -521,7 +508,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderQuestion(user: { id: User['id'] }, note: Note, poll: Poll): IQuestion {
+	public renderQuestion(user: { id: User['id'] }, note: T2P<Note, note>, poll: T2P<Poll, poll>): IQuestion {
 		return {
 			type: 'Question',
 			id: `${this.config.url}/questions/${note.id}`,
@@ -591,7 +578,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderVote(user: { id: User['id'] }, vote: PollVote, note: Note, poll: Poll, pollOwner: RemoteUser): ICreate {
+	public renderVote(user: { id: User['id'] }, vote: T2P<PollVote, poll_vote>, note: T2P<Note, note>, poll: T2P<Poll, poll>, pollOwner: RemoteUser): ICreate {
 		return {
 			id: `${this.config.url}/users/${user.id}#votes/${vote.id}/activity`,
 			actor: this.userEntityService.genLocalUserUri(user.id),

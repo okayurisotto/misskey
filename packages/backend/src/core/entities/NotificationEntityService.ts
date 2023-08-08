@@ -1,8 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { In } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { AccessTokensRepository, FollowRequestsRepository, NoteReactionsRepository, NotesRepository, User, UsersRepository } from '@/models/index.js';
+import type { User } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Notification } from '@/models/entities/Notification.js';
 import type { Note } from '@/models/entities/Note.js';
@@ -12,8 +10,8 @@ import { notificationTypes } from '@/types.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { UserSchema } from '@/models/zod/UserSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import type { OnModuleInit } from '@nestjs/common';
-import type { CustomEmojiService } from '../CustomEmojiService.js';
 import type { UserEntityService } from './UserEntityService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
 import type { z } from 'zod';
@@ -24,36 +22,16 @@ const NOTE_REQUIRED_NOTIFICATION_TYPES = new Set(['mention', 'reply', 'renote', 
 export class NotificationEntityService implements OnModuleInit {
 	private userEntityService: UserEntityService;
 	private noteEntityService: NoteEntityService;
-	private customEmojiService: CustomEmojiService;
 
 	constructor(
-		private moduleRef: ModuleRef,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.noteReactionsRepository)
-		private noteReactionsRepository: NoteReactionsRepository,
-
-		@Inject(DI.followRequestsRepository)
-		private followRequestsRepository: FollowRequestsRepository,
-
-		@Inject(DI.accessTokensRepository)
-		private accessTokensRepository: AccessTokensRepository,
-
-		//private userEntityService: UserEntityService,
-		//private noteEntityService: NoteEntityService,
-		//private customEmojiService: CustomEmojiService,
+		private readonly moduleRef: ModuleRef,
+		private readonly prismaService: PrismaService,
 	) {
 	}
 
-	onModuleInit() {
+	onModuleInit(): void {
 		this.userEntityService = this.moduleRef.get('UserEntityService');
 		this.noteEntityService = this.moduleRef.get('NoteEntityService');
-		this.customEmojiService = this.moduleRef.get('CustomEmojiService');
 	}
 
 	@bindThis
@@ -73,7 +51,7 @@ export class NotificationEntityService implements OnModuleInit {
 		const result = await awaitAll({
 			token: () =>
 				notification.appAccessTokenId
-					? this.accessTokensRepository.findOneByOrFail({ id: notification.appAccessTokenId })
+					? this.prismaService.client.access_token.findUniqueOrThrow({ where: { id: notification.appAccessTokenId } })
 					: Promise.resolve(null),
 			noteIfNeed: () =>
 				NOTE_REQUIRED_NOTIFICATION_TYPES.has(notification.type) && notification.noteId != null
@@ -116,9 +94,8 @@ export class NotificationEntityService implements OnModuleInit {
 		let validNotifications = notifications;
 
 		const noteIds = validNotifications.map(x => x.noteId).filter(isNotNull);
-		const notes = noteIds.length > 0 ? await this.notesRepository.find({
-			where: { id: In(noteIds) },
-			relations: ['user', 'reply', 'reply.user', 'renote', 'renote.user'],
+		const notes = noteIds.length > 0 ? await this.prismaService.client.note.findMany({
+			where: { id: { in: noteIds } },
 		}) : [];
 		const packedNotesArray = await this.noteEntityService.packMany(notes, { id: meId }, {
 			detail: true,
@@ -128,8 +105,8 @@ export class NotificationEntityService implements OnModuleInit {
 		validNotifications = validNotifications.filter(x => x.noteId == null || packedNotes.has(x.noteId));
 
 		const userIds = validNotifications.map(x => x.notifierId).filter(isNotNull);
-		const users = userIds.length > 0 ? await this.usersRepository.find({
-			where: { id: In(userIds) },
+		const users = userIds.length > 0 ? await this.prismaService.client.user.findMany({
+			where: { id: { in: userIds } },
 		}) : [];
 		const packedUsersArray = await Promise.all(
 			users.map((user) => this.userEntityService.pack(user, { id: meId }, { detail: false })),
@@ -139,8 +116,8 @@ export class NotificationEntityService implements OnModuleInit {
 		// 既に解決されたフォローリクエストの通知を除外
 		const followRequestNotifications = validNotifications.filter(x => x.type === 'receiveFollowRequest');
 		if (followRequestNotifications.length > 0) {
-			const reqs = await this.followRequestsRepository.find({
-				where: { followerId: In(followRequestNotifications.map(x => x.notifierId!)) },
+			const reqs = await this.prismaService.client.follow_request.findMany({
+				where: { followerId: { in: followRequestNotifications.map(x => x.notifierId!) } },
 			});
 			validNotifications = validNotifications.filter(x => (x.type !== 'receiveFollowRequest') || reqs.some(r => r.followerId === x.notifierId));
 		}

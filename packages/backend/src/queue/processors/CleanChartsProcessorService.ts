@@ -1,6 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
 import type Logger from '@/logger.js';
 import FederationChart from '@/core/chart/charts/federation.js';
 import NotesChart from '@/core/chart/charts/notes.js';
@@ -16,30 +14,26 @@ import PerUserDriveChart from '@/core/chart/charts/per-user-drive.js';
 import ApRequestChart from '@/core/chart/charts/ap-request.js';
 import { bindThis } from '@/decorators.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
-import type * as Bull from 'bullmq';
 
 @Injectable()
 export class CleanChartsProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private readonly federationChart: FederationChart,
+		private readonly notesChart: NotesChart,
+		private readonly usersChart: UsersChart,
+		private readonly activeUsersChart: ActiveUsersChart,
+		private readonly instanceChart: InstanceChart,
+		private readonly perUserNotesChart: PerUserNotesChart,
+		private readonly perUserPvChart: PerUserPvChart,
+		private readonly driveChart: DriveChart,
+		private readonly perUserReactionsChart: PerUserReactionsChart,
+		private readonly perUserFollowingChart: PerUserFollowingChart,
+		private readonly perUserDriveChart: PerUserDriveChart,
+		private readonly apRequestChart: ApRequestChart,
 
-		private federationChart: FederationChart,
-		private notesChart: NotesChart,
-		private usersChart: UsersChart,
-		private activeUsersChart: ActiveUsersChart,
-		private instanceChart: InstanceChart,
-		private perUserNotesChart: PerUserNotesChart,
-		private perUserPvChart: PerUserPvChart,
-		private driveChart: DriveChart,
-		private perUserReactionsChart: PerUserReactionsChart,
-		private perUserFollowingChart: PerUserFollowingChart,
-		private perUserDriveChart: PerUserDriveChart,
-		private apRequestChart: ApRequestChart,
-
-		private queueLoggerService: QueueLoggerService,
+		private readonly queueLoggerService: QueueLoggerService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('clean-charts');
 	}

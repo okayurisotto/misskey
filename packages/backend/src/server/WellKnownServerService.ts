@@ -1,18 +1,17 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { IsNull } from 'typeorm';
 import vary from 'vary';
 import fastifyAccepts from '@fastify/accepts';
 import { DI } from '@/di-symbols.js';
-import type { UsersRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import { escapeAttribute, escapeValue } from '@/misc/prelude/xml.js';
 import type { User } from '@/models/entities/User.js';
 import * as Acct from '@/misc/acct.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { NodeinfoServerService } from './NodeinfoServerService.js';
-import type { FindOptionsWhere } from 'typeorm';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
+import type { Prisma } from '@prisma/client';
 
 @Injectable()
 export class WellKnownServerService {
@@ -20,14 +19,10 @@ export class WellKnownServerService {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private nodeinfoServerService: NodeinfoServerService,
-		private userEntityService: UserEntityService,
-	) {
-		//this.createServer = this.createServer.bind(this);
-	}
+		private readonly nodeinfoServerService: NodeinfoServerService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
 	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void) {
@@ -88,26 +83,33 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 */
 
 		fastify.get<{ Querystring: { resource: string } }>(webFingerPath, async (request, reply) => {
-			const fromId = (id: User['id']): FindOptionsWhere<User> => ({
+			const fromId = (id: User['id']): Prisma.userWhereInput => ({
 				id,
-				host: IsNull(),
+				host: null,
 				isSuspended: false,
 			});
 
-			const generateQuery = (resource: string): FindOptionsWhere<User> | number =>
-				resource.startsWith(`${this.config.url.toLowerCase()}/users/`) ?
-					fromId(resource.split('/').pop()!) :
-					fromAcct(Acct.parse(
-						resource.startsWith(`${this.config.url.toLowerCase()}/@`) ? resource.split('/').pop()! :
-						resource.startsWith('acct:') ? resource.slice('acct:'.length) :
-						resource));
+			const generateQuery = (resource: string) =>
+				resource.startsWith(`${this.config.url.toLowerCase()}/users/`)
+					? fromId(resource.split('/').pop()!)
+					: fromAcct(
+							Acct.parse(
+								resource.startsWith(`${this.config.url.toLowerCase()}/@`)
+									? resource.split('/').pop()!
+									: resource.startsWith('acct:')
+										? resource.slice('acct:'.length)
+										: resource
+							)
+					);
 
-			const fromAcct = (acct: Acct.Acct): FindOptionsWhere<User> | number =>
-				!acct.host || acct.host === this.config.host.toLowerCase() ? {
-					usernameLower: acct.username,
-					host: IsNull(),
-					isSuspended: false,
-				} : 422;
+			const fromAcct = (acct: Acct.Acct): Prisma.userWhereInput | number =>
+				!acct.host || acct.host === this.config.host.toLowerCase()
+					? {
+							usernameLower: acct.username,
+							host: null,
+							isSuspended: false,
+						}
+					: 422;
 
 			if (typeof request.query.resource !== 'string') {
 				reply.code(400);
@@ -121,7 +123,9 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 				return;
 			}
 
-			const user = await this.usersRepository.findOneBy(query);
+			const user = await this.prismaService.client.user.findFirst({
+				where: query,
+			});
 
 			if (user == null) {
 				reply.code(404);

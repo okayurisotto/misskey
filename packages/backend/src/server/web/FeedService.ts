@@ -1,13 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { In, IsNull } from 'typeorm';
 import { Feed } from 'feed';
 import { DI } from '@/di-symbols.js';
-import type { DriveFilesRepository, NotesRepository, UserProfilesRepository, UsersRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import type { User } from '@/models/entities/User.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
+import type { user } from '@prisma/client';
+import { PrismaService } from '@/core/PrismaService.js';
 
 @Injectable()
 export class FeedService {
@@ -15,39 +16,27 @@ export class FeedService {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
 		private userEntityService: UserEntityService,
 		private driveFileEntityService: DriveFileEntityService,
-	) {
-	}
+		private prismaService: PrismaService,
+	) {}
 
 	@bindThis
-	public async packFeed(user: User) {
+	public async packFeed(user: T2P<User, user>) {
 		const author = {
 			link: `${this.config.url}/@${user.username}`,
 			name: user.name ?? user.username,
 		};
 
-		const profile = await this.userProfilesRepository.findOneByOrFail({ userId: user.id });
+		const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } });
 
-		const notes = await this.notesRepository.find({
+		const notes = await this.prismaService.client.note.findMany({
 			where: {
 				userId: user.id,
-				renoteId: IsNull(),
-				visibility: In(['public', 'home']),
+				renoteId: null,
+				visibility: { in: ['public', 'home'] },
 			},
-			order: { createdAt: -1 },
+			orderBy: { createdAt: 'desc' },
 			take: 20,
 		});
 
@@ -68,8 +57,10 @@ export class FeedService {
 		});
 
 		for (const note of notes) {
-			const files = note.fileIds.length > 0 ? await this.driveFilesRepository.findBy({
-				id: In(note.fileIds),
+			const files = note.fileIds.length > 0 ? await this.prismaService.client.drive_file.findMany({
+				where: {
+					id: { in: note.fileIds },
+				},
 			}) : [];
 			const file = files.find(file => file.type.startsWith('image/'));
 

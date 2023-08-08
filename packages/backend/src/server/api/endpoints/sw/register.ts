@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
-import type { SwSubscriptionsRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MetaService } from '@/core/MetaService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	state: z.enum(['already-subscribed', 'subscribed']).optional(),
@@ -35,19 +34,19 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.swSubscriptionsRepository)
-		private swSubscriptionsRepository: SwSubscriptionsRepository,
-
-		private idService: IdService,
-		private metaService: MetaService,
+		private readonly idService: IdService,
+		private readonly metaService: MetaService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// if already subscribed
-			const exist = await this.swSubscriptionsRepository.findOneBy({
-				userId: me.id,
-				endpoint: ps.endpoint,
-				auth: ps.auth,
-				publickey: ps.publickey,
+			const exist = await this.prismaService.client.sw_subscription.findFirst({
+				where: {
+					userId: me.id,
+					endpoint: ps.endpoint,
+					auth: ps.auth,
+					publickey: ps.publickey,
+				},
 			});
 
 			const instance = await this.metaService.fetch(true);
@@ -62,14 +61,16 @@ export default class extends Endpoint<
 				};
 			}
 
-			await this.swSubscriptionsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				userId: me.id,
-				endpoint: ps.endpoint,
-				auth: ps.auth,
-				publickey: ps.publickey,
-				sendReadMessage: ps.sendReadMessage,
+			await this.prismaService.client.sw_subscription.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					userId: me.id,
+					endpoint: ps.endpoint,
+					auth: ps.auth,
+					publickey: ps.publickey,
+					sendReadMessage: ps.sendReadMessage,
+				},
 			});
 
 			return {

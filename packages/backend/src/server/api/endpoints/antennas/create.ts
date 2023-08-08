@@ -1,17 +1,13 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import type {
-	UserListsRepository,
-	AntennasRepository,
-} from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { AntennaEntityService } from '@/core/entities/AntennaEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { AntennaSchema } from '@/models/zod/AntennaSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = AntennaSchema;
@@ -56,25 +52,21 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.antennasRepository)
-		private antennasRepository: AntennasRepository,
-
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-
-		private antennaEntityService: AntennaEntityService,
-		private roleService: RoleService,
-		private idService: IdService,
-		private globalEventService: GlobalEventService,
+		private readonly antennaEntityService: AntennaEntityService,
+		private readonly roleService: RoleService,
+		private readonly idService: IdService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			if (ps.keywords.length === 0 || ps.keywords[0].every((x) => x === '')) {
 				throw new Error('invalid param');
 			}
 
-			const currentAntennasCount = await this.antennasRepository.countBy({
-				userId: me.id,
-			});
+			const currentAntennasCount =
+				await this.prismaService.client.antenna.count({
+					where: { userId: me.id },
+				});
 			if (
 				currentAntennasCount >
 				(await this.roleService.getUserPolicies(me.id)).antennaLimit
@@ -85,9 +77,11 @@ export default class extends Endpoint<
 			let userList;
 
 			if (ps.src === 'list' && ps.userListId) {
-				userList = await this.userListsRepository.findOneBy({
-					id: ps.userListId,
-					userId: me.id,
+				userList = await this.prismaService.client.user_list.findUnique({
+					where: {
+						id: ps.userListId,
+						userId: me.id,
+					},
 				});
 
 				if (userList == null) {
@@ -97,8 +91,8 @@ export default class extends Endpoint<
 
 			const now = new Date();
 
-			const antenna = await this.antennasRepository
-				.insert({
+			const antenna = await this.prismaService.client.antenna.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt: now,
 					lastUsedAt: now,
@@ -113,8 +107,8 @@ export default class extends Endpoint<
 					withReplies: ps.withReplies,
 					withFile: ps.withFile,
 					notify: ps.notify,
-				})
-				.then((x) => this.antennasRepository.findOneByOrFail(x.identifiers[0]));
+				},
+			});
 
 			this.globalEventService.publishInternalEvent('antennaCreated', antenna);
 

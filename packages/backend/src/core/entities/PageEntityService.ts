@@ -1,56 +1,46 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type {
-	DriveFilesRepository,
-	PagesRepository,
-	PageLikesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { Page } from '@/models/entities/Page.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { bindThis } from '@/decorators.js';
 import type { PageSchema } from '@/models/zod/PageSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
-import type { z } from 'zod';
+import type { drive_file, page } from '@prisma/client';
 
 @Injectable()
 export class PageEntityService {
 	constructor(
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		@Inject(DI.pageLikesRepository)
-		private pageLikesRepository: PageLikesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private userEntityService: UserEntityService,
-		private driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly userEntityService: UserEntityService,
 	) {}
 
 	@bindThis
 	public async pack(
-		src: Page['id'] | Page,
+		src: Page['id'] | T2P<Page, page>,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof PageSchema>> {
 		const meId = me ? me.id : null;
 		const page =
 			typeof src === 'object'
 				? src
-				: await this.pagesRepository.findOneByOrFail({ id: src });
+				: await this.prismaService.client.page.findUniqueOrThrow({ where: { id: src } });
 
-		const attachedFiles: Promise<DriveFile | null>[] = [];
+		const attachedFiles: Promise<T2P<DriveFile, drive_file> | null>[] = [];
 		const collectFile = (xs: any[]) => {
 			for (const x of xs) {
 				if (x.type === 'image') {
 					attachedFiles.push(
-						this.driveFilesRepository.findOneBy({
-							id: x.fileId,
-							userId: page.userId,
+						this.prismaService.client.drive_file.findUnique({
+							where: {
+								id: x.fileId,
+								userId: page.userId,
+							},
 						}),
 					);
 				}
@@ -59,7 +49,7 @@ export class PageEntityService {
 				}
 			}
 		};
-		collectFile(page.content);
+		collectFile(z.array(z.record(z.string(), z.any())).parse(page.content));
 
 		// 後方互換性のため
 		let migrated = false;
@@ -80,15 +70,18 @@ export class PageEntityService {
 				}
 			}
 		};
-		migrate(page.content);
+		migrate(z.array(z.record(z.string(), z.any())).parse(page.content));
 		if (migrated) {
-			this.pagesRepository.update(page.id, {
-				content: page.content,
+			this.prismaService.client.page.update({
+				where: { id: page.id },
+				data: {
+					content: z.array(z.record(z.string(), z.any())).parse(page.content),
+				},
 			});
 		}
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.pack(page.user ?? page.userId, me), // { detail: true } すると無限ループするので注意
+			user: () => this.userEntityService.pack(page.userId, me), // { detail: true } すると無限ループするので注意
 			eyeCatchingImage: () =>
 				page.eyeCatchingImageId
 					? this.driveFileEntityService.pack(page.eyeCatchingImageId)
@@ -99,12 +92,13 @@ export class PageEntityService {
 						(x): x is DriveFile => x != null,
 					),
 				),
-			isLiked: () =>
+			isLiked: async () =>
 				meId
-					? this.pageLikesRepository.exist({
+					? await this.prismaService.client.page_like.count({
 							where: { pageId: page.id, userId: meId },
-					  })
-					: Promise.resolve(undefined),
+							take: 1,
+					  }) > 0
+					: undefined,
 		});
 
 		return {
@@ -113,8 +107,8 @@ export class PageEntityService {
 			updatedAt: page.updatedAt.toISOString(),
 			userId: page.userId,
 			user: result.user,
-			content: page.content,
-			variables: page.variables,
+			content: z.array(z.record(z.string(), z.any())).parse(page.content),
+			variables: z.array(z.record(z.string(), z.any())).parse(page.variables),
 			title: page.title,
 			name: page.name,
 			summary: page.summary,

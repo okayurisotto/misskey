@@ -2,9 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import * as OTPAuth from 'otpauth';
-import { IsNull } from 'typeorm';
 import { DI } from '@/di-symbols.js';
-import type { UserSecurityKeysRepository, SigninsRepository, UserProfilesRepository, AttestationChallengesRepository, UsersRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser } from '@/models/entities/User.js';
@@ -14,32 +12,19 @@ import { bindThis } from '@/decorators.js';
 import { RateLimiterService } from './RateLimiterService.js';
 import { SigninService } from './SigninService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { PrismaService } from '@/core/PrismaService.js';
 
 @Injectable()
 export class SigninApiService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userSecurityKeysRepository)
-		private userSecurityKeysRepository: UserSecurityKeysRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.attestationChallengesRepository)
-		private attestationChallengesRepository: AttestationChallengesRepository,
-
-		@Inject(DI.signinsRepository)
-		private signinsRepository: SigninsRepository,
-
-		private idService: IdService,
-		private rateLimiterService: RateLimiterService,
-		private signinService: SigninService,
-		private twoFactorAuthenticationService: TwoFactorAuthenticationService,
+		private readonly idService: IdService,
+		private readonly rateLimiterService: RateLimiterService,
+		private readonly signinService: SigninService,
+		private readonly twoFactorAuthenticationService: TwoFactorAuthenticationService,
+		private readonly prismaService: PrismaService,
 	) {
 	}
 
@@ -102,9 +87,11 @@ export class SigninApiService {
 		}
 
 		// Fetch user
-		const user = await this.usersRepository.findOneBy({
-			usernameLower: username.toLowerCase(),
-			host: IsNull(),
+		const user = await this.prismaService.client.user.findFirst({
+			where: {
+				usernameLower: username.toLowerCase(),
+				host: null,
+			},
 		}) as LocalUser;
 
 		if (user == null) {
@@ -119,20 +106,22 @@ export class SigninApiService {
 			});
 		}
 
-		const profile = await this.userProfilesRepository.findOneByOrFail({ userId: user.id });
+		const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } });
 
 		// Compare password
 		const same = await bcrypt.compare(password, profile.password!);
 
 		const fail = async (status?: number, failure?: { id: string }) => {
 		// Append signin history
-			await this.signinsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				userId: user.id,
-				ip: request.ip,
-				headers: request.headers as any,
-				success: false,
+			await this.prismaService.client.signin.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					userId: user.id,
+					ip: request.ip,
+					headers: request.headers as any,
+					success: false,
+				},
 			});
 
 			return error(status ?? 500, failure ?? { id: '4e30e80c-e338-45a0-8c8f-44455efa3b76' });
@@ -178,11 +167,13 @@ export class SigninApiService {
 
 			const clientDataJSON = Buffer.from(body.clientDataJSON, 'hex');
 			const clientData = JSON.parse(clientDataJSON.toString('utf-8'));
-			const challenge = await this.attestationChallengesRepository.findOneBy({
-				userId: user.id,
-				id: body.challengeId,
-				registrationChallenge: false,
-				challenge: this.twoFactorAuthenticationService.hash(clientData.challenge).toString('hex'),
+			const challenge = await this.prismaService.client.attestation_challenge.findFirst({
+				where: {
+					userId: user.id,
+					id: body.challengeId,
+					registrationChallenge: false,
+					challenge: this.twoFactorAuthenticationService.hash(clientData.challenge).toString('hex'),
+				},
 			});
 
 			if (!challenge) {
@@ -191,9 +182,11 @@ export class SigninApiService {
 				});
 			}
 
-			await this.attestationChallengesRepository.delete({
-				userId: user.id,
-				id: body.challengeId,
+			await this.prismaService.client.attestation_challenge.deleteMany({
+				where: {
+					userId: user.id,
+					id: body.challengeId,
+				},
 			});
 
 			if (new Date().getTime() - challenge.createdAt.getTime() >= 5 * 60 * 1000) {
@@ -202,13 +195,15 @@ export class SigninApiService {
 				});
 			}
 
-			const securityKey = await this.userSecurityKeysRepository.findOneBy({
-				id: Buffer.from(
-					body.credentialId
+			const securityKey = await this.prismaService.client.user_security_key.findUnique({
+				where: {
+					id: Buffer.from(
+						body.credentialId
 						.replace(/-/g, '+')
 						.replace(/_/g, '/'),
-					'base64',
-				).toString('hex'),
+						'base64',
+						).toString('hex'),
+				},
 			});
 
 			if (!securityKey) {
@@ -240,8 +235,10 @@ export class SigninApiService {
 				});
 			}
 
-			const keys = await this.userSecurityKeysRepository.findBy({
-				userId: user.id,
+			const keys = await this.prismaService.client.user_security_key.findMany({
+				where: {
+					userId: user.id,
+				},
 			});
 
 			if (keys.length === 0) {
@@ -258,12 +255,14 @@ export class SigninApiService {
 
 			const challengeId = this.idService.genId();
 
-			await this.attestationChallengesRepository.insert({
-				userId: user.id,
-				id: challengeId,
-				challenge: this.twoFactorAuthenticationService.hash(Buffer.from(challenge, 'utf-8')).toString('hex'),
-				createdAt: new Date(),
-				registrationChallenge: false,
+			await this.prismaService.client.attestation_challenge.create({
+				data: {
+					userId: user.id,
+					id: challengeId,
+					challenge: this.twoFactorAuthenticationService.hash(Buffer.from(challenge, 'utf-8')).toString('hex'),
+					createdAt: new Date(),
+					registrationChallenge: false,
+				},
 			});
 
 			reply.code(200);
@@ -278,4 +277,3 @@ export class SigninApiService {
 	// never get here
 	}
 }
-

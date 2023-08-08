@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AppsRepository } from '@/models/index.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { AppSchema } from '@/models/zod/AppSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(AppSchema);
 export const meta = {
@@ -26,18 +25,12 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.appsRepository)
-		private appsRepository: AppsRepository,
-
-		private appEntityService: AppEntityService,
+		private readonly appEntityService: AppEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = {
-				userId: me.id,
-			};
-
-			const apps = await this.appsRepository.find({
-				where: query,
+			const apps = await this.prismaService.client.app.findMany({
+				where: { userId: me.id },
 				take: ps.limit,
 				skip: ps.offset,
 			});

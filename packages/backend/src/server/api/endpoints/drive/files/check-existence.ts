@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFilesRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MD5Schema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.boolean();
 export const meta = {
@@ -25,17 +24,16 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const exist = await this.driveFilesRepository.exist({
-				where: {
-					md5: ps.md5,
-					userId: me.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.drive_file.count({
+					where: {
+						md5: ps.md5,
+						userId: me.id,
+					},
+					take: 1,
+				})) > 0;
 
 			return exist satisfies z.infer<typeof res>;
 		});

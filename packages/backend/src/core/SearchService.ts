@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { In } from 'typeorm';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
 import { Note } from '@/models/entities/Note.js';
-import { User } from '@/models/index.js';
-import type { NotesRepository } from '@/models/index.js';
-import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
-import { QueryService } from '@/core/QueryService.js';
+import type { User } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import type { Index, MeiliSearch } from 'meilisearch';
+import type { note, user } from '@prisma/client';
 
 type K = string;
 type V = string | number | boolean;
@@ -57,16 +57,14 @@ export class SearchService {
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
 		@Inject(DI.meilisearch)
-		private meilisearch: MeiliSearch | null,
+		private readonly meilisearch: MeiliSearch | null,
 
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private queryService: QueryService,
-		private idService: IdService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		if (meilisearch) {
 			this.meilisearchNoteIndex = meilisearch.index(`${config.meilisearch!.index}---notes`);
@@ -100,7 +98,7 @@ export class SearchService {
 	}
 
 	@bindThis
-	public async indexNote(note: Note): Promise<void> {
+	public async indexNote(note: T2P<Note, note>): Promise<void> {
 		if (note.text == null && note.cw == null) return;
 		if (!['home', 'public'].includes(note.visibility)) return;
 
@@ -136,7 +134,7 @@ export class SearchService {
 	}
 
 	@bindThis
-	public async unindexNote(note: Note): Promise<void> {
+	public async unindexNote(note: T2P<Note, note>): Promise<void> {
 		if (!['home', 'public'].includes(note.visibility)) return;
 
 		if (this.meilisearch) {
@@ -145,7 +143,7 @@ export class SearchService {
 	}
 
 	@bindThis
-	public async searchNote(q: string, me: User | null, opts: {
+	public async searchNote(q: string, me: T2P<User, user> | null, opts: {
 		userId?: Note['userId'] | null;
 		channelId?: Note['channelId'] | null;
 		host?: string | null;
@@ -153,7 +151,7 @@ export class SearchService {
 		untilId?: Note['id'];
 		sinceId?: Note['id'];
 		limit?: number;
-	}): Promise<Note[]> {
+	}): Promise<T2P<Note, note>[]> {
 		if (this.meilisearch) {
 			const filter: Q = {
 				op: 'and',
@@ -178,32 +176,30 @@ export class SearchService {
 				limit: pagination.limit,
 			});
 			if (res.hits.length === 0) return [];
-			const notes = await this.notesRepository.findBy({
-				id: In(res.hits.map(x => x.id)),
+			const notes = await this.prismaService.client.note.findMany({
+				where: { id: { in: res.hits.map(x => x.id) } },
 			});
 			return notes.sort((a, b) => a.id > b.id ? -1 : 1);
 		} else {
-			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), pagination.sinceId, pagination.untilId);
-
-			if (opts.userId) {
-				query.andWhere('note.userId = :userId', { userId: opts.userId });
-			} else if (opts.channelId) {
-				query.andWhere('note.channelId = :channelId', { channelId: opts.channelId });
-			}
-
-			query
-				.andWhere('note.text ILIKE :q', { q: `%${ sqlLikeEscape(q) }%` })
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
-
-			this.queryService.generateVisibilityQuery(query, me);
-			if (me) this.queryService.generateMutedUserQuery(query, me);
-			if (me) this.queryService.generateBlockedUserQuery(query, me);
-
-			return await query.limit(pagination.limit).getMany();
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: pagination.sinceId,
+				untilId: pagination.untilId,
+			});
+			return await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						{ text: { contains: q, mode: 'insensitive' } },
+						{ userId: opts.userId ?? undefined },
+						{ channelId: opts.channelId ?? undefined },
+						paginationQuery.where,
+						this.prismaQueryService.getVisibilityWhereForNote(me?.id ?? null),
+						await this.prismaQueryService.getMutingWhereForNote(me?.id ?? null),
+						this.prismaQueryService.getBlockedWhereForNote(me?.id ?? null),
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: pagination.limit,
+			});
 		}
 	}
 }

@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { PromoNotesRepository } from '@/models/index.js';
 import { GetterService } from '@/server/api/GetterService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -38,12 +37,10 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.promoNotesRepository)
-		private promoNotesRepository: PromoNotesRepository,
-
-		private getterService: GetterService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((e) => {
 				if (e.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
 					throw new ApiError(meta.errors.noSuchNote);
@@ -51,18 +48,22 @@ export default class extends Endpoint<
 				throw e;
 			});
 
-			const exist = await this.promoNotesRepository.exist({
-				where: { noteId: note.id },
-			});
+			const exist =
+				(await this.prismaService.client.promo_note.count({
+					where: { noteId: note.id },
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyPromoted);
 			}
 
-			await this.promoNotesRepository.insert({
-				noteId: note.id,
-				expiresAt: new Date(ps.expiresAt),
-				userId: note.userId,
+			await this.prismaService.client.promo_note.create({
+				data: {
+					noteId: note.id,
+					expiresAt: new Date(ps.expiresAt),
+					userId: note.userId,
+				},
 			});
 		});
 	}

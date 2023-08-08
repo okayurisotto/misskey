@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { MutingsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserMutingService } from '@/core/UserMutingService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -57,11 +56,9 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		private getterService: GetterService,
-		private userMutingService: UserMutingService,
+		private readonly getterService: GetterService,
+		private readonly userMutingService: UserMutingService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const muter = me;
@@ -80,12 +77,14 @@ export default class extends Endpoint<
 			});
 
 			// Check if already muting
-			const exist = await this.mutingsRepository.exist({
-				where: {
-					muterId: muter.id,
-					muteeId: mutee.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.muting.count({
+					where: {
+						muterId: muter.id,
+						muteeId: mutee.id,
+					},
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyMuting);

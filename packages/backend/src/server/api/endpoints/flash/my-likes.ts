@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { FlashLikesRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { FlashLikeEntityService } from '@/core/entities/FlashLikeEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { FlashSchema } from '@/models/zod/FlashSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(
 	z.object({
@@ -35,23 +34,23 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.flashLikesRepository)
-		private flashLikesRepository: FlashLikesRepository,
-
-		private flashLikeEntityService: FlashLikeEntityService,
-		private queryService: QueryService,
+		private readonly flashLikeEntityService: FlashLikeEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.flashLikesRepository.createQueryBuilder('like'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('like.userId = :meId', { meId: me.id })
-				.leftJoinAndSelect('like.flash', 'flash');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const likes = await query.limit(ps.limit).getMany();
+			const likes = await this.prismaService.client.flash_like.findMany({
+				where: {
+					AND: [paginationQuery.where, { userId: me.id }],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				likes.map((like) => this.flashLikeEntityService.pack(like, me)),

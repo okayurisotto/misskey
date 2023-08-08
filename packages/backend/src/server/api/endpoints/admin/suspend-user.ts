@@ -1,17 +1,17 @@
 import { z } from 'zod';
-import { IsNull, Not } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UsersRepository, FollowingsRepository } from '@/models/index.js';
 import type { User } from '@/models/entities/User.js';
 import type { RelationshipJobData } from '@/queue/types.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
-import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
+import type { user } from '@prisma/client';
 
 export const meta = {
 	tags: ['admin'],
@@ -19,9 +19,7 @@ export const meta = {
 	requireModerator: true,
 } as const;
 
-export const paramDef = z.object({
-	userId: MisskeyIdSchema,
-});
+export const paramDef = z.object({ userId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -31,19 +29,16 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private userSuspendService: UserSuspendService,
-		private roleService: RoleService,
-		private moderationLogService: ModerationLogService,
-		private queueService: QueueService,
+		private readonly userSuspendService: UserSuspendService,
+		private readonly roleService: RoleService,
+		private readonly moderationLogService: ModerationLogService,
+		private readonly queueService: QueueService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const user = await this.usersRepository.findOneBy({ id: ps.userId });
+			const user = await this.prismaService.client.user.findUnique({
+				where: { id: ps.userId },
+			});
 
 			if (user == null) {
 				throw new Error('user not found');
@@ -53,40 +48,32 @@ export default class extends Endpoint<
 				throw new Error('cannot suspend moderator account');
 			}
 
-			await this.usersRepository.update(user.id, {
-				isSuspended: true,
+			await this.prismaService.client.user.update({
+				where: { id: user.id },
+				data: { isSuspended: true },
 			});
 
-			this.moderationLogService.insertModerationLog(me, 'suspend', {
+			await this.moderationLogService.insertModerationLog(me, 'suspend', {
 				targetId: user.id,
 			});
 
-			(async (): Promise<void> => {
-				await this.userSuspendService.doPostSuspend(user).catch((e) => {});
-				await this.unFollowAll(user).catch((e) => {});
-			})();
+			await this.userSuspendService.doPostSuspend(user);
+			await this.unFollowAll(user);
 		});
 	}
 
 	@bindThis
-	private async unFollowAll(follower: User): Promise<void> {
-		const followings = await this.followingsRepository.find({
-			where: {
-				followerId: follower.id,
-				followeeId: Not(IsNull()),
-			},
+	private async unFollowAll(follower: T2P<User, user>): Promise<void> {
+		const followings = await this.prismaService.client.following.findMany({
+			where: { followerId: follower.id },
 		});
 
-		const jobs: RelationshipJobData[] = [];
-		for (const following of followings) {
-			if (following.followeeId && following.followerId) {
-				jobs.push({
-					from: { id: following.followerId },
-					to: { id: following.followeeId },
-					silent: true,
-				});
-			}
-		}
-		this.queueService.createUnfollowJob(jobs);
+		await this.queueService.createUnfollowJob(
+			followings.map<RelationshipJobData>((following) => ({
+				from: { id: following.followerId },
+				to: { id: following.followeeId },
+				silent: true,
+			})),
+		);
 	}
 }

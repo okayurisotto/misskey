@@ -1,17 +1,8 @@
 import { z } from 'zod';
-import { Brackets, In } from 'typeorm';
 import * as Redis from 'ioredis';
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UsersRepository,
-	FollowingsRepository,
-	MutingsRepository,
-	UserProfilesRepository,
-	NotesRepository,
-} from '@/models/index.js';
 import { obsoleteNotificationTypes, notificationTypes } from '@/types.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { NotificationEntityService } from '@/core/entities/NotificationEntityService.js';
 import { NotificationService } from '@/core/NotificationService.js';
@@ -20,6 +11,7 @@ import { IdService } from '@/core/IdService.js';
 import { Notification } from '@/models/entities/Notification.js';
 import { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(NotificationSchema);
 export const meta = {
@@ -55,25 +47,13 @@ export default class extends Endpoint<
 > {
 	constructor(
 		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private readonly redisClient: Redis.Redis,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private idService: IdService,
-		private notificationEntityService: NotificationEntityService,
-		private notificationService: NotificationService,
-		private queryService: QueryService,
-		private noteReadService: NoteReadService,
+		private readonly idService: IdService,
+		private readonly notificationEntityService: NotificationEntityService,
+		private readonly notificationService: NotificationService,
+		private readonly noteReadService: NoteReadService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// includeTypes が空の場合はクエリしない
@@ -141,7 +121,9 @@ export default class extends Endpoint<
 				.map((notification) => notification.noteId!);
 
 			if (noteIds.length > 0) {
-				const notes = await this.notesRepository.findBy({ id: In(noteIds) });
+				const notes = await this.prismaService.client.note.findMany({
+					where: { id: { in: noteIds } },
+				});
 				this.noteReadService.read(me.id, notes);
 			}
 

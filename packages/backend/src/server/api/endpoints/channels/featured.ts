@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { ChannelsRepository } from '@/models/index.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(ChannelSchema);
 export const meta = {
@@ -23,19 +22,18 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		private channelEntityService: ChannelEntityService,
+		private readonly channelEntityService: ChannelEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.channelsRepository
-				.createQueryBuilder('channel')
-				.where('channel.lastNotedAt IS NOT NULL')
-				.andWhere('channel.isArchived = FALSE')
-				.orderBy('channel.lastNotedAt', 'DESC');
-
-			const channels = await query.limit(10).getMany();
+			const channels = await this.prismaService.client.channel.findMany({
+				where: {
+					lastNotedAt: { not: null },
+					isArchived: false,
+				},
+				orderBy: { lastNotedAt: 'desc' },
+				take: 10,
+			});
 
 			return (await Promise.all(
 				channels.map((x) => this.channelEntityService.pack(x, me)),

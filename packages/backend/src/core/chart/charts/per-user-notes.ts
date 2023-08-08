@@ -4,12 +4,14 @@ import type { User } from '@/models/entities/User.js';
 import type { Note } from '@/models/entities/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
-import type { NotesRepository } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-notes.js';
 import type { KVs } from '../core.js';
+import type { note } from '@prisma/client';
 
 /**
  * ユーザーごとのノートに関するチャート
@@ -19,20 +21,18 @@ import type { KVs } from '../core.js';
 export default class PerUserNotesChart extends Chart<typeof schema> {
 	constructor(
 		@Inject(DI.db)
-		private db: DataSource,
+		private readonly db: DataSource,
 
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private appLockService: AppLockService,
-		private chartLoggerService: ChartLoggerService,
+		private readonly appLockService: AppLockService,
+		private readonly chartLoggerService: ChartLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
 	}
 
 	protected async tickMajor(group: string): Promise<Partial<KVs<typeof schema>>> {
 		const [count] = await Promise.all([
-			this.notesRepository.countBy({ userId: group }),
+			this.prismaService.client.note.count({ where: { userId: group } }),
 		]);
 
 		return {
@@ -45,7 +45,7 @@ export default class PerUserNotesChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public update(user: { id: User['id'] }, note: Note, isAdditional: boolean): void {
+	public update(user: { id: User['id'] }, note: T2P<Note, note>, isAdditional: boolean): void {
 		this.commit({
 			'total': isAdditional ? 1 : -1,
 			'inc': isAdditional ? 1 : 0,

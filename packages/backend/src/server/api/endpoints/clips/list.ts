@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { ClipsRepository } from '@/models/index.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(ClipSchema);
 export const meta = {
@@ -24,14 +23,12 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		private clipEntityService: ClipEntityService,
+		private readonly clipEntityService: ClipEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const clips = await this.clipsRepository.findBy({
-				userId: me.id,
+			const clips = await this.prismaService.client.clip.findMany({
+				where: { userId: me.id },
 			});
 
 			return (await Promise.all(

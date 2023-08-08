@@ -1,18 +1,18 @@
 import { setTimeout } from 'node:timers/promises';
 import * as Redis from 'ioredis';
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import { In } from 'typeorm';
 import { DI } from '@/di-symbols.js';
-import type { MutingsRepository, UserProfile, UserProfilesRepository, UsersRepository } from '@/models/index.js';
 import type { User } from '@/models/entities/User.js';
 import type { Notification } from '@/models/entities/Notification.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PushNotificationService } from '@/core/PushNotificationService.js';
 import { NotificationEntityService } from '@/core/entities/NotificationEntityService.js';
 import { IdService } from '@/core/IdService.js';
 import { CacheService } from '@/core/CacheService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
 
 @Injectable()
 export class NotificationService implements OnApplicationShutdown {
@@ -20,23 +20,14 @@ export class NotificationService implements OnApplicationShutdown {
 
 	constructor(
 		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private readonly redisClient: Redis.Redis,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		private notificationEntityService: NotificationEntityService,
-		private userEntityService: UserEntityService,
-		private idService: IdService,
-		private globalEventService: GlobalEventService,
-		private pushNotificationService: PushNotificationService,
-		private cacheService: CacheService,
+		private readonly notificationEntityService: NotificationEntityService,
+		private readonly idService: IdService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly pushNotificationService: PushNotificationService,
+		private readonly cacheService: CacheService,
+		private readonly prismaService: PrismaService,
 	) {
 	}
 
@@ -116,8 +107,8 @@ export class NotificationService implements OnApplicationShutdown {
 			this.globalEventService.publishMainStream(notifieeId, 'unreadNotification', packed);
 			this.pushNotificationService.pushNotification(notifieeId, 'notification', packed);
 
-			if (type === 'follow') this.emailNotificationFollow(notifieeId, await this.usersRepository.findOneByOrFail({ id: data.notifierId! }));
-			if (type === 'receiveFollowRequest') this.emailNotificationReceiveFollowRequest(notifieeId, await this.usersRepository.findOneByOrFail({ id: data.notifierId! }));
+			if (type === 'follow') this.emailNotificationFollow(notifieeId, await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.notifierId! } }));
+			if (type === 'receiveFollowRequest') this.emailNotificationReceiveFollowRequest(notifieeId, await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.notifierId! } }));
 		}, () => { /* aborted, ignore it */ });
 
 		return notification;
@@ -129,7 +120,7 @@ export class NotificationService implements OnApplicationShutdown {
 	// TODO: locale ファイルをクライアント用とサーバー用で分けたい
 
 	@bindThis
-	private async emailNotificationFollow(userId: User['id'], follower: User) {
+	private async emailNotificationFollow(userId: User['id'], follower: T2P<User, user>) {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
 		if (!userProfile.email || !userProfile.emailNotificationTypes.includes('follow')) return;
@@ -141,7 +132,7 @@ export class NotificationService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async emailNotificationReceiveFollowRequest(userId: User['id'], follower: User) {
+	private async emailNotificationReceiveFollowRequest(userId: User['id'], follower: T2P<User, user>) {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
 		if (!userProfile.email || !userProfile.emailNotificationTypes.includes('receiveFollowRequest')) return;

@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AntennasRepository } from '@/models/index.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -20,9 +19,7 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = z.object({
-	antennaId: MisskeyIdSchema,
-});
+export const paramDef = z.object({ antennaId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -32,22 +29,24 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.antennasRepository)
-		private antennasRepository: AntennasRepository,
-
-		private globalEventService: GlobalEventService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const antenna = await this.antennasRepository.findOneBy({
-				id: ps.antennaId,
-				userId: me.id,
+			const antenna = await this.prismaService.client.antenna.findUnique({
+				where: {
+					id: ps.antennaId,
+					userId: me.id,
+				},
 			});
 
 			if (antenna == null) {
 				throw new ApiError(meta.errors.noSuchAntenna);
 			}
 
-			await this.antennasRepository.delete(antenna.id);
+			await this.prismaService.client.antenna.delete({
+				where: { id: antenna.id },
+			});
 
 			this.globalEventService.publishInternalEvent('antennaDeleted', antenna);
 		});

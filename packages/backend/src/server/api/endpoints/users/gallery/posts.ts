@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { GalleryPostsRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(GalleryPostSchema);
 export const meta = {
@@ -30,22 +29,21 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.galleryPostsRepository)
-		private galleryPostsRepository: GalleryPostsRepository,
-
-		private galleryPostEntityService: GalleryPostEntityService,
-		private queryService: QueryService,
+		private readonly galleryPostEntityService: GalleryPostEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.galleryPostsRepository.createQueryBuilder('post'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('post.userId = :userId', { userId: ps.userId });
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const posts = await query.limit(ps.limit).getMany();
+			const posts = await this.prismaService.client.gallery_post.findMany({
+				where: { AND: [paginationQuery.where, { userId: ps.userId }] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				posts.map((post) => this.galleryPostEntityService.pack(post, me)),

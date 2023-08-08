@@ -1,16 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	NotesRepository,
-	ClipsRepository,
-	ClipNotesRepository,
-} from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -43,21 +38,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.clipNotesRepository)
-		private clipNotesRepository: ClipNotesRepository,
-
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const clip = await this.clipsRepository.findOneBy({
-				id: ps.clipId,
+			const clip = await this.prismaService.client.clip.findUnique({
+				where: { id: ps.clipId },
 			});
 
 			if (clip == null) {
@@ -68,34 +55,37 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchClip);
 			}
 
-			const query = this.queryService
-				.makePaginationQuery(
-					this.notesRepository.createQueryBuilder('note'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.innerJoin(
-					this.clipNotesRepository.metadata.targetName,
-					'clipNote',
-					'clipNote.noteId = note.id',
-				)
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser')
-				.andWhere('clipNote.clipId = :clipId', { clipId: clip.id });
-
-			if (me) {
-				this.queryService.generateVisibilityQuery(query, me);
-				this.queryService.generateMutedUserQuery(query, me);
-				this.queryService.generateBlockedUserQuery(query, me);
-			}
-
-			const notes = await query.limit(ps.limit).getMany();
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
+			const clipNotes = await this.prismaService.client.clip_note.findMany({
+				where: {
+					AND: [
+						{ clipId: clip.id },
+						{
+							note: {
+								AND: [
+									paginationQuery.where,
+									...(me
+										? [
+												this.prismaQueryService.getVisibilityWhereForNote(me.id),
+												await this.prismaQueryService.getMutingWhereForNote(me.id),
+												this.prismaQueryService.getBlockedWhereForNote(me.id),
+										  ]
+										: []),
+								],
+							},
+						},
+					],
+				},
+				include: { note: true },
+				orderBy: { note: paginationQuery.orderBy },
+				take: ps.limit,
+			});
 
 			return (await this.noteEntityService.packMany(
-				notes,
+				clipNotes.map((clipNote) => clipNote.note),
 				me,
 			)) satisfies z.infer<typeof res>;
 		});

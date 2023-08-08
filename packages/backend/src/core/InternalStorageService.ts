@@ -16,9 +16,8 @@ const path = Path.resolve(_dirname, '../../../../files');
 export class InternalStorageService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
-	) {
-	}
+		private readonly config: Config,
+	) {}
 
 	@bindThis
 	public resolvePath(key: string) {

@@ -1,14 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	UserListFavoritesRepository,
-	UserListsRepository,
-} from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { ApiError } from '@/server/api/error.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 // const res = z.unknown();
 export const meta = {
@@ -39,41 +35,43 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-
-		@Inject(DI.userListFavoritesRepository)
-		private userListFavoritesRepository: UserListFavoritesRepository,
-		private idService: IdService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const userListExist = await this.userListsRepository.exist({
-				where: {
-					id: ps.listId,
-					isPublic: true,
-				},
-			});
+			const userListExist =
+				(await this.prismaService.client.user_list.count({
+					where: {
+						id: ps.listId,
+						isPublic: true,
+					},
+					take: 0,
+				})) > 1;
 
 			if (!userListExist) {
 				throw new ApiError(meta.errors.noSuchList);
 			}
 
-			const exist = await this.userListFavoritesRepository.exist({
-				where: {
-					userId: me.id,
-					userListId: ps.listId,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.user_list_favorite.count({
+					where: {
+						userId: me.id,
+						userListId: ps.listId,
+					},
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyFavorited);
 			}
 
-			await this.userListFavoritesRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				userId: me.id,
-				userListId: ps.listId,
+			await this.prismaService.client.user_list_favorite.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					userId: me.id,
+					userListId: ps.listId,
+				},
 			});
 		});
 	}

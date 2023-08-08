@@ -1,12 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UserProfilesRepository,
-	UsersRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -26,24 +22,20 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
+	constructor(private readonly prismaService: PrismaService) {
+		super(meta, paramDef, async (ps) => {
+			const user = await this.prismaService.client.user.findUnique({
+				where: { id: ps.userId },
+			});
 
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const user = await this.usersRepository.findOneBy({ id: ps.userId });
-
-			if (user == null) {
+			if (user === null) {
 				throw new Error('user not found');
 			}
 
-			await this.userProfilesRepository.update(
-				{ userId: user.id },
-				{ moderationNote: ps.text },
-			);
+			await this.prismaService.client.user_profile.update({
+				where: { userId: user.id },
+				data: { moderationNote: ps.text },
+			});
 		});
 	}
 }

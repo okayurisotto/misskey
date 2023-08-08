@@ -1,11 +1,11 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { Not, IsNull, DataSource } from 'typeorm';
+import { DataSource } from 'typeorm';
 import type { User } from '@/models/entities/User.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import type { FollowingsRepository } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-following.js';
@@ -14,19 +14,17 @@ import type { KVs } from '../core.js';
 /**
  * ユーザーごとのフォローに関するチャート
  */
-// eslint-disable-next-line import/no-default-export
 @Injectable()
+// eslint-disable-next-line import/no-default-export
 export default class PerUserFollowingChart extends Chart<typeof schema> {
 	constructor(
 		@Inject(DI.db)
-		private db: DataSource,
+		private readonly db: DataSource,
 
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private appLockService: AppLockService,
-		private userEntityService: UserEntityService,
-		private chartLoggerService: ChartLoggerService,
+		private readonly appLockService: AppLockService,
+		private readonly userEntityService: UserEntityService,
+		private readonly chartLoggerService: ChartLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
 	}
@@ -38,10 +36,10 @@ export default class PerUserFollowingChart extends Chart<typeof schema> {
 			remoteFollowingsCount,
 			remoteFollowersCount,
 		] = await Promise.all([
-			this.followingsRepository.countBy({ followerId: group, followeeHost: IsNull() }),
-			this.followingsRepository.countBy({ followeeId: group, followerHost: IsNull() }),
-			this.followingsRepository.countBy({ followerId: group, followeeHost: Not(IsNull()) }),
-			this.followingsRepository.countBy({ followeeId: group, followerHost: Not(IsNull()) }),
+			this.prismaService.client.following.count({ where: { followerId: group, followeeHost: null } }),
+			this.prismaService.client.following.count({ where: { followeeId: group, followerHost: null } }),
+			this.prismaService.client.following.count({ where: { followerId: group, followeeHost: { not: null } } }),
+			this.prismaService.client.following.count({ where: { followeeId: group, followerHost: { not: null } } }),
 		]);
 
 		return {

@@ -1,14 +1,12 @@
 import { z } from 'zod';
-import { Brackets } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository, FollowingsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
-import { DI } from '@/di-symbols.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -33,61 +31,49 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
 		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
 		private noteReadService: NoteReadService,
+		private prismaService: PrismaService,
+		private prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const followingQuery = this.followingsRepository
-				.createQueryBuilder('following')
-				.select('following.followeeId')
-				.where('following.followerId = :followerId', { followerId: me.id });
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const query = this.queryService
-				.makePaginationQuery(
-					this.notesRepository.createQueryBuilder('note'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere(
-					new Brackets((qb) => {
-						qb.where(`'{"${me.id}"}' <@ note.mentions`).orWhere(
-							`'{"${me.id}"}' <@ note.visibleUserIds`,
-						);
-					}),
-				)
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
-
-			this.queryService.generateVisibilityQuery(query, me);
-			this.queryService.generateMutedUserQuery(query, me);
-			this.queryService.generateMutedNoteThreadQuery(query, me);
-			this.queryService.generateBlockedUserQuery(query, me);
-
-			if (ps.visibility) {
-				query.andWhere('note.visibility = :visibility', {
-					visibility: ps.visibility,
-				});
-			}
-
-			if (ps.following) {
-				query.andWhere(
-					`((note.userId IN (${followingQuery.getQuery()})) OR (note.userId = :meId))`,
-					{ meId: me.id },
-				);
-				query.setParameters(followingQuery.getParameters());
-			}
-
-			const mentions = await query.limit(ps.limit).getMany();
+			const mentions = await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{
+							OR: [
+								{ mentions: { has: me.id } },
+								{ visibleUserIds: { has: me.id } },
+							],
+						},
+						this.prismaQueryService.getVisibilityWhereForNote(me.id),
+						await this.prismaQueryService.getMutingWhereForNote(me.id),
+						await this.prismaQueryService.getNoteThreadMutingWhereForNote(me.id),
+						this.prismaQueryService.getBlockedWhereForNote(me.id),
+						ps.visibility ? { visibility: ps.visibility } : {},
+						ps.following
+							? {
+									OR: [
+										{
+											user: {
+												following_following_followeeIdTouser: {
+													some: { followerId: me.id },
+												},
+											},
+										},
+										{ userId: me.id },
+									],
+							  }
+							: {},
+					],
+				},
+			});
 
 			this.noteReadService.read(me.id, mentions);
 

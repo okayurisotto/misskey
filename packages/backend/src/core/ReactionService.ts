@@ -1,12 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { EmojisRepository, NoteReactionsRepository, UsersRepository, NotesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js';
+import { z } from 'zod';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import type { RemoteUser, User } from '@/models/entities/User.js';
 import type { Note } from '@/models/entities/Note.js';
 import { IdService } from '@/core/IdService.js';
 import type { NoteReaction } from '@/models/entities/NoteReaction.js';
-import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import PerUserReactionsChart from '@/core/chart/charts/per-user-reactions.js';
@@ -21,6 +20,9 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { RoleService } from '@/core/RoleService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { note, note_reaction } from '@prisma/client';
 
 const FALLBACK = '❤';
 
@@ -61,36 +63,24 @@ const decodeCustomEmojiRegexp = /^:([\w+-]+)(?:@([\w.-]+))?:$/;
 @Injectable()
 export class ReactionService {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.noteReactionsRepository)
-		private noteReactionsRepository: NoteReactionsRepository,
-
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
-		private utilityService: UtilityService,
-		private metaService: MetaService,
-		private customEmojiService: CustomEmojiService,
-		private roleService: RoleService,
-		private userEntityService: UserEntityService,
-		private noteEntityService: NoteEntityService,
-		private userBlockingService: UserBlockingService,
-		private idService: IdService,
-		private globalEventService: GlobalEventService,
-		private apRendererService: ApRendererService,
-		private apDeliverManagerService: ApDeliverManagerService,
-		private notificationService: NotificationService,
-		private perUserReactionsChart: PerUserReactionsChart,
-	) {
-	}
+		private readonly utilityService: UtilityService,
+		private readonly metaService: MetaService,
+		private readonly customEmojiService: CustomEmojiService,
+		private readonly roleService: RoleService,
+		private readonly userEntityService: UserEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly userBlockingService: UserBlockingService,
+		private readonly idService: IdService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly apRendererService: ApRendererService,
+		private readonly apDeliverManagerService: ApDeliverManagerService,
+		private readonly notificationService: NotificationService,
+		private readonly perUserReactionsChart: PerUserReactionsChart,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
-	public async create(user: { id: User['id']; host: User['host']; isBot: User['isBot'] }, note: Note, _reaction?: string | null) {
+	public async create(user: { id: User['id']; host: User['host']; isBot: User['isBot'] }, note: T2P<Note, note>, _reaction?: string | null) {
 		// Check blocking
 		if (note.userId !== user.id) {
 			const blocked = await this.userBlockingService.checkBlocked(note.userId, user.id);
@@ -116,9 +106,13 @@ export class ReactionService {
 				const name = custom[1];
 				const emoji = reacterHost == null
 					? (await this.customEmojiService.localEmojisCache.fetch()).get(name)
-					: await this.emojisRepository.findOneBy({
-						host: reacterHost,
-						name,
+					: await this.prismaService.client.emoji.findUnique({
+						where: {
+							name_host: {
+								host: reacterHost,
+								name,
+							},
+						},
 					});
 
 				if (emoji) {
@@ -141,7 +135,7 @@ export class ReactionService {
 			}
 		}
 
-		const record: NoteReaction = {
+		const record: T2P<NoteReaction, note_reaction> = {
 			id: this.idService.genId(),
 			createdAt: new Date(),
 			noteId: note.id,
@@ -151,21 +145,29 @@ export class ReactionService {
 
 		// Create reaction
 		try {
-			await this.noteReactionsRepository.insert(record);
-		} catch (e) {
-			if (isDuplicateKeyValueError(e)) {
-				const exists = await this.noteReactionsRepository.findOneByOrFail({
-					noteId: note.id,
-					userId: user.id,
-				});
+			await this.prismaService.client.note_reaction.create({ data: record });
+		} catch (e: any) {
+			if (e instanceof PrismaClientKnownRequestError) {
+				if (e.code === 'P2002') {
+					const exists = await this.prismaService.client.note_reaction.findUniqueOrThrow({
+						where: {
+							userId_noteId: {
+								noteId: note.id,
+								userId: user.id,
+							},
+						},
+					});
 
-				if (exists.reaction !== reaction) {
-					// 別のリアクションがすでにされていたら置き換える
-					await this.delete(user, note);
-					await this.noteReactionsRepository.insert(record);
+					if (exists.reaction !== reaction) {
+						// 別のリアクションがすでにされていたら置き換える
+						await this.delete(user, note);
+						await this.prismaService.client.note_reaction.create({ data: record });
+					} else {
+						// 同じリアクションがすでにされていたらエラー
+						throw new IdentifiableError('51c42bb4-931a-456b-bff7-e5a8a70dd298');
+					}
 				} else {
-					// 同じリアクションがすでにされていたらエラー
-					throw new IdentifiableError('51c42bb4-931a-456b-bff7-e5a8a70dd298');
+					throw e;
 				}
 			} else {
 				throw e;
@@ -173,14 +175,27 @@ export class ReactionService {
 		}
 
 		// Increment reactions count
-		const sql = `jsonb_set("reactions", '{${reaction}}', (COALESCE("reactions"->>'${reaction}', '0')::int + 1)::text::jsonb)`;
-		await this.notesRepository.createQueryBuilder().update()
-			.set({
-				reactions: () => sql,
-				... (!user.isBot ? { score: () => '"score" + 1' } : {}),
-			})
-			.where('id = :id', { id: note.id })
-			.execute();
+		await this.prismaService.client.$transaction(async (client) => {
+			const data = await client.note.findUniqueOrThrow({ where: { id: note.id } });
+
+			const reactions = z.record(z.string(), z.number().int()).parse(data.reactions);
+
+			const count = (() => {
+				if (reaction in reactions) return reactions[reaction] + 1;
+				return 1;
+			})();
+
+			await client.note.update({
+				where: { id: note.id },
+				data: {
+					reactions: {
+						...reactions,
+						[reaction]: count,
+					},
+					...(user.isBot ? {} : { score: { increment: 1 } }),
+				},
+			});
+		});
 
 		const meta = await this.metaService.fetch();
 
@@ -193,11 +208,12 @@ export class ReactionService {
 
 		const customEmoji = decodedReaction.name == null ? null : decodedReaction.host == null
 			? (await this.customEmojiService.localEmojisCache.fetch()).get(decodedReaction.name)
-			: await this.emojisRepository.findOne(
-				{
+			: await this.prismaService.client.emoji.findUnique({
 					where: {
-						name: decodedReaction.name,
-						host: decodedReaction.host,
+						name_host: {
+							name: decodedReaction.name,
+							host: decodedReaction.host,
+						},
 					},
 				});
 
@@ -225,14 +241,16 @@ export class ReactionService {
 			const content = this.apRendererService.addContext(await this.apRendererService.renderLike(record, note));
 			const dm = this.apDeliverManagerService.createDeliverManager(user, content);
 			if (note.userHost !== null) {
-				const reactee = await this.usersRepository.findOneBy({ id: note.userId });
+				const reactee = await this.prismaService.client.user.findUnique({ where: { id: note.userId } });
 				dm.addDirectRecipe(reactee as RemoteUser);
 			}
 
 			if (['public', 'home', 'followers'].includes(note.visibility)) {
 				dm.addFollowersRecipe();
 			} else if (note.visibility === 'specified') {
-				const visibleUsers = await Promise.all(note.visibleUserIds.map(id => this.usersRepository.findOneBy({ id })));
+				const visibleUsers = await Promise.all(
+					note.visibleUserIds.map(id => this.prismaService.client.user.findUnique({ where: { id } })),
+				);
 				for (const u of visibleUsers.filter(u => u && this.userEntityService.isRemoteUser(u))) {
 					dm.addDirectRecipe(u as RemoteUser);
 				}
@@ -244,11 +262,15 @@ export class ReactionService {
 	}
 
 	@bindThis
-	public async delete(user: { id: User['id']; host: User['host']; isBot: User['isBot']; }, note: Note) {
+	public async delete(user: { id: User['id']; host: User['host']; isBot: User['isBot']; }, note: T2P<Note, note>) {
 		// if already unreacted
-		const exist = await this.noteReactionsRepository.findOneBy({
-			noteId: note.id,
-			userId: user.id,
+		const exist = await this.prismaService.client.note_reaction.findUnique({
+			where: {
+				userId_noteId: {
+					noteId: note.id,
+					userId: user.id,
+				},
+			},
 		});
 
 		if (exist == null) {
@@ -256,22 +278,33 @@ export class ReactionService {
 		}
 
 		// Delete reaction
-		const result = await this.noteReactionsRepository.delete(exist.id);
-
-		if (result.affected !== 1) {
+		await this.prismaService.client.note_reaction.delete({ where: { id: exist.id } }).catch(() => {
 			throw new IdentifiableError('60527ec9-b4cb-4a88-a6bd-32d3ad26817d', 'not reacted');
-		}
+		})
 
 		// Decrement reactions count
-		const sql = `jsonb_set("reactions", '{${exist.reaction}}', (COALESCE("reactions"->>'${exist.reaction}', '0')::int - 1)::text::jsonb)`;
-		await this.notesRepository.createQueryBuilder().update()
-			.set({
-				reactions: () => sql,
-			})
-			.where('id = :id', { id: note.id })
-			.execute();
+		await this.prismaService.client.$transaction(async (client) => {
+			const data = await client.note.findUniqueOrThrow({ where: { id: note.id } });
 
-		if (!user.isBot) this.notesRepository.decrement({ id: note.id }, 'score', 1);
+			const reactions = z.record(z.string(), z.number().int()).parse(data.reactions);
+
+			await client.note.update({
+				where: { id: note.id },
+				data: {
+					reactions: Object.fromEntries(Object.entries(reactions).map(([k, v]) => {
+						if (k !== exist.reaction) return [k, v];
+						return [k, v - 1];
+					})),
+				},
+			});
+		});
+
+		if (!user.isBot) {
+			await this.prismaService.client.note.update({
+				where: { id: note.id },
+				data: { score: { decrement: 1 } },
+			});
+		}
 
 		this.globalEventService.publishNoteStream(note.id, 'unreacted', {
 			reaction: this.decodeReaction(exist.reaction).reaction,
@@ -283,11 +316,11 @@ export class ReactionService {
 			const content = this.apRendererService.addContext(this.apRendererService.renderUndo(await this.apRendererService.renderLike(exist, note), user));
 			const dm = this.apDeliverManagerService.createDeliverManager(user, content);
 			if (note.userHost !== null) {
-				const reactee = await this.usersRepository.findOneBy({ id: note.userId });
+				const reactee = await this.prismaService.client.user.findUnique({ where: { id: note.userId } });
 				dm.addDirectRecipe(reactee as RemoteUser);
 			}
 			dm.addFollowersRecipe();
-			dm.execute();
+			await dm.execute();
 		}
 		//#endregion
 	}

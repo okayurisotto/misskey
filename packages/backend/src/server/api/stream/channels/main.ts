@@ -3,6 +3,7 @@ import { isInstanceMuted, isUserFromMutedInstance } from '@/misc/is-instance-mut
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
+import { z } from 'zod';
 
 class MainChannel extends Channel {
 	public readonly chName = 'main';
@@ -25,7 +26,7 @@ class MainChannel extends Channel {
 			switch (data.type) {
 				case 'notification': {
 					// Ignore notifications from instances the user has muted
-					if (isUserFromMutedInstance(data.body, new Set<string>(this.userProfile?.mutedInstances ?? []))) return;
+					if (isUserFromMutedInstance(data.body, new Set<string>(z.array(z.string()).optional().parse(this.userProfile?.mutedInstances) ?? []))) return;
 					if (data.body.userId && this.userIdsWhoMeMuting.has(data.body.userId)) return;
 
 					if (data.body.note && data.body.note.isHidden) {
@@ -38,7 +39,7 @@ class MainChannel extends Channel {
 					break;
 				}
 				case 'mention': {
-					if (isInstanceMuted(data.body, new Set<string>(this.userProfile?.mutedInstances ?? []))) return;
+					if (isInstanceMuted(data.body, new Set<string>(z.array(z.string()).optional().parse(this.userProfile?.mutedInstances) ?? []))) return;
 
 					if (this.userIdsWhoMeMuting.has(data.body.userId)) return;
 					if (data.body.isHidden) {

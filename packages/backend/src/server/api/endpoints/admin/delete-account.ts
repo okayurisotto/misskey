@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DeleteAccountService } from '@/core/DeleteAccountService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -12,9 +11,7 @@ export const meta = {
 	requireAdmin: true,
 } as const;
 
-export const paramDef = z.object({
-	userId: MisskeyIdSchema,
-});
+export const paramDef = z.object({ userId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -24,18 +21,14 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private deleteAccountService: DeleteAccountService,
+		private readonly deleteAccountService: DeleteAccountService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const user = await this.usersRepository.findOneByOrFail({
-				id: ps.userId,
+			const user = await this.prismaService.client.user.findUniqueOrThrow({
+				where: { id: ps.userId },
 			});
-			if (user.isDeleted) {
-				return;
-			}
+			if (user.isDeleted) return;
 
 			await this.deleteAccountService.deleteAccount(user);
 		});

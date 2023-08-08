@@ -1,39 +1,36 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { BlockingsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type { Blocking } from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
 import type { BlockingSchema } from '@/models/zod/BlockingSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type z from 'zod';
+import type { blocking } from '@prisma/client';
 
 @Injectable()
 export class BlockingEntityService {
 	constructor(
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
 	) {}
 
 	@bindThis
 	public async pack(
-		src: Blocking['id'] | Blocking,
+		src: Blocking['id'] | T2P<Blocking, blocking>,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof BlockingSchema>> {
 		const blocking =
 			typeof src === 'object'
 				? src
-				: await this.blockingsRepository.findOneByOrFail({ id: src });
+				: await this.prismaService.client.blocking.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: blocking.id,
 			createdAt: blocking.createdAt.toISOString(),
 			blockeeId: blocking.blockeeId,
-			blockee: await this.userEntityService.pack(blocking.blockeeId, me, {
-				detail: true,
-			}),
+			blockee: await this.userEntityService.pack(blocking.blockeeId, me, { detail: true }),
 		};
 	}
 }

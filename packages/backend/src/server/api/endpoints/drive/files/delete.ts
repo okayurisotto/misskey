@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFilesRepository } from '@/models/index.js';
 import { DriveService } from '@/core/DriveService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -40,15 +39,15 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private driveService: DriveService,
-		private roleService: RoleService,
-		private globalEventService: GlobalEventService,
+		private readonly driveService: DriveService,
+		private readonly roleService: RoleService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
+			const file = await this.prismaService.client.drive_file.findUnique({
+				where: { id: ps.fileId },
+			});
 
 			if (file == null) {
 				throw new ApiError(meta.errors.noSuchFile);

@@ -1,7 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import { In } from 'typeorm';
-import type { Role, RoleAssignment, RoleAssignmentsRepository, RolesRepository, UsersRepository } from '@/models/index.js';
+import type { Role, RoleAssignment } from '@/models/index.js';
 import { MemoryKVCache, MemorySingleCache } from '@/misc/cache.js';
 import type { User } from '@/models/entities/User.js';
 import { DI } from '@/di-symbols.js';
@@ -15,7 +14,10 @@ import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
-import type { z } from 'zod';
+import { z } from 'zod';
+import type { T2P } from '@/types.js';
+import type { role, role_assignment, user } from '@prisma/client';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export type RolePolicies = {
 	gtlAvailable: boolean;
@@ -67,38 +69,30 @@ export const DEFAULT_POLICIES: RolePolicies = {
 
 @Injectable()
 export class RoleService implements OnApplicationShutdown {
-	private rolesCache: MemorySingleCache<Role[]>;
-	private roleAssignmentByUserIdCache: MemoryKVCache<RoleAssignment[]>;
+	private rolesCache: MemorySingleCache<T2P<Role, role>[]>;
+	private roleAssignmentByUserIdCache: MemoryKVCache<T2P<RoleAssignment, role_assignment>[]>;
 
 	public static AlreadyAssignedError = class extends Error {};
 	public static NotAssignedError = class extends Error {};
 
 	constructor(
 		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private readonly redisClient: Redis.Redis,
 
 		@Inject(DI.redisForSub)
-		private redisForSub: Redis.Redis,
+		private readonly redisForSub: Redis.Redis,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.rolesRepository)
-		private rolesRepository: RolesRepository,
-
-		@Inject(DI.roleAssignmentsRepository)
-		private roleAssignmentsRepository: RoleAssignmentsRepository,
-
-		private metaService: MetaService,
-		private cacheService: CacheService,
-		private userEntityService: UserEntityService,
-		private globalEventService: GlobalEventService,
-		private idService: IdService,
+		private readonly metaService: MetaService,
+		private readonly cacheService: CacheService,
+		private readonly userEntityService: UserEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		//this.onMessage = this.onMessage.bind(this);
 
-		this.rolesCache = new MemorySingleCache<Role[]>(1000 * 60 * 60 * 1);
-		this.roleAssignmentByUserIdCache = new MemoryKVCache<RoleAssignment[]>(1000 * 60 * 60 * 1);
+		this.rolesCache = new MemorySingleCache<T2P<Role, role>[]>(1000 * 60 * 60 * 1);
+		this.roleAssignmentByUserIdCache = new MemoryKVCache<T2P<RoleAssignment, role_assignment>[]>(1000 * 60 * 60 * 1);
 
 		this.redisForSub.on('message', this.onMessage);
 	}
@@ -169,7 +163,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private evalCond(user: User, value: RoleCondFormulaValue): boolean {
+	private evalCond(user: T2P<User, user>, value: RoleCondFormulaValue): boolean {
 		try {
 			switch (value.type) {
 				case 'and': {
@@ -223,7 +217,10 @@ export class RoleService implements OnApplicationShutdown {
 	@bindThis
 	public async getUserAssigns(userId: User['id']) {
 		const now = Date.now();
-		let assigns = await this.roleAssignmentByUserIdCache.fetch(userId, () => this.roleAssignmentsRepository.findBy({ userId }));
+		let assigns = await this.roleAssignmentByUserIdCache.fetch(
+			userId,
+			() => this.prismaService.client.role_assignment.findMany({ where: { userId } }),
+		);
 		// 期限切れのロールを除外
 		assigns = assigns.filter(a => a.expiresAt == null || (a.expiresAt.getTime() > now));
 		return assigns;
@@ -231,7 +228,7 @@ export class RoleService implements OnApplicationShutdown {
 
 	@bindThis
 	public async getUserRoles(userId: User['id']) {
-		const roles = await this.rolesCache.fetch(() => this.rolesRepository.findBy({}));
+		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const assigns = await this.getUserAssigns(userId);
 		const assignedRoles = roles.filter(r => assigns.map(x => x.roleId).includes(r.id));
 		const user = roles.some(r => r.target === 'conditional') ? await this.cacheService.findUserById(userId) : null;
@@ -245,11 +242,14 @@ export class RoleService implements OnApplicationShutdown {
 	@bindThis
 	public async getUserBadgeRoles(userId: User['id']) {
 		const now = Date.now();
-		let assigns = await this.roleAssignmentByUserIdCache.fetch(userId, () => this.roleAssignmentsRepository.findBy({ userId }));
+		let assigns = await this.roleAssignmentByUserIdCache.fetch(
+			userId,
+			() => this.prismaService.client.role_assignment.findMany({ where: { userId } }),
+		);
 		// 期限切れのロールを除外
 		assigns = assigns.filter(a => a.expiresAt == null || (a.expiresAt.getTime() > now));
 		const assignedRoleIds = assigns.map(x => x.roleId);
-		const roles = await this.rolesCache.fetch(() => this.rolesRepository.findBy({}));
+		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const assignedBadgeRoles = roles.filter(r => r.asBadge && assignedRoleIds.includes(r.id));
 		const badgeCondRoles = roles.filter(r => r.asBadge && (r.target === 'conditional'));
 		if (badgeCondRoles.length > 0) {
@@ -264,7 +264,10 @@ export class RoleService implements OnApplicationShutdown {
 	@bindThis
 	public async getUserPolicies(userId: User['id'] | null): Promise<RolePolicies> {
 		const meta = await this.metaService.fetch();
-		const basePolicies = { ...DEFAULT_POLICIES, ...meta.policies };
+		const basePolicies = {
+			...DEFAULT_POLICIES,
+			...z.record(z.string(), z.any()).optional().parse(meta.policies),
+		};
 
 		if (userId == null) return basePolicies;
 
@@ -324,18 +327,18 @@ export class RoleService implements OnApplicationShutdown {
 	@bindThis
 	public async isExplorable(role: { id: Role['id']} | null): Promise<boolean> {
 		if (role == null) return false;
-		const check = await this.rolesRepository.findOneBy({ id: role.id });
+		const check = await this.prismaService.client.role.findUnique({ where: { id: role.id } });
 		if (check == null) return false;
 		return check.isExplorable;
 	}
 
 	@bindThis
 	public async getModeratorIds(includeAdmins = true): Promise<User['id'][]> {
-		const roles = await this.rolesCache.fetch(() => this.rolesRepository.findBy({}));
+		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const moderatorRoles = includeAdmins ? roles.filter(r => r.isModerator || r.isAdministrator) : roles.filter(r => r.isModerator);
-		const assigns = moderatorRoles.length > 0 ? await this.roleAssignmentsRepository.findBy({
-			roleId: In(moderatorRoles.map(r => r.id)),
-		}) : [];
+		const assigns = moderatorRoles.length > 0
+			? await this.prismaService.client.role_assignment.findMany({ where: { roleId: { in: moderatorRoles.map(r => r.id) } } })
+			: [];
 		// TODO: isRootなアカウントも含める
 		return assigns.map(a => a.userId);
 	}
@@ -343,28 +346,28 @@ export class RoleService implements OnApplicationShutdown {
 	@bindThis
 	public async getModerators(includeAdmins = true): Promise<User[]> {
 		const ids = await this.getModeratorIds(includeAdmins);
-		const users = ids.length > 0 ? await this.usersRepository.findBy({
-			id: In(ids),
+		const users = ids.length > 0 ? await this.prismaService.client.user.findMany({
+			where: { id: { in: ids } },
 		}) : [];
 		return users;
 	}
 
 	@bindThis
 	public async getAdministratorIds(): Promise<User['id'][]> {
-		const roles = await this.rolesCache.fetch(() => this.rolesRepository.findBy({}));
+		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const administratorRoles = roles.filter(r => r.isAdministrator);
-		const assigns = administratorRoles.length > 0 ? await this.roleAssignmentsRepository.findBy({
-			roleId: In(administratorRoles.map(r => r.id)),
-		}) : [];
+		const assigns = administratorRoles.length > 0
+			? await this.prismaService.client.role_assignment.findMany({ where: { roleId: { in: administratorRoles.map(r => r.id) } } })
+			: [];
 		// TODO: isRootなアカウントも含める
 		return assigns.map(a => a.userId);
 	}
 
 	@bindThis
-	public async getAdministrators(): Promise<User[]> {
+	public async getAdministrators(): Promise<T2P<User, user>[]> {
 		const ids = await this.getAdministratorIds();
-		const users = ids.length > 0 ? await this.usersRepository.findBy({
-			id: In(ids),
+		const users = ids.length > 0 ? await this.prismaService.client.user.findMany({
+			where: { id: { in: ids } },
 		}) : [];
 		return users;
 	}
@@ -373,32 +376,43 @@ export class RoleService implements OnApplicationShutdown {
 	public async assign(userId: User['id'], roleId: Role['id'], expiresAt: Date | null = null): Promise<void> {
 		const now = new Date();
 
-		const existing = await this.roleAssignmentsRepository.findOneBy({
-			roleId: roleId,
-			userId: userId,
+		const existing = await this.prismaService.client.role_assignment.findUnique({
+			where: {
+				userId_roleId: {
+					roleId: roleId,
+					userId: userId,
+				}
+			}
 		});
 
 		if (existing) {
 			if (existing.expiresAt && (existing.expiresAt.getTime() < now.getTime())) {
-				await this.roleAssignmentsRepository.delete({
-					roleId: roleId,
-					userId: userId,
+				await this.prismaService.client.role_assignment.delete({
+					where: {
+						userId_roleId: {
+							roleId: roleId,
+							userId: userId,
+						},
+					},
 				});
 			} else {
 				throw new RoleService.AlreadyAssignedError();
 			}
 		}
 
-		const created = await this.roleAssignmentsRepository.insert({
-			id: this.idService.genId(),
-			createdAt: now,
-			expiresAt: expiresAt,
-			roleId: roleId,
-			userId: userId,
-		}).then(x => this.roleAssignmentsRepository.findOneByOrFail(x.identifiers[0]));
+		const created = await this.prismaService.client.role_assignment.create({
+			data: {
+				id: this.idService.genId(),
+				createdAt: now,
+				expiresAt: expiresAt,
+				roleId: roleId,
+				userId: userId,
+			},
+		});
 
-		this.rolesRepository.update(roleId, {
-			lastUsedAt: new Date(),
+		this.prismaService.client.role.update({
+			where: { id: roleId },
+			data: { lastUsedAt: new Date() },
 		});
 
 		this.globalEventService.publishInternalEvent('userRoleAssigned', created);
@@ -408,21 +422,26 @@ export class RoleService implements OnApplicationShutdown {
 	public async unassign(userId: User['id'], roleId: Role['id']): Promise<void> {
 		const now = new Date();
 
-		const existing = await this.roleAssignmentsRepository.findOneBy({ roleId, userId });
+		const existing = await this.prismaService.client.role_assignment.findUnique({ where: { userId_roleId: { roleId, userId } } });
 		if (existing == null) {
 			throw new RoleService.NotAssignedError();
 		} else if (existing.expiresAt && (existing.expiresAt.getTime() < now.getTime())) {
-			await this.roleAssignmentsRepository.delete({
-				roleId: roleId,
-				userId: userId,
+			await this.prismaService.client.role_assignment.delete({
+				where: {
+					userId_roleId: {
+						roleId: roleId,
+						userId: userId,
+					},
+				},
 			});
 			throw new RoleService.NotAssignedError();
 		}
 
-		await this.roleAssignmentsRepository.delete(existing.id);
+		await this.prismaService.client.role_assignment.delete({ where: { id: existing.id } });
 
-		this.rolesRepository.update(roleId, {
-			lastUsedAt: now,
+		this.prismaService.client.role.update({
+			where: { id: roleId },
+			data: { lastUsedAt: now },
 		});
 
 		this.globalEventService.publishInternalEvent('userRoleUnassigned', existing);

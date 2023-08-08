@@ -1,13 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
-import { DI } from '@/di-symbols.js';
-import type {
-	AnnouncementReadsRepository,
-	AnnouncementsRepository,
-} from '@/models/index.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(
 	z.object({
@@ -42,27 +38,26 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.announcementsRepository)
-		private announcementsRepository: AnnouncementsRepository,
-
-		@Inject(DI.announcementReadsRepository)
-		private announcementReadsRepository: AnnouncementReadsRepository,
-
-		private queryService: QueryService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService.makePaginationQuery(
-				this.announcementsRepository.createQueryBuilder('announcement'),
-				ps.sinceId,
-				ps.untilId,
-			);
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const announcements = await query.limit(ps.limit).getMany();
+			const announcements =
+				await this.prismaService.client.announcement.findMany({
+					where: { AND: [paginationQuery.where] },
+					orderBy: paginationQuery.orderBy,
+					take: ps.limit,
+				});
 
 			if (me) {
 				const reads = (
-					await this.announcementReadsRepository.findBy({
-						userId: me.id,
+					await this.prismaService.client.announcement_read.findMany({
+						where: { userId: me.id },
 					})
 				).map((x) => x.announcementId);
 

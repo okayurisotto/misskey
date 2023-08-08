@@ -1,12 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { FollowingsRepository } from '@/models/index.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
-import { DI } from '@/di-symbols.js';
 import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
@@ -43,9 +41,6 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
 		private userEntityService: UserEntityService,
 		private getterService: GetterService,
 		private userFollowingService: UserFollowingService,

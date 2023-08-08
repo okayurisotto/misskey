@@ -1,15 +1,13 @@
 import { z } from 'zod';
-import { Brackets } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository, FollowingsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -39,110 +37,89 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
-		private activeUsersChart: ActiveUsersChart,
-		private idService: IdService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly activeUsersChart: ActiveUsersChart,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const followees = await this.followingsRepository
-				.createQueryBuilder('following')
-				.select('following.followeeId')
-				.where('following.followerId = :followerId', { followerId: me.id })
-				.getMany();
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+				sinceDate: ps.sinceDate,
+				untilDate: ps.untilDate,
+			});
 
-			//#region Construct query
-			const query = this.queryService
-				.makePaginationQuery(
-					this.notesRepository.createQueryBuilder('note'),
-					ps.sinceId,
-					ps.untilId,
-					ps.sinceDate,
-					ps.untilDate,
-				)
-				.andWhere('note.id > :minId', {
-					minId: this.idService.genId(
-						new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
-					),
-				}) // 10日前まで
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
-
-			if (followees.length > 0) {
-				const meOrFolloweeIds = [me.id, ...followees.map((f) => f.followeeId)];
-
-				query.andWhere('note.userId IN (:...meOrFolloweeIds)', {
-					meOrFolloweeIds: meOrFolloweeIds,
-				});
-			} else {
-				query.andWhere('note.userId = :meId', { meId: me.id });
-			}
-
-			this.queryService.generateChannelQuery(query, me);
-			this.queryService.generateRepliesQuery(query, ps.withReplies, me);
-			this.queryService.generateVisibilityQuery(query, me);
-			this.queryService.generateMutedUserQuery(query, me);
-			this.queryService.generateMutedNoteQuery(query, me);
-			this.queryService.generateBlockedUserQuery(query, me);
-			this.queryService.generateMutedUserRenotesQueryForNotes(query, me);
-
-			if (ps.includeMyRenotes === false) {
-				query.andWhere(
-					new Brackets((qb) => {
-						qb.orWhere('note.userId != :meId', { meId: me.id });
-						qb.orWhere('note.renoteId IS NULL');
-						qb.orWhere('note.text IS NOT NULL');
-						qb.orWhere("note.fileIds != '{}'");
-						qb.orWhere(
-							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
-						);
-					}),
-				);
-			}
-
-			if (ps.includeRenotedMyNotes === false) {
-				query.andWhere(
-					new Brackets((qb) => {
-						qb.orWhere('note.renoteUserId != :meId', { meId: me.id });
-						qb.orWhere('note.renoteId IS NULL');
-						qb.orWhere('note.text IS NOT NULL');
-						qb.orWhere("note.fileIds != '{}'");
-						qb.orWhere(
-							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
-						);
-					}),
-				);
-			}
-
-			if (ps.includeLocalRenotes === false) {
-				query.andWhere(
-					new Brackets((qb) => {
-						qb.orWhere('note.renoteUserHost IS NOT NULL');
-						qb.orWhere('note.renoteId IS NULL');
-						qb.orWhere('note.text IS NOT NULL');
-						qb.orWhere("note.fileIds != '{}'");
-						qb.orWhere(
-							'0 < (SELECT COUNT(*) FROM poll WHERE poll."noteId" = note.id)',
-						);
-					}),
-				);
-			}
-
-			if (ps.withFiles) {
-				query.andWhere("note.fileIds != '{}'");
-			}
-			//#endregion
-
-			const timeline = await query.limit(ps.limit).getMany();
+			const timeline = await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{
+							id: {
+								gt: this.idService.genId(
+									new Date(Date.now() - 1000 * 60 * 60 * 24 * 10),
+								),
+							},
+						},
+						{
+							OR: [
+								{ userId: me.id },
+								{
+									user: {
+										following_following_followeeIdTouser: {
+											some: { followerId: me.id },
+										},
+									},
+								},
+							],
+						},
+						this.prismaQueryService.getChannelWhereForNote(me.id),
+						this.prismaQueryService.getRepliesWhereForNote(me.id),
+						this.prismaQueryService.getVisibilityWhereForNote(me.id),
+						await this.prismaQueryService.getMutingWhereForNote(me.id),
+						await this.prismaQueryService.getNoteThreadMutingWhereForNote(me.id),
+						this.prismaQueryService.getBlockedWhereForNote(me.id),
+						await this.prismaQueryService.getRenoteMutingWhereForNote(me.id),
+						ps.includeMyRenotes
+							? {}
+							: {
+									OR: [
+										{ userId: { not: me.id } },
+										{ renoteId: null },
+										{ text: { not: null } },
+										{ fileIds: { isEmpty: false } },
+										{ hasPoll: true },
+									],
+							  },
+						ps.includeRenotedMyNotes
+							? {}
+							: {
+									OR: [
+										{ renoteUserId: { not: me.id } },
+										{ renoteId: null },
+										{ text: { not: null } },
+										{ fileIds: { isEmpty: false } },
+										{ hasPoll: true },
+									],
+							  },
+						ps.includeLocalRenotes
+							? {}
+							: {
+									OR: [
+										{ renoteUserHost: { not: null } },
+										{ renoteId: null },
+										{ text: { not: null } },
+										{ fileIds: { isEmpty: false } },
+										{ hasPoll: true },
+									],
+							  },
+						ps.withFiles ? { fileIds: { isEmpty: false } } : {},
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			process.nextTick(() => {
 				this.activeUsersChart.read(me);

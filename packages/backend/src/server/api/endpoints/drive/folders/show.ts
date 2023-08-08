@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFoldersRepository } from '@/models/index.js';
 import { DriveFolderEntityService } from '@/core/entities/DriveFolderEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = DriveFolderSchema;
@@ -35,16 +34,16 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFoldersRepository)
-		private driveFoldersRepository: DriveFoldersRepository,
-
-		private driveFolderEntityService: DriveFolderEntityService,
+		private readonly driveFolderEntityService: DriveFolderEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Get folder
-			const folder = await this.driveFoldersRepository.findOneBy({
-				id: ps.folderId,
-				userId: me.id,
+			const folder = await this.prismaService.client.drive_folder.findUnique({
+				where: {
+					id: ps.folderId,
+					userId: me.id,
+				},
 			});
 
 			if (folder == null) {

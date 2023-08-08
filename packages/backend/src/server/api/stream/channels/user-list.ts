@@ -1,13 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import type { UserListJoiningsRepository, UserListsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type { User } from '@/models/entities/User.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import Channel from '../channel.js';
 import type { z } from 'zod';
+import { PrismaService } from '@/core/PrismaService.js';
 
 class UserListChannel extends Channel {
 	public readonly chName = 'userList';
@@ -18,9 +17,8 @@ class UserListChannel extends Channel {
 	private listUsersClock: NodeJS.Timer;
 
 	constructor(
-		private userListsRepository: UserListsRepository,
-		private userListJoiningsRepository: UserListJoiningsRepository,
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly prismaService: PrismaService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -35,12 +33,13 @@ class UserListChannel extends Channel {
 		this.listId = params.listId as string;
 
 		// Check existence and owner
-		const listExist = await this.userListsRepository.exist({
+		const listExist = (await this.prismaService.client.user_list.count({
 			where: {
 				id: this.listId,
 				userId: this.user!.id,
 			},
-		});
+			take: 1
+		})) > 0;
 		if (!listExist) return;
 
 		// Subscribe stream
@@ -54,11 +53,10 @@ class UserListChannel extends Channel {
 
 	@bindThis
 	private async updateListUsers() {
-		const users = await this.userListJoiningsRepository.find({
+		const users = await this.prismaService.client.user_list_joining.findMany({
 			where: {
 				userListId: this.listId,
 			},
-			select: ['userId'],
 		});
 
 		this.listUsers = users.map(x => x.userId);
@@ -117,22 +115,16 @@ export class UserListChannelService {
 	public readonly requireCredential = UserListChannel.requireCredential;
 
 	constructor(
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-
-		@Inject(DI.userListJoiningsRepository)
-		private userListJoiningsRepository: UserListJoiningsRepository,
-
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 	}
 
 	@bindThis
 	public create(id: string, connection: Channel['connection']): UserListChannel {
 		return new UserListChannel(
-			this.userListsRepository,
-			this.userListJoiningsRepository,
 			this.noteEntityService,
+			this.prismaService,
 			id,
 			connection,
 		);

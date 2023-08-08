@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import type { ClipsRepository } from '@/models/index.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ApiError } from '@/server/api/error.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = ClipSchema;
 export const meta = {
@@ -39,16 +38,14 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		private clipEntityService: ClipEntityService,
-		private roleService: RoleService,
-		private idService: IdService,
+		private readonly clipEntityService: ClipEntityService,
+		private readonly roleService: RoleService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const currentCount = await this.clipsRepository.countBy({
-				userId: me.id,
+			const currentCount = await this.prismaService.client.clip.count({
+				where: { userId: me.id },
 			});
 			if (
 				currentCount > (await this.roleService.getUserPolicies(me.id)).clipLimit
@@ -56,16 +53,16 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.tooManyClips);
 			}
 
-			const clip = await this.clipsRepository
-				.insert({
+			const clip = await this.prismaService.client.clip.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
 					userId: me.id,
 					name: ps.name,
 					isPublic: ps.isPublic,
 					description: ps.description,
-				})
-				.then((x) => this.clipsRepository.findOneByOrFail(x.identifiers[0]));
+				},
+			});
 
 			return (await this.clipEntityService.pack(clip, me)) satisfies z.infer<
 				typeof res

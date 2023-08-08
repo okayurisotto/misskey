@@ -2,9 +2,9 @@ process.env.NODE_ENV = 'test';
 
 import * as assert from 'assert';
 import { loadConfig } from '@/config.js';
-import { User, UsersRepository } from '@/models/index.js';
 import { jobQueue } from '@/boot/common.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { uploadFile, signup, startServer, initTestDb, api, sleep, successfulApiCall } from '../utils.js';
 import type { INestApplicationContext } from '@nestjs/common';
 import type * as misskey from 'misskey-js';
@@ -22,14 +22,14 @@ describe('Account Move', () => {
 	let eve: misskey.entities.MeSignup;
 	let frank: misskey.entities.MeSignup;
 
-	let Users: UsersRepository;
+	let prismaService: PrismaService;
 
 	beforeAll(async () => {
 		app = await startServer();
 		jq = await jobQueue();
 		const config = loadConfig();
 		url = new URL(config.url);
-		const connection = await initTestDb(false);
+		await initTestDb(false);
 		root = await signup({ username: 'root' });
 		alice = await signup({ username: 'alice' });
 		bob = await signup({ username: 'bob' });
@@ -37,7 +37,7 @@ describe('Account Move', () => {
 		dave = await signup({ username: 'dave' });
 		eve = await signup({ username: 'eve' });
 		frank = await signup({ username: 'frank' });
-		Users = connection.getRepository(User);
+		prismaService = app.get(PrismaService);
 	}, 1000 * 60 * 2);
 
 	afterAll(async () => {
@@ -46,7 +46,10 @@ describe('Account Move', () => {
 
 	describe('Create Alias', () => {
 		afterEach(async () => {
-			await Users.update(bob.id, { alsoKnownAs: null });
+			await prismaService.client.user.update({
+				where: { id:bob.id },
+				data: { alsoKnownAs: null },
+			});
 		}, 1000 * 10);
 
 		test('Able to create an alias', async () => {
@@ -54,9 +57,9 @@ describe('Account Move', () => {
 				alsoKnownAs: [`@alice@${url.hostname}`],
 			}, bob);
 
-			const newBob = await Users.findOneByOrFail({ id: bob.id });
-			assert.strictEqual(newBob.alsoKnownAs?.length, 1);
-			assert.strictEqual(newBob.alsoKnownAs[0], `${url.origin}/users/${alice.id}`);
+			const newBob = await prismaService.client.user.findUniqueOrThrow({ where: { id: bob.id } });
+			assert.strictEqual(newBob.alsoKnownAs?.split(',').length, 1);
+			assert.strictEqual(newBob.alsoKnownAs.split(',')[0], `${url.origin}/users/${alice.id}`);
 			assert.strictEqual(res.body.alsoKnownAs?.length, 1);
 			assert.strictEqual(res.body.alsoKnownAs[0], alice.id);
 		});
@@ -66,9 +69,9 @@ describe('Account Move', () => {
 				alsoKnownAs: ['@alice'],
 			}, bob);
 
-			const newBob = await Users.findOneByOrFail({ id: bob.id });
-			assert.strictEqual(newBob.alsoKnownAs?.length, 1);
-			assert.strictEqual(newBob.alsoKnownAs[0], `${url.origin}/users/${alice.id}`);
+			const newBob = await prismaService.client.user.findUniqueOrThrow({ where: { id: bob.id } });
+			assert.strictEqual(newBob.alsoKnownAs?.split(',')?.length, 1);
+			assert.strictEqual(newBob.alsoKnownAs.split(',')[0], `${url.origin}/users/${alice.id}`);
 		});
 
 		test('Able to create a local alias without @', async () => {
@@ -76,9 +79,9 @@ describe('Account Move', () => {
 				alsoKnownAs: ['alice'],
 			}, bob);
 
-			const newBob = await Users.findOneByOrFail({ id: bob.id });
-			assert.strictEqual(newBob.alsoKnownAs?.length, 1);
-			assert.strictEqual(newBob.alsoKnownAs[0], `${url.origin}/users/${alice.id}`);
+			const newBob = await prismaService.client.user.findUniqueOrThrow({ where: { id: bob.id } });
+			assert.strictEqual(newBob.alsoKnownAs?.split(',')?.length, 1);
+			assert.strictEqual(newBob.alsoKnownAs.split(',')[0], `${url.origin}/users/${alice.id}`);
 		});
 
 		test('Able to set remote user (but may fail)', async () => {
@@ -134,10 +137,10 @@ describe('Account Move', () => {
 				alsoKnownAs: [`@alice@${url.hostname}`, `@carol@${url.hostname}`],
 			}, bob);
 
-			const newBob = await Users.findOneByOrFail({ id: bob.id });
-			assert.strictEqual(newBob.alsoKnownAs?.length, 2);
-			assert.strictEqual(newBob.alsoKnownAs[0], `${url.origin}/users/${alice.id}`);
-			assert.strictEqual(newBob.alsoKnownAs[1], `${url.origin}/users/${carol.id}`);
+			const newBob = await prismaService.client.user.findUniqueOrThrow({ where: { id: bob.id } });
+			assert.strictEqual(newBob.alsoKnownAs?.split(',')?.length, 2);
+			assert.strictEqual(newBob.alsoKnownAs.split(',')[0], `${url.origin}/users/${alice.id}`);
+			assert.strictEqual(newBob.alsoKnownAs.split(',')[1], `${url.origin}/users/${carol.id}`);
 		});
 
 		test('Able to properly overwrite alsoKnownAs', async () => {
@@ -148,10 +151,10 @@ describe('Account Move', () => {
 				alsoKnownAs: [`@carol@${url.hostname}`, `@dave@${url.hostname}`],
 			}, bob);
 
-			const newBob = await Users.findOneByOrFail({ id: bob.id });
-			assert.strictEqual(newBob.alsoKnownAs?.length, 2);
-			assert.strictEqual(newBob.alsoKnownAs[0], `${url.origin}/users/${carol.id}`);
-			assert.strictEqual(newBob.alsoKnownAs[1], `${url.origin}/users/${dave.id}`);
+			const newBob = await prismaService.client.user.findUniqueOrThrow({ where: { id: bob.id } });
+			assert.strictEqual(newBob.alsoKnownAs?.split(',')?.length, 2);
+			assert.strictEqual(newBob.alsoKnownAs.split(',')[0], `${url.origin}/users/${carol.id}`);
+			assert.strictEqual(newBob.alsoKnownAs.split(',')[1], `${url.origin}/users/${dave.id}`);
 		});
 	});
 
@@ -349,9 +352,9 @@ describe('Account Move', () => {
 			await api('/following/create', {
 				userId: alice.id,
 			}, eve);
-			const newAlice = await Users.findOneByOrFail({ id: alice.id });
-			const newCarol = await Users.findOneByOrFail({ id: carol.id });
-			let newEve = await Users.findOneByOrFail({ id: eve.id });
+			const newAlice = await prismaService.client.user.findUniqueOrThrow({ where: { id: alice.id } });
+			const newCarol = await prismaService.client.user.findUniqueOrThrow({ where: { id: carol.id } });
+			let newEve = await prismaService.client.user.findUniqueOrThrow({ where: { id: eve.id } });
 			assert.strictEqual(newAlice.movedToUri, `${url.origin}/users/${bob.id}`);
 			assert.strictEqual(newAlice.followingCount, 0);
 			assert.strictEqual(newAlice.followersCount, 0);
@@ -362,7 +365,7 @@ describe('Account Move', () => {
 			await api('/following/delete', {
 				userId: alice.id,
 			}, eve);
-			newEve = await Users.findOneByOrFail({ id: eve.id });
+			newEve = await prismaService.client.user.findUniqueOrThrow({ where: { id: eve.id } });
 			assert.strictEqual(newEve.followingCount, 1);
 			assert.strictEqual(newEve.followersCount, 1);
 		});

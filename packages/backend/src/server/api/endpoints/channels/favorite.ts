@@ -1,13 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	ChannelFavoritesRepository,
-	ChannelsRepository,
-} from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -36,28 +32,25 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		@Inject(DI.channelFavoritesRepository)
-		private channelFavoritesRepository: ChannelFavoritesRepository,
-
-		private idService: IdService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const channel = await this.channelsRepository.findOneBy({
-				id: ps.channelId,
+			const channel = await this.prismaService.client.channel.findUnique({
+				where: { id: ps.channelId },
 			});
 
 			if (channel == null) {
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			await this.channelFavoritesRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				userId: me.id,
-				channelId: channel.id,
+			await this.prismaService.client.channel_favorite.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					userId: me.id,
+					channelId: channel.id,
+				},
 			});
 		});
 	}

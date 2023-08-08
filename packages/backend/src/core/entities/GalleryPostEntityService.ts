@@ -1,52 +1,46 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type {
-	GalleryLikesRepository,
-	GalleryPostsRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { GalleryPost } from '@/models/entities/GalleryPost.js';
 import { bindThis } from '@/decorators.js';
 import type { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
 import type { z } from 'zod';
+import type { gallery_post } from '@prisma/client';
 
 @Injectable()
 export class GalleryPostEntityService {
 	constructor(
-		@Inject(DI.galleryPostsRepository)
-		private galleryPostsRepository: GalleryPostsRepository,
-
-		@Inject(DI.galleryLikesRepository)
-		private galleryLikesRepository: GalleryLikesRepository,
-
-		private userEntityService: UserEntityService,
-		private driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly userEntityService: UserEntityService,
 	) {}
 
 	@bindThis
 	public async pack(
-		src: GalleryPost['id'] | GalleryPost,
+		src: GalleryPost['id'] | T2P<GalleryPost, gallery_post>,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof GalleryPostSchema>> {
 		const meId = me ? me.id : null;
 		const post =
 			typeof src === 'object'
 				? src
-				: await this.galleryPostsRepository.findOneByOrFail({ id: src });
+				: await this.prismaService.client.gallery_post.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.pack(post.user ?? post.userId, me),
+			user: () => this.userEntityService.pack(post.userId, me),
 			files: () => this.driveFileEntityService.packManyByIds(post.fileIds), // TODO: packMany causes N+1 queries
-			isLiked: () =>
+			isLiked: async () =>
 				meId
-					? this.galleryLikesRepository.exist({
+					? (await this.prismaService.client.gallery_like.count({
 							where: { postId: post.id, userId: meId },
-					  })
-					: Promise.resolve(undefined),
+							take: 1,
+					  })) > 0
+					: undefined,
 		});
 
 		return {

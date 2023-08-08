@@ -1,8 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RegistryItemsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -25,38 +24,35 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.registryItemsRepository)
-		private registryItemsRepository: RegistryItemsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.registryItemsRepository
-				.createQueryBuilder('item')
-				.where('item.domain IS NULL')
-				.andWhere('item.userId = :userId', { userId: me.id })
-				.andWhere('item.scope = :scope', { scope: ps.scope });
+			const items = await this.prismaService.client.registry_item.findMany({
+				where: {
+					domain: null,
+					userId: me.id,
+					scope: { equals: ps.scope },
+				},
+			});
 
-			const items = await query.getMany();
-
-			const res_ = {} as Record<string, string>;
-
-			for (const item of items) {
-				const type = typeof item.value;
-				res_[item.key] =
-					item.value === null
-						? 'null'
-						: Array.isArray(item.value)
-						? 'array'
-						: type === 'number'
-						? 'number'
-						: type === 'string'
-						? 'string'
-						: type === 'boolean'
-						? 'boolean'
-						: type === 'object'
-						? 'object'
-						: (null as never);
-			}
+			const res_ = items.reduce<Record<string, string>>((acc, cur) => {
+				return {
+					...acc,
+					[cur.key]:
+						cur.value === null
+							? 'null'
+							: Array.isArray(cur.value)
+							? 'array'
+							: typeof cur.value === 'number'
+							? 'number'
+							: typeof cur.value === 'string'
+							? 'string'
+							: typeof cur.value === 'boolean'
+							? 'boolean'
+							: typeof cur.value === 'object'
+							? 'object'
+							: (null as never),
+				};
+			}, {});
 
 			return res_ satisfies z.infer<typeof res>;
 		});

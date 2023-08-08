@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { MutingsRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { MutingEntityService } from '@/core/entities/MutingEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { MutingSchema } from '@/models/zod/MutingSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(MutingSchema);
 export const meta = {
@@ -30,22 +29,21 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		private mutingEntityService: MutingEntityService,
-		private queryService: QueryService,
+		private readonly mutingEntityService: MutingEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.mutingsRepository.createQueryBuilder('muting'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('muting.muterId = :meId', { meId: me.id });
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const mutings = await query.limit(ps.limit).getMany();
+			const mutings = await this.prismaService.client.muting.findMany({
+				where: { AND: [paginationQuery.where, { muterId: me.id }] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				mutings.map((muting) => this.mutingEntityService.pack(muting, me)),

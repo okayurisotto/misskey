@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { ClipNotesRepository, ClipsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -39,18 +38,15 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		@Inject(DI.clipNotesRepository)
-		private clipNotesRepository: ClipNotesRepository,
-
-		private getterService: GetterService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const clip = await this.clipsRepository.findOneBy({
-				id: ps.clipId,
-				userId: me.id,
+			const clip = await this.prismaService.client.clip.findUnique({
+				where: {
+					id: ps.clipId,
+					userId: me.id,
+				},
 			});
 
 			if (clip == null) {
@@ -64,9 +60,13 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			await this.clipNotesRepository.delete({
-				noteId: note.id,
-				clipId: clip.id,
+			await this.prismaService.client.clip_note.delete({
+				where: {
+					noteId_clipId: {
+						noteId: note.id,
+						clipId: clip.id,
+					},
+				},
 			});
 		});
 	}

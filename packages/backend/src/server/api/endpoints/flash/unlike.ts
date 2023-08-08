@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { FlashsRepository, FlashLikesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -37,22 +36,22 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.flashsRepository)
-		private flashsRepository: FlashsRepository,
-
-		@Inject(DI.flashLikesRepository)
-		private flashLikesRepository: FlashLikesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const flash = await this.flashsRepository.findOneBy({ id: ps.flashId });
+			const flash = await this.prismaService.client.flash.findUnique({
+				where: { id: ps.flashId },
+			});
 			if (flash == null) {
 				throw new ApiError(meta.errors.noSuchFlash);
 			}
 
-			const exist = await this.flashLikesRepository.findOneBy({
-				flashId: flash.id,
-				userId: me.id,
+			const exist = await this.prismaService.client.flash_like.findUnique({
+				where: {
+					userId_flashId: {
+						flashId: flash.id,
+						userId: me.id,
+					},
+				},
 			});
 
 			if (exist == null) {
@@ -60,9 +59,14 @@ export default class extends Endpoint<
 			}
 
 			// Delete like
-			await this.flashLikesRepository.delete(exist.id);
+			await this.prismaService.client.flash_like.delete({
+				where: { id: exist.id },
+			});
 
-			this.flashsRepository.decrement({ id: flash.id }, 'likedCount', 1);
+			await this.prismaService.client.flash.update({
+				where: { id: flash.id },
+				data: { likedCount: { decrement: 1 } },
+			});
 		});
 	}
 }

@@ -1,13 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as stream from 'node:stream/promises';
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
+import { Injectable } from '@nestjs/common';
 import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser, User } from '@/models/entities/User.js';
 import type { AccessToken } from '@/models/entities/AccessToken.js';
 import type Logger from '@/logger.js';
-import type { UserIpsRepository } from '@/models/index.js';
 import { MetaService } from '@/core/MetaService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { bindThis } from '@/decorators.js';
@@ -20,6 +18,9 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { IEndpointMeta, IEndpoint } from './endpoints.js';
 import { generateOpenApiSpec } from 'zod2spec';
+import { PrismaService } from '@/core/PrismaService.js';
+import { T2P } from '@/types.js';
+import { access_token } from '@prisma/client';
 
 const accessDenied = {
 	message: 'Access denied.',
@@ -34,14 +35,12 @@ export class ApiCallService implements OnApplicationShutdown {
 	private userIpHistoriesClearIntervalId: NodeJS.Timer;
 
 	constructor(
-		@Inject(DI.userIpsRepository)
-		private userIpsRepository: UserIpsRepository,
-
-		private metaService: MetaService,
-		private authenticateService: AuthenticateService,
-		private rateLimiterService: RateLimiterService,
-		private roleService: RoleService,
-		private apiLoggerService: ApiLoggerService,
+		private readonly metaService: MetaService,
+		private readonly authenticateService: AuthenticateService,
+		private readonly rateLimiterService: RateLimiterService,
+		private readonly roleService: RoleService,
+		private readonly apiLoggerService: ApiLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.apiLoggerService.logger;
 		this.userIpHistories = new Map<User['id'], Set<string>>();
@@ -205,11 +204,13 @@ export class ApiCallService implements OnApplicationShutdown {
 			}
 
 			try {
-				this.userIpsRepository.createQueryBuilder().insert().values({
-					createdAt: new Date(),
-					userId: user.id,
-					ip: ip,
-				}).orIgnore(true).execute();
+				this.prismaService.client.user_ip.create({
+					data: {
+						createdAt: new Date(),
+						userId: user.id,
+						ip: ip,
+					},
+				});
 			} catch {
 			}
 		}
@@ -219,7 +220,7 @@ export class ApiCallService implements OnApplicationShutdown {
 	private async call(
 		ep: IEndpoint & { exec: any },
 		user: LocalUser | null | undefined,
-		token: AccessToken | null | undefined,
+		token: T2P<AccessToken, access_token> | null | undefined,
 		data: any,
 		file: {
 			name: string;

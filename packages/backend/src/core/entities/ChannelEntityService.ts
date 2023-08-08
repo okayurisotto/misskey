@@ -1,79 +1,78 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { ChannelFavoritesRepository, ChannelFollowingsRepository, ChannelsRepository, DriveFilesRepository, NoteUnreadsRepository, NotesRepository } from '@/models/index.js';
-import type { } from '@/models/entities/Blocking.js';
+import { Injectable } from '@nestjs/common';
 import type { User } from '@/models/entities/User.js';
 import type { Channel } from '@/models/entities/Channel.js';
 import { bindThis } from '@/decorators.js';
 import type { ChannelSchema } from '@/models/zod/ChannelSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
 import { NoteEntityService } from './NoteEntityService.js';
-import { In } from 'typeorm';
 import type { z } from 'zod';
+import type { channel } from '@prisma/client';
 
 @Injectable()
 export class ChannelEntityService {
 	constructor(
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		@Inject(DI.channelFollowingsRepository)
-		private channelFollowingsRepository: ChannelFollowingsRepository,
-
-		@Inject(DI.channelFavoritesRepository)
-		private channelFavoritesRepository: ChannelFavoritesRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.noteUnreadsRepository)
-		private noteUnreadsRepository: NoteUnreadsRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private noteEntityService: NoteEntityService,
-		private driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 	}
 
 	@bindThis
 	public async pack(
-		src: Channel['id'] | Channel,
+		src: Channel['id'] | T2P<Channel, channel>,
 		me?: { id: User['id'] } | null | undefined,
 		detailed?: boolean,
 	): Promise<z.infer<typeof ChannelSchema>> {
-		const channel = typeof src === 'object' ? src : await this.channelsRepository.findOneByOrFail({ id: src });
+		const channel = typeof src === 'object'
+			? src
+			: await this.prismaService.client.channel.findUniqueOrThrow({ where: { id: src } });
 		const meId = me ? me.id : null;
 
-		const banner = channel.bannerId ? await this.driveFilesRepository.findOneBy({ id: channel.bannerId }) : null;
+		const banner = channel.bannerId
+			? await this.prismaService.client.drive_file.findUnique({
+				where: { id: channel.bannerId },
+			})
+			: null;
 
-		const hasUnreadNote = meId ? await this.noteUnreadsRepository.exist({
-			where: {
-				noteChannelId: channel.id,
-				userId: meId,
-			},
-		}) : undefined;
+		const hasUnreadNote = meId
+			? (await this.prismaService.client.note_unread.count({
+				where: {
+					noteChannelId: channel.id,
+					userId: meId,
+				},
+				take: 1
+			})) > 0
+			: undefined;
 
-		const isFollowing = meId ? await this.channelFollowingsRepository.exist({
-			where: {
-				followerId: meId,
-				followeeId: channel.id,
-			},
-		}) : false;
+		const isFollowing = meId
+			? (await this.prismaService.client.channel_following.count({
+				where: {
+					followerId: meId,
+					followeeId: channel.id,
+				},
+				take: 1,
+			})) > 0
+			: false;
 
-		const isFavorited = meId ? await this.channelFavoritesRepository.exist({
-			where: {
-				userId: meId,
-				channelId: channel.id,
-			},
-		}) : false;
+		const isFavorited = meId
+			? (await this.prismaService.client.channel_favorite.count({
+				where: {
+					userId: meId,
+					channelId: channel.id,
+				},
+				take: 1,
+			})) > 0
+			: false;
 
-		const pinnedNotes = channel.pinnedNoteIds.length > 0 ? await this.notesRepository.find({
-			where: {
-				id: In(channel.pinnedNoteIds),
-			},
-		}) : [];
+		const pinnedNotes = channel.pinnedNoteIds.length > 0
+			? await this.prismaService.client.note.findMany({
+				where: {
+					id: { in: channel.pinnedNoteIds },
+				},
+			})
+			: [];
 
 		return {
 			id: channel.id,
@@ -101,4 +100,3 @@ export class ChannelEntityService {
 		};
 	}
 }
-

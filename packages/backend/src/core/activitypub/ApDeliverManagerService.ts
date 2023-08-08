@@ -1,14 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull, Not } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { FollowingsRepository, UsersRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
 import type { LocalUser, RemoteUser, User } from '@/models/entities/User.js';
 import { QueueService } from '@/core/QueueService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import type { IActivity } from '@/core/activitypub/type.js';
 import { ThinUser } from '@/queue/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 interface IRecipe {
 	type: string;
@@ -36,15 +32,13 @@ class DeliverManager {
 
 	/**
 	 * Constructor
-	 * @param userEntityService
-	 * @param followingsRepository
+	 * @param prismaService
 	 * @param queueService
 	 * @param actor Actor
 	 * @param activity Activity to deliver
 	 */
 	constructor(
-		private userEntityService: UserEntityService,
-		private followingsRepository: FollowingsRepository,
+		private prismaService: PrismaService,
 		private queueService: QueueService,
 
 		actor: { id: User['id']; host: null; },
@@ -111,14 +105,10 @@ class DeliverManager {
 			// followers deliver
 			// TODO: SELECT DISTINCT ON ("followerSharedInbox") "followerSharedInbox" みたいな問い合わせにすればよりパフォーマンス向上できそう
 			// ただ、sharedInboxがnullなリモートユーザーも稀におり、その対応ができなさそう？
-			const followers = await this.followingsRepository.find({
+			const followers = await this.prismaService.client.following.findMany({
 				where: {
 					followeeId: this.actor.id,
-					followerHost: Not(IsNull()),
-				},
-				select: {
-					followerSharedInbox: true,
-					followerInbox: true,
+					followerHost: { not: null },
 				},
 			});
 
@@ -147,19 +137,9 @@ class DeliverManager {
 @Injectable()
 export class ApDeliverManagerService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private userEntityService: UserEntityService,
-		private queueService: QueueService,
-	) {
-	}
+		private readonly queueService: QueueService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	/**
 	 * Deliver activity to followers
@@ -169,8 +149,7 @@ export class ApDeliverManagerService {
 	@bindThis
 	public async deliverToFollowers(actor: { id: LocalUser['id']; host: null; }, activity: IActivity): Promise<void> {
 		const manager = new DeliverManager(
-			this.userEntityService,
-			this.followingsRepository,
+			this.prismaService,
 			this.queueService,
 			actor,
 			activity,
@@ -188,8 +167,7 @@ export class ApDeliverManagerService {
 	@bindThis
 	public async deliverToUser(actor: { id: LocalUser['id']; host: null; }, activity: IActivity, to: RemoteUser): Promise<void> {
 		const manager = new DeliverManager(
-			this.userEntityService,
-			this.followingsRepository,
+			this.prismaService,
 			this.queueService,
 			actor,
 			activity,
@@ -201,10 +179,8 @@ export class ApDeliverManagerService {
 	@bindThis
 	public createDeliverManager(actor: { id: User['id']; host: null; }, activity: IActivity | null): DeliverManager {
 		return new DeliverManager(
-			this.userEntityService,
-			this.followingsRepository,
+			this.prismaService,
 			this.queueService,
-
 			actor,
 			activity,
 		);

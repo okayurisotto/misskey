@@ -1,12 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	ChannelFavoritesRepository,
-	ChannelsRepository,
-} from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -23,9 +19,7 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = z.object({
-	channelId: MisskeyIdSchema,
-});
+export const paramDef = z.object({ channelId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -34,25 +28,27 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		@Inject(DI.channelFavoritesRepository)
-		private channelFavoritesRepository: ChannelFavoritesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const channel = await this.channelsRepository.findOneBy({
-				id: ps.channelId,
+			const channel = await this.prismaService.client.channel.findUnique({
+				where: { id: ps.channelId },
 			});
 
 			if (channel == null) {
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			await this.channelFavoritesRepository.delete({
-				userId: me.id,
-				channelId: channel.id,
+			await this.prismaService.client.channel_favorite.delete({
+				where: {
+					id: (
+						await this.prismaService.client.channel_favorite.findFirstOrThrow({
+							where: {
+								userId: me.id,
+								channelId: channel.id,
+							},
+						})
+					).id,
+				},
 			});
 		});
 	}

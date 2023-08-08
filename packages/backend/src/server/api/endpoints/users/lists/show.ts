@@ -1,15 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UserListsRepository,
-	UserListFavoritesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserListEntityService } from '@/core/entities/UserListEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { UserListSchema } from '@/models/zod/UserListSchema.js';
 import { ApiError } from '../../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = UserListSchema;
 export const meta = {
@@ -40,13 +36,8 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-
-		@Inject(DI.userListFavoritesRepository)
-		private userListFavoritesRepository: UserListFavoritesRepository,
-
-		private userListEntityService: UserListEntityService,
+		private readonly userListEntityService: UserListEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const additionalProperties: Partial<{
@@ -54,11 +45,12 @@ export default class extends Endpoint<
 				isLiked: boolean;
 			}> = {};
 			// Fetch the list
-			const userList = await this.userListsRepository.findOneBy(
-				!ps.forPublic && me !== null
-					? { id: ps.listId, userId: me.id }
-					: { id: ps.listId, isPublic: true },
-			);
+			const userList = await this.prismaService.client.user_list.findUnique({
+				where:
+					!ps.forPublic && me !== null
+						? { id: ps.listId, userId: me.id }
+						: { id: ps.listId, isPublic: true },
+			});
 
 			if (userList == null) {
 				throw new ApiError(meta.errors.noSuchList);
@@ -66,17 +58,20 @@ export default class extends Endpoint<
 
 			if (ps.forPublic && userList.isPublic) {
 				additionalProperties.likedCount =
-					await this.userListFavoritesRepository.countBy({
-						userListId: ps.listId,
+					await this.prismaService.client.user_list_favorite.count({
+						where: {
+							userListId: ps.listId,
+						},
 					});
 				if (me !== null) {
 					additionalProperties.isLiked =
-						await this.userListFavoritesRepository.exist({
+						(await this.prismaService.client.user_list_favorite.count({
 							where: {
 								userId: me.id,
 								userListId: ps.listId,
 							},
-						});
+							take: 1,
+						})) > 0;
 				} else {
 					additionalProperties.isLiked = false;
 				}

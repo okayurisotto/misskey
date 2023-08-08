@@ -1,14 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { InstancesRepository } from '@/models/index.js';
 import { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin'],
-
 	requireCredential: true,
 	requireModerator: true,
 } as const;
@@ -25,22 +23,23 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		private utilityService: UtilityService,
-		private fetchInstanceMetadataService: FetchInstanceMetadataService,
+		private readonly utilityService: UtilityService,
+		private readonly fetchInstanceMetadataService: FetchInstanceMetadataService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const instance = await this.instancesRepository.findOneBy({
-				host: this.utilityService.toPuny(ps.host),
+			const instance = await this.prismaService.client.instance.findUnique({
+				where: { host: this.utilityService.toPuny(ps.host) },
 			});
 
-			if (instance == null) {
+			if (instance === null) {
 				throw new Error('instance not found');
 			}
 
-			this.fetchInstanceMetadataService.fetchInstanceMetadata(instance, true);
+			await this.fetchInstanceMetadataService.fetchInstanceMetadata(
+				instance,
+				true,
+			);
 		});
 	}
 }

@@ -9,9 +9,8 @@ import { bindThis } from '@/decorators.js';
 export class UtilityService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
-	) {
-	}
+		private readonly config: Config,
+	) {}
 
 	@bindThis
 	public getFullApAccount(username: string, host: string | null): string {

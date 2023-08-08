@@ -1,17 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	ChannelsRepository,
-	DriveFilesRepository,
-} from '@/models/index.js';
-import type { Channel } from '@/models/entities/Channel.js';
 import { IdService } from '@/core/IdService.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = ChannelSchema;
@@ -49,21 +44,18 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		private idService: IdService,
-		private channelEntityService: ChannelEntityService,
+		private readonly idService: IdService,
+		private readonly channelEntityService: ChannelEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			let banner = null;
 			if (ps.bannerId != null) {
-				banner = await this.driveFilesRepository.findOneBy({
-					id: ps.bannerId,
-					userId: me.id,
+				banner = await this.prismaService.client.drive_file.findUnique({
+					where: {
+						id: ps.bannerId,
+						userId: me.id,
+					},
 				});
 
 				if (banner == null) {
@@ -71,8 +63,8 @@ export default class extends Endpoint<
 				}
 			}
 
-			const channel = await this.channelsRepository
-				.insert({
+			const channel = await this.prismaService.client.channel.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
 					userId: me.id,
@@ -80,8 +72,8 @@ export default class extends Endpoint<
 					description: ps.description ?? null,
 					bannerId: banner ? banner.id : null,
 					...(ps.color !== undefined ? { color: ps.color } : {}),
-				} as Channel)
-				.then((x) => this.channelsRepository.findOneByOrFail(x.identifiers[0]));
+				},
+			});
 
 			return (await this.channelEntityService.pack(
 				channel,

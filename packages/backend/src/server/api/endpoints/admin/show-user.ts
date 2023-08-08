@@ -1,15 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UsersRepository,
-	SigninsRepository,
-	UserProfilesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -31,22 +26,18 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.signinsRepository)
-		private signinsRepository: SigninsRepository,
-
-		private roleService: RoleService,
-		private roleEntityService: RoleEntityService,
+		private readonly roleService: RoleService,
+		private readonly roleEntityService: RoleEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const [user, profile] = await Promise.all([
-				this.usersRepository.findOneBy({ id: ps.userId }),
-				this.userProfilesRepository.findOneBy({ userId: ps.userId }),
+				this.prismaService.client.user.findUnique({
+					where: { id: ps.userId },
+				}),
+				this.prismaService.client.user_profile.findUnique({
+					where: { userId: ps.userId },
+				}),
 			]);
 
 			if (user == null || profile == null) {
@@ -57,15 +48,19 @@ export default class extends Endpoint<
 			const isSilenced = !(await this.roleService.getUserPolicies(user.id))
 				.canPublicNote;
 
-			const _me = await this.usersRepository.findOneByOrFail({ id: me.id });
+			const me_ = await this.prismaService.client.user.findUniqueOrThrow({
+				where: { id: me.id },
+			});
 			if (
-				!(await this.roleService.isAdministrator(_me)) &&
+				!(await this.roleService.isAdministrator(me_)) &&
 				(await this.roleService.isAdministrator(user))
 			) {
 				throw new Error('cannot show info of admin');
 			}
 
-			const signins = await this.signinsRepository.findBy({ userId: user.id });
+			const signins = await this.prismaService.client.signin.findMany({
+				where: { userId: user.id },
+			});
 
 			const roleAssigns = await this.roleService.getUserAssigns(user.id);
 			const roles = await this.roleService.getUserRoles(user.id);
@@ -88,7 +83,7 @@ export default class extends Endpoint<
 				isSilenced: isSilenced,
 				isSuspended: user.isSuspended,
 				lastActiveDate: user.lastActiveDate,
-				moderationNote: profile.moderationNote ?? '',
+				moderationNote: profile.moderationNote,
 				signins,
 				policies: await this.roleService.getUserPolicies(user.id),
 				roles: await Promise.all(

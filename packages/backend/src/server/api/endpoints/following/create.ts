@@ -1,15 +1,14 @@
 import { z } from 'zod';
 import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UsersRepository, FollowingsRepository } from '@/models/index.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = UserLiteSchema;
@@ -64,15 +63,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private userEntityService: UserEntityService,
-		private getterService: GetterService,
-		private userFollowingService: UserFollowingService,
+		private readonly userEntityService: UserEntityService,
+		private readonly getterService: GetterService,
+		private readonly userFollowingService: UserFollowingService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const follower = me;
@@ -93,12 +87,14 @@ export default class extends Endpoint<
 				});
 
 			// Check if already following
-			const exist = await this.followingsRepository.exist({
-				where: {
-					followerId: follower.id,
-					followeeId: followee.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.following.count({
+					where: {
+						followerId: follower.id,
+						followeeId: followee.id,
+					},
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyFollowing);

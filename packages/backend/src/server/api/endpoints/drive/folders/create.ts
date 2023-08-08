@@ -1,14 +1,13 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFoldersRepository } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { DriveFolderEntityService } from '@/core/entities/DriveFolderEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = DriveFolderSchema;
@@ -43,21 +42,21 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFoldersRepository)
-		private driveFoldersRepository: DriveFoldersRepository,
-
-		private driveFolderEntityService: DriveFolderEntityService,
-		private idService: IdService,
-		private globalEventService: GlobalEventService,
+		private readonly driveFolderEntityService: DriveFolderEntityService,
+		private readonly idService: IdService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// If the parent folder is specified
 			let parent = null;
 			if (ps.parentId) {
 				// Fetch parent folder
-				parent = await this.driveFoldersRepository.findOneBy({
-					id: ps.parentId,
-					userId: me.id,
+				parent = await this.prismaService.client.drive_folder.findUnique({
+					where: {
+						id: ps.parentId,
+						userId: me.id,
+					},
 				});
 
 				if (parent == null) {
@@ -66,17 +65,15 @@ export default class extends Endpoint<
 			}
 
 			// Create folder
-			const folder = await this.driveFoldersRepository
-				.insert({
+			const folder = await this.prismaService.client.drive_folder.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
-					name: ps.name,
+					name: ps.name!,
 					parentId: parent !== null ? parent.id : null,
 					userId: me.id,
-				})
-				.then((x) =>
-					this.driveFoldersRepository.findOneByOrFail(x.identifiers[0]),
-				);
+				},
+			});
 
 			const folderObj = await this.driveFolderEntityService.pack(folder);
 

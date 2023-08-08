@@ -1,38 +1,38 @@
 import { Injectable, Inject } from '@nestjs/common';
-import { Not, IsNull, DataSource } from 'typeorm';
-import type { NotesRepository } from '@/models/index.js';
+import { DataSource } from 'typeorm';
 import type { Note } from '@/models/entities/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/notes.js';
 import type { KVs } from '../core.js';
+import type { note } from '@prisma/client';
 
 /**
  * ノートに関するチャート
  */
-// eslint-disable-next-line import/no-default-export
 @Injectable()
+// eslint-disable-next-line import/no-default-export
 export default class NotesChart extends Chart<typeof schema> {
 	constructor(
 		@Inject(DI.db)
-		private db: DataSource,
+		private readonly db: DataSource,
 
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private appLockService: AppLockService,
-		private chartLoggerService: ChartLoggerService,
+		private readonly appLockService: AppLockService,
+		private readonly chartLoggerService: ChartLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema);
 	}
 
 	protected async tickMajor(): Promise<Partial<KVs<typeof schema>>> {
 		const [localCount, remoteCount] = await Promise.all([
-			this.notesRepository.countBy({ userHost: IsNull() }),
-			this.notesRepository.countBy({ userHost: Not(IsNull()) }),
+			this.prismaService.client.note.count({ where: { userHost: null } }),
+			this.prismaService.client.note.count({ where: { userHost: { not: null } } }),
 		]);
 
 		return {
@@ -46,7 +46,7 @@ export default class NotesChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async update(note: Note, isAdditional: boolean): Promise<void> {
+	public async update(note: T2P<Note, note>, isAdditional: boolean): Promise<void> {
 		const prefix = note.userHost === null ? 'local' : 'remote';
 
 		await this.commit({

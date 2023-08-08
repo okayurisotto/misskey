@@ -1,16 +1,12 @@
 import { z } from 'zod';
 import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	DriveFilesRepository,
-	GalleryPostsRepository,
-} from '@/models/index.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = GalleryPostSchema;
 export const meta = {
@@ -42,21 +38,18 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.galleryPostsRepository)
-		private galleryPostsRepository: GalleryPostsRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private galleryPostEntityService: GalleryPostEntityService,
+		private readonly galleryPostEntityService: GalleryPostEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const files = (
 				await Promise.all(
 					ps.fileIds.map((fileId) =>
-						this.driveFilesRepository.findOneBy({
-							id: fileId,
-							userId: me.id,
+						this.prismaService.client.drive_file.findUnique({
+							where: {
+								id: fileId,
+								userId: me.id,
+							},
 						}),
 					),
 				)
@@ -66,23 +59,26 @@ export default class extends Endpoint<
 				throw new Error();
 			}
 
-			await this.galleryPostsRepository.update(
-				{
+			await this.prismaService.client.gallery_post.update({
+				where: {
 					id: ps.postId,
 					userId: me.id,
 				},
-				{
+				data: {
 					updatedAt: new Date(),
 					title: ps.title,
 					description: ps.description,
 					isSensitive: ps.isSensitive,
 					fileIds: files.map((file) => file.id),
 				},
-			);
-
-			const post = await this.galleryPostsRepository.findOneByOrFail({
-				id: ps.postId,
 			});
+
+			const post =
+				await this.prismaService.client.gallery_post.findUniqueOrThrow({
+					where: {
+						id: ps.postId,
+					},
+				});
 
 			return (await this.galleryPostEntityService.pack(
 				post,

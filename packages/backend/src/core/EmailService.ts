@@ -5,9 +5,9 @@ import { MetaService } from '@/core/MetaService.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import type Logger from '@/logger.js';
-import type { UserProfilesRepository } from '@/models/index.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 @Injectable()
 export class EmailService {
@@ -15,13 +15,11 @@ export class EmailService {
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		private metaService: MetaService,
-		private loggerService: LoggerService,
+		private readonly metaService: MetaService,
+		private readonly loggerService: LoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.loggerService.getLogger('email');
 	}
@@ -150,9 +148,11 @@ export class EmailService {
 	}> {
 		const meta = await this.metaService.fetch();
 
-		const exist = await this.userProfilesRepository.countBy({
-			emailVerified: true,
-			email: emailAddress,
+		const exist = await this.prismaService.client.user_profile.count({
+			where: {
+				emailVerified: true,
+				email: emailAddress,
+			},
 		});
 
 		const validated = meta.enableActiveEmailValidation ? await validateEmail({

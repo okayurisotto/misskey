@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { InstancesRepository } from '@/models/index.js';
 import { InstanceEntityService } from '@/core/entities/InstanceEntityService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { DI } from '@/di-symbols.js';
 import { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = FederationInstanceSchema.nullable();
 export const meta = {
@@ -26,15 +25,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		private utilityService: UtilityService,
-		private instanceEntityService: InstanceEntityService,
+		private readonly utilityService: UtilityService,
+		private readonly instanceEntityService: InstanceEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const instance = await this.instancesRepository.findOneBy({
-				host: this.utilityService.toPuny(ps.host),
+			const instance = await this.prismaService.client.instance.findUnique({
+				where: { host: this.utilityService.toPuny(ps.host) },
 			});
 
 			return (

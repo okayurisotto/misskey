@@ -1,15 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import type { RenoteMutingsRepository } from '@/models/index.js';
-import type { RenoteMuting } from '@/models/entities/RenoteMuting.js';
-import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['account'],
@@ -51,12 +48,9 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.renoteMutingsRepository)
-		private renoteMutingsRepository: RenoteMutingsRepository,
-
-		private globalEventService: GlobalEventService,
-		private getterService: GetterService,
-		private idService: IdService,
+		private readonly getterService: GetterService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const muter = me;
@@ -67,7 +61,7 @@ export default class extends Endpoint<
 			}
 
 			// Get mutee
-			const mutee = await getterService.getUser(ps.userId).catch((err) => {
+			const mutee = await this.getterService.getUser(ps.userId).catch((err) => {
 				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
 					throw new ApiError(meta.errors.noSuchUser);
 				}
@@ -75,9 +69,11 @@ export default class extends Endpoint<
 			});
 
 			// Check if already muting
-			const exist = await this.renoteMutingsRepository.findOneBy({
-				muterId: muter.id,
-				muteeId: mutee.id,
+			const exist = await this.prismaService.client.renote_muting.findFirst({
+				where: {
+					muterId: muter.id,
+					muteeId: mutee.id,
+				},
 			});
 
 			if (exist != null) {
@@ -85,12 +81,14 @@ export default class extends Endpoint<
 			}
 
 			// Create mute
-			await this.renoteMutingsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				muterId: muter.id,
-				muteeId: mutee.id,
-			} as RenoteMuting);
+			await this.prismaService.client.renote_muting.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					muterId: muter.id,
+					muteeId: mutee.id,
+				},
+			});
 		});
 	}
 }

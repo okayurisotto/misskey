@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UserIpsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown(); // TODO
+const res = z.array(z.object({ ip: z.string(), createdAt: z.string() }));
 export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
@@ -13,9 +12,7 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	userId: MisskeyIdSchema,
-});
+export const paramDef = z.object({ userId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -24,14 +21,11 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.userIpsRepository)
-		private userIpsRepository: UserIpsRepository,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const ips = await this.userIpsRepository.find({
+	constructor(private readonly prismaService: PrismaService) {
+		super(meta, paramDef, async (ps) => {
+			const ips = await this.prismaService.client.user_ip.findMany({
 				where: { userId: ps.userId },
-				order: { createdAt: 'DESC' },
+				orderBy: { createdAt: 'desc' },
 				take: 30,
 			});
 

@@ -1,14 +1,13 @@
 import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import z from 'zod';
-import type { UsersRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteDeleteService } from '@/core/NoteDeleteService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.void();
 export const meta = {
@@ -44,12 +43,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private getterService: GetterService,
-		private roleService: RoleService,
-		private noteDeleteService: NoteDeleteService,
+		private readonly getterService: GetterService,
+		private readonly roleService: RoleService,
+		private readonly noteDeleteService: NoteDeleteService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
@@ -65,7 +62,9 @@ export default class extends Endpoint<
 
 			// この操作を行うのが投稿者とは限らない(例えばモデレーター)ため
 			(await this.noteDeleteService.delete(
-				await this.usersRepository.findOneByOrFail({ id: note.userId }),
+				await this.prismaService.client.user.findUniqueOrThrow({
+					where: { id: note.userId },
+				}),
 				note,
 			)) satisfies z.infer<typeof res>;
 		});

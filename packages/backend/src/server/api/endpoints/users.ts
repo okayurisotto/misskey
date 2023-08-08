@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import type { Prisma } from '@prisma/client';
 
 const res = z.array(UserDetailedSchema);
 export const meta = {
@@ -44,79 +44,64 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private userEntityService: UserEntityService,
-		private queryService: QueryService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.usersRepository
-				.createQueryBuilder('user')
-				.where('user.isExplorable = TRUE')
-				.andWhere('user.isSuspended = FALSE');
+			const orderBy = ((): Prisma.userOrderByWithRelationInput => {
+				switch (ps.sort) {
+					case '+follower':
+						return { followersCount: 'desc' };
+					case '-follower':
+						return { followersCount: 'asc' };
+					case '+createdAt':
+						return { createdAt: 'desc' };
+					case '-createdAt':
+						return { createdAt: 'asc' };
+					case '+updatedAt':
+						return { updatedAt: 'desc' };
+					case '-updatedAt':
+						return { updatedAt: 'asc' };
+					default:
+						return { id: 'asc' };
+				}
+			})();
 
-			switch (ps.state) {
-				case 'alive':
-					query.andWhere('user.updatedAt > :date', {
-						date: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
-					});
-					break;
-			}
-
-			switch (ps.origin) {
-				case 'local':
-					query.andWhere('user.host IS NULL');
-					break;
-				case 'remote':
-					query.andWhere('user.host IS NOT NULL');
-					break;
-			}
-
-			if (ps.hostname) {
-				query.andWhere('user.host = :hostname', {
-					hostname: ps.hostname.toLowerCase(),
-				});
-			}
-
-			switch (ps.sort) {
-				case '+follower':
-					query.orderBy('user.followersCount', 'DESC');
-					break;
-				case '-follower':
-					query.orderBy('user.followersCount', 'ASC');
-					break;
-				case '+createdAt':
-					query.orderBy('user.createdAt', 'DESC');
-					break;
-				case '-createdAt':
-					query.orderBy('user.createdAt', 'ASC');
-					break;
-				case '+updatedAt':
-					query
-						.andWhere('user.updatedAt IS NOT NULL')
-						.orderBy('user.updatedAt', 'DESC');
-					break;
-				case '-updatedAt':
-					query
-						.andWhere('user.updatedAt IS NOT NULL')
-						.orderBy('user.updatedAt', 'ASC');
-					break;
-				default:
-					query.orderBy('user.id', 'ASC');
-					break;
-			}
-
-			if (me) this.queryService.generateMutedUserQueryForUsers(query, me);
-			if (me) this.queryService.generateBlockQueryForUsers(query, me);
-
-			query.limit(ps.limit);
-			query.offset(ps.offset);
-
-			const users = await query.getMany();
+			const users = await this.prismaService.client.user.findMany({
+				where: {
+					AND: [
+						{ isExplorable: true },
+						{ isSuspended: false },
+						ps.state === 'alive'
+							? {
+									updatedAt: {
+										gt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5),
+									},
+							  }
+							: {},
+						ps.origin === 'local' ? { host: null } : {},
+						ps.origin === 'remote' ? { host: { not: null } } : {},
+						ps.hostname ? { host: ps.hostname.toLowerCase() } : {},
+						ps.sort === '+updatedAt' ? { updatedAt: { not: null } } : {},
+						ps.sort === '-updatedAt' ? { updatedAt: { not: null } } : {},
+						...(me
+							? [
+									this.prismaQueryService.getMutingWhereForUser(me.id),
+									this.prismaQueryService.getBlockedWhereForUser(me.id),
+							  ]
+							: []),
+					],
+				},
+				orderBy,
+				take: ps.limit,
+				skip: ps.offset,
+			});
 
 			return (await Promise.all(
-				users.map((user) => this.userEntityService.pack(user, me, { detail: true }))
+				users.map((user) =>
+					this.userEntityService.pack(user, me, { detail: true }),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

@@ -1,18 +1,13 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueueService } from '@/core/QueueService.js';
-import type {
-	AntennasRepository,
-	DriveFilesRepository,
-	UsersRepository,
-	Antenna as _Antenna,
-} from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
+import type { Antenna as _Antenna } from '@/models/index.js';
 import { RoleService } from '@/core/RoleService.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -59,38 +54,40 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.antennasRepository)
-		private antennasRepository: AntennasRepository,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private roleService: RoleService,
-		private queueService: QueueService,
-		private downloadService: DownloadService,
+		private readonly roleService: RoleService,
+		private readonly queueService: QueueService,
+		private readonly downloadService: DownloadService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const userExist = await this.usersRepository.exist({
-				where: { id: me.id },
-			});
+			const userExist =
+				(await this.prismaService.client.user.count({
+					where: { id: me.id },
+					take: 1,
+				})) > 0;
 			if (!userExist) throw new ApiError(meta.errors.noSuchUser);
-			const file = await this.driveFilesRepository.findOneBy({ id: ps.fileId });
+
+			const file = await this.prismaService.client.drive_file.findUnique({
+				where: { id: ps.fileId },
+			});
 			if (file === null) throw new ApiError(meta.errors.noSuchFile);
 			if (file.size === 0) throw new ApiError(meta.errors.emptyFile);
+
 			const antennas: (_Antenna & { userListAccts: string[] | null })[] =
 				JSON.parse(await this.downloadService.downloadTextFile(file.url));
-			const currentAntennasCount = await this.antennasRepository.countBy({
-				userId: me.id,
-			});
+
+			const currentAntennasCount =
+				await this.prismaService.client.antenna.count({
+					where: { userId: me.id },
+				});
+
 			if (
 				currentAntennasCount + antennas.length >
 				(await this.roleService.getUserPolicies(me.id)).antennaLimit
 			) {
 				throw new ApiError(meta.errors.tooManyAntennas);
 			}
+
 			this.queueService.createImportAntennasJob(me, antennas);
 		});
 	}

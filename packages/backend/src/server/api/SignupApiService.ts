@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { IsNull } from 'typeorm';
 import { DI } from '@/di-symbols.js';
-import type { RegistrationTicketsRepository, UsedUsernamesRepository, UserPendingsRepository, UserProfilesRepository, UsersRepository, RegistrationTicket } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import { MetaService } from '@/core/MetaService.js';
 import { CaptchaService } from '@/core/CaptchaService.js';
@@ -16,37 +14,24 @@ import { bindThis } from '@/decorators.js';
 import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
 import { SigninService } from './SigninService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { registration_ticket } from '@prisma/client';
 
 @Injectable()
 export class SignupApiService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.userPendingsRepository)
-		private userPendingsRepository: UserPendingsRepository,
-
-		@Inject(DI.usedUsernamesRepository)
-		private usedUsernamesRepository: UsedUsernamesRepository,
-
-		@Inject(DI.registrationTicketsRepository)
-		private registrationTicketsRepository: RegistrationTicketsRepository,
-
-		private userEntityService: UserEntityService,
-		private idService: IdService,
-		private metaService: MetaService,
-		private captchaService: CaptchaService,
-		private signupService: SignupService,
-		private signinService: SigninService,
-		private emailService: EmailService,
-	) {
-	}
+		private readonly userEntityService: UserEntityService,
+		private readonly idService: IdService,
+		private readonly metaService: MetaService,
+		private readonly captchaService: CaptchaService,
+		private readonly signupService: SignupService,
+		private readonly signinService: SigninService,
+		private readonly emailService: EmailService,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
 	public async signup(
@@ -109,7 +94,7 @@ export class SignupApiService {
 			}
 		}
 
-		let ticket: RegistrationTicket | null = null;
+		let ticket: registration_ticket | null = null;
 
 		if (instance.disableRegistration) {
 			if (invitationCode == null || typeof invitationCode !== 'string') {
@@ -117,8 +102,10 @@ export class SignupApiService {
 				return;
 			}
 
-			ticket = await this.registrationTicketsRepository.findOneBy({
-				code: invitationCode,
+			ticket = await this.prismaService.client.registration_ticket.findUnique({
+				where: {
+					code: invitationCode,
+				},
 			});
 
 			if (ticket == null) {
@@ -138,12 +125,12 @@ export class SignupApiService {
 		}
 
 		if (instance.emailRequiredForSignup) {
-			if (await this.usersRepository.exist({ where: { usernameLower: username.toLowerCase(), host: IsNull() } })) {
+			if ((await this.prismaService.client.user.count({ where: { usernameLower: username.toLowerCase(), host: null }, take: 1 })) > 0) {
 				throw new FastifyReplyError(400, 'DUPLICATED_USERNAME');
 			}
 
 			// Check deleted username duplication
-			if (await this.usedUsernamesRepository.exist({ where: { username: username.toLowerCase() } })) {
+			if ((await this.prismaService.client.used_username.count({ where: { username: username.toLowerCase() }, take: 1 })) > 0) {
 				throw new FastifyReplyError(400, 'USED_USERNAME');
 			}
 
@@ -158,14 +145,16 @@ export class SignupApiService {
 			const salt = await bcrypt.genSalt(8);
 			const hash = await bcrypt.hash(password, salt);
 
-			const pendingUser = await this.userPendingsRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				code,
-				email: emailAddress!,
-				username: username,
-				password: hash,
-			}).then(x => this.userPendingsRepository.findOneByOrFail(x.identifiers[0]));
+			const pendingUser = await this.prismaService.client.user_pending.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					code,
+					email: emailAddress!,
+					username: username,
+					password: hash,
+				},
+			});
 
 			const link = `${this.config.url}/signup-complete/${code}`;
 
@@ -174,9 +163,12 @@ export class SignupApiService {
 				`To complete signup, please click this link: ${link}`);
 
 			if (ticket) {
-				await this.registrationTicketsRepository.update(ticket.id, {
-					usedAt: new Date(),
-					pendingUserId: pendingUser.id,
+				await this.prismaService.client.registration_ticket.update({
+					where: { id: ticket.id },
+					data: {
+						usedAt: new Date(),
+						pendingUserId: pendingUser.id,
+					},
 				});
 			}
 
@@ -194,10 +186,12 @@ export class SignupApiService {
 				});
 
 				if (ticket) {
-					await this.registrationTicketsRepository.update(ticket.id, {
-						usedAt: new Date(),
-						usedBy: account,
-						usedById: account.id,
+					await this.prismaService.client.registration_ticket.update({
+						where: { id: ticket.id },
+						data: {
+							usedAt: new Date(),
+							usedById: account.id,
+						},
 					});
 				}
 
@@ -218,31 +212,38 @@ export class SignupApiService {
 		const code = body['code'];
 
 		try {
-			const pendingUser = await this.userPendingsRepository.findOneByOrFail({ code });
+			const pendingUser = await this.prismaService.client.user_pending.findUniqueOrThrow({ where: { code } });
 
 			const { account, secret } = await this.signupService.signup({
 				username: pendingUser.username,
 				passwordHash: pendingUser.password,
 			});
 
-			this.userPendingsRepository.delete({
-				id: pendingUser.id,
+			this.prismaService.client.user_pending.delete({
+				where: {
+					id: pendingUser.id,
+				},
 			});
 
-			const profile = await this.userProfilesRepository.findOneByOrFail({ userId: account.id });
+			const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: account.id } });
 
-			await this.userProfilesRepository.update({ userId: profile.userId }, {
-				email: pendingUser.email,
-				emailVerified: true,
-				emailVerifyCode: null,
+			await this.prismaService.client.user_profile.update({
+				where: { userId: profile.userId },
+				data: {
+					email: pendingUser.email,
+					emailVerified: true,
+					emailVerifyCode: null,
+				},
 			});
 
-			const ticket = await this.registrationTicketsRepository.findOneBy({ pendingUserId: pendingUser.id });
+			const ticket = await this.prismaService.client.registration_ticket.findFirst({ where: { pendingUserId: pendingUser.id } });
 			if (ticket) {
-				await this.registrationTicketsRepository.update(ticket.id, {
-					usedBy: account,
-					usedById: account.id,
-					pendingUserId: null,
+				await this.prismaService.client.registration_ticket.update({
+					where: { id: ticket.id },
+					data: {
+						usedById: account.id,
+						pendingUserId: null,
+					},
 				});
 			}
 

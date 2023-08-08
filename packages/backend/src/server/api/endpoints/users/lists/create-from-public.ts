@@ -1,21 +1,15 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UserListsRepository,
-	UserListJoiningsRepository,
-	BlockingsRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
-import type { UserList } from '@/models/entities/UserList.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserListEntityService } from '@/core/entities/UserListEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { ApiError } from '@/server/api/error.js';
 import { RoleService } from '@/core/RoleService.js';
 import { UserListService } from '@/core/UserListService.js';
 import { UserListSchema } from '@/models/zod/UserListSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = UserListSchema;
 export const meta = {
@@ -70,31 +64,26 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-
-		@Inject(DI.userListJoiningsRepository)
-		private userListJoiningsRepository: UserListJoiningsRepository,
-
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
 		private userListService: UserListService,
 		private userListEntityService: UserListEntityService,
 		private idService: IdService,
 		private getterService: GetterService,
 		private roleService: RoleService,
+		private prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const listExist = await this.userListsRepository.exist({
-				where: {
-					id: ps.listId,
-					isPublic: true,
-				},
-			});
+			const listExist =
+				(await this.prismaService.client.user_list.count({
+					where: {
+						id: ps.listId,
+						isPublic: true,
+					},
+					take: 1,
+				})) > 0;
 			if (!listExist) throw new ApiError(meta.errors.noSuchList);
-			const currentCount = await this.userListsRepository.countBy({
-				userId: me.id,
+
+			const currentCount = await this.prismaService.client.user_list.count({
+				where: { userId: me.id },
 			});
 			if (
 				currentCount >
@@ -103,20 +92,18 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.tooManyUserLists);
 			}
 
-			const userList = await this.userListsRepository
-				.insert({
+			const userList = await this.prismaService.client.user_list.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
 					userId: me.id,
 					name: ps.name,
-				} as UserList)
-				.then((x) =>
-					this.userListsRepository.findOneByOrFail(x.identifiers[0]),
-				);
+				},
+			});
 
 			const users = (
-				await this.userListJoiningsRepository.findBy({
-					userListId: ps.listId,
+				await this.prismaService.client.user_list_joining.findMany({
+					where: { userListId: ps.listId },
 				})
 			).map((x) => x.userId);
 
@@ -124,29 +111,34 @@ export default class extends Endpoint<
 				const currentUser = await this.getterService
 					.getUser(user)
 					.catch((err) => {
-						if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff')
+						if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
 							throw new ApiError(meta.errors.noSuchUser);
+						}
 						throw err;
 					});
 
 				if (currentUser.id !== me.id) {
-					const blockExist = await this.blockingsRepository.exist({
-						where: {
-							blockerId: currentUser.id,
-							blockeeId: me.id,
-						},
-					});
+					const blockExist =
+						(await this.prismaService.client.blocking.count({
+							where: {
+								blockerId: currentUser.id,
+								blockeeId: me.id,
+							},
+							take: 1,
+						})) > 0;
 					if (blockExist) {
 						throw new ApiError(meta.errors.youHaveBeenBlocked);
 					}
 				}
 
-				const exist = await this.userListJoiningsRepository.exist({
-					where: {
-						userListId: userList.id,
-						userId: currentUser.id,
-					},
-				});
+				const exist =
+					(await this.prismaService.client.user_list_joining.count({
+						where: {
+							userListId: userList.id,
+							userId: currentUser.id,
+						},
+						take: 1,
+					})) > 0;
 
 				if (exist) {
 					throw new ApiError(meta.errors.alreadyAdded);
@@ -161,6 +153,7 @@ export default class extends Endpoint<
 					throw err;
 				}
 			}
+
 			return (await this.userListEntityService.pack(
 				userList,
 			)) satisfies z.infer<typeof res>;

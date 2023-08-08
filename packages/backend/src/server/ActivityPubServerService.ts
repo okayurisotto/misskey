@@ -2,26 +2,25 @@ import { IncomingMessage } from 'node:http';
 import { Inject, Injectable } from '@nestjs/common';
 import fastifyAccepts from '@fastify/accepts';
 import httpSignature from '@peertube/http-signature';
-import { Brackets, In, IsNull, LessThan, Not } from 'typeorm';
 import accepts from 'accepts';
 import vary from 'vary';
 import { DI } from '@/di-symbols.js';
-import type { FollowingsRepository, NotesRepository, EmojisRepository, NoteReactionsRepository, UserProfilesRepository, UserNotePiningsRepository, UsersRepository, FollowRequestsRepository } from '@/models/index.js';
 import * as url from '@/misc/prelude/url.js';
 import type { Config } from '@/config.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { QueueService } from '@/core/QueueService.js';
 import type { LocalUser, RemoteUser, User } from '@/models/entities/User.js';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
-import type { Following } from '@/models/entities/Following.js';
 import type { Note } from '@/models/entities/Note.js';
-import { QueryService } from '@/core/QueryService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { IActivity } from '@/core/activitypub/type.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
-import type { FindOptionsWhere } from 'typeorm';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { Prisma, note, user } from '@prisma/client';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import type { T2P } from '@/types.js';
 
 const ACTIVITY_JSON = 'application/activity+json; charset=utf-8';
 const LD_JSON = 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"; charset=utf-8';
@@ -32,36 +31,13 @@ export class ActivityPubServerService {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.noteReactionsRepository)
-		private noteReactionsRepository: NoteReactionsRepository,
-
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
-		@Inject(DI.userNotePiningsRepository)
-		private userNotePiningsRepository: UserNotePiningsRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		@Inject(DI.followRequestsRepository)
-		private followRequestsRepository: FollowRequestsRepository,
-
-		private utilityService: UtilityService,
-		private userEntityService: UserEntityService,
-		private apRendererService: ApRendererService,
-		private queueService: QueueService,
-		private userKeypairService: UserKeypairService,
-		private queryService: QueryService,
+		private readonly utilityService: UtilityService,
+		private readonly userEntityService: UserEntityService,
+		private readonly apRendererService: ApRendererService,
+		private readonly queueService: QueueService,
+		private readonly userKeypairService: UserKeypairService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		//this.createServer = this.createServer.bind(this);
 	}
@@ -81,9 +57,9 @@ export class ActivityPubServerService {
 	 * @param note Note
 	 */
 	@bindThis
-	private async packActivity(note: Note): Promise<any> {
+	private async packActivity(note: T2P<Note, note>): Promise<any> {
 		if (note.renoteId && note.text == null && !note.hasPoll && (note.fileIds == null || note.fileIds.length === 0)) {
-			const renote = await this.notesRepository.findOneByOrFail({ id: note.renoteId });
+			const renote = await this.prismaService.client.note.findUniqueOrThrow({ where: { id: note.renoteId } });
 			return this.apRendererService.renderAnnounce(renote.uri ? renote.uri : `${this.config.url}/notes/${renote.id}`, note);
 		}
 
@@ -122,9 +98,11 @@ export class ActivityPubServerService {
 
 		const page = request.query.page === 'true';
 
-		const user = await this.usersRepository.findOneBy({
-			id: userId,
-			host: IsNull(),
+		const user = await this.prismaService.client.user.findUnique({
+			where: {
+				id: userId,
+				host: null,
+			},
 		});
 
 		if (user == null) {
@@ -133,7 +111,7 @@ export class ActivityPubServerService {
 		}
 
 		//#region Check ff visibility
-		const profile = await this.userProfilesRepository.findOneByOrFail({ userId: user.id });
+		const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } });
 
 		if (profile.ffVisibility === 'private') {
 			reply.code(403);
@@ -150,20 +128,20 @@ export class ActivityPubServerService {
 		const partOf = `${this.config.url}/users/${userId}/followers`;
 
 		if (page) {
-			const query = {
+			const query: Prisma.followingWhereInput = {
 				followeeId: user.id,
-			} as FindOptionsWhere<Following>;
+			};
 
 			// カーソルが指定されている場合
 			if (cursor) {
-				query.id = LessThan(cursor);
+				query.id = { lt: cursor };
 			}
 
 			// Get followers
-			const followings = await this.followingsRepository.find({
+			const followings = await this.prismaService.client.following.findMany({
 				where: query,
 				take: limit + 1,
-				order: { id: -1 },
+				orderBy: { id: 'desc' },
 			});
 
 			// 「次のページ」があるかどうか
@@ -214,9 +192,11 @@ export class ActivityPubServerService {
 
 		const page = request.query.page === 'true';
 
-		const user = await this.usersRepository.findOneBy({
-			id: userId,
-			host: IsNull(),
+		const user = await this.prismaService.client.user.findUnique({
+			where: {
+				id: userId,
+				host: null,
+			},
 		});
 
 		if (user == null) {
@@ -225,7 +205,7 @@ export class ActivityPubServerService {
 		}
 
 		//#region Check ff visibility
-		const profile = await this.userProfilesRepository.findOneByOrFail({ userId: user.id });
+		const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } });
 
 		if (profile.ffVisibility === 'private') {
 			reply.code(403);
@@ -242,20 +222,20 @@ export class ActivityPubServerService {
 		const partOf = `${this.config.url}/users/${userId}/following`;
 
 		if (page) {
-			const query = {
+			const query: Prisma.followingWhereInput = {
 				followerId: user.id,
-			} as FindOptionsWhere<Following>;
+			};
 
 			// カーソルが指定されている場合
 			if (cursor) {
-				query.id = LessThan(cursor);
+				query.id = { lt: cursor };
 			}
 
 			// Get followings
-			const followings = await this.followingsRepository.find({
+			const followings = await this.prismaService.client.following.findMany({
 				where: query,
 				take: limit + 1,
-				order: { id: -1 },
+				orderBy: { id: 'desc' },
 			});
 
 			// 「次のページ」があるかどうか
@@ -295,9 +275,11 @@ export class ActivityPubServerService {
 	private async featured(request: FastifyRequest<{ Params: { user: string; }; }>, reply: FastifyReply) {
 		const userId = request.params.user;
 
-		const user = await this.usersRepository.findOneBy({
-			id: userId,
-			host: IsNull(),
+		const user = await this.prismaService.client.user.findUnique({
+			where: {
+				id: userId,
+				host: null,
+			},
 		});
 
 		if (user == null) {
@@ -305,13 +287,13 @@ export class ActivityPubServerService {
 			return;
 		}
 
-		const pinings = await this.userNotePiningsRepository.find({
+		const pinings = await this.prismaService.client.user_note_pining.findMany({
 			where: { userId: user.id },
-			order: { id: 'DESC' },
+			orderBy: { id: 'desc' },
 		});
 
 		const pinnedNotes = await Promise.all(pinings.map(pining =>
-			this.notesRepository.findOneByOrFail({ id: pining.noteId })));
+			this.prismaService.client.note.findUniqueOrThrow({ where: { id: pining.noteId } })));
 
 		const renderedNotes = await Promise.all(pinnedNotes.map(note => this.apRendererService.renderNote(note)));
 
@@ -357,9 +339,11 @@ export class ActivityPubServerService {
 			return;
 		}
 
-		const user = await this.usersRepository.findOneBy({
-			id: userId,
-			host: IsNull(),
+		const user = await this.prismaService.client.user.findUnique({
+			where: {
+				id: userId,
+				host: null,
+			},
 		});
 
 		if (user == null) {
@@ -371,15 +355,19 @@ export class ActivityPubServerService {
 		const partOf = `${this.config.url}/users/${userId}/outbox`;
 
 		if (page) {
-			const query = this.queryService.makePaginationQuery(this.notesRepository.createQueryBuilder('note'), sinceId, untilId)
-				.andWhere('note.userId = :userId', { userId: user.id })
-				.andWhere(new Brackets(qb => { qb
-					.where('note.visibility = \'public\'')
-					.orWhere('note.visibility = \'home\'');
-				}))
-				.andWhere('note.localOnly = FALSE');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({ sinceId, untilId });
 
-			const notes = await query.limit(limit).getMany();
+			const notes = await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{ userId: user.id },
+						{ OR: [{ visibility: 'public' }, { visibility: 'home' }] },
+						{ localOnly: false },
+					]
+				},
+				take: limit,
+			});
 
 			if (sinceId) notes.reverse();
 
@@ -418,7 +406,7 @@ export class ActivityPubServerService {
 	}
 
 	@bindThis
-	private async userInfo(request: FastifyRequest, reply: FastifyReply, user: User | null) {
+	private async userInfo(request: FastifyRequest, reply: FastifyReply, user: T2P<User, user> | null) {
 		if (user == null) {
 			reply.code(404);
 			return;
@@ -473,10 +461,12 @@ export class ActivityPubServerService {
 		fastify.get<{ Params: { note: string; } }>('/notes/:note', { constraints: { apOrHtml: 'ap' } }, async (request, reply) => {
 			vary(reply.raw, 'Accept');
 
-			const note = await this.notesRepository.findOneBy({
-				id: request.params.note,
-				visibility: In(['public', 'home']),
-				localOnly: false,
+			const note = await this.prismaService.client.note.findUnique({
+				where: {
+					id: request.params.note,
+					visibility: { in:  ['public', 'home'] },
+					localOnly: false,
+				},
 			});
 
 			if (note == null) {
@@ -503,11 +493,13 @@ export class ActivityPubServerService {
 		fastify.get<{ Params: { note: string; } }>('/notes/:note/activity', async (request, reply) => {
 			vary(reply.raw, 'Accept');
 
-			const note = await this.notesRepository.findOneBy({
-				id: request.params.note,
-				userHost: IsNull(),
-				visibility: In(['public', 'home']),
-				localOnly: false,
+			const note = await this.prismaService.client.note.findUnique({
+				where: {
+					id: request.params.note,
+					userHost: null,
+					visibility: { in: ['public', 'home'] },
+					localOnly: false,
+				},
 			});
 
 			if (note == null) {
@@ -545,9 +537,11 @@ export class ActivityPubServerService {
 		fastify.get<{ Params: { user: string; } }>('/users/:user/publickey', async (request, reply) => {
 			const userId = request.params.user;
 
-			const user = await this.usersRepository.findOneBy({
-				id: userId,
-				host: IsNull(),
+			const user = await this.prismaService.client.user.findUnique({
+				where: {
+					id: userId,
+					host: null,
+				},
 			});
 
 			if (user == null) {
@@ -570,20 +564,24 @@ export class ActivityPubServerService {
 		fastify.get<{ Params: { user: string; } }>('/users/:user', { constraints: { apOrHtml: 'ap' } }, async (request, reply) => {
 			const userId = request.params.user;
 
-			const user = await this.usersRepository.findOneBy({
-				id: userId,
-				host: IsNull(),
-				isSuspended: false,
+			const user = await this.prismaService.client.user.findUnique({
+				where: {
+					id: userId,
+					host: null,
+					isSuspended: false,
+				},
 			});
 
 			return await this.userInfo(request, reply, user);
 		});
 
 		fastify.get<{ Params: { user: string; } }>('/@:user', { constraints: { apOrHtml: 'ap' } }, async (request, reply) => {
-			const user = await this.usersRepository.findOneBy({
-				usernameLower: request.params.user.toLowerCase(),
-				host: IsNull(),
-				isSuspended: false,
+			const user = await this.prismaService.client.user.findFirst({
+				where: {
+					usernameLower: request.params.user.toLowerCase(),
+					host: null,
+					isSuspended: false,
+				},
 			});
 
 			return await this.userInfo(request, reply, user);
@@ -592,9 +590,11 @@ export class ActivityPubServerService {
 
 		// emoji
 		fastify.get<{ Params: { emoji: string; } }>('/emojis/:emoji', async (request, reply) => {
-			const emoji = await this.emojisRepository.findOneBy({
-				host: IsNull(),
-				name: request.params.emoji,
+			const emoji = await this.prismaService.client.emoji.findFirst({
+				where: {
+					host: null,
+					name: request.params.emoji,
+				},
 			});
 
 			if (emoji == null || emoji.localOnly) {
@@ -609,14 +609,14 @@ export class ActivityPubServerService {
 
 		// like
 		fastify.get<{ Params: { like: string; } }>('/likes/:like', async (request, reply) => {
-			const reaction = await this.noteReactionsRepository.findOneBy({ id: request.params.like });
+			const reaction = await this.prismaService.client.note_reaction.findUnique({ where: { id: request.params.like } });
 
 			if (reaction == null) {
 				reply.code(404);
 				return;
 			}
 
-			const note = await this.notesRepository.findOneBy({ id: reaction.noteId });
+			const note = await this.prismaService.client.note.findUnique({ where: { id: reaction.noteId } });
 
 			if (note == null) {
 				reply.code(404);
@@ -634,13 +634,17 @@ export class ActivityPubServerService {
 			// check if the following exists.
 
 			const [follower, followee] = await Promise.all([
-				this.usersRepository.findOneBy({
-					id: request.params.follower,
-					host: IsNull(),
+				this.prismaService.client.user.findUnique({
+					where: {
+						id: request.params.follower,
+						host: null,
+					},
 				}),
-				this.usersRepository.findOneBy({
-					id: request.params.followee,
-					host: Not(IsNull()),
+				this.prismaService.client.user.findUnique({
+					where: {
+						id: request.params.followee,
+						host: { not: null },
+					},
 				}),
 			]) as [LocalUser | RemoteUser | null, LocalUser | RemoteUser | null];
 
@@ -659,8 +663,10 @@ export class ActivityPubServerService {
 			// This may be used before the follow is completed, so we do not
 			// check if the following exists and only check if the follow request exists.
 
-			const followRequest = await this.followRequestsRepository.findOneBy({
-				id: request.params.followRequestId,
+			const followRequest = await this.prismaService.client.follow_request.findUnique({
+				where: {
+					id: request.params.followRequestId,
+				},
 			});
 
 			if (followRequest == null) {
@@ -669,13 +675,17 @@ export class ActivityPubServerService {
 			}
 
 			const [follower, followee] = await Promise.all([
-				this.usersRepository.findOneBy({
-					id: followRequest.followerId,
-					host: IsNull(),
+				this.prismaService.client.user.findUnique({
+					where: {
+						id: followRequest.followerId,
+						host: null,
+					},
 				}),
-				this.usersRepository.findOneBy({
-					id: followRequest.followeeId,
-					host: Not(IsNull()),
+				this.prismaService.client.user.findUnique({
+					where: {
+						id: followRequest.followeeId,
+						host: { not: null },
+					},
 				}),
 			]) as [LocalUser | RemoteUser | null, LocalUser | RemoteUser | null];
 

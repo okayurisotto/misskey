@@ -1,42 +1,28 @@
 import * as fs from 'node:fs';
-import { Inject, Injectable } from '@nestjs/common';
-import { MoreThan } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
-import { DI } from '@/di-symbols.js';
-import type { NoteFavorite, NoteFavoritesRepository, NotesRepository, PollsRepository, User, UsersRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import type { NoteFavorite, User } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import type { Poll } from '@/models/entities/Poll.js';
 import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbJobDataWithUser } from '../types.js';
+import type { note, note_favorite, poll, user } from '@prisma/client';
 
 @Injectable()
 export class ExportFavoritesProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.pollsRepository)
-		private pollsRepository: PollsRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.noteFavoritesRepository)
-		private noteFavoritesRepository: NoteFavoritesRepository,
-
-		private driveService: DriveService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly driveService: DriveService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('export-favorites');
 	}
@@ -45,7 +31,7 @@ export class ExportFavoritesProcessorService {
 	public async process(job: Bull.Job<DbJobDataWithUser>): Promise<void> {
 		this.logger.info(`Exporting favorites of ${job.data.user.id} ...`);
 
-		const user = await this.usersRepository.findOneBy({ id: job.data.user.id });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
 		if (user == null) {
 			return;
 		}
@@ -77,17 +63,15 @@ export class ExportFavoritesProcessorService {
 			let cursor: NoteFavorite['id'] | null = null;
 
 			while (true) {
-				const favorites = await this.noteFavoritesRepository.find({
+				const favorites: (note_favorite & { note: note & { user: user } })[] = await this.prismaService.client.note_favorite.findMany({
 					where: {
 						userId: user.id,
-						...(cursor ? { id: MoreThan(cursor) } : {}),
+						...(cursor ? { id: { gt: cursor } } : {}),
 					},
 					take: 100,
-					order: {
-						id: 1,
-					},
-					relations: ['note', 'note.user'],
-				}) as (NoteFavorite & { note: Note & { user: User } })[];
+					orderBy: { id: 'asc' },
+					include: { note: { include: { user: true } } },
+				});
 
 				if (favorites.length === 0) {
 					job.updateProgress(100);
@@ -97,9 +81,9 @@ export class ExportFavoritesProcessorService {
 				cursor = favorites.at(-1)?.id ?? null;
 
 				for (const favorite of favorites) {
-					let poll: Poll | undefined;
+					let poll: T2P<Poll, poll> | undefined;
 					if (favorite.note.hasPoll) {
-						poll = await this.pollsRepository.findOneByOrFail({ noteId: favorite.note.id });
+						poll = await this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: favorite.note.id } });
 					}
 					const content = JSON.stringify(serialize(favorite, poll));
 					const isFirst = exportedFavoritesCount === 0;
@@ -107,8 +91,10 @@ export class ExportFavoritesProcessorService {
 					exportedFavoritesCount++;
 				}
 
-				const total = await this.noteFavoritesRepository.countBy({
-					userId: user.id,
+				const total = await this.prismaService.client.note_favorite.count({
+					where: {
+						userId: user.id,
+					},
 				});
 
 				job.updateProgress(exportedFavoritesCount / total);
@@ -129,7 +115,7 @@ export class ExportFavoritesProcessorService {
 	}
 }
 
-function serialize(favorite: NoteFavorite & { note: Note & { user: User } }, poll: Poll | null = null): Record<string, unknown> {
+function serialize(favorite: T2P<NoteFavorite, note_favorite> & { note: T2P<Note, note> & { user: T2P<User, user> } }, poll: T2P<Poll, poll> | null = null): Record<string, unknown> {
 	return {
 		id: favorite.id,
 		createdAt: favorite.createdAt,

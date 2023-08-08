@@ -1,6 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { DriveFilesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type { RemoteUser } from '@/models/entities/User.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -10,22 +8,23 @@ import { DriveService } from '@/core/DriveService.js';
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
 import { checkHttps } from '@/misc/check-https.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApResolverService } from '../ApResolverService.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import type { IObject } from '../type.js';
+import type { drive_file } from '@prisma/client';
 
 @Injectable()
 export class ApImageService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private metaService: MetaService,
-		private apResolverService: ApResolverService,
-		private driveService: DriveService,
-		private apLoggerService: ApLoggerService,
+		private readonly metaService: MetaService,
+		private readonly apResolverService: ApResolverService,
+		private readonly driveService: DriveService,
+		private readonly apLoggerService: ApLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.apLoggerService.logger;
 	}
@@ -34,7 +33,7 @@ export class ApImageService {
 	 * Imageを作成します。
 	 */
 	@bindThis
-	public async createImage(actor: RemoteUser, value: string | IObject): Promise<DriveFile> {
+	public async createImage(actor: RemoteUser, value: string | IObject): Promise<T2P<DriveFile, drive_file>> {
 		// 投稿者が凍結されていたらスキップ
 		if (actor.isSuspended) {
 			throw new Error('actor has been suspended');
@@ -74,8 +73,11 @@ export class ApImageService {
 		if (!file.isLink || file.url === image.url) return file;
 
 		// URLが異なっている場合、同じ画像が以前に異なるURLで登録されていたということなので、URLを更新する
-		await this.driveFilesRepository.update({ id: file.id }, { url: image.url, uri: image.url });
-		return await this.driveFilesRepository.findOneByOrFail({ id: file.id });
+		await this.prismaService.client.drive_file.update({
+			where: { id: file.id },
+			data: { url: image.url, uri: image.url },
+		});
+		return await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: file.id } });
 	}
 
 	/**
@@ -85,7 +87,7 @@ export class ApImageService {
 	 * リモートサーバーからフェッチしてMisskeyに登録しそれを返します。
 	 */
 	@bindThis
-	public async resolveImage(actor: RemoteUser, value: string | IObject): Promise<DriveFile> {
+	public async resolveImage(actor: RemoteUser, value: string | IObject): Promise<T2P<DriveFile, drive_file>> {
 		// TODO
 
 		// リモートサーバーからフェッチしてきて登録

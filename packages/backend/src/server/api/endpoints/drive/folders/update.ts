@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFoldersRepository } from '@/models/index.js';
 import { DriveFolderEntityService } from '@/core/entities/DriveFolderEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = DriveFolderSchema;
@@ -48,17 +47,17 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFoldersRepository)
-		private driveFoldersRepository: DriveFoldersRepository,
-
-		private driveFolderEntityService: DriveFolderEntityService,
-		private globalEventService: GlobalEventService,
+		private readonly driveFolderEntityService: DriveFolderEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch folder
-			const folder = await this.driveFoldersRepository.findOneBy({
-				id: ps.folderId,
-				userId: me.id,
+			const folder = await this.prismaService.client.drive_folder.findUnique({
+				where: {
+					id: ps.folderId,
+					userId: me.id,
+				},
 			});
 
 			if (folder == null) {
@@ -74,10 +73,13 @@ export default class extends Endpoint<
 					folder.parentId = null;
 				} else {
 					// Get parent folder
-					const parent = await this.driveFoldersRepository.findOneBy({
-						id: ps.parentId,
-						userId: me.id,
-					});
+					const parent =
+						await this.prismaService.client.drive_folder.findUnique({
+							where: {
+								id: ps.parentId,
+								userId: me.id,
+							},
+						});
 
 					if (parent == null) {
 						throw new ApiError(meta.errors.noSuchParentFolder);
@@ -86,9 +88,12 @@ export default class extends Endpoint<
 					// Check if the circular reference will occur
 					const checkCircle = async (folderId: string): Promise<boolean> => {
 						// Fetch folder
-						const folder2 = await this.driveFoldersRepository.findOneBy({
-							id: folderId,
-						});
+						const folder2 =
+							await this.prismaService.client.drive_folder.findUnique({
+								where: {
+									id: folderId,
+								},
+							});
 
 						if (folder2!.id === folder!.id) {
 							return true;
@@ -110,9 +115,12 @@ export default class extends Endpoint<
 			}
 
 			// Update
-			this.driveFoldersRepository.update(folder.id, {
-				name: folder.name,
-				parentId: folder.parentId,
+			await this.prismaService.client.drive_folder.update({
+				where: { id: folder.id },
+				data: {
+					name: folder.name,
+					parentId: folder.parentId,
+				},
 			});
 
 			const folderObj = await this.driveFolderEntityService.pack(folder);

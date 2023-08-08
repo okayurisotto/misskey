@@ -1,12 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RegistrationTicketsRepository } from '@/models/index.js';
 import { InviteCodeEntityService } from '@/core/entities/InviteCodeEntityService.js';
-import { QueryService } from '@/core/QueryService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(z.unknown());
 export const meta = {
@@ -30,24 +28,24 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.registrationTicketsRepository)
-		private registrationTicketsRepository: RegistrationTicketsRepository,
-
-		private inviteCodeEntityService: InviteCodeEntityService,
-		private queryService: QueryService,
+		private readonly inviteCodeEntityService: InviteCodeEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.registrationTicketsRepository.createQueryBuilder('ticket'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('ticket.createdById = :meId', { meId: me.id })
-				.leftJoinAndSelect('ticket.createdBy', 'createdBy')
-				.leftJoinAndSelect('ticket.usedBy', 'usedBy');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const tickets = await query.limit(ps.limit).getMany();
+			const tickets =
+				await this.prismaService.client.registration_ticket.findMany({
+					where: {
+						AND: [paginationQuery.where, { createdById: me.id }],
+					},
+					orderBy: paginationQuery.orderBy,
+					take: ps.limit,
+				});
 
 			return (await Promise.all(
 				tickets.map((ticket) => this.inviteCodeEntityService.pack(ticket, me)),

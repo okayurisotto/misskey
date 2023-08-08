@@ -1,15 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	DriveFilesRepository,
-	ChannelsRepository,
-} from '@/models/index.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = ChannelSchema;
@@ -55,19 +51,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private channelEntityService: ChannelEntityService,
-
-		private roleService: RoleService,
+		private readonly channelEntityService: ChannelEntityService,
+		private readonly roleService: RoleService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const channel = await this.channelsRepository.findOneBy({
-				id: ps.channelId,
+			const channel = await this.prismaService.client.channel.findUnique({
+				where: { id: ps.channelId },
 			});
 
 			if (channel == null) {
@@ -82,9 +72,11 @@ export default class extends Endpoint<
 			// eslint:disable-next-line:no-unnecessary-initializer
 			let banner = undefined;
 			if (ps.bannerId != null) {
-				banner = await this.driveFilesRepository.findOneBy({
-					id: ps.bannerId,
-					userId: me.id,
+				banner = await this.prismaService.client.drive_file.findUnique({
+					where: {
+						id: ps.bannerId,
+						userId: me.id,
+					},
 				});
 
 				if (banner == null) {
@@ -94,19 +86,16 @@ export default class extends Endpoint<
 				banner = null;
 			}
 
-			await this.channelsRepository.update(channel.id, {
-				...(ps.name !== undefined ? { name: ps.name } : {}),
-				...(ps.description !== undefined
-					? { description: ps.description }
-					: {}),
-				...(ps.pinnedNoteIds !== undefined
-					? { pinnedNoteIds: ps.pinnedNoteIds }
-					: {}),
-				...(ps.color !== undefined ? { color: ps.color } : {}),
-				...(typeof ps.isArchived === 'boolean'
-					? { isArchived: ps.isArchived }
-					: {}),
-				...(banner ? { bannerId: banner.id } : {}),
+			await this.prismaService.client.channel.update({
+				where: { id: channel.id },
+				data: {
+					name: ps.name,
+					description: ps.description,
+					pinnedNoteIds: ps.pinnedNoteIds,
+					color: ps.color,
+					isArchived: ps.isArchived ?? undefined,
+					bannerId: banner?.id,
+				},
 			});
 
 			return (await this.channelEntityService.pack(

@@ -1,10 +1,6 @@
 import * as fs from 'node:fs';
-import { Inject, Injectable } from '@nestjs/common';
-import { MoreThan } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
-import { DI } from '@/di-symbols.js';
-import type { NotesRepository, PollsRepository, UsersRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
@@ -13,32 +9,23 @@ import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbJobDataWithUser } from '../types.js';
 import type { z } from 'zod';
+import type { note, poll } from '@prisma/client';
 
 @Injectable()
 export class ExportNotesProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.pollsRepository)
-		private pollsRepository: PollsRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private driveService: DriveService,
-		private queueLoggerService: QueueLoggerService,
-
-		private driveFileEntityService: DriveFileEntityService,
+		private readonly driveService: DriveService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('export-notes');
 	}
@@ -47,7 +34,7 @@ export class ExportNotesProcessorService {
 	public async process(job: Bull.Job<DbJobDataWithUser>): Promise<void> {
 		this.logger.info(`Exporting notes of ${job.data.user.id} ...`);
 
-		const user = await this.usersRepository.findOneBy({ id: job.data.user.id });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
 		if (user == null) {
 			return;
 		}
@@ -79,15 +66,13 @@ export class ExportNotesProcessorService {
 			let cursor: Note['id'] | null = null;
 
 			while (true) {
-				const notes = await this.notesRepository.find({
+				const notes = await this.prismaService.client.note.findMany({
 					where: {
 						userId: user.id,
-						...(cursor ? { id: MoreThan(cursor) } : {}),
+						...(cursor ? { id: { gt: cursor } } : {}),
 					},
 					take: 100,
-					order: {
-						id: 1,
-					},
+					orderBy: { id: 'asc' },
 				}) as Note[];
 
 				if (notes.length === 0) {
@@ -98,9 +83,9 @@ export class ExportNotesProcessorService {
 				cursor = notes.at(-1)?.id ?? null;
 
 				for (const note of notes) {
-					let poll: Poll | undefined;
+					let poll: T2P<Poll, poll> | undefined;
 					if (note.hasPoll) {
-						poll = await this.pollsRepository.findOneByOrFail({ noteId: note.id });
+						poll = await this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: note.id } });
 					}
 					const files = await this.driveFileEntityService.packManyByIds(note.fileIds);
 					const content = JSON.stringify(serialize(note, poll, files));
@@ -109,8 +94,8 @@ export class ExportNotesProcessorService {
 					exportedNotesCount++;
 				}
 
-				const total = await this.notesRepository.countBy({
-					userId: user.id,
+				const total = await this.prismaService.client.note.count({
+					where: { userId: user.id },
 				});
 
 				job.updateProgress(exportedNotesCount / total);
@@ -131,7 +116,7 @@ export class ExportNotesProcessorService {
 	}
 }
 
-function serialize(note: Note, poll: Poll | null = null, files: z.infer<typeof DriveFileSchema>[]): Record<string, unknown> {
+function serialize(note: T2P<Note, note>, poll: T2P<Poll, poll> | null = null, files: z.infer<typeof DriveFileSchema>[]): Record<string, unknown> {
 	return {
 		id: note.id,
 		text: note.text,

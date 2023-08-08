@@ -1,37 +1,31 @@
 import * as fs from 'node:fs';
 import { Inject, Injectable } from '@nestjs/common';
-import { IsNull } from 'typeorm';
 import { format as dateFormat } from 'date-fns';
 import mime from 'mime-types';
 import archiver from 'archiver';
 import { DI } from '@/di-symbols.js';
-import type { EmojisRepository, UsersRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp, createTempDir } from '@/misc/create-temp.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 
 @Injectable()
 export class ExportCustomEmojisProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.emojisRepository)
-		private emojisRepository: EmojisRepository,
-
-		private driveService: DriveService,
-		private downloadService: DownloadService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly driveService: DriveService,
+		private readonly downloadService: DownloadService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('export-custom-emojis');
 	}
@@ -40,7 +34,7 @@ export class ExportCustomEmojisProcessorService {
 	public async process(job: Bull.Job): Promise<void> {
 		this.logger.info('Exporting custom emojis ...');
 
-		const user = await this.usersRepository.findOneBy({ id: job.data.user.id });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
 		if (user == null) {
 			return;
 		}
@@ -70,13 +64,9 @@ export class ExportCustomEmojisProcessorService {
 
 		await writeMeta(`{"metaVersion":2,"host":"${this.config.host}","exportedAt":"${new Date().toString()}","emojis":[`);
 
-		const customEmojis = await this.emojisRepository.find({
-			where: {
-				host: IsNull(),
-			},
-			order: {
-				id: 'ASC',
-			},
+		const customEmojis = await this.prismaService.client.emoji.findMany({
+			where: { host: null },
+			orderBy: { id: 'asc' },
 		});
 
 		for (const emoji of customEmojis) {

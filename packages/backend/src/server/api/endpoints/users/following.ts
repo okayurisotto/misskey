@@ -1,19 +1,13 @@
 import { z } from 'zod';
-import { IsNull } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UsersRepository,
-	FollowingsRepository,
-	UserProfilesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { FollowingEntityService } from '@/core/entities/FollowingEntityService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { DI } from '@/di-symbols.js';
 import { FollowingSchema } from '@/models/zod/FollowingSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(FollowingSchema);
 export const meta = {
@@ -61,36 +55,30 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-
-		private utilityService: UtilityService,
-		private followingEntityService: FollowingEntityService,
-		private queryService: QueryService,
+		private readonly utilityService: UtilityService,
+		private readonly followingEntityService: FollowingEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const user = await this.usersRepository.findOneBy(
-				'userId' in ps
-					? { id: ps.userId }
-					: {
-							usernameLower: ps.username!.toLowerCase(),
-							host: this.utilityService.toPunyNullable(ps.host) ?? IsNull(),
-					  },
-			);
+			const user = await this.prismaService.client.user.findFirst({
+				where:
+					'userId' in ps
+						? { id: ps.userId }
+						: {
+								usernameLower: ps.username.toLowerCase(),
+								host: this.utilityService.toPunyNullable(ps.host) ?? null,
+						  },
+			});
 
 			if (user == null) {
 				throw new ApiError(meta.errors.noSuchUser);
 			}
 
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: user.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: user.id },
+				});
 
 			if (profile.ffVisibility === 'private') {
 				if (me == null || me.id !== user.id) {
@@ -100,28 +88,30 @@ export default class extends Endpoint<
 				if (me == null) {
 					throw new ApiError(meta.errors.forbidden);
 				} else if (me.id !== user.id) {
-					const isFollowing = await this.followingsRepository.exist({
-						where: {
-							followeeId: user.id,
-							followerId: me.id,
-						},
-					});
+					const isFollowing =
+						(await this.prismaService.client.following.count({
+							where: {
+								followeeId: user.id,
+								followerId: me.id,
+							},
+							take: 1,
+						})) > 0;
 					if (!isFollowing) {
 						throw new ApiError(meta.errors.forbidden);
 					}
 				}
 			}
 
-			const query = this.queryService
-				.makePaginationQuery(
-					this.followingsRepository.createQueryBuilder('following'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('following.followerId = :userId', { userId: user.id })
-				.innerJoinAndSelect('following.followee', 'followee');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const followings = await query.limit(ps.limit).getMany();
+			const followings = await this.prismaService.client.following.findMany({
+				where: { AND: [paginationQuery.where, { followerId: user.id }] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				followings.map((following) =>

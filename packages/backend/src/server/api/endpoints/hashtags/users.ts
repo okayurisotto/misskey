@@ -1,11 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UsersRepository } from '@/models/index.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(UserDetailedSchema);
 export const meta = {
@@ -37,54 +37,47 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.usersRepository
-				.createQueryBuilder('user')
-				.where(':tag = ANY(user.tags)', { tag: normalizeForSearch(ps.tag) })
-				.andWhere('user.isSuspended = FALSE');
-
 			const recent = new Date(Date.now() - 1000 * 60 * 60 * 24 * 5);
 
-			if (ps.state === 'alive') {
-				query.andWhere('user.updatedAt > :date', { date: recent });
-			}
+			const orderBy = ((): Prisma.userOrderByWithRelationInput => {
+				switch (ps.sort) {
+					case '+follower':
+						return { followersCount: 'desc' };
+					case '-follower':
+						return { followersCount: 'asc' };
+					case '+createdAt':
+						return { createdAt: 'desc' };
+					case '-createdAt':
+						return { createdAt: 'asc' };
+					case '+updatedAt':
+						return { updatedAt: 'desc' };
+					case '-updatedAt':
+						return { updatedAt: 'asc' };
+				}
+			})();
 
-			if (ps.origin === 'local') {
-				query.andWhere('user.host IS NULL');
-			} else if (ps.origin === 'remote') {
-				query.andWhere('user.host IS NOT NULL');
-			}
-
-			switch (ps.sort) {
-				case '+follower':
-					query.orderBy('user.followersCount', 'DESC');
-					break;
-				case '-follower':
-					query.orderBy('user.followersCount', 'ASC');
-					break;
-				case '+createdAt':
-					query.orderBy('user.createdAt', 'DESC');
-					break;
-				case '-createdAt':
-					query.orderBy('user.createdAt', 'ASC');
-					break;
-				case '+updatedAt':
-					query.orderBy('user.updatedAt', 'DESC');
-					break;
-				case '-updatedAt':
-					query.orderBy('user.updatedAt', 'ASC');
-					break;
-			}
-
-			const users = await query.limit(ps.limit).getMany();
+			const users = await this.prismaService.client.user.findMany({
+				where: {
+					AND: [
+						{ tags: { has: normalizeForSearch(ps.tag) } },
+						{ isSuspended: false },
+						ps.state === 'alive' ? { updatedAt: recent } : {},
+						ps.origin === 'local' ? { host: null } : {},
+						ps.origin === 'remote' ? { host: { not: null } } : {},
+					],
+				},
+				orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
-				users.map((user) => this.userEntityService.pack(user, me, { detail: true })),
+				users.map((user) =>
+					this.userEntityService.pack(user, me, { detail: true }),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

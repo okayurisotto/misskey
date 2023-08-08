@@ -1,12 +1,12 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Bull from 'bullmq';
 import { DI } from '@/di-symbols.js';
-import type { WebhooksRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import type Logger from '@/logger.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { StatusError } from '@/misc/status-error.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { WebhookDeliverJobData } from '../types.js';
 
@@ -18,11 +18,9 @@ export class WebhookDeliverProcessorService {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.webhooksRepository)
-		private webhooksRepository: WebhooksRepository,
-
 		private httpRequestService: HttpRequestService,
 		private queueLoggerService: QueueLoggerService,
+		private prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('webhook');
 	}
@@ -51,16 +49,22 @@ export class WebhookDeliverProcessorService {
 				}),
 			});
 
-			this.webhooksRepository.update({ id: job.data.webhookId }, {
-				latestSentAt: new Date(),
-				latestStatus: res.status,
+			await this.prismaService.client.webhook.update({
+				where: { id: job.data.webhookId },
+				data: {
+					latestSentAt: new Date(),
+					latestStatus: res.status,
+				},
 			});
 
 			return 'Success';
 		} catch (res) {
-			this.webhooksRepository.update({ id: job.data.webhookId }, {
-				latestSentAt: new Date(),
-				latestStatus: res instanceof StatusError ? res.statusCode : 1,
+			await this.prismaService.client.webhook.update({
+				where: { id: job.data.webhookId },
+				data: {
+					latestSentAt: new Date(),
+					latestStatus: res instanceof StatusError ? res.statusCode : 1,
+				},
 			});
 
 			if (res instanceof StatusError) {

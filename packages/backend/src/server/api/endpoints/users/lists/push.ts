@@ -1,17 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
-import type {
-	UserListsRepository,
-	UserListJoiningsRepository,
-	BlockingsRepository,
-} from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserListService } from '@/core/UserListService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['lists', 'users'],
@@ -66,23 +61,17 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-
-		@Inject(DI.userListJoiningsRepository)
-		private userListJoiningsRepository: UserListJoiningsRepository,
-
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		private getterService: GetterService,
-		private userListService: UserListService,
+		private readonly getterService: GetterService,
+		private readonly userListService: UserListService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch the list
-			const userList = await this.userListsRepository.findOneBy({
-				id: ps.listId,
-				userId: me.id,
+			const userList = await this.prismaService.client.user_list.findUnique({
+				where: {
+					id: ps.listId,
+					userId: me.id,
+				},
 			});
 
 			if (userList == null) {
@@ -99,23 +88,27 @@ export default class extends Endpoint<
 
 			// Check blocking
 			if (user.id !== me.id) {
-				const blockExist = await this.blockingsRepository.exist({
-					where: {
-						blockerId: user.id,
-						blockeeId: me.id,
-					},
-				});
+				const blockExist =
+					(await this.prismaService.client.blocking.count({
+						where: {
+							blockerId: user.id,
+							blockeeId: me.id,
+						},
+						take: 1,
+					})) > 0;
 				if (blockExist) {
 					throw new ApiError(meta.errors.youHaveBeenBlocked);
 				}
 			}
 
-			const exist = await this.userListJoiningsRepository.exist({
-				where: {
-					userListId: userList.id,
-					userId: user.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.user_list_joining.count({
+					where: {
+						userListId: userList.id,
+						userId: user.id,
+					},
+					take: 1,
+				})) > 1;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyAdded);

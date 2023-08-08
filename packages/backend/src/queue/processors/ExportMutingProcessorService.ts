@@ -1,39 +1,27 @@
 import * as fs from 'node:fs';
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull, MoreThan } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
-import { DI } from '@/di-symbols.js';
-import type { MutingsRepository, UsersRepository, BlockingsRepository, Muting } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import type { Muting } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbJobDataWithUser } from '../types.js';
+import type { muting } from '@prisma/client';
 
 @Injectable()
 export class ExportMutingProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		private utilityService: UtilityService,
-		private driveService: DriveService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly utilityService: UtilityService,
+		private readonly driveService: DriveService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('export-muting');
 	}
@@ -42,7 +30,7 @@ export class ExportMutingProcessorService {
 	public async process(job: Bull.Job<DbJobDataWithUser>): Promise<void> {
 		this.logger.info(`Exporting muting of ${job.data.user.id} ...`);
 
-		const user = await this.usersRepository.findOneBy({ id: job.data.user.id });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
 		if (user == null) {
 			return;
 		}
@@ -59,16 +47,14 @@ export class ExportMutingProcessorService {
 			let cursor: Muting['id'] | null = null;
 
 			while (true) {
-				const mutes = await this.mutingsRepository.find({
+				const mutes: muting[] = await this.prismaService.client.muting.findMany({
 					where: {
 						muterId: user.id,
-						expiresAt: IsNull(),
-						...(cursor ? { id: MoreThan(cursor) } : {}),
+						expiresAt: null,
+						...(cursor ? { id: { gt: cursor } } : {}),
 					},
 					take: 100,
-					order: {
-						id: 1,
-					},
+					orderBy: { id: 'asc' },
 				});
 
 				if (mutes.length === 0) {
@@ -79,7 +65,7 @@ export class ExportMutingProcessorService {
 				cursor = mutes.at(-1)?.id ?? null;
 
 				for (const mute of mutes) {
-					const u = await this.usersRepository.findOneBy({ id: mute.muteeId });
+					const u = await this.prismaService.client.user.findUnique({ where: { id: mute.muteeId } });
 					if (u == null) {
 						exportedCount++; continue;
 					}
@@ -98,8 +84,10 @@ export class ExportMutingProcessorService {
 					exportedCount++;
 				}
 
-				const total = await this.mutingsRepository.countBy({
-					muterId: user.id,
+				const total = await this.prismaService.client.muting.count({
+					where: {
+						muterId: user.id,
+					},
 				});
 
 				job.updateProgress(exportedCount / total);

@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFilesRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(DriveFileSchema);
 export const meta = {
@@ -34,32 +33,31 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private driveFileEntityService: DriveFileEntityService,
-		private queryService: QueryService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.driveFilesRepository.createQueryBuilder('file'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('file.userId = :userId', { userId: me.id });
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			if (ps.type) {
-				if (ps.type.endsWith('/*')) {
-					query.andWhere('file.type like :type', {
-						type: ps.type.replace('/*', '/') + '%',
-					});
-				} else {
-					query.andWhere('file.type = :type', { type: ps.type });
-				}
-			}
-
-			const files = await query.limit(ps.limit).getMany();
+			const files = await this.prismaService.client.drive_file.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{ userId: me.id },
+						ps.type
+							? ps.type.endsWith('/*')
+								? { type: { startsWith: ps.type.replace(/\/\*$/, '/') } }
+								: { type: ps.type }
+							: {},
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await this.driveFileEntityService.packMany(files, {
 				detail: false,

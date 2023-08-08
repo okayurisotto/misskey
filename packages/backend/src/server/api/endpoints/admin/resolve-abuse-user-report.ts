@@ -1,15 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	UsersRepository,
-	AbuseUserReportsRepository,
-} from '@/models/index.js';
 import { InstanceActorService } from '@/core/InstanceActorService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -22,8 +18,6 @@ export const paramDef = z.object({
 	forward: z.boolean().default(false),
 });
 
-// TODO: ロジックをサービスに切り出す
-
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
@@ -32,20 +26,16 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.abuseUserReportsRepository)
-		private abuseUserReportsRepository: AbuseUserReportsRepository,
-
-		private queueService: QueueService,
-		private instanceActorService: InstanceActorService,
-		private apRendererService: ApRendererService,
+		private readonly queueService: QueueService,
+		private readonly instanceActorService: InstanceActorService,
+		private readonly apRendererService: ApRendererService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const report = await this.abuseUserReportsRepository.findOneBy({
-				id: ps.reportId,
-			});
+			const report =
+				await this.prismaService.client.abuse_user_report.findUnique({
+					where: { id: ps.reportId },
+				});
 
 			if (report == null) {
 				throw new Error('report not found');
@@ -53,9 +43,10 @@ export default class extends Endpoint<
 
 			if (ps.forward && report.targetUserHost != null) {
 				const actor = await this.instanceActorService.getInstanceActor();
-				const targetUser = await this.usersRepository.findOneByOrFail({
-					id: report.targetUserId,
-				});
+				const targetUser =
+					await this.prismaService.client.user.findUniqueOrThrow({
+						where: { id: report.targetUserId },
+					});
 
 				this.queueService.deliver(
 					actor,
@@ -71,10 +62,13 @@ export default class extends Endpoint<
 				);
 			}
 
-			await this.abuseUserReportsRepository.update(report.id, {
-				resolved: true,
-				assigneeId: me.id,
-				forwarded: ps.forward && report.targetUserHost != null,
+			await this.prismaService.client.abuse_user_report.update({
+				where: { id: report.id },
+				data: {
+					resolved: true,
+					assigneeId: me.id,
+					forwarded: ps.forward && report.targetUserHost !== null,
+				},
 			});
 		});
 	}

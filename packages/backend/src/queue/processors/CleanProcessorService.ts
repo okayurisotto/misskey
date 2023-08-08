@@ -1,36 +1,18 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { In, LessThan } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { AntennasRepository, MutedNotesRepository, RoleAssignmentsRepository, UserIpsRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
 import { IdService } from '@/core/IdService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
-import type * as Bull from 'bullmq';
 
 @Injectable()
 export class CleanProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.userIpsRepository)
-		private userIpsRepository: UserIpsRepository,
-
-		@Inject(DI.mutedNotesRepository)
-		private mutedNotesRepository: MutedNotesRepository,
-
-		@Inject(DI.antennasRepository)
-		private antennasRepository: AntennasRepository,
-
-		@Inject(DI.roleAssignmentsRepository)
-		private roleAssignmentsRepository: RoleAssignmentsRepository,
-
-		private queueLoggerService: QueueLoggerService,
-		private idService: IdService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('clean');
 	}
@@ -39,35 +21,39 @@ export class CleanProcessorService {
 	public async process(): Promise<void> {
 		this.logger.info('Cleaning...');
 
-		this.userIpsRepository.delete({
-			createdAt: LessThan(new Date(Date.now() - (1000 * 60 * 60 * 24 * 90))),
+		await this.prismaService.client.user_ip.deleteMany({
+			where: {
+				createdAt: { lt: new Date(Date.now() - (1000 * 60 * 60 * 24 * 90)) },
+			},
 		});
 
-		this.mutedNotesRepository.delete({
-			id: LessThan(this.idService.genId(new Date(Date.now() - (1000 * 60 * 60 * 24 * 90)))),
-			reason: 'word',
+		await this.prismaService.client.muted_note.deleteMany({
+			where: {
+				id: { lt: this.idService.genId(new Date(Date.now() - (1000 * 60 * 60 * 24 * 90))) },
+				reason: 'word',
+			},
 		});
 
-		this.mutedNotesRepository.delete({
-			id: LessThan(this.idService.genId(new Date(Date.now() - (1000 * 60 * 60 * 24 * 90)))),
-			reason: 'word',
+		await this.prismaService.client.muted_note.deleteMany({
+			where: {
+				id: { lt: this.idService.genId(new Date(Date.now() - (1000 * 60 * 60 * 24 * 90))) },
+				reason: 'word',
+			},
 		});
 
 		// 7日以上使われてないアンテナを停止
-		this.antennasRepository.update({
-			lastUsedAt: LessThan(new Date(Date.now() - (1000 * 60 * 60 * 24 * 7))),
-		}, {
-			isActive: false,
+		await this.prismaService.client.antenna.updateMany({
+			where: { lastUsedAt: { lt: new Date(Date.now() - (1000 * 60 * 60 * 24 * 7)) } },
+			data: { isActive: false },
 		});
 
-		const expiredRoleAssignments = await this.roleAssignmentsRepository.createQueryBuilder('assign')
-			.where('assign.expiresAt IS NOT NULL')
-			.andWhere('assign.expiresAt < :now', { now: new Date() })
-			.getMany();
+		const expiredRoleAssignments = await this.prismaService.client.role_assignment.findMany({
+			where: { expiresAt: { not: null, lt: new Date() } },
+		});
 
 		if (expiredRoleAssignments.length > 0) {
-			await this.roleAssignmentsRepository.delete({
-				id: In(expiredRoleAssignments.map(x => x.id)),
+			await this.prismaService.client.role_assignment.deleteMany({
+				where: { id: { in: expiredRoleAssignments.map((x) => x.id) } },
 			});
 		}
 

@@ -107,11 +107,11 @@ export default class extends Endpoint<
 > {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		private metaService: MetaService,
+		private readonly metaService: MetaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async () => {
 			const instance = await this.metaService.fetch(true);
 
 			return {
@@ -195,7 +195,10 @@ export default class extends Endpoint<
 					instance.enableChartsForFederatedInstances,
 				enableServerMachineStats: instance.enableServerMachineStats,
 				enableIdenticonGeneration: instance.enableIdenticonGeneration,
-				policies: { ...DEFAULT_POLICIES, ...instance.policies },
+				policies: {
+					...DEFAULT_POLICIES,
+					...z.record(z.string(), z.any()).parse(instance.policies),
+				},
 			} satisfies z.infer<typeof res>;
 		});
 	}

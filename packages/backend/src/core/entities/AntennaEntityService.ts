@@ -1,31 +1,30 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { AntennasRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import type { Antenna } from '@/models/entities/Antenna.js';
 import type { AntennaSchema } from '@/models/zod/AntennaSchema.js';
 import { bindThis } from '@/decorators.js';
-import type { z } from 'zod';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { antenna } from '@prisma/client';
 
 @Injectable()
 export class AntennaEntityService {
-	constructor(
-		@Inject(DI.antennasRepository)
-		private antennasRepository: AntennasRepository,
-	) {
-	}
+	constructor(private readonly prismaService: PrismaService) {}
 
 	@bindThis
 	public async pack(
-		src: Antenna['id'] | Antenna,
+		src: Antenna['id'] | T2P<Antenna, antenna>,
 	): Promise<z.infer<typeof AntennaSchema>> {
-		const antenna = typeof src === 'object' ? src : await this.antennasRepository.findOneByOrFail({ id: src });
+		const antenna = typeof src === 'object'
+			? src
+			: await this.prismaService.client.antenna.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: antenna.id,
 			createdAt: antenna.createdAt.toISOString(),
 			name: antenna.name,
-			keywords: antenna.keywords,
-			excludeKeywords: antenna.excludeKeywords,
+			keywords: z.array(z.array(z.string())).parse(antenna.keywords),
+			excludeKeywords: z.array(z.array(z.string())).parse(antenna.excludeKeywords),
 			src: antenna.src,
 			userListId: antenna.userListId,
 			users: antenna.users,

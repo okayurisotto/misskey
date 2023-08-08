@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { DriveFilesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { MD5Schema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(DriveFileSchema);
 export const meta = {
@@ -28,15 +27,15 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const files = await this.driveFilesRepository.findBy({
-				md5: ps.md5,
-				userId: me.id,
+			const files = await this.prismaService.client.drive_file.findMany({
+				where: {
+					md5: ps.md5,
+					userId: me.id,
+				},
 			});
 
 			return (await this.driveFileEntityService.packMany(files, {

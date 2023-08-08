@@ -1,10 +1,5 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UsersRepository,
-	PollsRepository,
-	PollVotesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type { RemoteUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -13,10 +8,10 @@ import { QueueService } from '@/core/QueueService.js';
 import { PollService } from '@/core/PollService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -63,8 +58,6 @@ export const paramDef = z.object({
 	choice: z.number().int(),
 });
 
-// TODO: ロジックをサービスに切り出す
-
 @Injectable()
 // eslint-disable-next-line import/no-default-export
 export default class extends Endpoint<
@@ -73,22 +66,14 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.pollsRepository)
-		private pollsRepository: PollsRepository,
-
-		@Inject(DI.pollVotesRepository)
-		private pollVotesRepository: PollVotesRepository,
-
-		private idService: IdService,
-		private getterService: GetterService,
-		private queueService: QueueService,
-		private pollService: PollService,
-		private apRendererService: ApRendererService,
-		private globalEventService: GlobalEventService,
-		private userBlockingService: UserBlockingService,
+		private readonly idService: IdService,
+		private readonly getterService: GetterService,
+		private readonly queueService: QueueService,
+		private readonly pollService: PollService,
+		private readonly apRendererService: ApRendererService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly userBlockingService: UserBlockingService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const createdAt = new Date();
@@ -116,8 +101,8 @@ export default class extends Endpoint<
 				}
 			}
 
-			const poll = await this.pollsRepository.findOneByOrFail({
-				noteId: note.id,
+			const poll = await this.prismaService.client.poll.findUniqueOrThrow({
+				where: { noteId: note.id },
 			});
 
 			if (poll.expiresAt && poll.expiresAt < createdAt) {
@@ -129,9 +114,11 @@ export default class extends Endpoint<
 			}
 
 			// if already voted
-			const exist = await this.pollVotesRepository.findBy({
-				noteId: note.id,
-				userId: me.id,
+			const exist = await this.prismaService.client.poll_vote.findMany({
+				where: {
+					noteId: note.id,
+					userId: me.id,
+				},
 			});
 
 			if (exist.length) {
@@ -145,23 +132,27 @@ export default class extends Endpoint<
 			}
 
 			// Create vote
-			const vote = await this.pollVotesRepository
-				.insert({
+			const vote = await this.prismaService.client.poll_vote.create({
+				data: {
 					id: this.idService.genId(),
 					createdAt,
 					noteId: note.id,
 					userId: me.id,
 					choice: ps.choice,
-				})
-				.then((x) =>
-					this.pollVotesRepository.findOneByOrFail(x.identifiers[0]),
-				);
+				},
+			});
 
 			// Increment votes count
-			const index = ps.choice + 1; // In SQL, array index is 1 based
-			await this.pollsRepository.query(
-				`UPDATE poll SET votes[${index}] = votes[${index}] + 1 WHERE "noteId" = '${poll.noteId}'`,
-			);
+			const votes = (
+				await this.prismaService.client.poll.findUniqueOrThrow({
+					where: { noteId: poll.noteId },
+					select: { votes: true },
+				})
+			).votes;
+			await this.prismaService.client.poll.update({
+				where: { noteId: poll.noteId },
+				data: { votes: votes.map((v, i) => (i === ps.choice ? v + 1 : v)) },
+			});
 
 			this.globalEventService.publishNoteStream(note.id, 'pollVoted', {
 				choice: ps.choice,
@@ -170,20 +161,15 @@ export default class extends Endpoint<
 
 			// リモート投票の場合リプライ送信
 			if (note.userHost != null) {
-				const pollOwner = (await this.usersRepository.findOneByOrFail({
-					id: note.userId,
-				})) as RemoteUser;
+				const pollOwner =
+					(await this.prismaService.client.user.findUniqueOrThrow({
+						where: { id: note.userId },
+					})) as RemoteUser;
 
 				this.queueService.deliver(
 					me,
 					this.apRendererService.addContext(
-						await this.apRendererService.renderVote(
-							me,
-							vote,
-							note,
-							poll,
-							pollOwner,
-						),
+						this.apRendererService.renderVote(me, vote, note, poll, pollOwner),
 					),
 					pollOwner.inbox,
 					false,

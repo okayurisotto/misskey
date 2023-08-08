@@ -1,14 +1,9 @@
 import { z } from 'zod';
-import { IsNull } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UsedUsernamesRepository,
-	UsersRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MetaService } from '@/core/MetaService.js';
 import { LocalUsernameSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	available: z.boolean(),
@@ -31,22 +26,21 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.usedUsernamesRepository)
-		private usedUsernamesRepository: UsedUsernamesRepository,
-
-		private metaService: MetaService,
+		private readonly metaService: MetaService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const exist = await this.usersRepository.countBy({
-				host: IsNull(),
-				usernameLower: ps.username.toLowerCase(),
+			const exist = await this.prismaService.client.user.count({
+				where: {
+					host: null,
+					usernameLower: ps.username.toLowerCase(),
+				},
 			});
 
-			const exist2 = await this.usedUsernamesRepository.countBy({
-				username: ps.username.toLowerCase(),
+			const exist2 = await this.prismaService.client.used_username.count({
+				where: {
+					username: ps.username.toLowerCase(),
+				},
 			});
 
 			const meta = await this.metaService.fetch();

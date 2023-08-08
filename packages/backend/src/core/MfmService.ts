@@ -19,9 +19,8 @@ const urlRegexFull = /^https?:\/\/[\w\/:%#@$&?!()\[\]~.,=+\-]+$/;
 export class MfmService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
-	) {
-	}
+		private readonly config: Config,
+	) {}
 
 	@bindThis
 	public fromHtml(html: string, hashtagNames?: string[]): string {

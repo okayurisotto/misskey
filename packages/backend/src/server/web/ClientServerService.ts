@@ -8,7 +8,6 @@ import { FastifyAdapter } from '@bull-board/fastify';
 import ms from 'ms';
 import sharp from 'sharp';
 import pug from 'pug';
-import { In, IsNull } from 'typeorm';
 import fastifyStatic from '@fastify/static';
 import fastifyView from '@fastify/view';
 import fastifyCookie from '@fastify/cookie';
@@ -26,8 +25,7 @@ import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
-import type { ChannelsRepository, ClipsRepository, FlashsRepository, GalleryPostsRepository, Meta, NotesRepository, PagesRepository, UserProfilesRepository, UsersRepository } from '@/models/index.js';
-import type Logger from '@/logger.js';
+import type { Meta } from '@/models/index.js';
 import { deepClone } from '@/misc/clone.js';
 import { bindThis } from '@/decorators.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
@@ -37,6 +35,10 @@ import { FeedService } from './FeedService.js';
 import { UrlPreviewService } from './UrlPreviewService.js';
 import { ClientLoggerService } from './ClientLoggerService.js';
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply } from 'fastify';
+import type { T2P } from '@/types.js';
+import type { meta } from '@prisma/client';
+import { PrismaService } from '@/core/PrismaService.js';
+import { z } from 'zod';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -49,35 +51,9 @@ const viteOut = `${_dirname}/../../../../../built/_vite_/`;
 
 @Injectable()
 export class ClientServerService {
-	private logger: Logger;
-
 	constructor(
 		@Inject(DI.config)
 		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.galleryPostsRepository)
-		private galleryPostsRepository: GalleryPostsRepository,
-
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		@Inject(DI.flashsRepository)
-		private flashsRepository: FlashsRepository,
 
 		private flashEntityService: FlashEntityService,
 		private userEntityService: UserEntityService,
@@ -91,6 +67,7 @@ export class ClientServerService {
 		private feedService: FeedService,
 		private roleService: RoleService,
 		private clientLoggerService: ClientLoggerService,
+		private prismaService: PrismaService,
 
 		@Inject('queue:system') public systemQueue: SystemQueue,
 		@Inject('queue:endedPollNotification') public endedPollNotificationQueue: EndedPollNotificationQueue,
@@ -99,9 +76,7 @@ export class ClientServerService {
 		@Inject('queue:db') public dbQueue: DbQueue,
 		@Inject('queue:objectStorage') public objectStorageQueue: ObjectStorageQueue,
 		@Inject('queue:webhookDeliver') public webhookDeliverQueue: WebhookDeliverQueue,
-	) {
-		//this.createServer = this.createServer.bind(this);
-	}
+	) {}
 
 	@bindThis
 	private async manifestHandler(reply: FastifyReply) {
@@ -118,7 +93,7 @@ export class ClientServerService {
 	}
 
 	@bindThis
-	private generateCommonPugData(meta: Meta) {
+	private generateCommonPugData(meta: T2P<Meta, meta>) {
 		return {
 			instanceName: meta.name ?? 'Misskey',
 			icon: meta.iconUrl,
@@ -144,7 +119,7 @@ export class ClientServerService {
 					reply.code(401);
 					throw new Error('login required');
 				}
-				const user = await this.usersRepository.findOneBy({ token });
+				const user = await this.prismaService.client.user.findUnique({ where: { token } });
 				if (user == null) {
 					reply.code(403);
 					throw new Error('no such user');
@@ -365,10 +340,12 @@ export class ClientServerService {
 
 		const getFeed = async (acct: string) => {
 			const { username, host } = Acct.parse(acct);
-			const user = await this.usersRepository.findOneBy({
-				usernameLower: username.toLowerCase(),
-				host: host ?? IsNull(),
-				isSuspended: false,
+			const user = await this.prismaService.client.user.findFirst({
+				where: {
+					usernameLower: username.toLowerCase(),
+					host: host ?? null,
+					isSuspended: false,
+				},
 			});
 
 			return user && await this.feedService.packFeed(user);
@@ -417,17 +394,19 @@ export class ClientServerService {
 		// User
 		fastify.get<{ Params: { user: string; sub?: string; } }>('/@:user/:sub?', async (request, reply) => {
 			const { username, host } = Acct.parse(request.params.user);
-			const user = await this.usersRepository.findOneBy({
-				usernameLower: username.toLowerCase(),
-				host: host ?? IsNull(),
-				isSuspended: false,
+			const user = await this.prismaService.client.user.findFirst({
+				where: {
+					usernameLower: username.toLowerCase(),
+					host: host ?? null,
+					isSuspended: false,
+				},
 			});
 
 			if (user != null) {
-				const profile = await this.userProfilesRepository.findOneByOrFail({ userId: user.id });
+				const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } });
 				const meta = await this.metaService.fetch();
 				const me = profile.fields
-					? profile.fields
+					? z.array(z.object({ value: z.string() })).parse(profile.fields)
 						.filter(filed => filed.value != null && filed.value.match(/^https?:/))
 						.map(field => field.value)
 					: [];
@@ -451,10 +430,12 @@ export class ClientServerService {
 		});
 
 		fastify.get<{ Params: { user: string; } }>('/users/:user', async (request, reply) => {
-			const user = await this.usersRepository.findOneBy({
-				id: request.params.user,
-				host: IsNull(),
-				isSuspended: false,
+			const user = await this.prismaService.client.user.findFirst({
+				where: {
+					id: request.params.user,
+					host: null,
+					isSuspended: false,
+				},
 			});
 
 			if (user == null) {
@@ -469,14 +450,16 @@ export class ClientServerService {
 		fastify.get<{ Params: { note: string; } }>('/notes/:note', async (request, reply) => {
 			vary(reply.raw, 'Accept');
 
-			const note = await this.notesRepository.findOneBy({
-				id: request.params.note,
-				visibility: In(['public', 'home']),
+			const note = await this.prismaService.client.note.findUnique({
+				where: {
+					id: request.params.note,
+					visibility: { in: ['public', 'home'] },
+				},
 			});
 
 			if (note) {
 				const _note = await this.noteEntityService.pack(note);
-				const profile = await this.userProfilesRepository.findOneByOrFail({ userId: note.userId });
+				const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: note.userId } });
 				const meta = await this.metaService.fetch();
 				reply.header('Cache-Control', 'public, max-age=15');
 				if (profile.preventAiLearning) {
@@ -499,21 +482,27 @@ export class ClientServerService {
 		// Page
 		fastify.get<{ Params: { user: string; page: string; } }>('/@:user/pages/:page', async (request, reply) => {
 			const { username, host } = Acct.parse(request.params.user);
-			const user = await this.usersRepository.findOneBy({
-				usernameLower: username.toLowerCase(),
-				host: host ?? IsNull(),
+			const user = await this.prismaService.client.user.findFirst({
+				where: {
+					usernameLower: username.toLowerCase(),
+					host: host ?? null,
+				},
 			});
 
 			if (user == null) return;
 
-			const page = await this.pagesRepository.findOneBy({
-				name: request.params.page,
-				userId: user.id,
+			const page = await this.prismaService.client.page.findUnique({
+				where: {
+					userId_name: {
+						name: request.params.page,
+						userId: user.id,
+					},
+				},
 			});
 
 			if (page) {
 				const _page = await this.pageEntityService.pack(page);
-				const profile = await this.userProfilesRepository.findOneByOrFail({ userId: page.userId });
+				const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: page.userId } });
 				const meta = await this.metaService.fetch();
 				if (['public'].includes(page.visibility)) {
 					reply.header('Cache-Control', 'public, max-age=15');
@@ -537,13 +526,15 @@ export class ClientServerService {
 
 		// Flash
 		fastify.get<{ Params: { id: string; } }>('/play/:id', async (request, reply) => {
-			const flash = await this.flashsRepository.findOneBy({
-				id: request.params.id,
+			const flash = await this.prismaService.client.flash.findUnique({
+				where: {
+					id: request.params.id,
+				},
 			});
 
 			if (flash) {
 				const _flash = await this.flashEntityService.pack(flash);
-				const profile = await this.userProfilesRepository.findOneByOrFail({ userId: flash.userId });
+				const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: flash.userId } });
 				const meta = await this.metaService.fetch();
 				reply.header('Cache-Control', 'public, max-age=15');
 				if (profile.preventAiLearning) {
@@ -563,13 +554,15 @@ export class ClientServerService {
 
 		// Clip
 		fastify.get<{ Params: { clip: string; } }>('/clips/:clip', async (request, reply) => {
-			const clip = await this.clipsRepository.findOneBy({
-				id: request.params.clip,
+			const clip = await this.prismaService.client.clip.findUnique({
+				where: {
+					id: request.params.clip,
+				},
 			});
 
 			if (clip && clip.isPublic) {
 				const _clip = await this.clipEntityService.pack(clip);
-				const profile = await this.userProfilesRepository.findOneByOrFail({ userId: clip.userId });
+				const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: clip.userId } });
 				const meta = await this.metaService.fetch();
 				reply.header('Cache-Control', 'public, max-age=15');
 				if (profile.preventAiLearning) {
@@ -589,11 +582,11 @@ export class ClientServerService {
 
 		// Gallery post
 		fastify.get<{ Params: { post: string; } }>('/gallery/:post', async (request, reply) => {
-			const post = await this.galleryPostsRepository.findOneBy({ id: request.params.post });
+			const post = await this.prismaService.client.gallery_post.findUnique({ where: { id: request.params.post } });
 
 			if (post) {
 				const _post = await this.galleryPostEntityService.pack(post);
-				const profile = await this.userProfilesRepository.findOneByOrFail({ userId: post.userId });
+				const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: post.userId } });
 				const meta = await this.metaService.fetch();
 				reply.header('Cache-Control', 'public, max-age=15');
 				if (profile.preventAiLearning) {
@@ -613,8 +606,10 @@ export class ClientServerService {
 
 		// Channel
 		fastify.get<{ Params: { channel: string; } }>('/channels/:channel', async (request, reply) => {
-			const channel = await this.channelsRepository.findOneBy({
-				id: request.params.channel,
+			const channel = await this.prismaService.client.channel.findUnique({
+				where: {
+					id: request.params.channel,
+				},
 			});
 
 			if (channel) {
@@ -640,8 +635,8 @@ export class ClientServerService {
 				version: this.config.version,
 				host: this.config.host,
 				meta: meta,
-				originalUsersCount: await this.usersRepository.countBy({ host: IsNull() }),
-				originalNotesCount: await this.notesRepository.countBy({ userHost: IsNull() }),
+				originalUsersCount: await this.prismaService.client.user.count({ where: { host: null } }),
+				originalNotesCount: await this.prismaService.client.note.count({ where: { userHost: null } }),
 			});
 		});
 

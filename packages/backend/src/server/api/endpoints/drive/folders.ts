@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFoldersRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { DriveFolderEntityService } from '@/core/entities/DriveFolderEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(DriveFolderSchema);
 export const meta = {
@@ -31,30 +30,27 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFoldersRepository)
-		private driveFoldersRepository: DriveFoldersRepository,
-
-		private driveFolderEntityService: DriveFolderEntityService,
-		private queryService: QueryService,
+		private readonly driveFolderEntityService: DriveFolderEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.driveFoldersRepository.createQueryBuilder('folder'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('folder.userId = :userId', { userId: me.id });
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			if (ps.folderId) {
-				query.andWhere('folder.parentId = :parentId', {
-					parentId: ps.folderId,
-				});
-			} else {
-				query.andWhere('folder.parentId IS NULL');
-			}
-
-			const folders = await query.limit(ps.limit).getMany();
+			const folders = await this.prismaService.client.drive_folder.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{ userId: me.id },
+						ps.folderId ? { parentId: ps.folderId } : { parentId: null },
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				folders.map((folder) => this.driveFolderEntityService.pack(folder)),

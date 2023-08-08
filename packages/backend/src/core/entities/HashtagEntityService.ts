@@ -1,24 +1,19 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { HashtagsRepository } from '@/models/index.js';
-import type {} from '@/models/entities/Blocking.js';
+import { Injectable } from '@nestjs/common';
 import type { Hashtag } from '@/models/entities/Hashtag.js';
 import { bindThis } from '@/decorators.js';
 import type { HashtagSchema } from '@/models/zod/HashtagSchema.js';
-import { UserEntityService } from './UserEntityService.js';
+import type { T2P } from '@/types.js';
 import type { z } from 'zod';
+import type { hashtag } from '@prisma/client';
 
 @Injectable()
 export class HashtagEntityService {
-	constructor(
-		@Inject(DI.hashtagsRepository)
-		private hashtagsRepository: HashtagsRepository,
-
-		private userEntityService: UserEntityService,
-	) {}
+	constructor() {}
 
 	@bindThis
-	public async pack(src: Hashtag): Promise<z.infer<typeof HashtagSchema>> {
+	public async pack(
+		src: T2P<Hashtag, hashtag>,
+	): Promise<z.infer<typeof HashtagSchema>> {
 		return {
 			tag: src.name,
 			mentionedUsersCount: src.mentionedUsersCount,

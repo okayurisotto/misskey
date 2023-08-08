@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { DriveFilesRepository, UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MD5Schema, MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.object({
@@ -68,32 +67,33 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		private roleService: RoleService,
+		private readonly roleService: RoleService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const file =
 				'fileId' in ps
-					? await this.driveFilesRepository.findOneBy({ id: ps.fileId })
-					: await this.driveFilesRepository.findOne({
-							where: [
-								{ url: ps.url },
-								{ thumbnailUrl: ps.url },
-								{ webpublicUrl: ps.url },
-							],
+					? await this.prismaService.client.drive_file.findUnique({
+							where: { id: ps.fileId },
+					  })
+					: await this.prismaService.client.drive_file.findFirst({
+							where: {
+								OR: [
+									{ url: ps.url },
+									{ thumbnailUrl: ps.url },
+									{ webpublicUrl: ps.url },
+								],
+							},
 					  });
 
-			if (file == null) {
+			if (file === null) {
 				throw new ApiError(meta.errors.noSuchFile);
 			}
 
 			const owner = file.userId
-				? await this.usersRepository.findOneByOrFail({ id: file.userId })
+				? await this.prismaService.client.user.findUniqueOrThrow({
+						where: { id: file.userId },
+				  })
 				: null;
 
 			const iAmModerator = await this.roleService.isModerator(me);
@@ -130,7 +130,12 @@ export default class extends Endpoint<
 				createdAt: file.createdAt.toISOString(),
 				requestIp: iAmModerator ? file.requestIp : null,
 				requestHeaders:
-					iAmModerator && !ownerIsModerator ? file.requestHeaders : null,
+					iAmModerator && !ownerIsModerator
+						? z
+								.record(z.string(), z.string())
+								.nullable()
+								.parse(file.requestHeaders)
+						: null,
 			} satisfies z.infer<typeof res>;
 		});
 	}

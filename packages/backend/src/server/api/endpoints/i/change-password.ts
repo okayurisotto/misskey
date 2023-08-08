@@ -1,9 +1,8 @@
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { UserProfilesRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	requireCredential: true,
@@ -22,14 +21,12 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: me.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: me.id },
+				});
 
 			// Compare password
 			const same = await bcrypt.compare(ps.currentPassword, profile.password!);
@@ -42,8 +39,9 @@ export default class extends Endpoint<
 			const salt = await bcrypt.genSalt(8);
 			const hash = await bcrypt.hash(ps.newPassword, salt);
 
-			await this.userProfilesRepository.update(me.id, {
-				password: hash,
+			await this.prismaService.client.user_profile.update({
+				where: { userId: me.id },
+				data: { password: hash },
 			});
 		});
 	}

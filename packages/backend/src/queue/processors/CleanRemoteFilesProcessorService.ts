@@ -1,27 +1,21 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull, MoreThan, Not } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { DriveFile, DriveFilesRepository } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
+import type { DriveFile } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
+import type { drive_file } from '@prisma/client';
 import type * as Bull from 'bullmq';
 
 @Injectable()
 export class CleanRemoteFilesProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private driveService: DriveService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly driveService: DriveService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('clean-remote-files');
 	}
@@ -32,18 +26,17 @@ export class CleanRemoteFilesProcessorService {
 
 		let deletedCount = 0;
 		let cursor: DriveFile['id'] | null = null;
+		const take = 8;
 
 		while (true) {
-			const files = await this.driveFilesRepository.find({
+			const files: drive_file[] = await this.prismaService.client.drive_file.findMany({
 				where: {
-					userHost: Not(IsNull()),
+					userHost: { not: null },
 					isLink: false,
-					...(cursor ? { id: MoreThan(cursor) } : {}),
+					...(cursor ? { id: { gt: cursor } } : {}),
 				},
-				take: 8,
-				order: {
-					id: 1,
-				},
+				take,
+				orderBy: { id: 'asc' },
 			});
 
 			if (files.length === 0) {
@@ -55,11 +48,13 @@ export class CleanRemoteFilesProcessorService {
 
 			await Promise.all(files.map(file => this.driveService.deleteFileSync(file, true)));
 
-			deletedCount += 8;
+			deletedCount += take;
 
-			const total = await this.driveFilesRepository.countBy({
-				userHost: Not(IsNull()),
-				isLink: false,
+			const total = await this.prismaService.client.drive_file.count({
+				where: {
+					userHost: { not: null },
+					isLink: false,
+				},
 			});
 
 			job.updateProgress(deletedCount / total);

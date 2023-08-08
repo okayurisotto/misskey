@@ -1,11 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UsersRepository, FlashsRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { FlashSchema } from '@/models/zod/FlashSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 const res = FlashSchema;
@@ -34,16 +33,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.flashsRepository)
-		private flashsRepository: FlashsRepository,
-
-		private flashEntityService: FlashEntityService,
+		private readonly flashEntityService: FlashEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const flash = await this.flashsRepository.findOneBy({ id: ps.flashId });
+			const flash = await this.prismaService.client.flash.findUnique({
+				where: { id: ps.flashId },
+			});
 
 			if (flash == null) {
 				throw new ApiError(meta.errors.noSuchFlash);

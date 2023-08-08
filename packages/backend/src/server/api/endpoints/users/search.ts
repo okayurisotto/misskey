@@ -1,17 +1,13 @@
 import { z } from 'zod';
-import { Brackets } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	UsersRepository,
-	UserProfilesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import type { User } from '@/models/entities/User.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DI } from '@/di-symbols.js';
-import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';
 import { LocalUsernameSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
+import type { T2P } from '@/types.js';
 
 const res = z.array(UserSchema);
 export const meta = {
@@ -37,13 +33,8 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		private userEntityService: UserEntityService,
+		private readonly userEntityService: UserEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const activeThreshold = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30); // 30日
@@ -51,115 +42,104 @@ export default class extends Endpoint<
 			ps.query = ps.query.trim();
 			const isUsername = ps.query.startsWith('@');
 
-			let users: User[] = [];
+			let users: T2P<User, user>[] = [];
 
 			if (isUsername) {
-				const usernameQuery = this.usersRepository
-					.createQueryBuilder('user')
-					.where('user.usernameLower LIKE :username', {
-						username:
-							sqlLikeEscape(ps.query.replace('@', '').toLowerCase()) + '%',
-					})
-					.andWhere(
-						new Brackets((qb) => {
-							qb.where('user.updatedAt IS NULL').orWhere(
-								'user.updatedAt > :activeThreshold',
-								{ activeThreshold: activeThreshold },
-							);
-						}),
-					)
-					.andWhere('user.isSuspended = FALSE');
-
-				if (ps.origin === 'local') {
-					usernameQuery.andWhere('user.host IS NULL');
-				} else if (ps.origin === 'remote') {
-					usernameQuery.andWhere('user.host IS NOT NULL');
-				}
-
-				users = await usernameQuery
-					.orderBy('user.updatedAt', 'DESC', 'NULLS LAST')
-					.limit(ps.limit)
-					.offset(ps.offset)
-					.getMany();
+				users = await this.prismaService.client.user.findMany({
+					where: {
+						AND: [
+							{
+								usernameLower: {
+									startsWith: ps.query.replace('@', '').toLowerCase(),
+									mode: 'insensitive',
+								},
+							},
+							{ OR: [{ updatedAt: null }, { updatedAt: activeThreshold }] },
+							{ isSuspended: false },
+							ps.origin === 'local' ? { host: null } : {},
+							ps.origin === 'remote' ? { host: { not: null } } : {},
+						],
+					},
+					orderBy: { updatedAt: { sort: 'desc', nulls: 'last' } },
+					take: ps.limit,
+					skip: ps.offset,
+				});
 			} else {
-				const nameQuery = this.usersRepository
-					.createQueryBuilder('user')
-					.where(
-						new Brackets((qb) => {
-							qb.where('user.name ILIKE :query', {
-								query: '%' + sqlLikeEscape(ps.query) + '%',
-							});
-
-							// Also search username if it qualifies as username
-							if (LocalUsernameSchema.safeParse(ps.query).success) {
-								qb.orWhere('user.usernameLower LIKE :username', {
-									username: '%' + sqlLikeEscape(ps.query.toLowerCase()) + '%',
-								});
-							}
-						}),
-					)
-					.andWhere(
-						new Brackets((qb) => {
-							qb.where('user.updatedAt IS NULL').orWhere(
-								'user.updatedAt > :activeThreshold',
-								{ activeThreshold: activeThreshold },
-							);
-						}),
-					)
-					.andWhere('user.isSuspended = FALSE');
-
-				if (ps.origin === 'local') {
-					nameQuery.andWhere('user.host IS NULL');
-				} else if (ps.origin === 'remote') {
-					nameQuery.andWhere('user.host IS NOT NULL');
-				}
-
-				users = await nameQuery
-					.orderBy('user.updatedAt', 'DESC', 'NULLS LAST')
-					.limit(ps.limit)
-					.offset(ps.offset)
-					.getMany();
+				users = await this.prismaService.client.user.findMany({
+					where: {
+						AND: [
+							{
+								OR: [
+									{ name: { contains: ps.query, mode: 'insensitive' } },
+									LocalUsernameSchema.safeParse(ps.query).success
+										? {
+												usernameLower: {
+													contains: ps.query.toLowerCase(),
+													mode: 'insensitive',
+												},
+										  }
+										: {}, // TODO
+								],
+							},
+							{
+								OR: [
+									{ updatedAt: null },
+									{ updatedAt: { gt: activeThreshold } },
+								],
+							},
+							{ isSuspended: false },
+							ps.origin === 'local' ? { host: null } : {},
+							ps.origin === 'remote' ? { host: { not: null } } : {},
+						],
+					},
+					orderBy: { updatedAt: { sort: 'desc', nulls: 'last' } },
+					take: ps.limit,
+					skip: ps.offset,
+				});
 
 				if (users.length < ps.limit) {
-					const profQuery = this.userProfilesRepository
-						.createQueryBuilder('prof')
-						.select('prof.userId')
-						.where('prof.description ILIKE :query', {
-							query: '%' + sqlLikeEscape(ps.query) + '%',
+					const descriptionSearch =
+						await this.prismaService.client.user.findMany({
+							where: {
+								AND: [
+									{
+										user_profile: {
+											AND: [
+												{
+													description: {
+														contains: ps.query,
+														mode: 'insensitive',
+													},
+												},
+												ps.origin === 'local' ? { userHost: null } : {},
+												ps.origin === 'remote'
+													? { userHost: { not: null } }
+													: {},
+											],
+										},
+									},
+									{
+										OR: [
+											{ updatedAt: null },
+											{ updatedAt: { gt: activeThreshold } },
+										],
+									},
+									{ isSuspended: false },
+								],
+							},
+							orderBy: { updatedAt: { sort: 'desc', nulls: 'last' } },
+							take: ps.limit,
+							skip: ps.offset,
 						});
 
-					if (ps.origin === 'local') {
-						profQuery.andWhere('prof.userHost IS NULL');
-					} else if (ps.origin === 'remote') {
-						profQuery.andWhere('prof.userHost IS NOT NULL');
-					}
-
-					const query = this.usersRepository
-						.createQueryBuilder('user')
-						.where(`user.id IN (${profQuery.getQuery()})`)
-						.andWhere(
-							new Brackets((qb) => {
-								qb.where('user.updatedAt IS NULL').orWhere(
-									'user.updatedAt > :activeThreshold',
-									{ activeThreshold: activeThreshold },
-								);
-							}),
-						)
-						.andWhere('user.isSuspended = FALSE')
-						.setParameters(profQuery.getParameters());
-
-					users = users.concat(
-						await query
-							.orderBy('user.updatedAt', 'DESC', 'NULLS LAST')
-							.limit(ps.limit)
-							.offset(ps.offset)
-							.getMany(),
-					);
+					users = users.concat(descriptionSearch);
 				}
 			}
 
 			return (await Promise.all(
-				users.map((user) => this.userEntityService.pack(user, me, { detail: ps.detail }))
+				users.map((user) =>
+					this.userEntityService.pack(user, me, { detail: ps.detail }),
+				),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

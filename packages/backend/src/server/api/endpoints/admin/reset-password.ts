@@ -1,14 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	UsersRepository,
-	UserProfilesRepository,
-} from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	password: z.string().min(8).max(8),
@@ -31,15 +27,11 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps) => {
-			const user = await this.usersRepository.findOneBy({ id: ps.userId });
+			const user = await this.prismaService.client.user.findUnique({
+				where: { id: ps.userId },
+			});
 
 			if (user == null) {
 				throw new Error('user not found');
@@ -49,19 +41,14 @@ export default class extends Endpoint<
 				throw new Error('cannot reset password of root');
 			}
 
-			const passwd = secureRndstr(8);
+			const password = secureRndstr(8);
+			const hash = bcrypt.hashSync(password);
+			await this.prismaService.client.user_profile.update({
+				where: { userId: user.id },
+				data: { password: hash },
+			});
 
-			// Generate hash of password
-			const hash = bcrypt.hashSync(passwd);
-
-			await this.userProfilesRepository.update(
-				{ userId: user.id },
-				{ password: hash },
-			);
-
-			return {
-				password: passwd,
-			} satisfies z.infer<typeof res>;
+			return { password } satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -1,14 +1,15 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { Note } from '@/models/entities/Note.js';
-import type { NotesRepository } from '@/models/index.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
+import type { note } from '@prisma/client';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -38,11 +39,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private noteEntityService: NoteEntityService,
-		private getterService: GetterService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
@@ -52,12 +51,14 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			const conversation: Note[] = [];
+			const conversation: T2P<Note, note>[] = [];
 			let i = 0;
 
 			const get = async (id: any) => {
 				i++;
-				const p = await this.notesRepository.findOneBy({ id });
+				const p = await this.prismaService.client.note.findUnique({
+					where: { id },
+				});
 				if (p == null) return;
 
 				if (i > ps.offset!) {

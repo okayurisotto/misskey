@@ -1,9 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AnnouncementsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -19,9 +18,7 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = z.object({
-	id: MisskeyIdSchema,
-});
+export const paramDef = z.object({ id: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -30,20 +27,20 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		@Inject(DI.announcementsRepository)
-		private announcementsRepository: AnnouncementsRepository,
-	) {
-		super(meta, paramDef, async (ps, me) => {
-			const announcement = await this.announcementsRepository.findOneBy({
-				id: ps.id,
-			});
+	constructor(private readonly prismaService: PrismaService) {
+		super(meta, paramDef, async (ps) => {
+			const announcement =
+				await this.prismaService.client.announcement.findUnique({
+					where: { id: ps.id },
+				});
 
-			if (announcement == null) {
+			if (announcement === null) {
 				throw new ApiError(meta.errors.noSuchAnnouncement);
 			}
 
-			await this.announcementsRepository.delete(announcement.id);
+			await this.prismaService.client.announcement.delete({
+				where: { id: announcement.id },
+			});
 		});
 	}
 }

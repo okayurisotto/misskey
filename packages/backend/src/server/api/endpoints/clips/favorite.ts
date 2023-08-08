@@ -1,13 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type {
-	ClipsRepository,
-	ClipFavoritesRepository,
-} from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -29,9 +25,7 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = z.object({
-	clipId: MisskeyIdSchema,
-});
+export const paramDef = z.object({ clipId: MisskeyIdSchema });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -41,16 +35,13 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.clipsRepository)
-		private clipsRepository: ClipsRepository,
-
-		@Inject(DI.clipFavoritesRepository)
-		private clipFavoritesRepository: ClipFavoritesRepository,
-
-		private idService: IdService,
+		private readonly idService: IdService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const clip = await this.clipsRepository.findOneBy({ id: ps.clipId });
+			const clip = await this.prismaService.client.clip.findUnique({
+				where: { id: ps.clipId },
+			});
 			if (clip == null) {
 				throw new ApiError(meta.errors.noSuchClip);
 			}
@@ -58,22 +49,26 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchClip);
 			}
 
-			const exist = await this.clipFavoritesRepository.exist({
-				where: {
-					clipId: clip.id,
-					userId: me.id,
-				},
-			});
+			const exist =
+				(await this.prismaService.client.clip_favorite.count({
+					where: {
+						clipId: clip.id,
+						userId: me.id,
+					},
+					take: 1,
+				})) > 0;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyFavorited);
 			}
 
-			await this.clipFavoritesRepository.insert({
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				clipId: clip.id,
-				userId: me.id,
+			await this.prismaService.client.clip_favorite.create({
+				data: {
+					id: this.idService.genId(),
+					createdAt: new Date(),
+					clipId: clip.id,
+					userId: me.id,
+				},
 			});
 		});
 	}

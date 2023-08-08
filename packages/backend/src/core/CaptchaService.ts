@@ -9,10 +9,7 @@ type CaptchaResponse = {
 
 @Injectable()
 export class CaptchaService {
-	constructor(
-		private httpRequestService: HttpRequestService,
-	) {
-	}
+	constructor(private readonly httpRequestService: HttpRequestService) {}
 
 	@bindThis
 	private async getCaptchaResponse(url: string, secret: string, response: string): Promise<CaptchaResponse> {
@@ -84,4 +81,3 @@ export class CaptchaService {
 		}
 	}
 }
-

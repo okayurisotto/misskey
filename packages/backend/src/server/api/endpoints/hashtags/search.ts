@@ -1,9 +1,7 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { HashtagsRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
-import { sqlLikeEscape } from '@/misc/sql-like-escape.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(z.string());
 export const meta = {
@@ -25,21 +23,14 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		@Inject(DI.hashtagsRepository)
-		private hashtagsRepository: HashtagsRepository,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const hashtags = await this.hashtagsRepository
-				.createQueryBuilder('tag')
-				.where('tag.name like :q', {
-					q: sqlLikeEscape(ps.query.toLowerCase()) + '%',
-				})
-				.orderBy('tag.count', 'DESC')
-				.groupBy('tag.id')
-				.limit(ps.limit)
-				.offset(ps.offset)
-				.getMany();
+			const hashtags = await this.prismaService.client.hashtag.findMany({
+				where: { name: { startsWith: ps.query.toLowerCase() } },
+				orderBy: { mentionedUsersCount: 'desc' },
+				take: ps.limit,
+				skip: ps.offset,
+			});
 
 			return hashtags.map((tag) => tag.name) satisfies z.infer<typeof res>;
 		});

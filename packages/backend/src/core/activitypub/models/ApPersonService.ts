@@ -1,9 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import promiseLimit from 'promise-limit';
-import { DataSource } from 'typeorm';
 import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
-import type { FollowingsRepository, InstancesRepository, UserProfilesRepository, UserPublickeysRepository, UsersRepository } from '@/models/index.js';
 import type { Config } from '@/config.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { User } from '@/models/entities/User.js';
@@ -19,12 +17,9 @@ import { toArray } from '@/misc/prelude/array.js';
 import type { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import type { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
-import { UserProfile } from '@/models/entities/UserProfile.js';
-import { UserPublickey } from '@/models/entities/UserPublickey.js';
 import type UsersChart from '@/core/chart/charts/users.js';
 import type InstanceChart from '@/core/chart/charts/instance.js';
 import type { HashtagService } from '@/core/HashtagService.js';
-import { UserNotePining } from '@/models/entities/UserNotePining.js';
 import { StatusError } from '@/misc/status-error.js';
 import type { UtilityService } from '@/core/UtilityService.js';
 import type { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -33,6 +28,8 @@ import { MetaService } from '@/core/MetaService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import type { AccountMoveService } from '@/core/AccountMoveService.js';
 import { checkHttps } from '@/misc/check-https.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { getApId, getApType, getOneApHrefNullable, isActor, isCollection, isCollectionOrOrderedCollection, isPropertyValue } from '../type.js';
 import { extractApHashtags } from './tag.js';
 import type { OnModuleInit } from '@nestjs/common';
@@ -40,9 +37,9 @@ import type { ApNoteService } from './ApNoteService.js';
 import type { ApMfmService } from '../ApMfmService.js';
 import type { ApResolverService, Resolver } from '../ApResolverService.js';
 import type { ApLoggerService } from '../ApLoggerService.js';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 import type { ApImageService } from './ApImageService.js';
 import type { IActor, IObject } from '../type.js';
+import type { note } from '@prisma/client';
 
 const nameLength = 128;
 const summaryLength = 2048;
@@ -73,30 +70,13 @@ export class ApPersonService implements OnModuleInit {
 	private logger: Logger;
 
 	constructor(
-		private moduleRef: ModuleRef,
+		private readonly moduleRef: ModuleRef,
 
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		@Inject(DI.db)
-		private db: DataSource,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.userPublickeysRepository)
-		private userPublickeysRepository: UserPublickeysRepository,
-
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		@Inject(DI.followingsRepository)
-		private followingsRepository: FollowingsRepository,
-	) {
-	}
+		private readonly prismaService: PrismaService,
+	) {}
 
 	onModuleInit(): void {
 		this.utilityService = this.moduleRef.get('UtilityService');
@@ -203,13 +183,13 @@ export class ApPersonService implements OnModuleInit {
 		// URIがこのサーバーを指しているならデータベースからフェッチ
 		if (uri.startsWith(`${this.config.url}/`)) {
 			const id = uri.split('/').pop();
-			const u = await this.usersRepository.findOneBy({ id }) as LocalUser | null;
+			const u = await this.prismaService.client.user.findUnique({ where: { id } }) as LocalUser | null;
 			if (u) this.cacheService.uriPersonCache.set(uri, u);
 			return u;
 		}
 
 		//#region このサーバーに既に登録されていたらそれを返す
-		const exist = await this.usersRepository.findOneBy({ uri }) as LocalUser | RemoteUser | null;
+		const exist = await this.prismaService.client.user.findFirst({ where: { uri } }) as LocalUser | RemoteUser | null;
 
 		if (exist) {
 			this.cacheService.uriPersonCache.set(uri, exist);
@@ -287,9 +267,8 @@ export class ApPersonService implements OnModuleInit {
 		//#endregion
 
 		try {
-			// Start transaction
-			await this.db.transaction(async transactionalEntityManager => {
-				user = await transactionalEntityManager.save(new User({
+			user = await this.prismaService.client.user.create({
+				data: {
 					id: this.idService.genId(),
 					avatarId: null,
 					bannerId: null,
@@ -299,10 +278,10 @@ export class ApPersonService implements OnModuleInit {
 					isLocked: person.manuallyApprovesFollowers,
 					movedToUri: person.movedTo,
 					movedAt: person.movedTo ? new Date() : null,
-					alsoKnownAs: person.alsoKnownAs,
+					alsoKnownAs: person.alsoKnownAs?.join(','),
 					isExplorable: person.discoverable,
 					username: person.preferredUsername,
-					usernameLower: person.preferredUsername?.toLowerCase(),
+					usernameLower: person.preferredUsername.toLowerCase(),
 					host,
 					inbox: person.inbox,
 					sharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox,
@@ -313,31 +292,31 @@ export class ApPersonService implements OnModuleInit {
 					isBot,
 					isCat: (person as any).isCat === true,
 					emojis,
-				})) as RemoteUser;
 
-				await transactionalEntityManager.save(new UserProfile({
-					userId: user.id,
-					description: person.summary ? this.apMfmService.htmlToMfm(truncate(person.summary, summaryLength), person.tag) : null,
-					url,
-					fields,
-					birthday: bday?.[0] ?? null,
-					location: person['vcard:Address'] ?? null,
-					userHost: host,
-				}));
+					user_profile: {
+						create: {
+							description: person.summary ? this.apMfmService.htmlToMfm(truncate(person.summary, summaryLength), person.tag) : null,
+							url,
+							fields,
+							birthday: bday?.[0] ?? null,
+							location: person['vcard:Address'] ?? null,
+							userHost: host,
+						},
+					},
 
-				if (person.publicKey) {
-					await transactionalEntityManager.save(new UserPublickey({
-						userId: user.id,
-						keyId: person.publicKey.id,
-						keyPem: person.publicKey.publicKeyPem,
-					}));
-				}
+					...(person.publicKey ? {
+						user_publickey: {
+							keyId: person.publicKey.id,
+							keyPem: person.publicKey.publicKeyPem,
+						},
+					} : {}),
+				},
 			});
 		} catch (e) {
 			// duplicate key error
 			if (isDuplicateKeyValueError(e)) {
 				// /users/@a => /users/:id のように入力がaliasなときにエラーになることがあるのを対応
-				const u = await this.usersRepository.findOneBy({ uri: person.id });
+				const u = await this.prismaService.client.user.findFirst({ where: { uri: person.id } });
 				if (u == null) throw new Error('already registered');
 
 				user = u as RemoteUser;
@@ -348,13 +327,15 @@ export class ApPersonService implements OnModuleInit {
 		}
 
 		if (user == null) throw new Error('failed to create user: user is null');
-
 		// Register to the cache
 		this.cacheService.uriPersonCache.set(user.uri, user);
 
 		// Register host
 		this.federatedInstanceService.fetch(host).then(async i => {
-			this.instancesRepository.increment({ id: i.id }, 'usersCount', 1);
+			this.prismaService.client.instance.update({
+				where: { id: i.id },
+				data: { usersCount: { increment: 1 } },
+			});
 			this.fetchInstanceMetadataService.fetchInstanceMetadata(i);
 			if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
 				this.instanceChart.newUser(i.host);
@@ -369,7 +350,10 @@ export class ApPersonService implements OnModuleInit {
 		//#region アバターとヘッダー画像をフェッチ
 		try {
 			const updates = await this.resolveAvatarAndBanner(user, person.icon, person.image);
-			await this.usersRepository.update(user.id, updates);
+			await this.prismaService.client.user.update({
+				where: { id: user.id },
+				data: updates,
+			});
 			user = { ...user, ...updates };
 
 			// Register to the cache
@@ -435,7 +419,7 @@ export class ApPersonService implements OnModuleInit {
 			throw new Error('unexpected schema of person url: ' + url);
 		}
 
-		const updates = {
+		const updates: Omit<Partial<RemoteUser>, 'alsoKnownAs'> & { alsoKnownAs: string[] | null } & Pick<RemoteUser, 'isBot' | 'isCat' | 'isLocked' | 'movedToUri' | 'alsoKnownAs' | 'isExplorable'> = {
 			lastFetchedAt: new Date(),
 			inbox: person.inbox,
 			sharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox,
@@ -445,13 +429,13 @@ export class ApPersonService implements OnModuleInit {
 			name: truncate(person.name, nameLength),
 			tags,
 			isBot: getApType(object) === 'Service',
-			isCat: (person as any).isCat === true,
+			isCat: person.isCat === true,
 			isLocked: person.manuallyApprovesFollowers,
 			movedToUri: person.movedTo ?? null,
 			alsoKnownAs: person.alsoKnownAs ?? null,
 			isExplorable: person.discoverable,
 			...(await this.resolveAvatarAndBanner(exist, person.icon, person.image).catch(() => ({}))),
-		} as Partial<RemoteUser> & Pick<RemoteUser, 'isBot' | 'isCat' | 'isLocked' | 'movedToUri' | 'alsoKnownAs' | 'isExplorable'>;
+		};
 
 		const moving = ((): boolean => {
 			// 移行先がない→ある
@@ -474,21 +458,33 @@ export class ApPersonService implements OnModuleInit {
 		if (moving) updates.movedAt = new Date();
 
 		// Update user
-		await this.usersRepository.update(exist.id, updates);
+		await this.prismaService.client.user.update({
+			where: { id: exist.id },
+			data: {
+				...updates,
+				alsoKnownAs: updates.alsoKnownAs?.join(','),
+			},
+		});
 
 		if (person.publicKey) {
-			await this.userPublickeysRepository.update({ userId: exist.id }, {
-				keyId: person.publicKey.id,
-				keyPem: person.publicKey.publicKeyPem,
+			await this.prismaService.client.user_publickey.update({
+				where: { userId: exist.id },
+				data: {
+					keyId: person.publicKey.id,
+					keyPem: person.publicKey.publicKeyPem,
+				},
 			});
 		}
 
-		await this.userProfilesRepository.update({ userId: exist.id }, {
-			url,
-			fields,
-			description: person.summary ? this.apMfmService.htmlToMfm(truncate(person.summary, summaryLength), person.tag) : null,
-			birthday: bday?.[0] ?? null,
-			location: person['vcard:Address'] ?? null,
+		await this.prismaService.client.user_profile.update({
+			where: { userId: exist.id },
+			data: {
+				url,
+				fields,
+				description: person.summary ? this.apMfmService.htmlToMfm(truncate(person.summary, summaryLength), person.tag) : null,
+				birthday: bday?.[0] ?? null,
+				location: person['vcard:Address'] ?? null,
+			},
 		});
 
 		this.globalEventService.publishInternalEvent('remoteUserUpdated', { id: exist.id });
@@ -497,10 +493,10 @@ export class ApPersonService implements OnModuleInit {
 		this.hashtagService.updateUsertags(exist, tags);
 
 		// 該当ユーザーが既にフォロワーになっていた場合はFollowingもアップデートする
-		await this.followingsRepository.update(
-			{ followerId: exist.id },
-			{ followerSharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox },
-		);
+		await this.prismaService.client.following.updateMany({
+			where: { followerId: exist.id },
+			data: { followerSharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox },
+		});
 
 		await this.updateFeatured(exist.id, resolver).catch(err => this.logger.error(err));
 
@@ -517,7 +513,7 @@ export class ApPersonService implements OnModuleInit {
 			exist.movedAt.getTime() + 1000 * 60 * 60 * 24 * 14 < updated.movedAt.getTime()
 		)) {
 			this.logger.info(`Start to process Move of @${updated.username}@${updated.host} (${uri})`);
-			return this.processRemoteMove(updated, movePreventUris)
+			return await this.processRemoteMove(updated, movePreventUris)
 				.then(result => {
 					this.logger.info(`Processing Move Finished [${result}] @${updated.username}@${updated.host} (${uri})`);
 					return result;
@@ -568,7 +564,7 @@ export class ApPersonService implements OnModuleInit {
 
 	@bindThis
 	public async updateFeatured(userId: User['id'], resolver?: Resolver): Promise<void> {
-		const user = await this.usersRepository.findOneByOrFail({ id: userId });
+		const user = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: userId } });
 		if (!this.userEntityService.isRemoteUser(user)) return;
 		if (!user.featured) return;
 
@@ -585,7 +581,7 @@ export class ApPersonService implements OnModuleInit {
 		const items = await Promise.all(toArray(unresolvedItems).map(x => _resolver.resolve(x)));
 
 		// Resolve and regist Notes
-		const limit = promiseLimit<Note | null>(2);
+		const limit = promiseLimit<T2P<Note, note> | null>(2);
 		const featuredNotes = await Promise.all(items
 			.filter(item => getApType(item) === 'Note')	// TODO: Noteでなくてもいいかも
 			.slice(0, 5)
@@ -594,18 +590,20 @@ export class ApPersonService implements OnModuleInit {
 				sentFrom: new URL(user.uri),
 			}))));
 
-		await this.db.transaction(async transactionalEntityManager => {
-			await transactionalEntityManager.delete(UserNotePining, { userId: user.id });
+		await this.prismaService.client.$transaction(async (client) => {
+			await client.user_note_pining.deleteMany({ where: { userId: user.id } });
 
 			// とりあえずidを別の時間で生成して順番を維持
 			let td = 0;
 			for (const note of featuredNotes.filter((note): note is Note => note != null)) {
 				td -= 1000;
-				transactionalEntityManager.insert(UserNotePining, {
-					id: this.idService.genId(new Date(Date.now() + td)),
-					createdAt: new Date(),
-					userId: user.id,
-					noteId: note.id,
+				client.user_note_pining.create({
+					data: {
+						id: this.idService.genId(new Date(Date.now() + td)),
+						createdAt: new Date(),
+						userId: user.id,
+						noteId: note.id,
+					},
 				});
 			}
 		});
@@ -627,7 +625,7 @@ export class ApPersonService implements OnModuleInit {
 
 		if (dst && this.userEntityService.isLocalUser(dst)) {
 			// targetがローカルユーザーだった場合データベースから引っ張ってくる
-			dst = await this.usersRepository.findOneByOrFail({ uri: src.movedToUri }) as LocalUser;
+			dst = await this.prismaService.client.user.findFirstOrThrow({ where: { uri: src.movedToUri } }) as LocalUser;
 		} else if (dst) {
 			if (movePreventUris.includes(src.movedToUri)) return 'skip: circular move';
 

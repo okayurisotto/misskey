@@ -1,10 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
-import type { DriveFilesRepository } from '@/models/index.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -54,20 +53,20 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		private customEmojiService: CustomEmojiService,
+		private readonly customEmojiService: CustomEmojiService,
+		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			let driveFile;
+		super(meta, paramDef, async (ps) => {
+			const driveFile = await (async () => {
+				if (!ps.fileId) return undefined;
 
-			if (ps.fileId) {
-				driveFile = await this.driveFilesRepository.findOneBy({
-					id: ps.fileId,
+				const result = await this.prismaService.client.drive_file.findUnique({
+					where: { id: ps.fileId },
 				});
-				if (driveFile == null) throw new ApiError(meta.errors.noSuchFile);
-			}
+				if (result === null) throw new ApiError(meta.errors.noSuchFile);
+
+				return result;
+			})();
 
 			await this.customEmojiService.update(ps.id, {
 				driveFile,

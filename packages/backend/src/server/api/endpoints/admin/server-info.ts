@@ -2,10 +2,10 @@ import * as os from 'node:os';
 import { z } from 'zod';
 import si from 'systeminformation';
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import * as Redis from 'ioredis';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.object({
 	machine: z.string(),
@@ -46,11 +46,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
-
 		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private readonly redisClient: Redis.Redis,
+
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async () => {
 			const memStats = await si.mem();
@@ -65,9 +64,11 @@ export default class extends Endpoint<
 				machine: os.hostname(),
 				os: os.platform(),
 				node: process.version,
-				psql: await this.db
-					.query('SHOW server_version')
-					.then((x) => x[0].server_version),
+				psql: z
+					.tuple([z.object({ server_version: z.string() })])
+					.parse(
+						await this.prismaService.client.$queryRaw`SHOW server_version`,
+					)[0]['server_version'],
 				redis: redis_version,
 				cpu: {
 					model: os.cpus()[0].model,

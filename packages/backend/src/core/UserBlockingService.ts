@@ -1,13 +1,10 @@
-
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { IdService } from '@/core/IdService.js';
 import type { User } from '@/models/entities/User.js';
 import type { Blocking } from '@/models/entities/Blocking.js';
 import { QueueService } from '@/core/QueueService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
-import type { FollowRequestsRepository, BlockingsRepository, UserListsRepository, UserListJoiningsRepository } from '@/models/index.js';
 import Logger from '@/logger.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
@@ -16,6 +13,9 @@ import { WebhookService } from '@/core/WebhookService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { blocking, user } from '@prisma/client';
 
 @Injectable()
 export class UserBlockingService implements OnModuleInit {
@@ -23,28 +23,17 @@ export class UserBlockingService implements OnModuleInit {
 	private userFollowingService: UserFollowingService;
 
 	constructor(
-		private moduleRef: ModuleRef,
+		private readonly moduleRef: ModuleRef,
 
-		@Inject(DI.followRequestsRepository)
-		private followRequestsRepository: FollowRequestsRepository,
-
-		@Inject(DI.blockingsRepository)
-		private blockingsRepository: BlockingsRepository,
-
-		@Inject(DI.userListsRepository)
-		private userListsRepository: UserListsRepository,
-
-		@Inject(DI.userListJoiningsRepository)
-		private userListJoiningsRepository: UserListJoiningsRepository,
-
-		private cacheService: CacheService,
-		private userEntityService: UserEntityService,
-		private idService: IdService,
-		private queueService: QueueService,
-		private globalEventService: GlobalEventService,
-		private webhookService: WebhookService,
-		private apRendererService: ApRendererService,
-		private loggerService: LoggerService,
+		private readonly cacheService: CacheService,
+		private readonly userEntityService: UserEntityService,
+		private readonly idService: IdService,
+		private readonly queueService: QueueService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly webhookService: WebhookService,
+		private readonly apRendererService: ApRendererService,
+		private readonly loggerService: LoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.loggerService.getLogger('user-block');
 	}
@@ -54,7 +43,7 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async block(blocker: User, blockee: User, silent = false) {
+	public async block(blocker: T2P<User, user>, blockee: T2P<User, user>, silent = false) {
 		await Promise.all([
 			this.cancelRequest(blocker, blockee, silent),
 			this.cancelRequest(blockee, blocker, silent),
@@ -63,16 +52,14 @@ export class UserBlockingService implements OnModuleInit {
 			this.removeFromList(blockee, blocker),
 		]);
 
-		const blocking = {
+		const blocking: T2P<Blocking, blocking> = {
 			id: this.idService.genId(),
 			createdAt: new Date(),
-			blocker,
 			blockerId: blocker.id,
-			blockee,
 			blockeeId: blockee.id,
-		} as Blocking;
+		};
 
-		await this.blockingsRepository.insert(blocking);
+		await this.prismaService.client.blocking.create({ data: blocking });
 
 		this.cacheService.userBlockingCache.refresh(blocker.id);
 		this.cacheService.userBlockedCache.refresh(blockee.id);
@@ -83,25 +70,39 @@ export class UserBlockingService implements OnModuleInit {
 		});
 
 		if (this.userEntityService.isLocalUser(blocker) && this.userEntityService.isRemoteUser(blockee)) {
-			const content = this.apRendererService.addContext(this.apRendererService.renderBlock(blocking));
+			const content = this.apRendererService.addContext(this.apRendererService.renderBlock({
+				...blocking,
+				blockee: {
+					...blockee,
+					alsoKnownAs: typeof blockee.alsoKnownAs === 'string' ? blockee.alsoKnownAs.split(',') : blockee.alsoKnownAs,
+				},
+			}));
 			this.queueService.deliver(blocker, content, blockee.inbox, false);
 		}
 	}
 
 	@bindThis
-	private async cancelRequest(follower: User, followee: User, silent = false) {
-		const request = await this.followRequestsRepository.findOneBy({
-			followeeId: followee.id,
-			followerId: follower.id,
+	private async cancelRequest(follower: T2P<User, user>, followee: T2P<User, user>, silent = false) {
+		const request = await this.prismaService.client.follow_request.findUnique({
+			where: {
+				followerId_followeeId: {
+					followeeId: followee.id,
+					followerId: follower.id,
+				},
+			},
 		});
 
 		if (request == null) {
 			return;
 		}
 
-		await this.followRequestsRepository.delete({
-			followeeId: followee.id,
-			followerId: follower.id,
+		await this.prismaService.client.follow_request.delete({
+			where: {
+				followerId_followeeId: {
+					followeeId: followee.id,
+					followerId: follower.id,
+				},
+			},
 		});
 
 		if (this.userEntityService.isLocalUser(followee)) {
@@ -139,37 +140,40 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async removeFromList(listOwner: User, user: User) {
-		const userLists = await this.userListsRepository.findBy({
-			userId: listOwner.id,
-		});
-
-		for (const userList of userLists) {
-			await this.userListJoiningsRepository.delete({
-				userListId: userList.id,
+	private async removeFromList(listOwner: T2P<User, user>, user: T2P<User, user>) {
+		await this.prismaService.client.user_list_joining.deleteMany({
+			where: {
+				user_list: { userId: listOwner.id },
 				userId: user.id,
-			});
-		}
+			}
+		});
 	}
 
 	@bindThis
-	public async unblock(blocker: User, blockee: User) {
-		const blocking = await this.blockingsRepository.findOneBy({
-			blockerId: blocker.id,
-			blockeeId: blockee.id,
+	public async unblock(blocker: T2P<User, user>, blockee: T2P<User, user>) {
+		const blocking_ = await this.prismaService.client.blocking.findUnique({
+			where: {
+				blockerId_blockeeId: {
+					blockerId: blocker.id,
+					blockeeId: blockee.id,
+				},
+			},
 		});
 
-		if (blocking == null) {
+		if (blocking_ == null) {
 			this.logger.warn('ブロック解除がリクエストされましたがブロックしていませんでした');
 			return;
 		}
 
 		// Since we already have the blocker and blockee, we do not need to fetch
 		// them in the query above and can just manually insert them here.
-		blocking.blocker = blocker;
-		blocking.blockee = blockee;
+		const blocking = {
+			...blocking_,
+			blocker,
+			blockee,
+		};
 
-		await this.blockingsRepository.delete(blocking.id);
+		await this.prismaService.client.blocking.delete({ where: { id: blocking.id } });
 
 		this.cacheService.userBlockingCache.refresh(blocker.id);
 		this.cacheService.userBlockedCache.refresh(blockee.id);

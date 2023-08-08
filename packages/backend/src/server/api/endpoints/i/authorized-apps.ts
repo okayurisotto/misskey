@@ -1,10 +1,8 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import { IsNull, Not } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { AccessTokensRepository } from '@/models/index.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.unknown();
 export const meta = {
@@ -27,32 +25,28 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.accessTokensRepository)
-		private accessTokensRepository: AccessTokensRepository,
-
-		private appEntityService: AppEntityService,
+		private readonly appEntityService: AppEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Get tokens
-			const tokens = await this.accessTokensRepository.find({
+			const tokens = await this.prismaService.client.access_token.findMany({
 				where: {
 					userId: me.id,
-					appId: Not(IsNull()),
+					appId: { not: null },
 				},
 				take: ps.limit,
 				skip: ps.offset,
-				order: {
-					id: ps.sort === 'asc' ? 1 : -1,
-				},
+				orderBy: { id: ps.sort === 'asc' ? 'asc' : 'desc' },
 			});
 
-			return await Promise.all(
+			return (await Promise.all(
 				tokens.map((token) =>
 					this.appEntityService.pack(token.appId!, me, {
 						detail: true,
 					}),
 				),
-			) satisfies z.infer<typeof res>;
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

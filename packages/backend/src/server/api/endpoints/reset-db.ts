@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
 import * as Redis from 'ioredis';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { resetDb } from '@/misc/reset-db.js';
 
 export const meta = {
@@ -24,19 +24,18 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
-
 		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private readonly redisClient: Redis.Redis,
+
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			if (process.env.NODE_ENV !== 'test') {
 				throw new Error('NODE_ENV is not a test');
 			}
 
-			await redisClient.flushdb();
-			await resetDb(this.db);
+			await this.redisClient.flushdb();
+			await resetDb(this.prismaService.client);
 
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 		});

@@ -1,12 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { RenoteMutingsRepository } from '@/models/index.js';
-import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['account'],
@@ -43,11 +41,8 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.renoteMutingsRepository)
-		private renoteMutingsRepository: RenoteMutingsRepository,
-
-		private globalEventService: GlobalEventService,
-		private getterService: GetterService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const muter = me;
@@ -66,9 +61,11 @@ export default class extends Endpoint<
 			});
 
 			// Check not muting
-			const exist = await this.renoteMutingsRepository.findOneBy({
-				muterId: muter.id,
-				muteeId: mutee.id,
+			const exist = await this.prismaService.client.renote_muting.findFirst({
+				where: {
+					muterId: muter.id,
+					muteeId: mutee.id,
+				},
 			});
 
 			if (exist == null) {
@@ -76,8 +73,8 @@ export default class extends Endpoint<
 			}
 
 			// Delete mute
-			await this.renoteMutingsRepository.delete({
-				id: exist.id,
+			await this.prismaService.client.renote_muting.delete({
+				where: { id: exist.id },
 			});
 		});
 	}

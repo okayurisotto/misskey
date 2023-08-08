@@ -7,7 +7,7 @@ import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import Channel from '../channel.js';
-import type { z } from 'zod';
+import { z } from 'zod';
 
 class LocalTimelineChannel extends Channel {
 	public readonly chName = 'localTimeline';
@@ -76,7 +76,7 @@ class LocalTimelineChannel extends Channel {
 		// 現状では、ワードミュートにおけるMutedNoteレコードの追加処理はストリーミングに流す処理と並列で行われるため、
 		// レコードが追加されるNoteでも追加されるより先にここのストリーミングの処理に到達することが起こる。
 		// そのためレコードが存在するかのチェックでは不十分なので、改めてcheckWordMuteを呼んでいる
-		if (this.userProfile && await checkWordMute(note, this.user, this.userProfile.mutedWords)) return;
+		if (this.userProfile && await checkWordMute(note, this.user, z.array(z.array(z.string())).parse(this.userProfile.mutedWords))) return;
 
 		this.connection.cacheNote(note);
 

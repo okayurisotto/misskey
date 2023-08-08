@@ -1,14 +1,12 @@
 import { z } from 'zod';
-import { Not, In, IsNull } from 'typeorm';
-import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository, UsersRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(
 	z.object({
@@ -44,14 +42,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
 		private userEntityService: UserEntityService,
 		private getterService: GetterService,
+		private prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Lookup user
@@ -63,16 +56,13 @@ export default class extends Endpoint<
 			});
 
 			// Fetch recent notes
-			const recentNotes = await this.notesRepository.find({
+			const recentNotes = await this.prismaService.client.note.findMany({
 				where: {
 					userId: user.id,
-					replyId: Not(IsNull()),
+					replyId: { not: null },
 				},
-				order: {
-					id: -1,
-				},
+				orderBy: { id: 'desc' },
 				take: 1000,
-				select: ['replyId'],
 			});
 
 			// 投稿が少なかったら中断
@@ -81,11 +71,10 @@ export default class extends Endpoint<
 			}
 
 			// TODO ミュートを考慮
-			const replyTargetNotes = await this.notesRepository.find({
+			const replyTargetNotes = await this.prismaService.client.note.findMany({
 				where: {
-					id: In(recentNotes.map((p) => p.replyId)),
+					id: { in: recentNotes.map((p) => p.replyId!) },
 				},
-				select: ['userId'],
 			});
 
 			const repliedUsers: Record<string, number> = {};

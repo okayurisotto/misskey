@@ -1,55 +1,46 @@
 import { setTimeout } from 'node:timers/promises';
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import { In } from 'typeorm';
-import { DI } from '@/di-symbols.js';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import type { User } from '@/models/entities/User.js';
 import type { Note } from '@/models/entities/Note.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import type { NoteUnreadsRepository, MutingsRepository, NoteThreadMutingsRepository } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
+import type { note } from '@prisma/client';
 
 @Injectable()
 export class NoteReadService implements OnApplicationShutdown {
 	#shutdownController = new AbortController();
 
 	constructor(
-		@Inject(DI.noteUnreadsRepository)
-		private noteUnreadsRepository: NoteUnreadsRepository,
-
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		@Inject(DI.noteThreadMutingsRepository)
-		private noteThreadMutingsRepository: NoteThreadMutingsRepository,
-
-		private idService: IdService,
-		private globalEventService: GlobalEventService,
+		private readonly idService: IdService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 	}
 
 	@bindThis
-	public async insertNoteUnread(userId: User['id'], note: Note, params: {
+	public async insertNoteUnread(userId: User['id'], note: T2P<Note, note>, params: {
 		// NOTE: isSpecifiedがtrueならisMentionedは必ずfalse
 		isSpecified: boolean;
 		isMentioned: boolean;
 	}): Promise<void> {
 		//#region ミュートしているなら無視
-		const mute = await this.mutingsRepository.findBy({
-			muterId: userId,
-		});
+		const mute = await this.prismaService.client.muting.findMany({ where: { muterId: userId } });
 		if (mute.map(m => m.muteeId).includes(note.userId)) return;
 		//#endregion
 
 		// スレッドミュート
-		const isThreadMuted = await this.noteThreadMutingsRepository.exist({
+		const isThreadMuted = (await this.prismaService.client.note_thread_muting.count({
 			where: {
 				userId: userId,
 				threadId: note.threadId ?? note.id,
 			},
-		});
+			take: 1,
+		})) > 0;
 		if (isThreadMuted) return;
 
 		const unread = {
@@ -61,11 +52,14 @@ export class NoteReadService implements OnApplicationShutdown {
 			noteUserId: note.userId,
 		};
 
-		await this.noteUnreadsRepository.insert(unread);
+		await this.prismaService.client.note_unread.create({ data: unread });
 
 		// 2秒経っても既読にならなかったら「未読の投稿がありますよ」イベントを発行する
 		setTimeout(2000, 'unread note', { signal: this.#shutdownController.signal }).then(async () => {
-			const exist = await this.noteUnreadsRepository.exist({ where: { id: unread.id } });
+			const exist = (await this.prismaService.client.note_unread.count({
+				where: { id: unread.id },
+				take: 1,
+			})) > 0;
 
 			if (!exist) return;
 
@@ -81,10 +75,10 @@ export class NoteReadService implements OnApplicationShutdown {
 	@bindThis
 	public async read(
 		userId: User['id'],
-		notes: (Note | z.infer<typeof NoteSchema>)[],
+		notes: (T2P<Note, note> | z.infer<typeof NoteSchema>)[],
 	): Promise<void> {
-		const readMentions: (Note | z.infer<typeof NoteSchema>)[] = [];
-		const readSpecifiedNotes: (Note | z.infer<typeof NoteSchema>)[] = [];
+		const readMentions: (T2P<Note, note> | z.infer<typeof NoteSchema>)[] = [];
+		const readSpecifiedNotes: (T2P<Note, note> | z.infer<typeof NoteSchema>)[] = [];
 
 		for (const note of notes) {
 			if (note.mentions && note.mentions.includes(userId)) {
@@ -96,16 +90,18 @@ export class NoteReadService implements OnApplicationShutdown {
 
 		if ((readMentions.length > 0) || (readSpecifiedNotes.length > 0)) {
 			// Remove the record
-			await this.noteUnreadsRepository.delete({
-				userId: userId,
-				noteId: In([...readMentions.map(n => n.id), ...readSpecifiedNotes.map(n => n.id)]),
+			await this.prismaService.client.note_unread.deleteMany({
+				where: {
+					userId: userId,
+					noteId: { in: [...readMentions.map(n => n.id), ...readSpecifiedNotes.map(n => n.id)] },
+				},
 			});
 
-			// TODO: ↓まとめてクエリしたい
-
-			this.noteUnreadsRepository.countBy({
-				userId: userId,
-				isMentioned: true,
+			this.prismaService.client.note_unread.count({
+				where: {
+					userId: userId,
+					isMentioned: true,
+				},
 			}).then(mentionsCount => {
 				if (mentionsCount === 0) {
 					// 全て既読になったイベントを発行
@@ -113,9 +109,11 @@ export class NoteReadService implements OnApplicationShutdown {
 				}
 			});
 
-			this.noteUnreadsRepository.countBy({
-				userId: userId,
-				isSpecified: true,
+			this.prismaService.client.note_unread.count({
+				where: {
+					userId: userId,
+					isSpecified: true,
+				},
 			}).then(specifiedCount => {
 				if (specifiedCount === 0) {
 					// 全て既読になったイベントを発行

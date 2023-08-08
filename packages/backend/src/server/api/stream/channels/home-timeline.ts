@@ -6,7 +6,7 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import Channel from '../channel.js';
-import type z from 'zod';
+import { z } from 'zod';
 
 class HomeTimelineChannel extends Channel {
 	public readonly chName = 'homeTimeline';
@@ -41,7 +41,7 @@ class HomeTimelineChannel extends Channel {
 		}
 
 		// Ignore notes from instances the user has muted
-		if (isInstanceMuted(note, new Set<string>(this.userProfile!.mutedInstances ?? []))) return;
+		if (isInstanceMuted(note, new Set<string>(z.array(z.string()).parse(this.userProfile!.mutedInstances) ?? []))) return;
 
 		if (['followers', 'specified'].includes(note.visibility)) {
 			note = await this.noteEntityService.pack(note.id, this.user!, {
@@ -85,7 +85,7 @@ class HomeTimelineChannel extends Channel {
 		// 現状では、ワードミュートにおけるMutedNoteレコードの追加処理はストリーミングに流す処理と並列で行われるため、
 		// レコードが追加されるNoteでも追加されるより先にここのストリーミングの処理に到達することが起こる。
 		// そのためレコードが存在するかのチェックでは不十分なので、改めてcheckWordMuteを呼んでいる
-		if (await checkWordMute(note, this.user, this.userProfile!.mutedWords)) return;
+		if (await checkWordMute(note, this.user, z.array(z.array(z.string())).parse(this.userProfile!.mutedWords))) return;
 
 		this.connection.cacheNote(note);
 

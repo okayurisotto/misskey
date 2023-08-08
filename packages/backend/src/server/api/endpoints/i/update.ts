@@ -1,19 +1,13 @@
 import { z } from 'zod';
 import RE2 from 're2';
 import * as mfm from 'mfm-js';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
 import { extractHashtags } from '@/misc/extract-hashtags.js';
 import * as Acct from '@/misc/acct.js';
-import type {
-	UsersRepository,
-	DriveFilesRepository,
-	UserProfilesRepository,
-	PagesRepository,
-} from '@/models/index.js';
 import type { User } from '@/models/entities/User.js';
 import type { UserProfile } from '@/models/entities/UserProfile.js';
-import { notificationTypes } from '@/types.js';
+import { T2P, notificationTypes } from '@/types.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { langmap } from '@/misc/langmap.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -22,10 +16,8 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { AccountUpdateService } from '@/core/AccountUpdateService.js';
 import { HashtagService } from '@/core/HashtagService.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { CacheService } from '@/core/CacheService.js';
-import { AccountMoveService } from '@/core/AccountMoveService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import {
@@ -37,8 +29,10 @@ import {
 	uniqueItems,
 } from '@/models/zod/misc.js';
 import { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiLoggerService } from '../../ApiLoggerService.js';
 import { ApiError } from '../../error.js';
+import type { user, user_profile } from '@prisma/client';
 
 const res = MeDetailedSchema;
 export const meta = {
@@ -157,40 +151,31 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.driveFilesRepository)
-		private driveFilesRepository: DriveFilesRepository,
-
-		@Inject(DI.pagesRepository)
-		private pagesRepository: PagesRepository,
-
-		private userEntityService: UserEntityService,
-		private driveFileEntityService: DriveFileEntityService,
-		private globalEventService: GlobalEventService,
-		private userFollowingService: UserFollowingService,
-		private accountUpdateService: AccountUpdateService,
-		private accountMoveService: AccountMoveService,
-		private remoteUserResolveService: RemoteUserResolveService,
-		private apiLoggerService: ApiLoggerService,
-		private hashtagService: HashtagService,
-		private roleService: RoleService,
-		private cacheService: CacheService,
+		private readonly userEntityService: UserEntityService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly userFollowingService: UserFollowingService,
+		private readonly accountUpdateService: AccountUpdateService,
+		private readonly remoteUserResolveService: RemoteUserResolveService,
+		private readonly apiLoggerService: ApiLoggerService,
+		private readonly hashtagService: HashtagService,
+		private readonly roleService: RoleService,
+		private readonly cacheService: CacheService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, _user, token) => {
-			const user = await this.usersRepository.findOneByOrFail({ id: _user.id });
+			const user = await this.prismaService.client.user.findUniqueOrThrow({
+				where: { id: _user.id },
+			});
 			const isSecure = token == null;
 
 			const updates = {} as Partial<User>;
 			const profileUpdates = {} as Partial<UserProfile>;
 
-			const profile = await this.userProfilesRepository.findOneByOrFail({
-				userId: user.id,
-			});
+			const profile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: user.id },
+				});
 
 			if (ps.name !== undefined) updates.name = ps.name;
 			if (ps.description !== undefined) {
@@ -280,8 +265,8 @@ export default class extends Endpoint<
 			}
 
 			if (ps.avatarId) {
-				const avatar = await this.driveFilesRepository.findOneBy({
-					id: ps.avatarId,
+				const avatar = await this.prismaService.client.drive_file.findUnique({
+					where: { id: ps.avatarId },
 				});
 
 				if (avatar == null || avatar.userId !== user.id) {
@@ -304,8 +289,8 @@ export default class extends Endpoint<
 			}
 
 			if (ps.bannerId) {
-				const banner = await this.driveFilesRepository.findOneBy({
-					id: ps.bannerId,
+				const banner = await this.prismaService.client.drive_file.findUnique({
+					where: { id: ps.bannerId },
 				});
 
 				if (banner == null || banner.userId !== user.id) {
@@ -325,8 +310,8 @@ export default class extends Endpoint<
 			}
 
 			if (ps.pinnedPageId) {
-				const page = await this.pagesRepository.findOneBy({
-					id: ps.pinnedPageId,
+				const page = await this.prismaService.client.page.findUnique({
+					where: { id: ps.pinnedPageId },
 				});
 
 				if (page == null || page.userId !== user.id) {
@@ -423,7 +408,13 @@ export default class extends Endpoint<
 			//#endregion
 
 			if (Object.keys(updates).length > 0) {
-				await this.usersRepository.update(user.id, updates);
+				await this.prismaService.client.user.update({
+					where: { id: user.id },
+					data: {
+						...updates,
+						alsoKnownAs: updates.alsoKnownAs?.join(','),
+					},
+				});
 			}
 			if (Object.keys(updates).includes('alsoKnownAs')) {
 				this.cacheService.uriPersonCache.set(
@@ -432,7 +423,14 @@ export default class extends Endpoint<
 				);
 			}
 			if (Object.keys(profileUpdates).length > 0) {
-				await this.userProfilesRepository.update(user.id, profileUpdates);
+				await this.prismaService.client.user_profile.update({
+					where: { userId: user.id },
+					data: {
+						...profileUpdates,
+						user: undefined,
+						moderationNote: profileUpdates.moderationNote === null ? '' : profileUpdates.moderationNote,
+					},
+				});
 			}
 
 			const iObj = await this.userEntityService.pack<true, true>(
@@ -444,9 +442,10 @@ export default class extends Endpoint<
 				},
 			);
 
-			const updatedProfile = await this.userProfilesRepository.findOneByOrFail({
-				userId: user.id,
-			});
+			const updatedProfile =
+				await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: user.id },
+				});
 
 			this.cacheService.userProfileCache.set(user.id, updatedProfile);
 

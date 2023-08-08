@@ -1,7 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Readable } from 'node:stream';
+import { Injectable } from '@nestjs/common';
 import sharp from 'sharp';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { bindThis } from '@/decorators.js';
 
 export type IImage = {
 	data: Buffer;
@@ -39,17 +39,8 @@ export const avifDefault: sharp.AvifOptions = {
 	effort: 2,
 };
 
-import { bindThis } from '@/decorators.js';
-import { Readable } from 'node:stream';
-
 @Injectable()
 export class ImageProcessingService {
-	constructor(
-		@Inject(DI.config)
-		private config: Config,
-	) {
-	}
-
 	/**
 	 * Convert to WebP
 	 *   with resize, remove metadata, resolve orientation, stop animation

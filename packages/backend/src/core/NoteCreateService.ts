@@ -1,22 +1,20 @@
 import { setImmediate } from 'node:timers/promises';
 import * as mfm from 'mfm-js';
-import { In, DataSource } from 'typeorm';
 import * as Redis from 'ioredis';
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import RE2 from 're2';
+import { z } from 'zod';
 import { extractMentions } from '@/misc/extract-mentions.js';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
 import { extractHashtags } from '@/misc/extract-hashtags.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
 import { Note } from '@/models/entities/Note.js';
-import type { ChannelFollowingsRepository, ChannelsRepository, InstancesRepository, MutedNotesRepository, MutingsRepository, NotesRepository, NoteThreadMutingsRepository, UserProfilesRepository, UsersRepository } from '@/models/index.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import type { App } from '@/models/entities/App.js';
 import { concat } from '@/misc/prelude/array.js';
 import { IdService } from '@/core/IdService.js';
 import type { User, LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { IPoll } from '@/models/entities/Poll.js';
-import { Poll } from '@/models/entities/Poll.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import { checkWordMute } from '@/misc/check-word-mute.js';
 import type { Channel } from '@/models/entities/Channel.js';
@@ -48,6 +46,9 @@ import { DB_MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
+import type { T2P } from '@/types.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { Prisma, app, channel, drive_file, note, user } from '@prisma/client';
 
 const mutedWordsCache = new MemorySingleCache<{ userId: UserProfile['userId']; mutedWords: UserProfile['mutedWords']; }[]>(1000 * 60 * 5);
 
@@ -55,17 +56,17 @@ type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
 class NotificationManager {
 	private notifier: { id: User['id']; };
-	private note: Note;
+	private note: T2P<Note, note>;
 	private queue: {
 		target: LocalUser['id'];
 		reason: NotificationType;
 	}[];
 
 	constructor(
-		private mutingsRepository: MutingsRepository,
 		private notificationService: NotificationService,
+		private readonly prismaService: PrismaService,
 		notifier: { id: User['id']; },
-		note: Note,
+		note: T2P<Note, note>,
 	) {
 		this.notifier = notifier;
 		this.note = note;
@@ -96,8 +97,8 @@ class NotificationManager {
 	public async deliver() {
 		for (const x of this.queue) {
 			// ミュート情報を取得
-			const mentioneeMutes = await this.mutingsRepository.findBy({
-				muterId: x.target,
+			const mentioneeMutes = await this.prismaService.client.muting.findMany({
+				where: { muterId: x.target },
 			});
 
 			const mentioneesMutedUserIds = mentioneeMutes.map(m => m.muteeId);
@@ -124,22 +125,22 @@ type Option = {
 	createdAt?: Date | null;
 	name?: string | null;
 	text?: string | null;
-	reply?: Note | null;
-	renote?: Note | null;
-	files?: DriveFile[] | null;
+	reply?: T2P<Note, note> | null;
+	renote?: T2P<Note, note> | null;
+	files?: T2P<DriveFile, drive_file>[] | null;
 	poll?: IPoll | null;
 	localOnly?: boolean | null;
 	reactionAcceptance?: Note['reactionAcceptance'];
 	cw?: string | null;
 	visibility?: string;
 	visibleUsers?: MinimumUser[] | null;
-	channel?: Channel | null;
+	channel?: T2P<Channel, channel> | null;
 	apMentions?: MinimumUser[] | null;
 	apHashtags?: string[] | null;
 	apEmojis?: string[] | null;
 	uri?: string | null;
 	url?: string | null;
-	app?: App | null;
+	app?: T2P<App, app> | null;
 };
 
 @Injectable()
@@ -148,64 +149,35 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.db)
-		private db: DataSource,
+		private readonly config: Config,
 
 		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private readonly redisClient: Redis.Redis,
 
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		@Inject(DI.mutingsRepository)
-		private mutingsRepository: MutingsRepository,
-
-		@Inject(DI.instancesRepository)
-		private instancesRepository: InstancesRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		@Inject(DI.mutedNotesRepository)
-		private mutedNotesRepository: MutedNotesRepository,
-
-		@Inject(DI.channelsRepository)
-		private channelsRepository: ChannelsRepository,
-
-		@Inject(DI.channelFollowingsRepository)
-		private channelFollowingsRepository: ChannelFollowingsRepository,
-
-		@Inject(DI.noteThreadMutingsRepository)
-		private noteThreadMutingsRepository: NoteThreadMutingsRepository,
-
-		private userEntityService: UserEntityService,
-		private noteEntityService: NoteEntityService,
-		private idService: IdService,
-		private globalEventService: GlobalEventService,
-		private queueService: QueueService,
-		private noteReadService: NoteReadService,
-		private notificationService: NotificationService,
-		private relayService: RelayService,
-		private federatedInstanceService: FederatedInstanceService,
-		private hashtagService: HashtagService,
-		private antennaService: AntennaService,
-		private webhookService: WebhookService,
-		private remoteUserResolveService: RemoteUserResolveService,
-		private apDeliverManagerService: ApDeliverManagerService,
-		private apRendererService: ApRendererService,
-		private roleService: RoleService,
-		private metaService: MetaService,
-		private searchService: SearchService,
-		private notesChart: NotesChart,
-		private perUserNotesChart: PerUserNotesChart,
-		private activeUsersChart: ActiveUsersChart,
-		private instanceChart: InstanceChart,
-	) { }
+		private readonly userEntityService: UserEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly idService: IdService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly queueService: QueueService,
+		private readonly noteReadService: NoteReadService,
+		private readonly notificationService: NotificationService,
+		private readonly relayService: RelayService,
+		private readonly federatedInstanceService: FederatedInstanceService,
+		private readonly hashtagService: HashtagService,
+		private readonly antennaService: AntennaService,
+		private readonly webhookService: WebhookService,
+		private readonly remoteUserResolveService: RemoteUserResolveService,
+		private readonly apDeliverManagerService: ApDeliverManagerService,
+		private readonly apRendererService: ApRendererService,
+		private readonly roleService: RoleService,
+		private readonly metaService: MetaService,
+		private readonly searchService: SearchService,
+		private readonly notesChart: NotesChart,
+		private readonly perUserNotesChart: PerUserNotesChart,
+		private readonly activeUsersChart: ActiveUsersChart,
+		private readonly instanceChart: InstanceChart,
+		private readonly prismaService: PrismaService,
+	) {}
 
 	@bindThis
 	public async create(user: {
@@ -214,12 +186,12 @@ export class NoteCreateService implements OnApplicationShutdown {
 		host: User['host'];
 		createdAt: User['createdAt'];
 		isBot: User['isBot'];
-	}, data: Option, silent = false): Promise<Note> {
+	}, data: Option, silent = false): Promise<T2P<Note, note>> {
 		// チャンネル外にリプライしたら対象のスコープに合わせる
 		// (クライアントサイドでやっても良い処理だと思うけどとりあえずサーバーサイドで)
 		if (data.reply && data.channel && data.reply.channelId !== data.channel.id) {
 			if (data.reply.channelId) {
-				data.channel = await this.channelsRepository.findOneBy({ id: data.reply.channelId });
+				data.channel = await this.prismaService.client.channel.findUnique({ where: { id: data.reply.channelId } });
 			} else {
 				data.channel = null;
 			}
@@ -228,7 +200,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		// チャンネル内にリプライしたら対象のスコープに合わせる
 		// (クライアントサイドでやっても良い処理だと思うけどとりあえずサーバーサイドで)
 		if (data.reply && (data.channel == null) && data.reply.channelId) {
-			data.channel = await this.channelsRepository.findOneBy({ id: data.reply.channelId });
+			data.channel = await this.prismaService.client.channel.findUnique({ where: { id: data.reply.channelId } });
 		}
 
 		if (data.createdAt == null) data.createdAt = new Date();
@@ -310,7 +282,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		tags = tags.filter(tag => Array.from(tag ?? '').length <= 128).splice(0, 32);
 
 		if (data.reply && (user.id !== data.reply.userId) && !mentionedUsers.some(u => u.id === data.reply!.userId)) {
-			mentionedUsers.push(await this.usersRepository.findOneByOrFail({ id: data.reply!.userId }));
+			mentionedUsers.push(await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.reply!.userId } }));
 		}
 
 		if (data.visibility === 'specified') {
@@ -323,7 +295,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 			}
 
 			if (data.reply && !data.visibleUsers.some(x => x.id === data.reply!.userId)) {
-				data.visibleUsers.push(await this.usersRepository.findOneByOrFail({ id: data.reply!.userId }));
+				data.visibleUsers.push(await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.reply!.userId } }));
 			}
 		}
 
@@ -347,7 +319,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 	@bindThis
 	private async insertNote(user: { id: User['id']; host: User['host']; }, data: Option, tags: string[], emojis: string[], mentionedUsers: MinimumUser[]) {
-		const insert = new Note({
+		const insert: Prisma.noteUncheckedCreateInput = {
 			id: this.idService.genId(data.createdAt!),
 			createdAt: data.createdAt!,
 			fileIds: data.files ? data.files.map(file => file.id) : [],
@@ -383,7 +355,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 			renoteUserId: data.renote ? data.renote.userId : null,
 			renoteUserHost: data.renote ? data.renote.userHost : null,
 			userHost: user.host,
-		});
+		};
 
 		if (data.uri != null) insert.uri = data.uri;
 		if (data.url != null) insert.url = data.url;
@@ -391,7 +363,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		// Append mentions data
 		if (mentionedUsers.length > 0) {
 			insert.mentions = mentionedUsers.map(u => u.id);
-			const profiles = await this.userProfilesRepository.findBy({ userId: In(insert.mentions) });
+			const profiles = await this.prismaService.client.user_profile.findMany({ where: { userId: { in: insert.mentions } } });
 			insert.mentionedRemoteUsers = JSON.stringify(mentionedUsers.filter(u => this.userEntityService.isRemoteUser(u)).map(u => {
 				const profile = profiles.find(p => p.userId === u.id);
 				const url = profile != null ? profile.url : null;
@@ -406,29 +378,35 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 		// 投稿を作成
 		try {
-			if (insert.hasPoll) {
-				// Start transaction
-				await this.db.transaction(async transactionalEntityManager => {
-					await transactionalEntityManager.insert(Note, insert);
+			if (data.poll && insert.hasPoll) {
+				return await this.prismaService.client.note.create({
+					data: {
+						...insert,
+						user: undefined,
+						channel: undefined,
 
-					const poll = new Poll({
-						noteId: insert.id,
-						choices: data.poll!.choices,
-						expiresAt: data.poll!.expiresAt,
-						multiple: data.poll!.multiple,
-						votes: new Array(data.poll!.choices.length).fill(0),
-						noteVisibility: insert.visibility,
-						userId: user.id,
-						userHost: user.host,
-					});
-
-					await transactionalEntityManager.insert(Poll, poll);
+						poll: {
+							create: {
+								choices: data.poll.choices,
+								expiresAt: data.poll.expiresAt,
+								multiple: data.poll.multiple,
+								votes: new Array(data.poll.choices.length).fill(0),
+								noteVisibility: insert.visibility,
+								userId: user.id,
+								userHost: user.host,
+							},
+						},
+					},
 				});
 			} else {
-				await this.notesRepository.insert(insert);
+				return await this.prismaService.client.note.create({
+					data: {
+						...insert,
+						user: undefined,
+						channel: undefined,
+					},
+				});
 			}
-
-			return insert;
 		} catch (e) {
 			// duplicate key error
 			if (isDuplicateKeyValueError(e)) {
@@ -444,7 +422,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async postNoteCreated(note: Note, user: {
+	private async postNoteCreated(note: T2P<Note, note>, user: {
 		id: User['id'];
 		username: User['username'];
 		host: User['host'];
@@ -461,7 +439,10 @@ export class NoteCreateService implements OnApplicationShutdown {
 		// Register host
 		if (this.userEntityService.isRemoteUser(user)) {
 			this.federatedInstanceService.fetch(user.host).then(async i => {
-				this.instancesRepository.increment({ id: i.id }, 'notesCount', 1);
+				this.prismaService.client.instance.update({
+					where: { id: i.id },
+					data: { notesCount: { increment: 1 } },
+				});
 				if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
 					this.instanceChart.updateNote(i.host, note, true);
 				}
@@ -474,23 +455,27 @@ export class NoteCreateService implements OnApplicationShutdown {
 		}
 
 		// Increment notes count (user)
-		this.incNotesCountOfUser(user);
+		await this.incNotesCountOfUser(user);
 
 		// Word mute
-		mutedWordsCache.fetch(() => this.userProfilesRepository.find({
-			where: {
-				enableWordMute: true,
-			},
-			select: ['userId', 'mutedWords'],
-		})).then(us => {
+		mutedWordsCache.fetch(() => {
+			return this.prismaService.client.user_profile.findMany({ where: { enableWordMute: true } }).then((notes) => {
+				return notes.map((note) => ({
+					...note,
+					mutedWords: z.array(z.array(z.string())).parse(note.mutedWords),
+				}));
+			});
+		}).then(us => {
 			for (const u of us) {
 				checkWordMute(note, { id: u.userId }, u.mutedWords).then(shouldMute => {
 					if (shouldMute) {
-						this.mutedNotesRepository.insert({
-							id: this.idService.genId(),
-							userId: u.userId,
-							noteId: note.id,
-							reason: 'word',
+						this.prismaService.client.muted_note.create({
+							data: {
+								id: this.idService.genId(),
+								userId: u.userId,
+								noteId: note.id,
+								reason: 'word',
+							},
 						});
 					}
 				});
@@ -500,7 +485,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		this.antennaService.addNoteToAntennas(note, user);
 
 		if (data.reply) {
-			this.saveReply(data.reply, note);
+			await this.saveReply(data.reply, note);
 		}
 
 		// この投稿を除く指定したユーザーによる指定したノートのリノートが存在しないとき
@@ -562,7 +547,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 				}
 			});
 
-			const nm = new NotificationManager(this.mutingsRepository, this.notificationService, user, note);
+			const nm = new NotificationManager(this.notificationService, this.prismaService, user, note);
 
 			await this.createMentionedEvents(mentionedUsers, note, nm);
 
@@ -570,12 +555,13 @@ export class NoteCreateService implements OnApplicationShutdown {
 			if (data.reply) {
 				// 通知
 				if (data.reply.userHost === null) {
-					const isThreadMuted = await this.noteThreadMutingsRepository.exist({
+					const isThreadMuted = (await this.prismaService.client.note_thread_muting.count({
 						where: {
 							userId: data.reply.userId,
 							threadId: data.reply.threadId ?? data.reply.id,
 						},
-					});
+						take: 1
+					})) > 0;
 
 					if (!isThreadMuted) {
 						nm.push(data.reply.userId, 'reply');
@@ -628,13 +614,13 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 					// 投稿がリプライかつ投稿者がローカルユーザーかつリプライ先の投稿の投稿者がリモートユーザーなら配送
 					if (data.reply && data.reply.userHost !== null) {
-						const u = await this.usersRepository.findOneBy({ id: data.reply.userId });
+						const u = await this.prismaService.client.user.findUnique({ where: { id: data.reply.userId } });
 						if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
 					}
 
 					// 投稿がRenoteかつ投稿者がローカルユーザーかつRenote元の投稿の投稿者がリモートユーザーなら配送
 					if (data.renote && data.renote.userHost !== null) {
-						const u = await this.usersRepository.findOneBy({ id: data.renote.userId });
+						const u = await this.prismaService.client.user.findUnique({ where: { id: data.renote.userId } });
 						if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
 					}
 
@@ -654,19 +640,28 @@ export class NoteCreateService implements OnApplicationShutdown {
 		}
 
 		if (data.channel) {
-			this.channelsRepository.increment({ id: data.channel.id }, 'notesCount', 1);
-			this.channelsRepository.update(data.channel.id, {
-				lastNotedAt: new Date(),
+			this.prismaService.client.channel.update({
+				where: { id: data.channel.id },
+				data: { notesCount: { increment: 1 } },
+			});
+			this.prismaService.client.channel.update({
+				where: { id: data.channel.id },
+				data: { lastNotedAt: new Date() },
 			});
 
-			this.notesRepository.countBy({
-				userId: user.id,
-				channelId: data.channel.id,
+			this.prismaService.client.note.count({
+				where: {
+					userId: user.id,
+					channelId: data.channel.id,
+				},
 			}).then(count => {
 				// この処理が行われるのはノート作成後なので、ノートが一つしかなかったら最初の投稿だと判断できる
 				// TODO: とはいえノートを削除して何回も投稿すればその分だけインクリメントされる雑さもあるのでどうにかしたい
 				if (count === 1) {
-					this.channelsRepository.increment({ id: data.channel!.id }, 'usersCount', 1);
+					this.prismaService.client.channel.update({
+						where: { id: data.channel!.id },
+						data: { usersCount: { increment: 1 } },
+					});
 				}
 			});
 		}
@@ -701,25 +696,26 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private incRenoteCount(renote: Note) {
-		this.notesRepository.createQueryBuilder().update()
-			.set({
-				renoteCount: () => '"renoteCount" + 1',
-				score: () => '"score" + 1',
-			})
-			.where('id = :id', { id: renote.id })
-			.execute();
+	private incRenoteCount(renote: T2P<Note, note>) {
+		this.prismaService.client.note.update({
+			where: { id: renote.id },
+			data: {
+				renoteCount: { increment: 1 },
+				score: { increment: 1 },
+			}
+		});
 	}
 
 	@bindThis
-	private async createMentionedEvents(mentionedUsers: MinimumUser[], note: Note, nm: NotificationManager) {
+	private async createMentionedEvents(mentionedUsers: MinimumUser[], note: T2P<Note, note>, nm: NotificationManager) {
 		for (const u of mentionedUsers.filter(u => this.userEntityService.isLocalUser(u))) {
-			const isThreadMuted = await this.noteThreadMutingsRepository.exist({
+			const isThreadMuted = (await this.prismaService.client.note_thread_muting.count({
 				where: {
 					userId: u.id,
 					threadId: note.threadId ?? note.id,
 				},
-			});
+				take: 1,
+			})) > 0;
 
 			if (isThreadMuted) {
 				continue;
@@ -744,12 +740,15 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private saveReply(reply: Note, note: Note) {
-		this.notesRepository.increment({ id: reply.id }, 'repliesCount', 1);
+	private async saveReply(reply: T2P<Note, note>, note: T2P<Note, note>) {
+		await this.prismaService.client.note.update({
+			where: { id: reply.id },
+			data: { repliesCount: { increment: 1 } },
+		});
 	}
 
 	@bindThis
-	private async renderNoteOrRenoteActivity(data: Option, note: Note) {
+	private async renderNoteOrRenoteActivity(data: Option, note: T2P<Note, note>) {
 		if (data.localOnly) return null;
 
 		const content = data.renote && data.text == null && data.poll == null && (data.files == null || data.files.length === 0)
@@ -760,25 +759,25 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private index(note: Note) {
+	private index(note: T2P<Note, note>) {
 		if (note.text == null && note.cw == null) return;
 
 		this.searchService.indexNote(note);
 	}
 
 	@bindThis
-	private incNotesCountOfUser(user: { id: User['id']; }) {
-		this.usersRepository.createQueryBuilder().update()
-			.set({
+	private async incNotesCountOfUser(user: { id: User['id']; }) {
+		await this.prismaService.client.user.update({
+			where: { id: user.id },
+			data: {
 				updatedAt: new Date(),
-				notesCount: () => '"notesCount" + 1',
-			})
-			.where('id = :id', { id: user.id })
-			.execute();
+				notesCount: { increment: 1 }
+			},
+		});
 	}
 
 	@bindThis
-	private async extractMentionedUsers(user: { host: User['host']; }, tokens: mfm.MfmNode[]): Promise<User[]> {
+	private async extractMentionedUsers(user: { host: User['host']; }, tokens: mfm.MfmNode[]): Promise<T2P<User, user>[]> {
 		if (tokens == null) return [];
 
 		const mentions = extractMentions(tokens);

@@ -1,13 +1,12 @@
 import { z } from 'zod';
 import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
-import type { UsersRepository, NotesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteDeleteService } from '@/core/NoteDeleteService.js';
-import { DI } from '@/di-symbols.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -39,14 +38,9 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private getterService: GetterService,
-		private noteDeleteService: NoteDeleteService,
+		private readonly getterService: GetterService,
+		private readonly noteDeleteService: NoteDeleteService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
@@ -56,14 +50,18 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			const renotes = await this.notesRepository.findBy({
-				userId: me.id,
-				renoteId: note.id,
+			const renotes = await this.prismaService.client.note.findMany({
+				where: {
+					userId: me.id,
+					renoteId: note.id,
+				},
 			});
 
 			for (const note of renotes) {
 				this.noteDeleteService.delete(
-					await this.usersRepository.findOneByOrFail({ id: me.id }),
+					await this.prismaService.client.user.findUniqueOrThrow({
+						where: { id: me.id },
+					}),
 					note,
 				);
 			}

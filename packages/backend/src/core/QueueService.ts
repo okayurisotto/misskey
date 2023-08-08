@@ -11,6 +11,8 @@ import type { DbQueue, DeliverQueue, EndedPollNotificationQueue, InboxQueue, Obj
 import type { DbJobData, DeliverJobData, RelationshipJobData, ThinUser } from '../queue/types.js';
 import type httpSignature from '@peertube/http-signature';
 import type * as Bull from 'bullmq';
+import type { T2P } from '@/types.js';
+import type { webhook } from '@prisma/client';
 
 @Injectable()
 export class QueueService {
@@ -407,7 +409,7 @@ export class QueueService {
 	}
 
 	@bindThis
-	public webhookDeliver(webhook: Webhook, type: typeof webhookEventTypes[number], content: unknown) {
+	public webhookDeliver(webhook: T2P<Webhook, webhook>, type: typeof webhookEventTypes[number], content: unknown) {
 		const data = {
 			type,
 			content,

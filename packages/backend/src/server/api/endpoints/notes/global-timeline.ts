@@ -1,16 +1,14 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import type { NotesRepository } from '@/models/index.js';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { QueryService } from '@/core/QueryService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { MetaService } from '@/core/MetaService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -43,14 +41,11 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.notesRepository)
-		private notesRepository: NotesRepository,
-
-		private noteEntityService: NoteEntityService,
-		private queryService: QueryService,
-		private metaService: MetaService,
-		private roleService: RoleService,
-		private activeUsersChart: ActiveUsersChart,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly roleService: RoleService,
+		private readonly activeUsersChart: ActiveUsersChart,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const policies = await this.roleService.getUserPolicies(
@@ -60,37 +55,33 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.gtlDisabled);
 			}
 
-			//#region Construct query
-			const query = this.queryService
-				.makePaginationQuery(
-					this.notesRepository.createQueryBuilder('note'),
-					ps.sinceId,
-					ps.untilId,
-					ps.sinceDate,
-					ps.untilDate,
-				)
-				.andWhere("note.visibility = 'public'")
-				.andWhere('note.channelId IS NULL')
-				.innerJoinAndSelect('note.user', 'user')
-				.leftJoinAndSelect('note.reply', 'reply')
-				.leftJoinAndSelect('note.renote', 'renote')
-				.leftJoinAndSelect('reply.user', 'replyUser')
-				.leftJoinAndSelect('renote.user', 'renoteUser');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+				sinceDate: ps.sinceDate,
+				untilDate: ps.untilDate,
+			});
 
-			this.queryService.generateRepliesQuery(query, ps.withReplies, me);
-			if (me) {
-				this.queryService.generateMutedUserQuery(query, me);
-				this.queryService.generateMutedNoteQuery(query, me);
-				this.queryService.generateBlockedUserQuery(query, me);
-				this.queryService.generateMutedUserRenotesQueryForNotes(query, me);
-			}
-
-			if (ps.withFiles) {
-				query.andWhere("note.fileIds != '{}'");
-			}
-			//#endregion
-
-			const timeline = await query.limit(ps.limit).getMany();
+			const timeline = await this.prismaService.client.note.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{ visibility: 'public', channelId: null },
+						this.prismaQueryService.getRepliesWhereForNote(me?.id ?? null),
+						...(me
+							? [
+									await this.prismaQueryService.getMutingWhereForNote(me.id),
+									await this.prismaQueryService.getNoteThreadMutingWhereForNote(me.id),
+									this.prismaQueryService.getBlockedWhereForNote(me.id),
+									await this.prismaQueryService.getRenoteMutingWhereForNote(me.id),
+							  ]
+							: []),
+						ps.withFiles ? { fileIds: { isEmpty: false } } : {},
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			process.nextTick(() => {
 				if (me) {

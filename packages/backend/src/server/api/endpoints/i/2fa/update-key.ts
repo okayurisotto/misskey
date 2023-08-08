@@ -1,14 +1,9 @@
 import { z } from 'zod';
-import bcrypt from 'bcryptjs';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type {
-	UserProfilesRepository,
-	UserSecurityKeysRepository,
-} from '@/models/index.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DI } from '@/di-symbols.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.unknown();
@@ -43,18 +38,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.userSecurityKeysRepository)
-		private userSecurityKeysRepository: UserSecurityKeysRepository,
-
-		@Inject(DI.userProfilesRepository)
-		private userProfilesRepository: UserProfilesRepository,
-
-		private userEntityService: UserEntityService,
-		private globalEventService: GlobalEventService,
+		private readonly userEntityService: UserEntityService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const key = await this.userSecurityKeysRepository.findOneBy({
-				id: ps.credentialId,
+			const key = await this.prismaService.client.user_security_key.findUnique({
+				where: { id: ps.credentialId },
 			});
 
 			if (key == null) {
@@ -65,8 +55,9 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.accessDenied);
 			}
 
-			await this.userSecurityKeysRepository.update(key.id, {
-				name: ps.name,
+			await this.prismaService.client.user_security_key.update({
+				where: { id: key.id },
+				data: { name: ps.name },
 			});
 
 			// Publish meUpdated event

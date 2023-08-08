@@ -1,46 +1,35 @@
 import fs from 'node:fs';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { format as DateFormat } from 'date-fns';
-import { In } from 'typeorm';
-import { DI } from '@/di-symbols.js';
-import type { AntennasRepository, UsersRepository, UserListJoiningsRepository, User } from '@/models/index.js';
-import type { Config } from '@/config.js';
+import type { user } from '@prisma/client';
+import type { User } from '@/models/index.js';
 import Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { bindThis } from '@/decorators.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { T2P } from '@/types.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { DBExportAntennasData } from '../types.js';
 import type * as Bull from 'bullmq';
 
 @Injectable()
 export class ExportAntennasProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor (
-		@Inject(DI.config)
-		private config: Config,
-
-		@Inject(DI.usersRepository)
-		private usersRepository: UsersRepository,
-
-		@Inject(DI.antennasRepository)
-		private antennsRepository: AntennasRepository,
-
-		@Inject(DI.userListJoiningsRepository)
-		private userListJoiningsRepository: UserListJoiningsRepository,
-
-		private driveService: DriveService,
-		private utilityService: UtilityService,
-		private queueLoggerService: QueueLoggerService,
+		private readonly driveService: DriveService,
+		private readonly utilityService: UtilityService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('export-antennas');
 	}
 
 	@bindThis
 	public async process(job: Bull.Job<DBExportAntennasData>): Promise<void> {
-		const user = await this.usersRepository.findOneBy({ id: job.data.user.id });
+		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
 		if (user == null) {
 			return;
 		}
@@ -59,14 +48,16 @@ export class ExportAntennasProcessorService {
 			});
 		};
 		try {
-			const antennas = await this.antennsRepository.findBy({ userId: job.data.user.id });
+			const antennas = await this.prismaService.client.antenna.findMany({ where: { userId: job.data.user.id } });
 			write('[');
 			for (const [index, antenna] of antennas.entries()) {
-				let users: User[] | undefined;
+				let users: T2P<User, user>[] | undefined;
 				if (antenna.userListId !== null) {
-					const joinings = await this.userListJoiningsRepository.findBy({ userListId: antenna.userListId });
-					users = await this.usersRepository.findBy({
-						id: In(joinings.map(j => j.userId)),
+					const joinings = await this.prismaService.client.user_list_joining.findMany({ where: { userListId: antenna.userListId } });
+					users = await this.prismaService.client.user.findMany({
+						where: {
+							id: { in: joinings.map(j => j.userId) },
+						},
 					});
 				}
 				write(JSON.stringify({
@@ -98,4 +89,3 @@ export class ExportAntennasProcessorService {
 		}
 	}
 }
-

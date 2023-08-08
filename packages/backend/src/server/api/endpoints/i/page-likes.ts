@@ -1,12 +1,11 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { PageLikesRepository } from '@/models/index.js';
-import { QueryService } from '@/core/QueryService.js';
 import { PageLikeEntityService } from '@/core/entities/PageLikeEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PageSchema } from '@/models/zod/PageSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(
 	z.object({
@@ -35,23 +34,21 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.pageLikesRepository)
-		private pageLikesRepository: PageLikesRepository,
-
-		private pageLikeEntityService: PageLikeEntityService,
-		private queryService: QueryService,
+		private readonly pageLikeEntityService: PageLikeEntityService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query = this.queryService
-				.makePaginationQuery(
-					this.pageLikesRepository.createQueryBuilder('like'),
-					ps.sinceId,
-					ps.untilId,
-				)
-				.andWhere('like.userId = :meId', { meId: me.id })
-				.leftJoinAndSelect('like.page', 'page');
+			const paginationQuery = this.prismaQueryService.getPaginationQuery({
+				sinceId: ps.sinceId,
+				untilId: ps.untilId,
+			});
 
-			const likes = await query.limit(ps.limit).getMany();
+			const likes = await this.prismaService.client.page_like.findMany({
+				where: { AND: [paginationQuery.where, { userId: me.id }] },
+				orderBy: paginationQuery.orderBy,
+				take: ps.limit,
+			});
 
 			return (await Promise.all(
 				likes.map((like) => this.pageLikeEntityService.pack(like, me)),
