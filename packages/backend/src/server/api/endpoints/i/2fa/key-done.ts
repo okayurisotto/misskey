@@ -13,7 +13,10 @@ import { PrismaService } from '@/core/PrismaService.js';
 
 const cborDecodeFirst = promisify(cbor.decodeFirst) as any;
 
-const res = z.unknown();
+const res = z.object({
+	id: z.string(),
+	name: z.string(),
+});
 export const meta = {
 	requireCredential: true,
 	secure: true,

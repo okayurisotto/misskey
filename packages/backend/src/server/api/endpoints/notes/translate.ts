@@ -9,7 +9,13 @@ import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
-const res = z.unknown();
+const res = z.union([
+	z.number(),
+	z.object({
+		sourceLang: z.string(),
+		text: z.string(),
+	}),
+]);
 export const meta = {
 	tags: ['notes'],
 	requireCredential: false,

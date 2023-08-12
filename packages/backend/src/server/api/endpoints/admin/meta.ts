@@ -18,7 +18,7 @@ const res = z.object({
 	enableTurnstile: z.boolean(),
 	turnstileSiteKey: z.string().nullable(),
 	swPublickey: z.string().nullable(),
-	mascotImageUrl: z.string().default('/assets/ai.png').nullable(),
+	mascotImageUrl: z.string().nullable().default('/assets/ai.png'),
 	bannerUrl: z.string().nullable(),
 	serverErrorImageUrl: z.string().nullable(),
 	infoImageUrl: z.string().nullable(),
@@ -96,7 +96,7 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.unknown();
+export const paramDef = z.object({});
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

@@ -4,7 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.array(z.record(z.string(), z.unknown()));
 export const meta = {
 	tags: ['role'],
 	requireCredential: true,

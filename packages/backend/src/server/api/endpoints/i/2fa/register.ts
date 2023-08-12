@@ -8,7 +8,13 @@ import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.object({
+	qr: z.string(),
+	url: z.string(),
+	secret: z.string(),
+	label: z.string(),
+	issuer: z.string(),
+});
 export const meta = {
 	requireCredential: true,
 	secure: true,

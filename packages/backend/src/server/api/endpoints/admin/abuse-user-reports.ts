@@ -20,14 +20,8 @@ export const paramDef = z.object({
 	sinceId: MisskeyIdSchema.optional(),
 	untilId: MisskeyIdSchema.optional(),
 	state: z.string().nullable().default(null),
-	reporterOrigin: z
-		.enum(['combined', 'local', 'remote'])
-		.default('combined')
-		.optional(),
-	targetUserOrigin: z
-		.enum(['combined', 'local', 'remote'])
-		.default('combined')
-		.optional(),
+	reporterOrigin: z.enum(['combined', 'local', 'remote']).default('combined'),
+	targetUserOrigin: z.enum(['combined', 'local', 'remote']).default('combined'),
 	forwarded: z.boolean().default(false),
 });
 

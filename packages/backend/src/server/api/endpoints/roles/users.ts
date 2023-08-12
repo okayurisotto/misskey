@@ -6,8 +6,14 @@ import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 
-const res = z.unknown();
+const res = z.array(
+	z.object({
+		id: MisskeyIdSchema,
+		user: UserDetailedSchema,
+	}),
+);
 export const meta = {
 	tags: ['role', 'users'],
 	requireCredential: false,

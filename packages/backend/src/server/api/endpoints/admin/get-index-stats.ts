@@ -3,7 +3,12 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown(); // TODO
+const res = z.array(
+	z.object({
+		tablename: z.string(),
+		indexname: z.string(),
+	}),
+);
 export const meta = {
 	requireCredential: true,
 	requireAdmin: true,
@@ -11,7 +16,7 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.unknown();
+export const paramDef = z.object({});
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

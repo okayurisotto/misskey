@@ -19,7 +19,7 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 
 import * as Acct from '@/misc/acct.js';
 
-const res = z.unknown();
+const res = z.record(z.string(), z.unknown());
 export const meta = {
 	tags: ['users'],
 	secure: true,

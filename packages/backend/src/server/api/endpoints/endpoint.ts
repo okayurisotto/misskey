@@ -4,7 +4,16 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import endpoints from '../endpoints.js';
 import { generateOpenApiSpec } from 'zod2spec';
 
-const res = z.unknown();
+const res = z
+	.object({
+		params: z.array(
+			z.object({
+				name: z.string(),
+				type: z.string(),
+			}),
+		),
+	})
+	.nullable();
 export const meta = {
 	requireCredential: false,
 	tags: ['meta'],
@@ -27,7 +36,9 @@ export default class extends Endpoint<
 			const ep = endpoints.find((x) => x.name === ps.endpoint);
 			if (ep == null) return null satisfies z.infer<typeof res>;
 			return {
-				params: Object.entries(generateOpenApiSpec([])(ep.params).properties ?? {}).map(([k, v]) => ({
+				params: Object.entries(
+					generateOpenApiSpec([])(ep.params).properties ?? {},
+				).map(([k, v]) => ({
 					name: k,
 					type: v.type
 						? v.type.charAt(0).toUpperCase() + v.type.slice(1)

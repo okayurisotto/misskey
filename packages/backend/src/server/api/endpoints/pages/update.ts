@@ -48,7 +48,7 @@ export const paramDef = z.object({
 	variables: z.array(z.record(z.string(), z.any())),
 	script: z.string(),
 	eyeCatchingImageId: MisskeyIdSchema.nullable().optional(),
-	font: z.enum(['serif', 'sans-serif']).default('sans-serif').optional(),
+	font: z.enum(['serif', 'sans-serif']).default('sans-serif'),
 	alignCenter: z.boolean().optional(),
 	hideTitleWhenPinned: z.boolean().optional(),
 });

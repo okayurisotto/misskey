@@ -6,7 +6,7 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.object({});
 export const meta = {
 	requireCredential: true,
 	secure: true,

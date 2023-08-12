@@ -46,7 +46,7 @@ export class AccountMoveService {
 	 * After delivering Move activity, its local followers unfollow the old account and then follow the new one.
 	 */
 	@bindThis
-	public async moveFromLocal(src: LocalUser, dst: LocalUser | RemoteUser): Promise<unknown> {
+	public async moveFromLocal(src: LocalUser, dst: LocalUser | RemoteUser) {
 		const srcUri = this.userEntityService.getUserUri(src);
 		const dstUri = this.userEntityService.getUserUri(dst);
 

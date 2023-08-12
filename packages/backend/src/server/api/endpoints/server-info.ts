@@ -5,7 +5,20 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MetaService } from '@/core/MetaService.js';
 
-const res = z.unknown();
+const res = z.object({
+	machine: z.string(),
+	cpu: z.object({
+		model: z.string(),
+		cores: z.number().int().nonnegative(),
+	}),
+	mem: z.object({
+		total: z.number().int().nonnegative(),
+	}),
+	fs: z.object({
+		total: z.number().int().nonnegative(),
+		used: z.number().int().nonnegative(),
+	}),
+});
 export const meta = {
 	requireCredential: false,
 	allowGet: true,

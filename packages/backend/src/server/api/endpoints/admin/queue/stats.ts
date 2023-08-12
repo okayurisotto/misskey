@@ -25,7 +25,7 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.unknown();
+export const paramDef = z.object({});
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

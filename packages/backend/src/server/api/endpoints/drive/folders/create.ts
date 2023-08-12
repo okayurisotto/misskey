@@ -30,7 +30,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	name: z.string().max(200).default('Untitled').optional(),
+	name: z.string().max(200).default('Untitled'),
 	parentId: MisskeyIdSchema.nullable().optional(),
 });
 

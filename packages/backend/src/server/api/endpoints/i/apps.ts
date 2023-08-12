@@ -3,8 +3,17 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { MisskeyIdSchema } from '@/models/zod/misc.js';
 
-const res = z.unknown();
+const res = z.array(
+	z.object({
+		id: MisskeyIdSchema,
+		name: z.string().optional(),
+		createdAt: z.unknown(),
+		lastUsedAt: z.unknown(),
+		permission: z.array(z.string()),
+	}),
+);
 export const meta = {
 	requireCredential: true,
 	secure: true,

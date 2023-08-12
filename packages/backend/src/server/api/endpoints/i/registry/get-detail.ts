@@ -4,7 +4,10 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
-const res = z.unknown();
+const res = z.object({
+	updatedAt: z.unknown(),
+	value: z.unknown(),
+});
 export const meta = {
 	requireCredential: true,
 	secure: true,
@@ -20,10 +23,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	key: z.string(),
-	scope: z
-		.array(z.string().regex(/^[a-zA-Z0-9_]+$/))
-		.default([])
-		.optional(),
+	scope: z.array(z.string().regex(/^[a-zA-Z0-9_]+$/)).default([]),
 });
 
 @Injectable()

@@ -10,7 +10,10 @@ import { PrismaService } from '@/core/PrismaService.js';
 
 const randomBytes = promisify(crypto.randomBytes);
 
-const res = z.unknown();
+const res = z.object({
+	challengeId: z.string(),
+	challenge: z.string(),
+});
 export const meta = {
 	requireCredential: true,
 	secure: true,

@@ -4,7 +4,9 @@ import { USER_ONLINE_THRESHOLD } from '@/const.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.object({
+	count: z.number().int().nonnegative(),
+});
 export const meta = {
 	tags: ['meta'],
 	requireCredential: false,

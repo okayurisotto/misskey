@@ -6,7 +6,7 @@ import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
-const res = z.unknown();
+const res = z.array(z.record(z.string(), z.unknown()));
 export const meta = {
 	requireCredential: true,
 	secure: true,

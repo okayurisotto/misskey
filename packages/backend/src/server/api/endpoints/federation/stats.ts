@@ -5,7 +5,12 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { InstanceEntityService } from '@/core/entities/InstanceEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.object({
+	topSubInstances: z.array(z.unknown()),
+	otherFollowersCount: z.number().int().nonnegative(),
+	topPubInstances: z.array(z.unknown()),
+	otherFollowingCount: z.number().int().nonnegative(),
+});
 export const meta = {
 	tags: ['federation'],
 	requireCredential: false,

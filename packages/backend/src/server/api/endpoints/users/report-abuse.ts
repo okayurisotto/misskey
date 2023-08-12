@@ -12,7 +12,6 @@ import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-// const res = z.unknown();
 export const meta = {
 	tags: ['users'],
 	requireCredential: true,

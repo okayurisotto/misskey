@@ -6,7 +6,7 @@ import { IdService } from '@/core/IdService.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown(); // TODO
+const res = z.record(z.string(), z.unknown());
 export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,

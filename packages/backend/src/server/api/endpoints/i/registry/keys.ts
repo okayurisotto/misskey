@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.array(z.string());
 export const meta = {
 	requireCredential: true,
 	secure: true,
@@ -11,10 +11,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	scope: z
-		.array(z.string().regex(/^[a-zA-Z0-9_]+$/))
-		.default([])
-		.optional(),
+	scope: z.array(z.string().regex(/^[a-zA-Z0-9_]+$/)).default([]),
 });
 
 @Injectable()

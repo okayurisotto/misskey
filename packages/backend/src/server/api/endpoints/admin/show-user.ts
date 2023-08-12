@@ -6,7 +6,7 @@ import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.record(z.string(), z.unknown());
 export const meta = {
 	tags: ['admin'],
 	requireCredential: true,

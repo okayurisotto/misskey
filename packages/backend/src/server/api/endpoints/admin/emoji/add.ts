@@ -7,8 +7,9 @@ import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
+import { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
 
-const res = z.unknown(); // TODO
+const res = EmojiDetailedSchema; // TODO
 export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
@@ -74,9 +75,9 @@ export default class extends Endpoint<
 				emojiId: emoji.id,
 			});
 
-			return this.emojiEntityService.packDetailed(emoji) satisfies z.infer<
-				typeof res
-			>;
+			return (await this.emojiEntityService.packDetailed(
+				emoji,
+			)) satisfies z.infer<typeof res>;
 		});
 	}
 }

@@ -4,7 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown(); // TODO
+const res = z.array(z.unknown()); // TODO
 export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,
@@ -12,7 +12,7 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.unknown();
+export const paramDef = z.object({});
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

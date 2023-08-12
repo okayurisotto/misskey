@@ -6,7 +6,6 @@ import { ApiError } from '@/server/api/error.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-// const res = z.unknown();
 export const meta = {
 	requireCredential: true,
 	errors: {

@@ -13,10 +13,7 @@ export const meta = {
 export const paramDef = z.object({
 	key: z.string().min(1),
 	value: z.unknown(),
-	scope: z
-		.array(z.string().regex(/^[a-zA-Z0-9_]+$/))
-		.default([])
-		.optional(),
+	scope: z.array(z.string().regex(/^[a-zA-Z0-9_]+$/)).default([]),
 });
 
 @Injectable()

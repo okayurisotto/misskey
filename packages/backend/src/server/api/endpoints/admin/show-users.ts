@@ -40,12 +40,8 @@ export const paramDef = z.object({
 			'adminOrModerator',
 			'suspended',
 		])
-		.default('all')
-		.optional(),
-	origin: z
-		.enum(['combined', 'local', 'remote'])
-		.default('combined')
-		.optional(),
+		.default('all'),
+	origin: z.enum(['combined', 'local', 'remote']).default('combined'),
 	username: z.string().nullable().default(null),
 	hostname: z.string().nullable().default(null),
 });

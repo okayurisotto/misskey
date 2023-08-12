@@ -5,7 +5,7 @@ import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 
-const res = z.unknown();
+const res = z.record(z.string(), z.unknown());
 export const meta = {
 	tags: ['webhooks'],
 	requireCredential: true,

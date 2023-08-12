@@ -6,7 +6,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.record(z.string(), z.unknown());
 export const meta = {
 	tags: ['flash'],
 	requireCredential: true,

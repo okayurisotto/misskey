@@ -3,7 +3,12 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.array(
+	z.object({
+		createdAt: z.string().datetime(),
+		users: z.number().int().nonnegative(),
+	}),
+);
 export const meta = {
 	tags: ['users'],
 	requireCredential: false,

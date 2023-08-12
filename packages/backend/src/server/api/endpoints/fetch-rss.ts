@@ -8,7 +8,7 @@ import { HttpRequestService } from '@/core/HttpRequestService.js';
 
 const rssParser = new Parser();
 
-const res = z.unknown();
+const res = z.record(z.string(), z.unknown());
 export const meta = {
 	tags: ['meta'],
 	requireCredential: false,
@@ -45,7 +45,7 @@ export default class extends Endpoint<
 
 			const text = await res_.text();
 
-			return rssParser.parseString(text) satisfies z.infer<typeof res>;
+			return (await rssParser.parseString(text)) satisfies z.infer<typeof res>;
 		});
 	}
 }

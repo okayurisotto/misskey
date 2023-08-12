@@ -8,7 +8,7 @@ import { RoleService } from '@/core/RoleService.js';
 import { ApiError } from '@/server/api/error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.record(z.string(), z.unknown());
 export const meta = {
 	tags: ['webhooks'],
 	requireCredential: true,

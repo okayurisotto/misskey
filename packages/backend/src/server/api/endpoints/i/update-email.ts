@@ -12,7 +12,7 @@ import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 
-const res = z.unknown();
+const res = z.record(z.string(), z.unknown());
 export const meta = {
 	requireCredential: true,
 	secure: true,

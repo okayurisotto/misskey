@@ -4,7 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
-const res = z.unknown();
+const res = z.array(z.unknown());
 export const meta = {
 	requireCredential: true,
 	secure: true,
