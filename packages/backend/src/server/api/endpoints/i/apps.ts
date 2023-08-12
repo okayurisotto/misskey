@@ -53,6 +53,7 @@ export default class extends Endpoint<
 			const tokens = await this.prismaService.client.access_token.findMany({
 				where: { userId: me.id },
 				orderBy,
+				include: { app: true },
 			});
 
 			return (await Promise.all(

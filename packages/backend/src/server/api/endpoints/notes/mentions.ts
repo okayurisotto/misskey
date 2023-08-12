@@ -20,7 +20,7 @@ export const paramDef = z.object({
 	limit: z.number().int().min(1).max(100).default(10),
 	sinceId: MisskeyIdSchema.optional(),
 	untilId: MisskeyIdSchema.optional(),
-	visibility: z.string().optional(),
+	visibility: z.enum(['public', 'home', 'followers', 'specified']).optional(),
 });
 
 @Injectable()
@@ -54,7 +54,9 @@ export default class extends Endpoint<
 						},
 						this.prismaQueryService.getVisibilityWhereForNote(me.id),
 						await this.prismaQueryService.getMutingWhereForNote(me.id),
-						await this.prismaQueryService.getNoteThreadMutingWhereForNote(me.id),
+						await this.prismaQueryService.getNoteThreadMutingWhereForNote(
+							me.id,
+						),
 						this.prismaQueryService.getBlockedWhereForNote(me.id),
 						ps.visibility ? { visibility: ps.visibility } : {},
 						ps.following
