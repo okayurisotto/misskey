@@ -9,7 +9,6 @@
 		"lib": ["esnext"],
 		"module": "ESNext",
 		"noEmit": true,
-		"noImplicitOverride": false, // TODO
 		"noLib": false,
 		"noPropertyAccessFromIndexSignature": false, // TODO
 		"noUncheckedIndexedAccess": false, // TODO

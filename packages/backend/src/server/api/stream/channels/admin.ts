@@ -4,8 +4,8 @@ import Channel from '../channel.js';
 
 class AdminChannel extends Channel {
 	public readonly chName = 'admin';
-	public static shouldShare = true;
-	public static requireCredential = true;
+	public static override shouldShare = true;
+	public static override requireCredential = true;
 
 	@bindThis
 	public async init(params: any) {

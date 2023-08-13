@@ -7,8 +7,8 @@ const ev = new Xev();
 
 class ServerStatsChannel extends Channel {
 	public readonly chName = 'serverStats';
-	public static shouldShare = true;
-	public static requireCredential = false;
+	public static override shouldShare = true;
+	public static override requireCredential = false;
 
 	constructor(id: string, connection: Channel['connection']) {
 		super(id, connection);
@@ -27,7 +27,7 @@ class ServerStatsChannel extends Channel {
 	}
 
 	@bindThis
-	public onMessage(type: string, body: any) {
+	public override onMessage(type: string, body: any) {
 		switch (type) {
 			case 'requestLog':
 				ev.once(`serverStatsLog:${body.id}`, statsLog => {
@@ -42,7 +42,7 @@ class ServerStatsChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose() {
+	public override dispose() {
 		ev.removeListener('serverStats', this.onStats);
 	}
 }

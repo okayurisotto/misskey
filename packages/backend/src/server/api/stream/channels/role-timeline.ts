@@ -8,8 +8,8 @@ import { StreamMessages } from '../types.js';
 
 class RoleTimelineChannel extends Channel {
 	public readonly chName = 'roleTimeline';
-	public static shouldShare = false;
-	public static requireCredential = false;
+	public static override shouldShare = false;
+	public static override requireCredential = false;
 	private roleId: string;
 
 	constructor(
@@ -54,7 +54,7 @@ class RoleTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose() {
+	public override dispose() {
 		// Unsubscribe events
 		this.subscriber.off(`roleTimelineStream:${this.roleId}`, this.onEvent);
 	}

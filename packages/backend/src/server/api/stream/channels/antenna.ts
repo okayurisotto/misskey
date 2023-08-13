@@ -7,8 +7,8 @@ import type { StreamMessages } from '../types.js';
 
 class AntennaChannel extends Channel {
 	public readonly chName = 'antenna';
-	public static shouldShare = false;
-	public static requireCredential = false;
+	public static override shouldShare = false;
+	public static override requireCredential = false;
 	private antennaId: string;
 
 	constructor(
@@ -50,7 +50,7 @@ class AntennaChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose() {
+	public override dispose() {
 		// Unsubscribe events
 		this.subscriber.off(`antennaStream:${this.antennaId}`, this.onEvent);
 	}

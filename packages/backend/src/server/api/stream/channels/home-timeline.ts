@@ -10,8 +10,8 @@ import { z } from 'zod';
 
 class HomeTimelineChannel extends Channel {
 	public readonly chName = 'homeTimeline';
-	public static shouldShare = true;
-	public static requireCredential = true;
+	public static override shouldShare = true;
+	public static override requireCredential = true;
 	private withReplies: boolean;
 
 	constructor(
@@ -93,7 +93,7 @@ class HomeTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose() {
+	public override dispose() {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

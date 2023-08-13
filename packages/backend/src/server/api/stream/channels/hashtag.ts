@@ -9,8 +9,8 @@ import Channel from '../channel.js';
 
 class HashtagChannel extends Channel {
 	public readonly chName = 'hashtag';
-	public static shouldShare = false;
-	public static requireCredential = false;
+	public static override shouldShare = false;
+	public static override requireCredential = false;
 	private q: string[][];
 
 	constructor(
@@ -59,7 +59,7 @@ class HashtagChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose() {
+	public override dispose() {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

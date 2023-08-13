@@ -11,8 +11,8 @@ import { z } from 'zod';
 
 class LocalTimelineChannel extends Channel {
 	public readonly chName = 'localTimeline';
-	public static shouldShare = true;
-	public static requireCredential = false;
+	public static override shouldShare = true;
+	public static override requireCredential = false;
 	private withReplies: boolean;
 
 	constructor(
@@ -84,7 +84,7 @@ class LocalTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose() {
+	public override dispose() {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

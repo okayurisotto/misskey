@@ -4,8 +4,8 @@ import Channel from '../channel.js';
 
 class DriveChannel extends Channel {
 	public readonly chName = 'drive';
-	public static shouldShare = true;
-	public static requireCredential = true;
+	public static override shouldShare = true;
+	public static override requireCredential = true;
 
 	@bindThis
 	public async init(params: any) {

@@ -10,8 +10,8 @@ import { PrismaService } from '@/core/PrismaService.js';
 
 class UserListChannel extends Channel {
 	public readonly chName = 'userList';
-	public static shouldShare = false;
-	public static requireCredential = false;
+	public static override shouldShare = false;
+	public static override requireCredential = false;
 	private listId: string;
 	public listUsers: User['id'][] = [];
 	private listUsersClock: NodeJS.Timer;
@@ -100,7 +100,7 @@ class UserListChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose() {
+	public override dispose() {
 		// Unsubscribe events
 		this.subscriber.off(`userListStream:${this.listId}`, this.send);
 		this.subscriber.off('notesStream', this.onNote);

@@ -7,8 +7,8 @@ import { z } from 'zod';
 
 class MainChannel extends Channel {
 	public readonly chName = 'main';
-	public static shouldShare = true;
-	public static requireCredential = true;
+	public static override shouldShare = true;
+	public static override requireCredential = true;
 
 	constructor(
 		private noteEntityService: NoteEntityService,

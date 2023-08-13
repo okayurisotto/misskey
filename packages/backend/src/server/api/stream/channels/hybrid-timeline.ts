@@ -12,8 +12,8 @@ import { z } from 'zod';
 
 class HybridTimelineChannel extends Channel {
 	public readonly chName = 'hybridTimeline';
-	public static shouldShare = true;
-	public static requireCredential = true;
+	public static override shouldShare = true;
+	public static override requireCredential = true;
 	private withReplies: boolean;
 
 	constructor(
@@ -105,7 +105,7 @@ class HybridTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose(): void {
+	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

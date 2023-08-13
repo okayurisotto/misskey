@@ -1,7 +1,7 @@
 type E = { message: string, code: string, id: string, kind?: 'client' | 'server' | 'permission', httpStatusCode?: number };
 
 export class ApiError extends Error {
-	public message: string;
+	public override message: string;
 	public code: string;
 	public id: string;
 	public kind: string;

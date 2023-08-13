@@ -12,8 +12,8 @@ import Channel from '../channel.js';
 
 class GlobalTimelineChannel extends Channel {
 	public readonly chName = 'globalTimeline';
-	public static shouldShare = true;
-	public static requireCredential = false;
+	public static override shouldShare = true;
+	public static override requireCredential = false;
 	private withReplies: boolean;
 
 	constructor(
@@ -87,7 +87,7 @@ class GlobalTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose() {
+	public override dispose() {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

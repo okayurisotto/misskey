@@ -8,8 +8,8 @@ import type { z } from 'zod';
 
 class ChannelChannel extends Channel {
 	public readonly chName = 'channel';
-	public static shouldShare = false;
-	public static requireCredential = false;
+	public static override shouldShare = false;
+	public static override requireCredential = false;
 	private channelId: string;
 
 	constructor(
@@ -60,7 +60,7 @@ class ChannelChannel extends Channel {
 	}
 
 	@bindThis
-	public dispose() {
+	public override dispose() {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}
