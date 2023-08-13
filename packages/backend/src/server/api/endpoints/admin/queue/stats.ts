@@ -54,10 +54,10 @@ export default class extends Endpoint<
 				await this.objectStorageQueue.getJobCounts();
 
 			return {
-				deliver: deliverJobCounts,
-				inbox: inboxJobCounts,
-				db: dbJobCounts,
-				objectStorage: objectStorageJobCounts,
+				deliver: QueueCountSchema.parse(deliverJobCounts),
+				inbox: QueueCountSchema.parse(inboxJobCounts),
+				db: QueueCountSchema.parse(dbJobCounts),
+				objectStorage: QueueCountSchema.parse(objectStorageJobCounts),
 			} satisfies z.infer<typeof res>;
 		});
 	}
