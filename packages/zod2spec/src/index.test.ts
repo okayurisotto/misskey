@@ -11,6 +11,9 @@ const entries = [
   ["any", z.any(), {}],
   // unknown
   ["unknown", z.unknown(), {}],
+  ["literal > string", z.literal("literal"), { enum: ["literal"] }],
+  ["literal > number", z.literal(1984), { enum: [1984] }],
+  ["literal > true", z.literal(true), { enum: [true] }],
   // null
   ["null", z.null(), { type: "null" }],
   // boolean

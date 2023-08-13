@@ -5,7 +5,10 @@ import { ZodAny, convertZodAny } from "./ZodAny.js";
 import { ZodArray, convertZodArray } from "./ZodArray.js";
 import { ZodBoolean, convertZodBoolean } from "./ZodBoolean.js";
 import { ZodDefault, convertZodDefault } from "./ZodDefault.js";
+import { ZodEffects, convertZodEffects } from "./ZodEffects.js";
 import { ZodEnum, convertZodEnum } from "./ZodEnum.js";
+import { ZodLazy, convertZodLazy } from "./ZodLazy.js";
+import { ZodLiteral, convertZodLiteral } from "./ZodLiteral.js";
 import { ZodNull, convertZodNull } from "./ZodNull.js";
 import { ZodNullable, convertZodNullable } from "./ZodNullable.js";
 import { ZodNumber, convertZodNumber } from "./ZodNumber.js";
@@ -15,8 +18,6 @@ import { ZodRecord, convertZodRecord } from "./ZodRecord.js";
 import { ZodString, convertZodString } from "./ZodString.js";
 import { ZodUnion, convertZodUnion } from "./ZodUnion.js";
 import { ZodUnknown, convertZodUnknown } from "./ZodUnknown.js";
-import { ZodLazy, convertZodLazy } from "./ZodLazy.js";
-import { ZodEffects, convertZodEffects } from "./ZodEffects.js";
 import { OpenApiZod } from "./type.js";
 
 export const defineOpenApiSpec = <T extends OpenApiZod>(
@@ -35,6 +36,7 @@ const ZodType = z.discriminatedUnion("typeName", [
   ZodEffects,
   ZodEnum,
   ZodLazy,
+  ZodLiteral,
   ZodNull,
   ZodNullable,
   ZodNumber,
@@ -83,6 +85,8 @@ export const generateOpenApiSpec = (
         return convertZodEnum(result.data, recursive);
       case "ZodLazy":
         return convertZodLazy(result.data, recursive);
+      case "ZodLiteral":
+        return convertZodLiteral(result.data, recursive);
       case "ZodNull":
         return convertZodNull(result.data, recursive);
       case "ZodNullable":
