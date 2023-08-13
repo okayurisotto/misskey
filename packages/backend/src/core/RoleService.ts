@@ -1,48 +1,30 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import type { Role, RoleAssignment } from '@/models/index.js';
+import { z } from 'zod';
+import type { Role } from '@/models/index.js';
 import { MemoryKVCache, MemorySingleCache } from '@/misc/cache.js';
 import type { User } from '@/models/entities/User.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { CacheService } from '@/core/CacheService.js';
-import type { RoleCondFormulaValue } from '@/models/entities/Role.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
-import type { OnApplicationShutdown } from '@nestjs/common';
-import { z } from 'zod';
-import type { role, role_assignment, user } from '@prisma/client';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RoleCondForumaValueSchema } from '@/models/zod/RoleCondFormula.js';
+import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
+import type { OnApplicationShutdown } from '@nestjs/common';
+import type { role, role_assignment, user } from '@prisma/client';
 
-export type RolePolicies = {
-	gtlAvailable: boolean;
-	ltlAvailable: boolean;
-	canPublicNote: boolean;
-	canInvite: boolean;
-	inviteLimit: number;
-	inviteLimitCycle: number;
-	inviteExpirationTime: number;
-	canManageCustomEmojis: boolean;
-	canSearchNotes: boolean;
-	canHideAds: boolean;
-	driveCapacityMb: number;
-	alwaysMarkNsfw: boolean;
-	pinLimit: number;
-	antennaLimit: number;
-	wordMuteLimit: number;
-	webhookLimit: number;
-	clipLimit: number;
-	noteEachClipsLimit: number;
-	userListLimit: number;
-	userEachUserListsLimit: number;
-	rateLimitFactor: number;
+type ConvertRolePolicies<T extends Record<string, { value: unknown }>> = {
+	[K in keyof T]: T[K]["value"];
 };
+export type RolePolicies = ConvertRolePolicies<Required<z.infer<typeof RolePoliciesSchema>>>;
 
-export const DEFAULT_POLICIES: RolePolicies = {
+export const DEFAULT_POLICIES = {
 	gtlAvailable: true,
 	ltlAvailable: true,
 	canPublicNote: true,
@@ -64,7 +46,7 @@ export const DEFAULT_POLICIES: RolePolicies = {
 	userListLimit: 10,
 	userEachUserListsLimit: 50,
 	rateLimitFactor: 1,
-};
+} as const satisfies RolePolicies;
 
 @Injectable()
 export class RoleService implements OnApplicationShutdown {
@@ -162,7 +144,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private evalCond(user: user, value: RoleCondFormulaValue): boolean {
+	private evalCond(user: user, value: z.infer<typeof RoleCondForumaValueSchema>): boolean {
 		try {
 			switch (value.type) {
 				case 'and': {
@@ -231,7 +213,7 @@ export class RoleService implements OnApplicationShutdown {
 		const assigns = await this.getUserAssigns(userId);
 		const assignedRoles = roles.filter(r => assigns.map(x => x.roleId).includes(r.id));
 		const user = roles.some(r => r.target === 'conditional') ? await this.cacheService.findUserById(userId) : null;
-		const matchedCondRoles = roles.filter(r => r.target === 'conditional' && this.evalCond(user!, r.condFormula));
+		const matchedCondRoles = roles.filter(r => r.target === 'conditional' && this.evalCond(user!, RoleCondForumaValueSchema.parse(r.condFormula)));
 		return [...assignedRoles, ...matchedCondRoles];
 	}
 
@@ -253,7 +235,7 @@ export class RoleService implements OnApplicationShutdown {
 		const badgeCondRoles = roles.filter(r => r.asBadge && (r.target === 'conditional'));
 		if (badgeCondRoles.length > 0) {
 			const user = roles.some(r => r.target === 'conditional') ? await this.cacheService.findUserById(userId) : null;
-			const matchedBadgeCondRoles = badgeCondRoles.filter(r => this.evalCond(user!, r.condFormula));
+			const matchedBadgeCondRoles = badgeCondRoles.filter(r => this.evalCond(user!, RoleCondForumaValueSchema.parse(r.condFormula)));
 			return [...assignedBadgeRoles, ...matchedBadgeCondRoles];
 		} else {
 			return assignedBadgeRoles;

@@ -5,8 +5,9 @@ import { ApiError } from '@/server/api/error.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RoleSchema } from '@/models/zod/RoleSchema.js';
 
-const res = z.record(z.string(), z.unknown());
+const res = RoleSchema;
 export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,

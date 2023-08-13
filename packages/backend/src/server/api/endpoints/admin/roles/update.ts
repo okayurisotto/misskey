@@ -5,6 +5,8 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApiError } from '@/server/api/error.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RoleCondForumaValueSchema } from '@/models/zod/RoleCondFormula.js';
+import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -26,7 +28,7 @@ export const paramDef = z.object({
 	color: z.string().nullable(),
 	iconUrl: z.string().nullable(),
 	target: z.enum(['manual', 'conditional']),
-	condFormula: z.unknown(),
+	condFormula: RoleCondForumaValueSchema,
 	isPublic: z.boolean(),
 	isModerator: z.boolean(),
 	isAdministrator: z.boolean(),
@@ -34,7 +36,7 @@ export const paramDef = z.object({
 	asBadge: z.boolean(),
 	canEditMembersByModerator: z.boolean(),
 	displayOrder: z.number(),
-	policies: z.unknown(),
+	policies: RolePoliciesSchema,
 });
 
 @Injectable()

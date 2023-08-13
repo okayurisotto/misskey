@@ -3,8 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RoleSchema } from '@/models/zod/RoleSchema.js';
 
-const res = z.array(z.unknown()); // TODO
+const res = z.array(RoleSchema);
 export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,

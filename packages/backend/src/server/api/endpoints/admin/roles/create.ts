@@ -5,8 +5,11 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { IdService } from '@/core/IdService.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RoleSchema } from '@/models/zod/RoleSchema.js';
+import { RoleCondForumaValueSchema } from '@/models/zod/RoleCondFormula.js';
+import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 
-const res = z.record(z.string(), z.unknown());
+const res = RoleSchema;
 export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,
@@ -20,7 +23,7 @@ export const paramDef = z.object({
 	color: z.string().nullable(),
 	iconUrl: z.string().nullable(),
 	target: z.enum(['manual', 'conditional']),
-	condFormula: z.unknown(),
+	condFormula: RoleCondForumaValueSchema,
 	isPublic: z.boolean(),
 	isModerator: z.boolean(),
 	isAdministrator: z.boolean(),
@@ -28,7 +31,7 @@ export const paramDef = z.object({
 	asBadge: z.boolean(),
 	canEditMembersByModerator: z.boolean(),
 	displayOrder: z.number(),
-	policies: z.unknown(),
+	policies: RolePoliciesSchema,
 });
 
 @Injectable()

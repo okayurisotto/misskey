@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { MetaService } from '@/core/MetaService.js';
+import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -11,7 +12,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	policies: z.unknown(),
+	policies: RolePoliciesSchema,
 });
 
 @Injectable()

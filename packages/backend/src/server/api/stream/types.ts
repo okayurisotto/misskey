@@ -1,17 +1,13 @@
 import type { Channel } from '@/models/entities/Channel.js';
 import type { User } from '@/models/entities/User.js';
-import type { UserProfile } from '@/models/entities/UserProfile.js';
 import type { Note } from '@/models/entities/Note.js';
 import type { Antenna } from '@/models/entities/Antenna.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import type { DriveFolder } from '@/models/entities/DriveFolder.js';
 import type { UserList } from '@/models/entities/UserList.js';
 import type { AbuseUserReport } from '@/models/entities/AbuseUserReport.js';
-import type { Signin } from '@/models/entities/Signin.js';
 import type { Page } from '@/models/entities/Page.js';
-import type { Webhook } from '@/models/entities/Webhook.js';
-import type { Meta } from '@/models/entities/Meta.js';
-import type { Role, RoleAssignment } from '@/models/index.js';
+import type { Role } from '@/models/index.js';
 import type { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
@@ -19,6 +15,7 @@ import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSche
 import type { UserSchema } from '@/models/zod/UserSchema.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
+import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 import type { z } from 'zod';
 import type { EventEmitter } from 'events';
 import type Emitter from 'strict-event-emitter-types';
@@ -33,7 +30,7 @@ export interface InternalStreamTypes {
 	unfollow: { followerId: User['id']; followeeId: User['id']; };
 	blockingCreated: { blockerId: User['id']; blockeeId: User['id']; };
 	blockingDeleted: { blockerId: User['id']; blockeeId: User['id']; };
-	policiesUpdated: Role['policies'];
+	policiesUpdated: z.infer<typeof RolePoliciesSchema>;
 	roleCreated: role;
 	roleDeleted: role;
 	roleUpdated: role;

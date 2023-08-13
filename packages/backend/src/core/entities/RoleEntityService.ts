@@ -5,6 +5,9 @@ import type { Role } from '@/models/entities/Role.js';
 import { bindThis } from '@/decorators.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RoleSchema } from '@/models/zod/RoleSchema.js';
+import { RoleCondForumaValueSchema } from '@/models/zod/RoleCondFormula.js';
+import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 import type { role } from '@prisma/client';
 
 @Injectable()
@@ -15,7 +18,7 @@ export class RoleEntityService {
 	public async pack(
 		src: Role['id'] | role,
 		me?: { id: User['id'] } | null | undefined,
-	) {
+	): Promise<z.infer<typeof RoleSchema>> {
 		const role =
 			typeof src === 'object'
 				? src
@@ -28,16 +31,10 @@ export class RoleEntityService {
 					{ expiresAt: null },
 					{ expiresAt: { gt: new Date() } }
 				],
-			}
+			},
 		});
 
-		const policies = {
-			...z.record(z.string(), z.object({
-				useDefault: z.boolean(),
-				priority: z.number(),
-				value: z.any(),
-			})).parse(role.policies),
-		};
+		const policies = RolePoliciesSchema.parse(role.policies);
 		for (const [k, v] of Object.entries(DEFAULT_POLICIES)) {
 			if (policies[k] == null)
 				policies[k] = {
@@ -56,7 +53,7 @@ export class RoleEntityService {
 			color: role.color,
 			iconUrl: role.iconUrl,
 			target: role.target,
-			condFormula: role.condFormula,
+			condFormula: RoleCondForumaValueSchema.parse(role.condFormula),
 			isPublic: role.isPublic,
 			isAdministrator: role.isAdministrator,
 			isModerator: role.isModerator,
