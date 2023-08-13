@@ -335,22 +335,24 @@ export class ApiCallService implements OnApplicationShutdown {
 		}
 
 		// Cast non JSON input
-		const params = generateOpenApiSpec([])(ep.params);
-		if ((ep.meta.requireFile || request.method === 'GET') && params.properties) {
-			for (const k of Object.keys(params.properties)) {
-				const param = params.properties![k];
-				if (['boolean', 'number', 'integer'].includes(param.type ?? '') && typeof data[k] === 'string') {
-					try {
-						data[k] = JSON.parse(data[k]);
-					} catch (e) {
-						throw new ApiError({
-							message: 'Invalid param.',
-							code: 'INVALID_PARAM',
-							id: '0b5f1631-7c1a-41a6-b399-cce335f34d85',
-						}, {
-							param: k,
-							reason: `cannot cast to ${param.type}`,
-						});
+		if ((ep.meta.requireFile || request.method === 'GET')){
+			const params = generateOpenApiSpec([])(ep.params);
+			if (params.properties) {
+				for (const k of Object.keys(params.properties)) {
+					const param = params.properties![k];
+					if (['boolean', 'number', 'integer'].includes(param.type ?? '') && typeof data[k] === 'string') {
+						try {
+							data[k] = JSON.parse(data[k]);
+						} catch (e) {
+							throw new ApiError({
+								message: 'Invalid param.',
+								code: 'INVALID_PARAM',
+								id: '0b5f1631-7c1a-41a6-b399-cce335f34d85',
+							}, {
+								param: k,
+								reason: `cannot cast to ${param.type}`,
+							});
+						}
 					}
 				}
 			}
