@@ -86,7 +86,7 @@ export class AccountMoveService {
 		await this.queueService.createDelayedUnfollowJob(followings.map(following => ({
 			from: { id: src.id },
 			to: { id: following.followeeId },
-		})), process.env.NODE_ENV === 'test' ? 10000 : 1000 * 60 * 60 * 24);
+		})), process.env['NODE_ENV'] === 'test' ? 10000 : 1000 * 60 * 60 * 24);
 
 		await this.postMoveProcess(src, dst);
 

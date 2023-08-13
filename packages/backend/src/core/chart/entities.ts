@@ -30,7 +30,7 @@ export const entities = [
 	PerUserDriveChart.hour, PerUserDriveChart.day,
 	ApRequestChart.hour, ApRequestChart.day,
 
-	...(process.env.NODE_ENV === 'test' ? [
+	...(process.env['NODE_ENV'] === 'test' ? [
 		TestChart.hour, TestChart.day,
 		TestGroupedChart.hour, TestGroupedChart.day,
 		TestUniqueChart.hour, TestUniqueChart.day,

@@ -95,18 +95,18 @@ export class FetchInstanceMetadataService {
 			} as Record<string, any>;
 
 			if (info) {
-				updates.softwareName = typeof info.software?.name === 'string' ? info.software.name.toLowerCase() : '?';
-				updates.softwareVersion = info.software?.version;
-				updates.openRegistrations = info.openRegistrations;
-				updates.maintainerName = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.name ?? null) : null : null;
-				updates.maintainerEmail = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.email ?? null) : null : null;
+				updates['softwareName'] = typeof info.software?.name === 'string' ? info.software.name.toLowerCase() : '?';
+				updates['softwareVersion'] = info.software?.version;
+				updates['openRegistrations'] = info.openRegistrations;
+				updates['maintainerName'] = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.name ?? null) : null : null;
+				updates['maintainerEmail'] = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.email ?? null) : null : null;
 			}
 
-			if (name) updates.name = name;
-			if (description) updates.description = description;
-			if (icon || favicon) updates.iconUrl = (icon && !icon.includes('data:image/png;base64')) ? icon : favicon;
-			if (favicon) updates.faviconUrl = favicon;
-			if (themeColor) updates.themeColor = themeColor;
+			if (name) updates['name'] = name;
+			if (description) updates['description'] = description;
+			if (icon || favicon) updates['iconUrl'] = (icon && !icon.includes('data:image/png;base64')) ? icon : favicon;
+			if (favicon) updates['faviconUrl'] = favicon;
+			if (themeColor) updates['themeColor'] = themeColor;
 
 			await this.federatedInstanceService.update(instance.id, updates);
 
@@ -132,11 +132,11 @@ export class FetchInstanceMetadataService {
 					}
 				}) as Record<string, unknown>;
 
-			if (wellknown.links == null || !Array.isArray(wellknown.links)) {
+			if (wellknown['links'] == null || !Array.isArray(wellknown['links'])) {
 				throw new Error('No wellknown links');
 			}
 
-			const links = wellknown.links as any[];
+			const links = wellknown['links'] as any[];
 
 			const lnik1_0 = links.find(link => link.rel === 'http://nodeinfo.diaspora.software/ns/schema/1.0');
 			const lnik2_0 = links.find(link => link.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.0');
@@ -215,9 +215,9 @@ export class FetchInstanceMetadataService {
 
 	@bindThis
 	private async fetchIconUrl(instance: instance, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
-		if (manifest && manifest.icons && manifest.icons.length > 0 && manifest.icons[0].src) {
+		if (manifest && manifest['icons'] && manifest['icons'].length > 0 && manifest['icons'][0].src) {
 			const url = 'https://' + instance.host;
-			return (new URL(manifest.icons[0].src, url)).href;
+			return (new URL(manifest['icons'][0].src, url)).href;
 		}
 
 		if (doc) {
@@ -244,7 +244,7 @@ export class FetchInstanceMetadataService {
 
 	@bindThis
 	private async getThemeColor(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
-		const themeColor = info?.metadata?.themeColor ?? doc?.querySelector('meta[name="theme-color"]')?.getAttribute('content') ?? manifest?.theme_color;
+		const themeColor = info?.metadata?.themeColor ?? doc?.querySelector('meta[name="theme-color"]')?.getAttribute('content') ?? manifest?.['theme_color'];
 
 		if (themeColor) {
 			const color = new tinycolor(themeColor);
@@ -273,7 +273,7 @@ export class FetchInstanceMetadataService {
 		}
 
 		if (manifest) {
-			return manifest.name ?? manifest.short_name;
+			return manifest['name'] ?? manifest['short_name'];
 		}
 
 		return null;
@@ -302,7 +302,7 @@ export class FetchInstanceMetadataService {
 		}
 
 		if (manifest) {
-			return manifest.name ?? manifest.short_name;
+			return manifest['name'] ?? manifest['short_name'];
 		}
 
 		return null;

@@ -113,7 +113,7 @@ export class ClientServerService {
 		// Authenticate
 		fastify.addHook('onRequest', async (request, reply) => {
 			if (request.url === bullBoardPath || request.url.startsWith(bullBoardPath + '/')) {
-				const token = request.cookies.token;
+				const token = request.cookies['token'];
 				if (token == null) {
 					reply.code(401);
 					throw new Error('login required');

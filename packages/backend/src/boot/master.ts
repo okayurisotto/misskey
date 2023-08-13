@@ -82,7 +82,7 @@ export async function masterMain() {
 }
 
 function showEnvironment(): void {
-	const env = process.env.NODE_ENV;
+	const env = process.env['NODE_ENV'];
 	const logger = bootLogger.createSubLogger('env');
 	logger.info(typeof env === 'undefined' ? 'NODE_ENV is not set' : `NODE_ENV: ${env}`);
 

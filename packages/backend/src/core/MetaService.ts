@@ -26,7 +26,7 @@ export class MetaService implements OnApplicationShutdown {
 	) {
 		//this.onMessage = this.onMessage.bind(this);
 
-		if (process.env.NODE_ENV !== 'test') {
+		if (process.env['NODE_ENV'] !== 'test') {
 			this.intervalId = setInterval(() => {
 				this.fetch(true).then(meta => {
 					// fetch内でもセットしてるけど仕様変更の可能性もあるため一応

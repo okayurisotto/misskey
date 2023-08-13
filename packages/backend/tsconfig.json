@@ -10,7 +10,6 @@
 		"module": "ESNext",
 		"noEmit": true,
 		"noLib": false,
-		"noPropertyAccessFromIndexSignature": false, // TODO
 		"noUncheckedIndexedAccess": false, // TODO
 		"noUnusedLocals": false, // TODO
 		"noUnusedParameters": false, // TODO

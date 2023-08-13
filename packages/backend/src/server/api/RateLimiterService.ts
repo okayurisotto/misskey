@@ -20,7 +20,7 @@ export class RateLimiterService {
 	) {
 		this.logger = this.loggerService.getLogger('limiter');
 
-		if (process.env.NODE_ENV !== 'production') {
+		if (process.env['NODE_ENV'] !== 'production') {
 			this.disabled = true;
 		}
 	}

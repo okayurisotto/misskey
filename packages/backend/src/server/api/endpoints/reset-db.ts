@@ -30,7 +30,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			if (process.env.NODE_ENV !== 'test') {
+			if (process.env['NODE_ENV'] !== 'test') {
 				throw new Error('NODE_ENV is not a test');
 			}
 

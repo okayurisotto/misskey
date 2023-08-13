@@ -279,7 +279,7 @@ export class TwoFactorAuthenticationService {
 						.map((key: any) => PEMString(key))
 						.concat([GSR2]);
 
-					if (getCertSubject(certificateChain[0]).CN !== 'attest.android.com') {
+					if (getCertSubject(certificateChain[0])['CN'] !== 'attest.android.com') {
 						throw new Error('invalid common name');
 					}
 

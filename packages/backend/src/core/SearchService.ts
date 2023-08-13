@@ -176,7 +176,7 @@ export class SearchService {
 			});
 			if (res.hits.length === 0) return [];
 			const notes = await this.prismaService.client.note.findMany({
-				where: { id: { in: res.hits.map(x => x.id) } },
+				where: { id: { in: res.hits.map(x => x['id']) } },
 			});
 			return notes.sort((a, b) => a.id > b.id ? -1 : 1);
 		} else {

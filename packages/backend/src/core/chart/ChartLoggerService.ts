@@ -9,6 +9,6 @@ export class ChartLoggerService {
 	constructor(
 		private loggerService: LoggerService,
 	) {
-		this.logger = this.loggerService.getLogger('chart', 'white', process.env.NODE_ENV !== 'test');
+		this.logger = this.loggerService.getLogger('chart', 'white', process.env['NODE_ENV'] !== 'test');
 	}
 }

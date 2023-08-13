@@ -33,7 +33,7 @@ export class NestLogger implements LoggerService {
    * Write a 'debug' level log.
    */
 	debug?(message: any, ...optionalParams: any[]) {
-		if (process.env.NODE_ENV === 'production') return;
+		if (process.env['NODE_ENV'] === 'production') return;
 		const ctx = optionalParams[0];
 		nestLogger.debug(ctx + ': ' + message);
 	}
@@ -42,7 +42,7 @@ export class NestLogger implements LoggerService {
    * Write a 'verbose' level log.
    */
 	verbose?(message: any, ...optionalParams: any[]) {
-		if (process.env.NODE_ENV === 'production') return;
+		if (process.env['NODE_ENV'] === 'production') return;
 		const ctx = optionalParams[0];
 		nestLogger.debug(ctx + ': ' + message);
 	}

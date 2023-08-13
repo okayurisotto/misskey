@@ -73,7 +73,7 @@ export default class Logger {
 	public error(x: string | Error, data?: Record<string, any> | null, important = false): void { // 実行を継続できない状況で使う
 		if (x instanceof Error) {
 			data = data ?? {};
-			data.e = x;
+			data['e'] = x;
 			this.log('error', x.toString(), data, important);
 		} else if (typeof x === 'object') {
 			this.log('error', `${(x as any).message ?? (x as any).name ?? x}`, data, important);
@@ -94,7 +94,7 @@ export default class Logger {
 
 	@bindThis
 	public debug(message: string, data?: Record<string, any> | null, important = false): void { // デバッグ用に使う(開発者に必要だが利用者に不要な情報)
-		if (process.env.NODE_ENV !== 'production' || envOption.verbose) {
+		if (process.env['NODE_ENV'] !== 'production' || envOption.verbose) {
 			this.log('debug', message, data, important);
 		}
 	}

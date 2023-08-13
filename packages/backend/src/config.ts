@@ -126,9 +126,9 @@ const dir = `${_dirname}/../../../.config`;
 /**
  * Path of configuration file
  */
-const path = process.env.MISSKEY_CONFIG_YML
-	? resolve(dir, process.env.MISSKEY_CONFIG_YML)
-	: process.env.NODE_ENV === 'test'
+const path = process.env['MISSKEY_CONFIG_YML']
+	? resolve(dir, process.env['MISSKEY_CONFIG_YML'])
+	: process.env['NODE_ENV'] === 'test'
 		? resolve(dir, 'test.yml')
 		: resolve(dir, 'default.yml');
 
@@ -146,7 +146,7 @@ export function loadConfig() {
 
 	config.url = url.origin;
 
-	config.port = config.port ?? parseInt(process.env.PORT ?? '', 10);
+	config.port = config.port ?? parseInt(process.env['PORT'] ?? '', 10);
 
 	mixin.version = meta.version;
 	mixin.host = url.host;

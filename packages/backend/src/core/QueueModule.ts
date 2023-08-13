@@ -101,7 +101,7 @@ export class QueueModule implements OnApplicationShutdown {
 	) {}
 
 	public async dispose(): Promise<void> {
-		if (process.env.NODE_ENV === 'test') {
+		if (process.env['NODE_ENV'] === 'test') {
 			// XXX:
 			// Shutting down the existing connections causes errors on Jest as
 			// Misskey has asynchronous postgres/redis connections that are not

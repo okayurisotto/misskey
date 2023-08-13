@@ -63,7 +63,7 @@ export class ChartManagementService implements OnApplicationShutdown {
 	@bindThis
 	public async dispose(): Promise<void> {
 		clearInterval(this.saveIntervalId);
-		if (process.env.NODE_ENV !== 'test') {
+		if (process.env['NODE_ENV'] !== 'test') {
 			await Promise.all(
 				this.charts.map(chart => chart.save()),
 			);

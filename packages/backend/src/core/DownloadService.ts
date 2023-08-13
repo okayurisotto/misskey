@@ -65,7 +65,7 @@ export class DownloadService {
 			},
 			enableUnixSockets: false,
 		}).on('response', (res: Got.Response) => {
-			if ((process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'test') && !this.config.proxy && res.ip) {
+			if ((process.env['NODE_ENV'] === 'production' || process.env['NODE_ENV'] === 'test') && !this.config.proxy && res.ip) {
 				if (this.isPrivateIp(res.ip)) {
 					this.logger.warn(`Blocked address: ${res.ip}`);
 					req.destroy();
@@ -85,8 +85,8 @@ export class DownloadService {
 			if (contentDisposition != null) {
 				try {
 					const parsed = parse(contentDisposition);
-					if (parsed.parameters.filename) {
-						filename = parsed.parameters.filename;
+					if (parsed.parameters['filename']) {
+						filename = parsed.parameters['filename'];
 					}
 				} catch (e) {
 					this.logger.warn(`Failed to parse content-disposition: ${contentDisposition}`, { stack: e });
