@@ -4,7 +4,6 @@ import { IdService } from '@/core/IdService.js';
 import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { muting, user } from '@prisma/client';
 
@@ -17,7 +16,7 @@ export class UserMutingService {
 	) {}
 
 	@bindThis
-	public async mute(user: T2P<User, user>, target: T2P<User, user>, expiresAt: Date | null = null): Promise<void> {
+	public async mute(user: user, target: user, expiresAt: Date | null = null): Promise<void> {
 		await this.prismaService.client.muting.create({
 			data: {
 				id: this.idService.genId(),
@@ -32,7 +31,7 @@ export class UserMutingService {
 	}
 
 	@bindThis
-	public async unmute(mutings: T2P<Muting, muting>[]): Promise<void> {
+	public async unmute(mutings: muting[]): Promise<void> {
 		if (mutings.length === 0) return;
 
 		await this.prismaService.client.muting.deleteMany({

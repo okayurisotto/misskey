@@ -22,7 +22,6 @@ import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import type { z } from 'zod';
 import type { EventEmitter } from 'events';
 import type Emitter from 'strict-event-emitter-types';
-import type { T2P } from '@/types.js';
 import type { antenna, meta, note, role, role_assignment, signin, user_profile, webhook } from '@prisma/client';
 
 //#region Stream type-body definitions
@@ -35,21 +34,21 @@ export interface InternalStreamTypes {
 	blockingCreated: { blockerId: User['id']; blockeeId: User['id']; };
 	blockingDeleted: { blockerId: User['id']; blockeeId: User['id']; };
 	policiesUpdated: Role['policies'];
-	roleCreated: T2P<Role, role>;
-	roleDeleted: T2P<Role, role>;
-	roleUpdated: T2P<Role, role>;
-	userRoleAssigned: T2P<RoleAssignment, role_assignment>;
-	userRoleUnassigned: T2P<RoleAssignment, role_assignment>;
-	webhookCreated: T2P<Webhook, webhook>;
-	webhookDeleted: T2P<Webhook, webhook>;
-	webhookUpdated: T2P<Webhook, webhook>;
-	antennaCreated: T2P<Antenna, antenna>;
-	antennaDeleted: T2P<Antenna, antenna>;
-	antennaUpdated: T2P<Antenna, antenna>;
-	metaUpdated: T2P<Meta, meta>;
+	roleCreated: role;
+	roleDeleted: role;
+	roleUpdated: role;
+	userRoleAssigned: role_assignment;
+	userRoleUnassigned: role_assignment;
+	webhookCreated: webhook;
+	webhookDeleted: webhook;
+	webhookUpdated: webhook;
+	antennaCreated: antenna;
+	antennaDeleted: antenna;
+	antennaUpdated: antenna;
+	metaUpdated: meta;
 	followChannel: { userId: User['id']; channelId: Channel['id']; };
 	unfollowChannel: { userId: User['id']; channelId: Channel['id']; };
-	updateUserProfile: T2P<UserProfile, user_profile>;
+	updateUserProfile: user_profile;
 	mute: { muterId: User['id']; muteeId: User['id']; };
 	unmute: { muterId: User['id']; muteeId: User['id']; };
 }
@@ -100,14 +99,14 @@ export interface MainStreamTypes {
 	unreadAntenna: Antenna;
 	readAllAnnouncements: undefined;
 	myTokenRegenerated: undefined;
-	signin: T2P<Signin, signin>;
+	signin: signin;
 	registryUpdated: {
 		scope?: string[];
 		key: string;
 		value: any | null;
 	};
 	driveFileCreated: z.infer<typeof DriveFileSchema>;
-	readAntenna: T2P<Antenna, antenna>;
+	readAntenna: antenna;
 	receiveFollowRequest: z.infer<typeof UserSchema>;
 }
 
@@ -154,7 +153,7 @@ export interface UserListStreamTypes {
 }
 
 export interface AntennaStreamTypes {
-	note: T2P<Note, note>;
+	note: note;
 }
 
 export interface RoleTimelineStreamTypes {

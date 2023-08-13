@@ -3,7 +3,6 @@ import { z } from 'zod';
 import type { Antenna } from '@/models/entities/Antenna.js';
 import type { AntennaSchema } from '@/models/zod/AntennaSchema.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { antenna } from '@prisma/client';
 
@@ -13,7 +12,7 @@ export class AntennaEntityService {
 
 	@bindThis
 	public async pack(
-		src: Antenna['id'] | T2P<Antenna, antenna>,
+		src: Antenna['id'] | antenna,
 	): Promise<z.infer<typeof AntennaSchema>> {
 		const antenna = typeof src === 'object'
 			? src

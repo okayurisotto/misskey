@@ -4,7 +4,6 @@ import type { Webhook } from '@/models/entities/Webhook.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { webhook } from '@prisma/client';
@@ -12,7 +11,7 @@ import type { webhook } from '@prisma/client';
 @Injectable()
 export class WebhookService implements OnApplicationShutdown {
 	private webhooksFetched = false;
-	private webhooks: T2P<Webhook, webhook>[] = [];
+	private webhooks: webhook[] = [];
 
 	constructor(
 		@Inject(DI.redisForSub)

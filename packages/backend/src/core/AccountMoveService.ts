@@ -16,7 +16,6 @@ import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { MetaService } from '@/core/MetaService.js';
 import InstanceChart from '@/core/chart/charts/instance.js';
 import PerUserFollowingChart from '@/core/chart/charts/per-user-following.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -95,7 +94,7 @@ export class AccountMoveService {
 	}
 
 	@bindThis
-	public async postMoveProcess(src: T2P<User, user>, dst: T2P<User, user>): Promise<void> {
+	public async postMoveProcess(src: user, dst: user): Promise<void> {
 		// Copy blockings and mutings, and update lists
 		try {
 			await Promise.all([
@@ -200,7 +199,7 @@ export class AccountMoveService {
 	 * @returns Promise<void>
 	 */
 	@bindThis
-	public async updateLists(src: ThinUser, dst: T2P<User, user>): Promise<void> {
+	public async updateLists(src: ThinUser, dst: user): Promise<void> {
 		// Return if there is no list to be updated.
 		const oldJoinings = await this.prismaService.client.user_list_joining.findMany({
 			where: { userId: src.id },
@@ -243,7 +242,7 @@ export class AccountMoveService {
 	}
 
 	@bindThis
-	private async adjustFollowingCounts(localFollowerIds: string[], oldAccount: T2P<User, user>): Promise<void> {
+	private async adjustFollowingCounts(localFollowerIds: string[], oldAccount: user): Promise<void> {
 		if (localFollowerIds.length === 0) return;
 
 		// Set the old account's following and followers counts to 0.

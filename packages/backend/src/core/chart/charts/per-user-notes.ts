@@ -5,7 +5,6 @@ import type { Note } from '@/models/entities/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
@@ -45,7 +44,7 @@ export default class PerUserNotesChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public update(user: { id: User['id'] }, note: T2P<Note, note>, isAdditional: boolean): void {
+	public update(user: { id: User['id'] }, note: note, isAdditional: boolean): void {
 		this.commit({
 			'total': isAdditional ? 1 : -1,
 			'inc': isAdditional ? 1 : 0,

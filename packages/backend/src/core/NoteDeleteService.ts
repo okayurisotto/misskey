@@ -16,7 +16,6 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { note, user } from '@prisma/client';
 
@@ -46,7 +45,7 @@ export class NoteDeleteService {
 	 * @param user 投稿者
 	 * @param note 投稿
 	 */
-	async delete(user: { id: User['id']; uri: User['uri']; host: User['host']; isBot: User['isBot']; }, note: T2P<Note, note>, quiet = false) {
+	async delete(user: { id: User['id']; uri: User['uri']; host: User['host']; isBot: User['isBot']; }, note: note, quiet = false) {
 		const deletedAt = new Date();
 		const cascadingNotes = await this.findCascadingNotes(note);
 
@@ -76,7 +75,7 @@ export class NoteDeleteService {
 
 			//#region ローカルの投稿なら削除アクティビティを配送
 			if (this.userEntityService.isLocalUser(user) && !note.localOnly) {
-				let renote: T2P<Note, note> | null = null;
+				let renote: note | null = null;
 
 				// if deletd note is renote
 				if (note.renoteId && note.text == null && !note.hasPoll && (note.fileIds == null || note.fileIds.length === 0)) {
@@ -134,8 +133,8 @@ export class NoteDeleteService {
 	}
 
 	@bindThis
-	private async findCascadingNotes(note: T2P<Note, note>): Promise<(T2P<Note, note> & { user: T2P<User, user> | null })[]> {
-		const recursive = async (noteId: string): Promise<(T2P<Note, note> & { user: T2P<User, user> | null })[]> => {
+	private async findCascadingNotes(note: note): Promise<(note & { user: user | null })[]> {
+		const recursive = async (noteId: string): Promise<(note & { user: user | null })[]> => {
 			const replies = await this.prismaService.client.note.findMany({
 				where: {
 					OR: [
@@ -158,7 +157,7 @@ export class NoteDeleteService {
 	}
 
 	@bindThis
-	private async getMentionedRemoteUsers(note: T2P<Note, note>) {
+	private async getMentionedRemoteUsers(note: note) {
 		const where = [];
 
 		// mention / reply / dm
@@ -178,7 +177,7 @@ export class NoteDeleteService {
 	}
 
 	@bindThis
-	private async deliverToConcerned(user: { id: LocalUser['id']; host: null; }, note: T2P<Note, note>, content: any) {
+	private async deliverToConcerned(user: { id: LocalUser['id']; host: null; }, note: note, content: any) {
 		this.apDeliverManagerService.deliverToFollowers(user, content);
 		this.relayService.deliverToRelays(user, content);
 		const remoteUsers = await this.getMentionedRemoteUsers(note);

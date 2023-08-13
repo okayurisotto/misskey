@@ -6,7 +6,6 @@ import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
 import type { note } from '@prisma/client';
@@ -23,7 +22,7 @@ export class NoteReadService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async insertNoteUnread(userId: User['id'], note: T2P<Note, note>, params: {
+	public async insertNoteUnread(userId: User['id'], note: note, params: {
 		// NOTE: isSpecifiedがtrueならisMentionedは必ずfalse
 		isSpecified: boolean;
 		isMentioned: boolean;
@@ -75,10 +74,10 @@ export class NoteReadService implements OnApplicationShutdown {
 	@bindThis
 	public async read(
 		userId: User['id'],
-		notes: (T2P<Note, note> | z.infer<typeof NoteSchema>)[],
+		notes: (note | z.infer<typeof NoteSchema>)[],
 	): Promise<void> {
-		const readMentions: (T2P<Note, note> | z.infer<typeof NoteSchema>)[] = [];
-		const readSpecifiedNotes: (T2P<Note, note> | z.infer<typeof NoteSchema>)[] = [];
+		const readMentions: (note | z.infer<typeof NoteSchema>)[] = [];
+		const readSpecifiedNotes: (note | z.infer<typeof NoteSchema>)[] = [];
 
 		for (const note of notes) {
 			if (note.mentions && note.mentions.includes(userId)) {

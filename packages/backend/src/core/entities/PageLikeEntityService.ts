@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import type { User } from '@/models/entities/User.js';
 import type { PageLike } from '@/models/entities/PageLike.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PageEntityService } from './PageEntityService.js';
 import type { page_like } from '@prisma/client';
@@ -16,7 +15,7 @@ export class PageLikeEntityService {
 
 	@bindThis
 	public async pack(
-		src: PageLike['id'] | T2P<PageLike, page_like>,
+		src: PageLike['id'] | page_like,
 		me?: { id: User['id'] } | null | undefined,
 	) {
 		const like =

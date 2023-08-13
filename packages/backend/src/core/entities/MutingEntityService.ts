@@ -4,7 +4,6 @@ import type { User } from '@/models/entities/User.js';
 import type { Muting } from '@/models/entities/Muting.js';
 import { bindThis } from '@/decorators.js';
 import type { MutingSchema } from '@/models/zod/MutingSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
@@ -19,7 +18,7 @@ export class MutingEntityService {
 
 	@bindThis
 	public async pack(
-		src: Muting['id'] | T2P<Muting, muting>,
+		src: Muting['id'] | muting,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof MutingSchema>> {
 		const muting =

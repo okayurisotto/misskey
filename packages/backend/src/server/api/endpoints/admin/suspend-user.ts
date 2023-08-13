@@ -10,7 +10,6 @@ import { RoleService } from '@/core/RoleService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import type { user } from '@prisma/client';
 
 export const meta = {
@@ -63,7 +62,7 @@ export default class extends Endpoint<
 	}
 
 	@bindThis
-	private async unFollowAll(follower: T2P<User, user>): Promise<void> {
+	private async unFollowAll(follower: user): Promise<void> {
 		const followings = await this.prismaService.client.following.findMany({
 			where: { followerId: follower.id },
 		});

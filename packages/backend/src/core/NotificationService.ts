@@ -10,7 +10,6 @@ import { PushNotificationService } from '@/core/PushNotificationService.js';
 import { NotificationEntityService } from '@/core/entities/NotificationEntityService.js';
 import { IdService } from '@/core/IdService.js';
 import { CacheService } from '@/core/CacheService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -120,7 +119,7 @@ export class NotificationService implements OnApplicationShutdown {
 	// TODO: locale ファイルをクライアント用とサーバー用で分けたい
 
 	@bindThis
-	private async emailNotificationFollow(userId: User['id'], follower: T2P<User, user>) {
+	private async emailNotificationFollow(userId: User['id'], follower: user) {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
 		if (!userProfile.email || !userProfile.emailNotificationTypes.includes('follow')) return;
@@ -132,7 +131,7 @@ export class NotificationService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async emailNotificationReceiveFollowRequest(userId: User['id'], follower: T2P<User, user>) {
+	private async emailNotificationReceiveFollowRequest(userId: User['id'], follower: user) {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
 		if (!userProfile.email || !userProfile.emailNotificationTypes.includes('receiveFollowRequest')) return;

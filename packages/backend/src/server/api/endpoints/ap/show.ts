@@ -16,7 +16,6 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import type { T2P } from '@/types.js';
 import { ApiError } from '../../error.js';
 import type { note, user } from '@prisma/client';
 
@@ -133,8 +132,8 @@ export default class extends Endpoint<
 	@bindThis
 	private async mergePack(
 		me: LocalUser | null | undefined,
-		user: T2P<User, user> | null | undefined,
-		note: T2P<Note, note> | null | undefined,
+		user: user | null | undefined,
+		note: note | null | undefined,
 	): Promise<z.infer<typeof res> | null> {
 		if (user != null) {
 			return {

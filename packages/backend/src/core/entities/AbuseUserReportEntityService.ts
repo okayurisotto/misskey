@@ -4,7 +4,6 @@ import type { AbuseUserReport } from '@/models/entities/AbuseUserReport.js';
 import { bindThis } from '@/decorators.js';
 import { AbuseUserReportSchema } from '@/models/zod/AbuseUserReportSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
 import type { abuse_user_report } from '@prisma/client';
@@ -18,7 +17,7 @@ export class AbuseUserReportEntityService {
 
 	@bindThis
 	public async pack(
-		src: AbuseUserReport['id'] | T2P<AbuseUserReport, abuse_user_report>,
+		src: AbuseUserReport['id'] | abuse_user_report,
 	): Promise<z.infer<typeof AbuseUserReportSchema>> {
 		const report =
 			typeof src === 'object'

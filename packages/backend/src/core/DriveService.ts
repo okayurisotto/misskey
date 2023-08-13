@@ -36,7 +36,6 @@ import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { correctFilename } from '@/misc/correct-filename.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { drive_file } from '@prisma/client';
 
@@ -125,13 +124,13 @@ export class DriveService {
 	 */
 	@bindThis
 	private async save(
-		file: Omit<T2P<DriveFile, drive_file>, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null },
+		file: Omit<drive_file, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null },
 		path: string,
 		name: string,
 		type: string,
 		hash: string,
 		size: number,
-	): Promise<Omit<T2P<DriveFile, drive_file>, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null }> {
+	): Promise<Omit<drive_file, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null }> {
 		// thunbnail, webpublic を必要なら生成
 		const alts = await this.generateAlts(path, type, !file.uri);
 
@@ -482,7 +481,7 @@ export class DriveService {
 		requestIp = null,
 		requestHeaders = null,
 		ext = null,
-	}: AddFileArgs): Promise<T2P<DriveFile, drive_file>> {
+	}: AddFileArgs): Promise<drive_file> {
 		let skipNsfwCheck = false;
 		const instance = await this.metaService.fetch();
 		const userRoleNSFW = user && (await this.roleService.getUserPolicies(user.id)).alwaysMarkNsfw;
@@ -593,7 +592,7 @@ export class DriveService {
 
 		const folder = await fetchFolder();
 
-		let file: Omit<T2P<DriveFile, drive_file>, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null } = new DriveFile();
+		let file: Omit<drive_file, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null } = new DriveFile();
 		file.id = this.idService.genId();
 		file.createdAt = new Date();
 		file.userId = user ? user.id : null;
@@ -712,7 +711,7 @@ export class DriveService {
 	}
 
 	@bindThis
-	public async deleteFile(file: T2P<DriveFile, drive_file>, isExpired = false) {
+	public async deleteFile(file: drive_file, isExpired = false) {
 		if (file.storedInternal) {
 			this.internalStorageService.del(file.accessKey!);
 
@@ -739,7 +738,7 @@ export class DriveService {
 	}
 
 	@bindThis
-	public async deleteFileSync(file: T2P<DriveFile, drive_file>, isExpired = false) {
+	public async deleteFileSync(file: drive_file, isExpired = false) {
 		if (file.storedInternal) {
 			this.internalStorageService.del(file.accessKey!);
 
@@ -770,7 +769,7 @@ export class DriveService {
 	}
 
 	@bindThis
-	private async deletePostProcess(file: T2P<DriveFile, drive_file>, isExpired = false) {
+	private async deletePostProcess(file: drive_file, isExpired = false) {
 		// リモートファイル期限切れ削除後は直リンクにする
 		if (isExpired && file.userHost !== null && file.uri != null) {
 			this.prismaService.client.drive_file.update({
@@ -836,7 +835,7 @@ export class DriveService {
 		comment = null,
 		requestIp = null,
 		requestHeaders = null,
-	}: UploadFromUrlArgs): Promise<T2P<DriveFile, drive_file>> {
+	}: UploadFromUrlArgs): Promise<drive_file> {
 		// Create temp file
 		const [path, cleanup] = await createTemp();
 

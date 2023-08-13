@@ -6,7 +6,6 @@ import type { User } from '@/models/entities/User.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import type { user } from '@prisma/client';
 import { PrismaService } from '@/core/PrismaService.js';
 
@@ -22,7 +21,7 @@ export class FeedService {
 	) {}
 
 	@bindThis
-	public async packFeed(user: T2P<User, user>) {
+	public async packFeed(user: user) {
 		const author = {
 			link: `${this.config.url}/@${user.username}`,
 			name: user.name ?? user.username,

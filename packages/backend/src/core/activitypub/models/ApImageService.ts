@@ -8,7 +8,6 @@ import { DriveService } from '@/core/DriveService.js';
 import type Logger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
 import { checkHttps } from '@/misc/check-https.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApResolverService } from '../ApResolverService.js';
 import { ApLoggerService } from '../ApLoggerService.js';
@@ -33,7 +32,7 @@ export class ApImageService {
 	 * Imageを作成します。
 	 */
 	@bindThis
-	public async createImage(actor: RemoteUser, value: string | IObject): Promise<T2P<DriveFile, drive_file>> {
+	public async createImage(actor: RemoteUser, value: string | IObject): Promise<drive_file> {
 		// 投稿者が凍結されていたらスキップ
 		if (actor.isSuspended) {
 			throw new Error('actor has been suspended');
@@ -87,7 +86,7 @@ export class ApImageService {
 	 * リモートサーバーからフェッチしてMisskeyに登録しそれを返します。
 	 */
 	@bindThis
-	public async resolveImage(actor: RemoteUser, value: string | IObject): Promise<T2P<DriveFile, drive_file>> {
+	public async resolveImage(actor: RemoteUser, value: string | IObject): Promise<drive_file> {
 		// TODO
 
 		// リモートサーバーからフェッチしてきて登録

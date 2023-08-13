@@ -7,7 +7,6 @@ import { RoleService } from '@/core/RoleService.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import { ApiError } from '../../../error.js';
 import type { drive_file } from '@prisma/client';
 
@@ -50,7 +49,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			let file: T2P<DriveFile, drive_file> | null = null;
+			let file: drive_file | null = null;
 
 			if ('fileId' in ps) {
 				file = await this.prismaService.client.drive_file.findUnique({

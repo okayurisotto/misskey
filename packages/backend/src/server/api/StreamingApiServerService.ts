@@ -13,7 +13,6 @@ import { AuthenticateService, AuthenticationError } from './AuthenticateService.
 import MainStreamConnection from './stream/index.js';
 import { ChannelsService } from './stream/ChannelsService.js';
 import type * as http from 'node:http';
-import { T2P } from '@/types.js';
 import { access_token } from '@prisma/client';
 import { PrismaService } from '@/core/PrismaService.js';
 
@@ -51,7 +50,7 @@ export class StreamingApiServerService {
 			const q = new URL(request.url, `http://${request.headers.host}`).searchParams;
 
 			let user: LocalUser | null = null;
-			let app: T2P<AccessToken, access_token> | null = null;
+			let app: access_token | null = null;
 
 			// https://datatracker.ietf.org/doc/html/rfc6750.html#section-2.1
 			// Note that the standard WHATWG WebSocket API does not support setting any headers,

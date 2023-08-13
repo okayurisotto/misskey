@@ -8,7 +8,6 @@ import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { appendQuery, query } from '@/misc/prelude/url.js';
 import { deepClone } from '@/misc/clone.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
-import type { T2P } from '@/types.js';
 import { bindThis } from '@/decorators.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { isNotNull } from '@/misc/is-not-null.js';
@@ -53,7 +52,7 @@ export class DriveFileEntityService {
 	}
 
 	@bindThis
-	public getPublicProperties(file: T2P<DriveFile, drive_file>) {
+	public getPublicProperties(file: drive_file) {
 		const properties_ = z.object({
 			width: z.number().optional(),
 			height: z.number().optional(),
@@ -85,7 +84,7 @@ export class DriveFileEntityService {
 	}
 
 	@bindThis
-	public getThumbnailUrl(file: T2P<DriveFile, drive_file>): string | null {
+	public getThumbnailUrl(file: drive_file): string | null {
 		if (file.type.startsWith('video')) {
 			if (file.thumbnailUrl) return file.thumbnailUrl;
 
@@ -108,7 +107,7 @@ export class DriveFileEntityService {
 	}
 
 	@bindThis
-	public getPublicUrl(file: T2P<DriveFile, drive_file>, mode?: 'avatar'): string { // static = thumbnail
+	public getPublicUrl(file: drive_file, mode?: 'avatar'): string { // static = thumbnail
 		// リモートかつメディアプロキシ
 		if (file.uri != null && file.userHost != null && this.config.externalMediaProxyEnabled) {
 			return this.getProxiedUrl(file.uri, mode);
@@ -186,7 +185,7 @@ export class DriveFileEntityService {
 
 	@bindThis
 	public async pack(
-		src: DriveFile['id'] | T2P<DriveFile, drive_file>,
+		src: DriveFile['id'] | drive_file,
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema>> {
 		const opts = Object.assign({
@@ -238,7 +237,7 @@ export class DriveFileEntityService {
 
 	@bindThis
 	public async packNullable(
-		src: DriveFile['id'] | T2P<DriveFile, drive_file>,
+		src: DriveFile['id'] | drive_file,
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema> | null> {
 		const opts = Object.assign({
@@ -291,7 +290,7 @@ export class DriveFileEntityService {
 
 	@bindThis
 	public async packMany(
-		files: T2P<DriveFile, drive_file>[],
+		files: drive_file[],
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema>[]> {
 		const items = await Promise.all(files.map(f => this.packNullable(f, options)));

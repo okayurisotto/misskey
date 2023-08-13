@@ -5,7 +5,6 @@ import type { User } from '@/models/entities/User.js';
 import type { Following } from '@/models/entities/Following.js';
 import { bindThis } from '@/decorators.js';
 import type { FollowingSchema } from '@/models/zod/FollowingSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
@@ -44,35 +43,35 @@ export class FollowingEntityService {
 
 	@bindThis
 	public isLocalFollower(
-		following: T2P<Following, following>,
+		following: following,
 	): following is LocalFollowerFollowing {
 		return following.followerHost == null;
 	}
 
 	@bindThis
 	public isRemoteFollower(
-		following: T2P<Following, following>,
+		following: following,
 	): following is RemoteFollowerFollowing {
 		return following.followerHost != null;
 	}
 
 	@bindThis
 	public isLocalFollowee(
-		following: T2P<Following, following>,
+		following: following,
 	): following is LocalFolloweeFollowing {
 		return following.followeeHost == null;
 	}
 
 	@bindThis
 	public isRemoteFollowee(
-		following: T2P<Following, following>,
+		following: following,
 	): following is RemoteFolloweeFollowing {
 		return following.followeeHost != null;
 	}
 
 	@bindThis
 	public async pack(
-		src: Following['id'] | T2P<Following, following>,
+		src: Following['id'] | following,
 		me?: { id: User['id'] } | null | undefined,
 		opts?: {
 			populateFollowee?: boolean;

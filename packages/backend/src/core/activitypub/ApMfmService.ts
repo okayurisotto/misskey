@@ -7,7 +7,6 @@ import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
 import { extractApHashtagObjects } from './models/tag.js';
 import type { IObject } from './type.js';
-import type { T2P } from '@/types.js';
 import type { note } from '@prisma/client';
 
 @Injectable()
@@ -27,7 +26,7 @@ export class ApMfmService {
 	}
 
 	@bindThis
-	public getNoteHtml(note: T2P<Note, note>): string | null {
+	public getNoteHtml(note: note): string | null {
 		if (!note.text) return '';
 		return this.mfmService.toHtml(mfm.parse(note.text), JSON.parse(note.mentionedRemoteUsers));
 	}

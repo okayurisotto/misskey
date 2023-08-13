@@ -7,7 +7,6 @@ import { DownloadService } from '@/core/DownloadService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { QueueService } from '@/core/QueueService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
@@ -63,7 +62,7 @@ export class ImportBlockingProcessorService {
 
 			if (!host) return;
 
-			let target: T2P<User, user> | null = this.utilityService.isSelfHost(host)
+			let target: user | null = this.utilityService.isSelfHost(host)
 				? await this.prismaService.client.user.findFirst({
 					where: {
 						host: null,

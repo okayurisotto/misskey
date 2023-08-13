@@ -9,7 +9,6 @@ import { bindThis } from '@/decorators.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { DBExportAntennasData } from '../types.js';
 import type * as Bull from 'bullmq';
@@ -51,7 +50,7 @@ export class ExportAntennasProcessorService {
 			const antennas = await this.prismaService.client.antenna.findMany({ where: { userId: job.data.user.id } });
 			write('[');
 			for (const [index, antenna] of antennas.entries()) {
-				let users: T2P<User, user>[] | undefined;
+				let users: user[] | undefined;
 				if (antenna.userListId !== null) {
 					const joinings = await this.prismaService.client.user_list_joining.findMany({ where: { userListId: antenna.userListId } });
 					users = await this.prismaService.client.user.findMany({

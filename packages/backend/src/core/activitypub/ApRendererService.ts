@@ -21,7 +21,6 @@ import type { UserKeypair } from '@/models/entities/UserKeypair.js';
 import { bindThis } from '@/decorators.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { LdSignatureService } from './LdSignatureService.js';
 import { ApMfmService } from './ApMfmService.js';
@@ -64,7 +63,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderAnnounce(object: string | IObject, note: T2P<Note, note>): IAnnounce {
+	public renderAnnounce(object: string | IObject, note: note): IAnnounce {
 		const attributedTo = this.userEntityService.genLocalUserUri(note.userId);
 
 		let to: string[] = [];
@@ -100,7 +99,7 @@ export class ApRendererService {
 	 * @param block The block to be rendered. The blockee relation must be loaded.
 	 */
 	@bindThis
-	public renderBlock(block: T2P<Blocking, blocking> & { blockee: T2P<User, user> }): IBlock {
+	public renderBlock(block: blocking & { blockee: user }): IBlock {
 		if (block.blockee.uri == null) {
 			throw new Error('renderBlock: missing blockee uri');
 		}
@@ -114,7 +113,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderCreate(object: IObject, note: T2P<Note, note>): ICreate {
+	public renderCreate(object: IObject, note: note): ICreate {
 		const activity: ICreate = {
 			id: `${this.config.url}/notes/${note.id}/activity`,
 			actor: this.userEntityService.genLocalUserUri(note.userId),
@@ -220,7 +219,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderImage(file: T2P<DriveFile, drive_file>): IApImage {
+	public renderImage(file: drive_file): IApImage {
 		return {
 			type: 'Image',
 			url: this.driveFileEntityService.getPublicUrl(file),
@@ -230,7 +229,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderKey(user: LocalUser, key: T2P<UserKeypair, user_keypair>, postfix?: string): IKey {
+	public renderKey(user: LocalUser, key: user_keypair, postfix?: string): IKey {
 		return {
 			id: `${this.config.url}/users/${user.id}${postfix ?? '/publickey'}`,
 			type: 'Key',
@@ -291,7 +290,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public async renderNote(note: T2P<Note, note>, dive = true): Promise<IPost> {
+	public async renderNote(note: note, dive = true): Promise<IPost> {
 		const getPromisedFiles = async (ids: string[]): Promise<DriveFile[]> => {
 			if (ids.length === 0) return [];
 			const items = await this.prismaService.client.drive_file.findMany({ where: { id: { in: ids } } });
@@ -299,7 +298,7 @@ export class ApRendererService {
 		};
 
 		let inReplyTo;
-		let inReplyToNote: T2P<Note, note> | null;
+		let inReplyToNote: note | null;
 
 		if (note.replyId) {
 			inReplyToNote = await this.prismaService.client.note.findUnique({ where: { id: note.replyId } });
@@ -366,7 +365,7 @@ export class ApRendererService {
 		const files = await getPromisedFiles(note.fileIds);
 
 		const text = note.text ?? '';
-		let poll: T2P<Poll, poll> | null = null;
+		let poll: poll | null = null;
 
 		if (note.hasPoll) {
 			poll = await this.prismaService.client.poll.findUnique({ where: { noteId: note.id } });
@@ -508,7 +507,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderQuestion(user: { id: User['id'] }, note: T2P<Note, note>, poll: T2P<Poll, poll>): IQuestion {
+	public renderQuestion(user: { id: User['id'] }, note: note, poll: poll): IQuestion {
 		return {
 			type: 'Question',
 			id: `${this.config.url}/questions/${note.id}`,
@@ -578,7 +577,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderVote(user: { id: User['id'] }, vote: T2P<PollVote, poll_vote>, note: T2P<Note, note>, poll: T2P<Poll, poll>, pollOwner: RemoteUser): ICreate {
+	public renderVote(user: { id: User['id'] }, vote: poll_vote, note: note, poll: poll, pollOwner: RemoteUser): ICreate {
 		return {
 			id: `${this.config.url}/users/${user.id}#votes/${vote.id}/activity`,
 			actor: this.userEntityService.genLocalUserUri(user.id),

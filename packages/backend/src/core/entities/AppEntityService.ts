@@ -4,7 +4,6 @@ import type { App } from '@/models/entities/App.js';
 import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import type { z } from 'zod';
 import type { app } from '@prisma/client';
 
@@ -14,7 +13,7 @@ export class AppEntityService {
 
 	@bindThis
 	public async pack(
-		src: App['id'] | T2P<App, app>,
+		src: App['id'] | app,
 		me?: { id: User['id'] } | null | undefined,
 		options?: {
 			detail?: boolean,

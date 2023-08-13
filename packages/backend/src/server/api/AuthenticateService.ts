@@ -7,7 +7,6 @@ import isNativeToken from '@/misc/is-native-token.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { access_token, app } from '@prisma/client';
-import { T2P } from '@/types.js';
 
 export class AuthenticationError extends Error {
 	constructor(message: string) {
@@ -28,7 +27,7 @@ export class AuthenticateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async authenticate(token: string | null | undefined): Promise<[LocalUser | null, T2P<AccessToken, access_token> | null]> {
+	public async authenticate(token: string | null | undefined): Promise<[LocalUser | null, access_token | null]> {
 		if (token == null) {
 			return [null, null];
 		}

@@ -3,7 +3,6 @@ import type { User } from '@/models/entities/User.js';
 import type { RenoteMuting } from '@/models/entities/RenoteMuting.js';
 import { bindThis } from '@/decorators.js';
 import type { RenoteMutingSchema } from '@/models/zod/RenoteMutingSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
@@ -18,7 +17,7 @@ export class RenoteMutingEntityService {
 
 	@bindThis
 	public async pack(
-		src: RenoteMuting['id'] | T2P<RenoteMuting, renote_muting>,
+		src: RenoteMuting['id'] | renote_muting,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof RenoteMutingSchema>> {
 		const muting =

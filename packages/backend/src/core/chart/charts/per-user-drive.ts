@@ -5,7 +5,6 @@ import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
@@ -49,7 +48,7 @@ export default class PerUserDriveChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async update(file: T2P<DriveFile, drive_file>, isAdditional: boolean): Promise<void> {
+	public async update(file: drive_file, isAdditional: boolean): Promise<void> {
 		const fileSizeKb = file.size / 1000;
 		await this.commit({
 			'totalCount': isAdditional ? 1 : -1,

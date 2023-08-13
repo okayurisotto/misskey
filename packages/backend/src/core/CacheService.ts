@@ -7,18 +7,17 @@ import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { user, user_profile } from '@prisma/client';
 
 @Injectable()
 export class CacheService implements OnApplicationShutdown {
-	public userByIdCache: MemoryKVCache<T2P<User, user>, T2P<User, user> | string>;
+	public userByIdCache: MemoryKVCache<user, user | string>;
 	public localUserByNativeTokenCache: MemoryKVCache<LocalUser | null, string | null>;
 	public localUserByIdCache: MemoryKVCache<LocalUser>;
-	public uriPersonCache: MemoryKVCache<T2P<User, user> | null, string | null>;
-	public userProfileCache: RedisKVCache<T2P<UserProfile, user_profile>>;
+	public uriPersonCache: MemoryKVCache<user | null, string | null>;
+	public userProfileCache: RedisKVCache<user_profile>;
 	public userMutingsCache: RedisKVCache<Set<string>>;
 	public userBlockingCache: RedisKVCache<Set<string>>;
 	public userBlockedCache: RedisKVCache<Set<string>>; // NOTE: 「被」Blockキャッシュ
@@ -42,7 +41,7 @@ export class CacheService implements OnApplicationShutdown {
 		this.localUserByIdCache	= localUserByIdCache;
 
 		// ローカルユーザーならlocalUserByIdCacheにデータを追加し、こちらにはid(文字列)だけを追加する
-		const userByIdCache = new MemoryKVCache<T2P<User, user>, T2P<User, user> | string>(1000 * 60 * 60 * 6 /* 6h */, {
+		const userByIdCache = new MemoryKVCache<user, user | string>(1000 * 60 * 60 * 6 /* 6h */, {
 			toMapConverter: user => {
 				if (user.host === null) {
 					localUserByIdCache.set(user.id, user as LocalUser);
@@ -64,7 +63,7 @@ export class CacheService implements OnApplicationShutdown {
 			},
 			fromMapConverter: id => id === null ? null : localUserByIdCache.get(id),
 		});
-		this.uriPersonCache = new MemoryKVCache<T2P<User, user> | null, string | null>(Infinity, {
+		this.uriPersonCache = new MemoryKVCache<user | null, string | null>(Infinity, {
 			toMapConverter: user => {
 				if (user === null) return null;
 
@@ -74,7 +73,7 @@ export class CacheService implements OnApplicationShutdown {
 			fromMapConverter: id => id === null ? null : userByIdCache.get(id),
 		});
 
-		this.userProfileCache = new RedisKVCache<T2P<UserProfile, user_profile>>(this.redisClient, 'userProfile', {
+		this.userProfileCache = new RedisKVCache<user_profile>(this.redisClient, 'userProfile', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60, // 1m
 			fetcher: (key) => this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: key } }),

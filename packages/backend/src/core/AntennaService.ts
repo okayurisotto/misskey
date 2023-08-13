@@ -11,7 +11,6 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { antenna, note } from '@prisma/client';
@@ -19,7 +18,7 @@ import type { antenna, note } from '@prisma/client';
 @Injectable()
 export class AntennaService implements OnApplicationShutdown {
 	private antennasFetched: boolean;
-	private antennas: T2P<Antenna, antenna>[];
+	private antennas: antenna[];
 
 	constructor(
 		@Inject(DI.redis)
@@ -69,7 +68,7 @@ export class AntennaService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async addNoteToAntennas(note: T2P<Note, note>, noteUser: { id: User['id']; username: string; host: string | null; }): Promise<void> {
+	public async addNoteToAntennas(note: note, noteUser: { id: User['id']; username: string; host: string | null; }): Promise<void> {
 		const antennas = await this.getAntennas();
 		const antennasWithMatchResult = await Promise.all(antennas.map(antenna => this.checkHitAntenna(antenna, note, noteUser).then(hit => [antenna, hit] as const)));
 		const matchedAntennas = antennasWithMatchResult.filter(([, hit]) => hit).map(([antenna]) => antenna);
@@ -92,7 +91,7 @@ export class AntennaService implements OnApplicationShutdown {
 	// NOTE: フォローしているユーザーのノート、リストのユーザーのノート、グループのユーザーのノート指定はパフォーマンス上の理由で無効になっている
 
 	@bindThis
-	public async checkHitAntenna(antenna: T2P<Antenna, antenna>, note: (T2P<Note, note> | z.infer<typeof NoteSchema>), noteUser: { id: User['id']; username: string; host: string | null; }): Promise<boolean> {
+	public async checkHitAntenna(antenna: antenna, note: (note | z.infer<typeof NoteSchema>), noteUser: { id: User['id']; username: string; host: string | null; }): Promise<boolean> {
 		if (note.visibility === 'specified') return false;
 		if (note.visibility === 'followers') return false;
 

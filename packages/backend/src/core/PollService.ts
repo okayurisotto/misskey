@@ -9,7 +9,6 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { bindThis } from '@/decorators.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { note, user } from '@prisma/client';
 
@@ -27,7 +26,7 @@ export class PollService {
 	) {}
 
 	@bindThis
-	public async vote(user: T2P<User, user>, note: T2P<Note, note>, choice: number) {
+	public async vote(user: user, note: note, choice: number) {
 		const poll = await this.prismaService.client.poll.findUnique({ where: { noteId: note.id } });
 
 		if (poll == null) throw new Error('poll not found');

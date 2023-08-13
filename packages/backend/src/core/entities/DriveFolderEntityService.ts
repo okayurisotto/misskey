@@ -4,7 +4,6 @@ import type { } from '@/models/entities/Blocking.js';
 import type { DriveFolder } from '@/models/entities/DriveFolder.js';
 import { bindThis } from '@/decorators.js';
 import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
 import type { drive_folder } from '@prisma/client';
@@ -15,7 +14,7 @@ export class DriveFolderEntityService {
 
 	@bindThis
 	public async pack(
-		src: DriveFolder['id'] | T2P<DriveFolder, drive_folder>,
+		src: DriveFolder['id'] | drive_folder,
 		options?: {
 			detail: boolean
 		},

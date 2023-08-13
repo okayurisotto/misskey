@@ -12,7 +12,6 @@ import { ApiError } from '../../error.js';
 import { ApiLoggerService } from '../../ApiLoggerService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
-import type { T2P } from '@/types.js';
 
 const res = z.union([UserDetailedSchema, z.array(UserDetailedSchema)]);
 export const meta = {
@@ -106,7 +105,7 @@ export default class extends Endpoint<
 			}
 
 			const username = 'username' in ps ? ps.username?.trim() : null;
-			let user: T2P<User, user> | null;
+			let user: user | null;
 
 			// Lookup user
 			if (ps.host != null && username !== null) {

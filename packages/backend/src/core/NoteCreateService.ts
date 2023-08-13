@@ -46,7 +46,6 @@ import { DB_MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma, app, channel, drive_file, note, user } from '@prisma/client';
 
@@ -56,7 +55,7 @@ type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
 class NotificationManager {
 	private notifier: { id: User['id']; };
-	private note: T2P<Note, note>;
+	private note: note;
 	private queue: {
 		target: LocalUser['id'];
 		reason: NotificationType;
@@ -66,7 +65,7 @@ class NotificationManager {
 		private notificationService: NotificationService,
 		private readonly prismaService: PrismaService,
 		notifier: { id: User['id']; },
-		note: T2P<Note, note>,
+		note: note,
 	) {
 		this.notifier = notifier;
 		this.note = note;
@@ -125,22 +124,22 @@ type Option = {
 	createdAt?: Date | null;
 	name?: string | null;
 	text?: string | null;
-	reply?: T2P<Note, note> | null;
-	renote?: T2P<Note, note> | null;
-	files?: T2P<DriveFile, drive_file>[] | null;
+	reply?: note | null;
+	renote?: note | null;
+	files?: drive_file[] | null;
 	poll?: IPoll | null;
 	localOnly?: boolean | null;
 	reactionAcceptance?: Note['reactionAcceptance'];
 	cw?: string | null;
 	visibility?: string;
 	visibleUsers?: MinimumUser[] | null;
-	channel?: T2P<Channel, channel> | null;
+	channel?: channel | null;
 	apMentions?: MinimumUser[] | null;
 	apHashtags?: string[] | null;
 	apEmojis?: string[] | null;
 	uri?: string | null;
 	url?: string | null;
-	app?: T2P<App, app> | null;
+	app?: app | null;
 };
 
 @Injectable()
@@ -186,7 +185,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		host: User['host'];
 		createdAt: User['createdAt'];
 		isBot: User['isBot'];
-	}, data: Option, silent = false): Promise<T2P<Note, note>> {
+	}, data: Option, silent = false): Promise<note> {
 		// チャンネル外にリプライしたら対象のスコープに合わせる
 		// (クライアントサイドでやっても良い処理だと思うけどとりあえずサーバーサイドで)
 		if (data.reply && data.channel && data.reply.channelId !== data.channel.id) {
@@ -422,7 +421,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async postNoteCreated(note: T2P<Note, note>, user: {
+	private async postNoteCreated(note: note, user: {
 		id: User['id'];
 		username: User['username'];
 		host: User['host'];
@@ -696,7 +695,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private incRenoteCount(renote: T2P<Note, note>) {
+	private incRenoteCount(renote: note) {
 		this.prismaService.client.note.update({
 			where: { id: renote.id },
 			data: {
@@ -707,7 +706,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async createMentionedEvents(mentionedUsers: MinimumUser[], note: T2P<Note, note>, nm: NotificationManager) {
+	private async createMentionedEvents(mentionedUsers: MinimumUser[], note: note, nm: NotificationManager) {
 		for (const u of mentionedUsers.filter(u => this.userEntityService.isLocalUser(u))) {
 			const isThreadMuted = (await this.prismaService.client.note_thread_muting.count({
 				where: {
@@ -740,7 +739,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async saveReply(reply: T2P<Note, note>, note: T2P<Note, note>) {
+	private async saveReply(reply: note, note: note) {
 		await this.prismaService.client.note.update({
 			where: { id: reply.id },
 			data: { repliesCount: { increment: 1 } },
@@ -748,7 +747,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async renderNoteOrRenoteActivity(data: Option, note: T2P<Note, note>) {
+	private async renderNoteOrRenoteActivity(data: Option, note: note) {
 		if (data.localOnly) return null;
 
 		const content = data.renote && data.text == null && data.poll == null && (data.files == null || data.files.length === 0)
@@ -759,7 +758,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private index(note: T2P<Note, note>) {
+	private index(note: note) {
 		if (note.text == null && note.cw == null) return;
 
 		this.searchService.indexNote(note);
@@ -777,13 +776,13 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async extractMentionedUsers(user: { host: User['host']; }, tokens: mfm.MfmNode[]): Promise<T2P<User, user>[]> {
+	private async extractMentionedUsers(user: { host: User['host']; }, tokens: mfm.MfmNode[]): Promise<user[]> {
 		if (tokens == null) return [];
 
 		const mentions = extractMentions(tokens);
 		let mentionedUsers = (await Promise.all(mentions.map(m =>
 			this.remoteUserResolveService.resolveUser(m.username, m.host ?? user.host).catch(() => null),
-		))).filter(x => x != null) as User[];
+		))).filter((x): x is LocalUser | RemoteUser => x != null);
 
 		// Drop duplicate users
 		mentionedUsers = mentionedUsers.filter((u, i, self) =>

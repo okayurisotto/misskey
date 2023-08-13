@@ -3,7 +3,6 @@ import type { Emoji } from '@/models/entities/Emoji.js';
 import { bindThis } from '@/decorators.js';
 import type { EmojiSimpleSchema } from '@/models/zod/EmojiSimpleSchema.js';
 import type { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
 import type { emoji } from '@prisma/client';
@@ -14,7 +13,7 @@ export class EmojiEntityService {
 
 	@bindThis
 	public async packSimple(
-		src: Emoji['id'] | T2P<Emoji, emoji>,
+		src: Emoji['id'] | emoji,
 	): Promise<z.infer<typeof EmojiSimpleSchema>> {
 		const emoji = typeof src === 'object'
 			? src
@@ -33,7 +32,7 @@ export class EmojiEntityService {
 
 	@bindThis
 	public async packDetailed(
-		src: Emoji['id'] | T2P<Emoji, emoji>,
+		src: Emoji['id'] | emoji,
 	): Promise<z.infer<typeof EmojiDetailedSchema>> {
 		const emoji = typeof src === 'object'
 			? src

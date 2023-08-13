@@ -3,7 +3,6 @@ import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { FlashLike } from '@/models/entities/FlashLike.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { FlashEntityService } from './FlashEntityService.js';
 import type { flash_like } from '@prisma/client';
@@ -17,7 +16,7 @@ export class FlashLikeEntityService {
 
 	@bindThis
 	public async pack(
-		src: FlashLike['id'] | T2P<FlashLike, flash_like>,
+		src: FlashLike['id'] | flash_like,
 		me?: { id: User['id'] } | null | undefined,
 	) {
 		const like =

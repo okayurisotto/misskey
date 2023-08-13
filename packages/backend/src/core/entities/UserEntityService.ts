@@ -17,7 +17,6 @@ import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import type { UserSchema } from '@/models/zod/UserSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
@@ -33,15 +32,15 @@ type IsMeAndIsUserDetailed<ExpectsMe extends boolean | null, Detailed extends bo
 		z.infer<typeof UserDetailedSchema> :
 	z.infer<typeof UserLiteSchema>;
 
-function isLocalUser(user: T2P<User, user>): user is LocalUser;
+function isLocalUser(user: user): user is LocalUser;
 function isLocalUser<T extends { host: User['host'] }>(user: T): user is (T & { host: null; });
-function isLocalUser(user: T2P<User, user> | { host: User['host'] }): boolean {
+function isLocalUser(user: user | { host: User['host'] }): boolean {
 	return user.host == null;
 }
 
-function isRemoteUser(user: T2P<User, user>): user is RemoteUser;
+function isRemoteUser(user: user): user is RemoteUser;
 function isRemoteUser<T extends { host: User['host'] }>(user: T): user is (T & { host: string; });
-function isRemoteUser(user: T2P<User, user> | { host: User['host'] }): boolean {
+function isRemoteUser(user: user | { host: User['host'] }): boolean {
 	return !isLocalUser(user);
 }
 
@@ -178,7 +177,7 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public getOnlineStatus(user: T2P<User, user>): 'unknown' | 'online' | 'active' | 'offline' {
+	public getOnlineStatus(user: user): 'unknown' | 'online' | 'active' | 'offline' {
 		if (user.hideOnlineStatus) return 'unknown';
 		if (user.lastActiveDate == null) return 'unknown';
 		const elapsed = Date.now() - user.lastActiveDate.getTime();
@@ -190,7 +189,7 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public getIdenticonUrl(user: T2P<User, user>): string {
+	public getIdenticonUrl(user: user): string {
 		return `${this.config.url}/identicon/${user.username.toLowerCase()}@${user.host ?? this.config.host}`;
 	}
 
@@ -206,12 +205,12 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	public async pack<ExpectsMe extends boolean | null = null, D extends boolean = false>(
-		src: User['id'] | T2P<User, user>,
+		src: User['id'] | user,
 		me?: { id: User['id']; } | null | undefined,
 		options?: {
 			detail?: D,
 			includeSecrets?: boolean,
-			userProfile?: T2P<UserProfile, user_profile>,
+			userProfile?: user_profile,
 		},
 	): Promise<IsMeAndIsUserDetailed<ExpectsMe, D>> {
 		const opts = Object.assign({
@@ -247,7 +246,7 @@ export class UserEntityService implements OnModuleInit {
 
 		const meId = me ? me.id : null;
 		const isMe = meId === user.id;
-		const iAmModerator = me ? await this.roleService.isModerator(me as User) : false;
+		const iAmModerator = me ? await this.roleService.isModerator(me as user) : false;
 
 		const relation = meId && !isMe && opts.detail ? await this.getRelation(meId, user.id) : null;
 		const pins = opts.detail ? await this.prismaService.client.user_note_pining.findMany({

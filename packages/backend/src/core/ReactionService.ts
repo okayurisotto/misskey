@@ -20,7 +20,6 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { RoleService } from '@/core/RoleService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { note, note_reaction } from '@prisma/client';
 
@@ -80,7 +79,7 @@ export class ReactionService {
 	) {}
 
 	@bindThis
-	public async create(user: { id: User['id']; host: User['host']; isBot: User['isBot'] }, note: T2P<Note, note>, _reaction?: string | null) {
+	public async create(user: { id: User['id']; host: User['host']; isBot: User['isBot'] }, note: note, _reaction?: string | null) {
 		// Check blocking
 		if (note.userId !== user.id) {
 			const blocked = await this.userBlockingService.checkBlocked(note.userId, user.id);
@@ -135,7 +134,7 @@ export class ReactionService {
 			}
 		}
 
-		const record: T2P<NoteReaction, note_reaction> = {
+		const record: note_reaction = {
 			id: this.idService.genId(),
 			createdAt: new Date(),
 			noteId: note.id,
@@ -262,7 +261,7 @@ export class ReactionService {
 	}
 
 	@bindThis
-	public async delete(user: { id: User['id']; host: User['host']; isBot: User['isBot']; }, note: T2P<Note, note>) {
+	public async delete(user: { id: User['id']; host: User['host']; isBot: User['isBot']; }, note: note) {
 		// if already unreacted
 		const exist = await this.prismaService.client.note_reaction.findUnique({
 			where: {

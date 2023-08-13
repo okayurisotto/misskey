@@ -3,7 +3,6 @@ import type { Blocking } from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
 import type { BlockingSchema } from '@/models/zod/BlockingSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type z from 'zod';
@@ -18,7 +17,7 @@ export class BlockingEntityService {
 
 	@bindThis
 	public async pack(
-		src: Blocking['id'] | T2P<Blocking, blocking>,
+		src: Blocking['id'] | blocking,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof BlockingSchema>> {
 		const blocking =

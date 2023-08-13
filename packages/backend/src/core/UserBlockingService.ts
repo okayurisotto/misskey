@@ -13,7 +13,6 @@ import { WebhookService } from '@/core/WebhookService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { blocking, user } from '@prisma/client';
 
@@ -43,7 +42,7 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async block(blocker: T2P<User, user>, blockee: T2P<User, user>, silent = false) {
+	public async block(blocker: user, blockee: user, silent = false) {
 		await Promise.all([
 			this.cancelRequest(blocker, blockee, silent),
 			this.cancelRequest(blockee, blocker, silent),
@@ -52,7 +51,7 @@ export class UserBlockingService implements OnModuleInit {
 			this.removeFromList(blockee, blocker),
 		]);
 
-		const blocking: T2P<Blocking, blocking> = {
+		const blocking: blocking = {
 			id: this.idService.genId(),
 			createdAt: new Date(),
 			blockerId: blocker.id,
@@ -72,17 +71,14 @@ export class UserBlockingService implements OnModuleInit {
 		if (this.userEntityService.isLocalUser(blocker) && this.userEntityService.isRemoteUser(blockee)) {
 			const content = this.apRendererService.addContext(this.apRendererService.renderBlock({
 				...blocking,
-				blockee: {
-					...blockee,
-					alsoKnownAs: typeof blockee.alsoKnownAs === 'string' ? blockee.alsoKnownAs.split(',') : blockee.alsoKnownAs,
-				},
+				blockee,
 			}));
 			this.queueService.deliver(blocker, content, blockee.inbox, false);
 		}
 	}
 
 	@bindThis
-	private async cancelRequest(follower: T2P<User, user>, followee: T2P<User, user>, silent = false) {
+	private async cancelRequest(follower: user, followee: user, silent = false) {
 		const request = await this.prismaService.client.follow_request.findUnique({
 			where: {
 				followerId_followeeId: {
@@ -140,7 +136,7 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async removeFromList(listOwner: T2P<User, user>, user: T2P<User, user>) {
+	private async removeFromList(listOwner: user, user: user) {
 		await this.prismaService.client.user_list_joining.deleteMany({
 			where: {
 				user_list: { userId: listOwner.id },
@@ -150,7 +146,7 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async unblock(blocker: T2P<User, user>, blockee: T2P<User, user>) {
+	public async unblock(blocker: user, blockee: user) {
 		const blocking_ = await this.prismaService.client.blocking.findUnique({
 			where: {
 				blockerId_blockeeId: {

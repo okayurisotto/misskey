@@ -6,7 +6,6 @@ import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
@@ -85,7 +84,7 @@ export default class InstanceChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async updateNote(host: string, note: T2P<Note, note>, isAdditional: boolean): Promise<void> {
+	public async updateNote(host: string, note: note, isAdditional: boolean): Promise<void> {
 		await this.commit({
 			'notes.total': isAdditional ? 1 : -1,
 			'notes.inc': isAdditional ? 1 : 0,
@@ -116,7 +115,7 @@ export default class InstanceChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async updateDrive(file: T2P<DriveFile, drive_file>, isAdditional: boolean): Promise<void> {
+	public async updateDrive(file: drive_file, isAdditional: boolean): Promise<void> {
 		const fileSizeKb = file.size / 1000;
 		await this.commit({
 			'drive.totalFiles': isAdditional ? 1 : -1,

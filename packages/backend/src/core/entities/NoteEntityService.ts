@@ -11,7 +11,6 @@ import { bindThis } from '@/decorators.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
@@ -100,7 +99,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async populatePoll(note: T2P<Note, note>, meId: User['id'] | null) {
+	private async populatePoll(note: note, meId: User['id'] | null) {
 		const poll = await this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: note.id } });
 		const choices = poll.choices.map(c => ({
 			text: c,
@@ -143,7 +142,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async populateMyReaction(note: T2P<Note, note>, meId: User['id'], _hint_?: {
+	private async populateMyReaction(note: note, meId: User['id'], _hint_?: {
 		myReactions: Map<Note['id'], NoteReaction | null>;
 	}) {
 		if (_hint_?.myReactions) {
@@ -178,7 +177,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async isVisibleForMe(note: T2P<Note, note>, meId: User['id'] | null): Promise<boolean> {
+	public async isVisibleForMe(note: note, meId: User['id'] | null): Promise<boolean> {
 		// This code must always be synchronized with the checks in generateVisibilityQuery.
 		// visibility が specified かつ自分が指定されていなかったら非表示
 		if (note.visibility === 'specified') {
@@ -248,13 +247,13 @@ export class NoteEntityService implements OnModuleInit {
 
 	@bindThis
 	public async pack(
-		src: Note['id'] | T2P<Note, note>,
+		src: Note['id'] | note,
 		me?: { id: User['id'] } | null | undefined,
 		options?: {
 			detail?: boolean;
 			skipHide?: boolean;
 			_hint_?: {
-				myReactions: Map<Note['id'], T2P<NoteReaction, note_reaction> | null>;
+				myReactions: Map<Note['id'], note_reaction | null>;
 				packedFiles: Map<Note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>;
 			};
 		},
@@ -392,7 +391,7 @@ export class NoteEntityService implements OnModuleInit {
 
 	@bindThis
 	public async packMany(
-		notes: (T2P<Note, note> & { renote?: T2P<Note, note> | null; reply?: T2P<Note, note> | null })[],
+		notes: (note & { renote?: note | null; reply?: note | null })[],
 		me?: { id: User['id'] } | null | undefined,
 		options?: {
 			detail?: boolean;
@@ -434,7 +433,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public aggregateNoteEmojis(notes: (T2P<Note, note> & { renote?: (T2P<Note, note> & { user?: T2P<User, user> }) | null; user?: T2P<User, user> })[]) {
+	public aggregateNoteEmojis(notes: (note & { renote?: (note & { user?: user }) | null; user?: user })[]) {
 		let emojis: { name: string | null; host: string | null; }[] = [];
 		for (const note of notes) {
 			emojis = emojis.concat(note.emojis

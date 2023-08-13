@@ -6,7 +6,6 @@ import { IdService } from '@/core/IdService.js';
 import { DI } from '@/di-symbols.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { instance } from '@prisma/client';
 
@@ -22,7 +21,7 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.federatedInstanceCache = new RedisKVCache<T2P<Instance, instance> | null>(this.redisClient, 'federatedInstance', {
+		this.federatedInstanceCache = new RedisKVCache<instance | null>(this.redisClient, 'federatedInstance', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60 * 3, // 3m
 			fetcher: (key) => this.prismaService.client.instance.findUnique({ where: { host: key } }),
@@ -41,7 +40,7 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async fetch(host: string): Promise<T2P<Instance, instance>> {
+	public async fetch(host: string): Promise<instance> {
 		host = this.utilityService.toPuny(host);
 
 		const cached = await this.federatedInstanceCache.get(host);
@@ -67,7 +66,7 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async update(id: Instance['id'], data: Partial<T2P<Instance, instance>>): Promise<void> {
+	public async update(id: Instance['id'], data: Partial<instance>): Promise<void> {
 		const result = await this.prismaService.client.instance.update({
 			where: { id },
 			data,

@@ -5,13 +5,12 @@ import { RedisKVCache } from '@/misc/cache.js';
 import type { UserKeypair } from '@/models/entities/UserKeypair.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user_keypair } from '@prisma/client';
 
 @Injectable()
 export class UserKeypairService implements OnApplicationShutdown {
-	private cache: RedisKVCache<T2P<UserKeypair, user_keypair>>;
+	private cache: RedisKVCache<user_keypair>;
 
 	constructor(
 		@Inject(DI.redis)
@@ -19,7 +18,7 @@ export class UserKeypairService implements OnApplicationShutdown {
 
 		private readonly prismaService: PrismaService,
 	) {
-		this.cache = new RedisKVCache<T2P<UserKeypair, user_keypair>>(this.redisClient, 'userKeypair', {
+		this.cache = new RedisKVCache<user_keypair>(this.redisClient, 'userKeypair', {
 			lifetime: 1000 * 60 * 60 * 24, // 24h
 			memoryCacheLifetime: Infinity,
 			fetcher: (key) => this.prismaService.client.user_keypair.findUniqueOrThrow({ where: { userId: key } }),
@@ -29,7 +28,7 @@ export class UserKeypairService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getUserKeypair(userId: User['id']): Promise<T2P<UserKeypair, user_keypair>> {
+	public async getUserKeypair(userId: User['id']): Promise<user_keypair> {
 		return await this.cache.fetch(userId);
 	}
 

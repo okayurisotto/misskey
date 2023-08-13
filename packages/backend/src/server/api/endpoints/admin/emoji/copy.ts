@@ -7,7 +7,6 @@ import { DriveService } from '@/core/DriveService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
 import type { drive_file } from '@prisma/client';
@@ -52,7 +51,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchEmoji);
 			}
 
-			let driveFile: T2P<DriveFile, drive_file>;
+			let driveFile: drive_file;
 
 			try {
 				// Create file

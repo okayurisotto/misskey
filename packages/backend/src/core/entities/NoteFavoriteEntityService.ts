@@ -3,7 +3,6 @@ import type {} from '@/models/entities/Blocking.js';
 import type { User } from '@/models/entities/User.js';
 import type { NoteFavorite } from '@/models/entities/NoteFavorite.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { NoteEntityService } from './NoteEntityService.js';
 import type { note_favorite } from '@prisma/client';
@@ -17,7 +16,7 @@ export class NoteFavoriteEntityService {
 
 	@bindThis
 	public async pack(
-		src: NoteFavorite['id'] | T2P<NoteFavorite, note_favorite>,
+		src: NoteFavorite['id'] | note_favorite,
 		me?: { id: User['id'] } | null | undefined,
 	) {
 		const favorite =

@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import type { User } from '@/models/index.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma, user } from '@prisma/client';
 
@@ -52,7 +51,7 @@ export class PrismaQueryService {
 	}
 
 	public getVisibilityWhereForNote(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Prisma.noteWhereInput {
 		if (userId === null) {
 			return { OR: [{ visibility: 'public' }, { visibility: 'home' }] };
@@ -87,7 +86,7 @@ export class PrismaQueryService {
 	}
 
 	public getRepliesWhereForNote(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Prisma.noteWhereInput {
 		if (userId === null) {
 			return {
@@ -123,7 +122,7 @@ export class PrismaQueryService {
 	}
 
 	public getChannelWhereForNote(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Prisma.noteWhereInput {
 		if (userId === null) return { channelId: null };
 
@@ -136,7 +135,7 @@ export class PrismaQueryService {
 	}
 
 	public getBlockedWhereForNote(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Prisma.noteWhereInput {
 		if (userId === null) return {};
 
@@ -180,7 +179,7 @@ export class PrismaQueryService {
 	}
 
 	public async getNoteThreadMutingWhereForNote(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Promise<Prisma.noteWhereInput> {
 		if (userId === null) return {};
 
@@ -196,7 +195,7 @@ export class PrismaQueryService {
 	}
 
 	public async getMutingWhereForNote(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Promise<Prisma.noteWhereInput> {
 		if (userId === null) return {};
 
@@ -257,7 +256,7 @@ export class PrismaQueryService {
 	}
 
 	public async getRenoteMutingWhereForNote(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Promise<Prisma.noteWhereInput> {
 		if (userId === null) return {};
 
@@ -280,7 +279,7 @@ export class PrismaQueryService {
 	}
 
 	public getBlockedWhereForUser(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Prisma.userWhereInput {
 		if (userId === null) return {};
 
@@ -291,14 +290,14 @@ export class PrismaQueryService {
 	}
 
 	public getMutingWhereForUser(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Prisma.userWhereInput {
 		if (userId === null) return {};
 		return { muting_muting_muteeIdTouser: { none: { muterId: userId } } };
 	}
 
 	public getVisibilityWhereForNoteReaction(
-		userId: T2P<User, user>['id'] | null,
+		userId: user['id'] | null,
 	): Prisma.note_reactionWhereInput {
 		if (userId === null) {
 			return {

@@ -20,7 +20,6 @@ import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOption
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma, note, user } from '@prisma/client';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
-import type { T2P } from '@/types.js';
 
 const ACTIVITY_JSON = 'application/activity+json; charset=utf-8';
 const LD_JSON = 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"; charset=utf-8';
@@ -57,7 +56,7 @@ export class ActivityPubServerService {
 	 * @param note Note
 	 */
 	@bindThis
-	private async packActivity(note: T2P<Note, note>): Promise<any> {
+	private async packActivity(note: note): Promise<any> {
 		if (note.renoteId && note.text == null && !note.hasPoll && (note.fileIds == null || note.fileIds.length === 0)) {
 			const renote = await this.prismaService.client.note.findUniqueOrThrow({ where: { id: note.renoteId } });
 			return this.apRendererService.renderAnnounce(renote.uri ? renote.uri : `${this.config.url}/notes/${renote.id}`, note);
@@ -406,7 +405,7 @@ export class ActivityPubServerService {
 	}
 
 	@bindThis
-	private async userInfo(request: FastifyRequest, reply: FastifyReply, user: T2P<User, user> | null) {
+	private async userInfo(request: FastifyRequest, reply: FastifyReply, user: user | null) {
 		if (user == null) {
 			reply.code(404);
 			return;

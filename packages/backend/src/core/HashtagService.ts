@@ -4,7 +4,6 @@ import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { IdService } from '@/core/IdService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -25,7 +24,7 @@ export class HashtagService {
 	}
 
 	@bindThis
-	public async updateUsertags(user: T2P<User, user>, tags: string[]) {
+	public async updateUsertags(user: user, tags: string[]) {
 		for (const tag of tags) {
 			await this.updateHashtag(user, tag, true, true);
 		}

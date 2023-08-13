@@ -9,7 +9,6 @@ import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
 import { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import { getApId } from './type.js';
 import { ApPersonService } from './models/ApPersonService.js';
 import type { IObject } from './type.js';
@@ -32,8 +31,8 @@ export type UriParseResult = {
 
 @Injectable()
 export class ApDbResolverService implements OnApplicationShutdown {
-	private publicKeyCache: MemoryKVCache<T2P<UserPublickey, user_publickey> | null>;
-	private publicKeyByUserIdCache: MemoryKVCache<T2P<UserPublickey, user_publickey> | null>;
+	private publicKeyCache: MemoryKVCache<user_publickey | null>;
+	private publicKeyByUserIdCache: MemoryKVCache<user_publickey | null>;
 
 	constructor(
 		@Inject(DI.config)
@@ -43,8 +42,8 @@ export class ApDbResolverService implements OnApplicationShutdown {
 		private readonly apPersonService: ApPersonService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.publicKeyCache = new MemoryKVCache<T2P<UserPublickey, user_publickey> | null>(Infinity);
-		this.publicKeyByUserIdCache = new MemoryKVCache<T2P<UserPublickey, user_publickey> | null>(Infinity);
+		this.publicKeyCache = new MemoryKVCache<user_publickey | null>(Infinity);
+		this.publicKeyByUserIdCache = new MemoryKVCache<user_publickey | null>(Infinity);
 	}
 
 	@bindThis
@@ -67,7 +66,7 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	 * AP Note => Misskey Note in DB
 	 */
 	@bindThis
-	public async getNoteFromApId(value: string | IObject): Promise<T2P<Note, note> | null> {
+	public async getNoteFromApId(value: string | IObject): Promise<note | null> {
 		const parsed = this.parseUri(value);
 
 		if (parsed.local) {
@@ -111,7 +110,7 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	@bindThis
 	public async getAuthUserFromKeyId(keyId: string): Promise<{
 		user: RemoteUser;
-		key: T2P<UserPublickey, user_publickey>;
+		key: user_publickey;
 	} | null> {
 		const key = await this.publicKeyCache.fetch(
 			keyId,
@@ -141,7 +140,7 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	@bindThis
 	public async getAuthUserFromApId(uri: string): Promise<{
 		user: RemoteUser;
-		key: T2P<UserPublickey, user_publickey> | null;
+		key: user_publickey | null;
 	} | null> {
 		const user = await this.apPersonService.resolvePerson(uri) as RemoteUser;
 

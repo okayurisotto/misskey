@@ -15,7 +15,6 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import { z } from 'zod';
-import type { T2P } from '@/types.js';
 import type { role, role_assignment, user } from '@prisma/client';
 import { PrismaService } from '@/core/PrismaService.js';
 
@@ -69,8 +68,8 @@ export const DEFAULT_POLICIES: RolePolicies = {
 
 @Injectable()
 export class RoleService implements OnApplicationShutdown {
-	private rolesCache: MemorySingleCache<T2P<Role, role>[]>;
-	private roleAssignmentByUserIdCache: MemoryKVCache<T2P<RoleAssignment, role_assignment>[]>;
+	private rolesCache: MemorySingleCache<role[]>;
+	private roleAssignmentByUserIdCache: MemoryKVCache<role_assignment[]>;
 
 	public static AlreadyAssignedError = class extends Error {};
 	public static NotAssignedError = class extends Error {};
@@ -91,8 +90,8 @@ export class RoleService implements OnApplicationShutdown {
 	) {
 		//this.onMessage = this.onMessage.bind(this);
 
-		this.rolesCache = new MemorySingleCache<T2P<Role, role>[]>(1000 * 60 * 60 * 1);
-		this.roleAssignmentByUserIdCache = new MemoryKVCache<T2P<RoleAssignment, role_assignment>[]>(1000 * 60 * 60 * 1);
+		this.rolesCache = new MemorySingleCache<role[]>(1000 * 60 * 60 * 1);
+		this.roleAssignmentByUserIdCache = new MemoryKVCache<role_assignment[]>(1000 * 60 * 60 * 1);
 
 		this.redisForSub.on('message', this.onMessage);
 	}
@@ -163,7 +162,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private evalCond(user: T2P<User, user>, value: RoleCondFormulaValue): boolean {
+	private evalCond(user: user, value: RoleCondFormulaValue): boolean {
 		try {
 			switch (value.type) {
 				case 'and': {
@@ -344,7 +343,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getModerators(includeAdmins = true): Promise<User[]> {
+	public async getModerators(includeAdmins = true): Promise<user[]> {
 		const ids = await this.getModeratorIds(includeAdmins);
 		const users = ids.length > 0 ? await this.prismaService.client.user.findMany({
 			where: { id: { in: ids } },
@@ -364,7 +363,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getAdministrators(): Promise<T2P<User, user>[]> {
+	public async getAdministrators(): Promise<user[]> {
 		const ids = await this.getAdministratorIds();
 		const users = ids.length > 0 ? await this.prismaService.client.user.findMany({
 			where: { id: { in: ids } },

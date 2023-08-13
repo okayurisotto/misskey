@@ -35,7 +35,6 @@ import { FeedService } from './FeedService.js';
 import { UrlPreviewService } from './UrlPreviewService.js';
 import { ClientLoggerService } from './ClientLoggerService.js';
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply } from 'fastify';
-import type { T2P } from '@/types.js';
 import type { meta } from '@prisma/client';
 import { PrismaService } from '@/core/PrismaService.js';
 import { z } from 'zod';
@@ -93,7 +92,7 @@ export class ClientServerService {
 	}
 
 	@bindThis
-	private generateCommonPugData(meta: T2P<Meta, meta>) {
+	private generateCommonPugData(meta: meta) {
 		return {
 			instanceName: meta.name ?? 'Misskey',
 			icon: meta.iconUrl,

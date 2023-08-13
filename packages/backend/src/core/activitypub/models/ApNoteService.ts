@@ -17,7 +17,6 @@ import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { checkHttps } from '@/misc/check-https.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { getOneApId, getApId, getOneApHrefNullable, validPost, isEmoji, getApType } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
@@ -92,7 +91,7 @@ export class ApNoteService {
 	 * Misskeyに対象のNoteが登録されていればそれを返します。
 	 */
 	@bindThis
-	public async fetchNote(object: string | IObject): Promise<T2P<Note, note> | null> {
+	public async fetchNote(object: string | IObject): Promise<note | null> {
 		return await this.apDbResolverService.getNoteFromApId(object);
 	}
 
@@ -100,7 +99,7 @@ export class ApNoteService {
 	 * Noteを作成します。
 	 */
 	@bindThis
-	public async createNote(value: string | IObject, resolver?: Resolver, silent = false): Promise<T2P<Note, note> | null> {
+	public async createNote(value: string | IObject, resolver?: Resolver, silent = false): Promise<note | null> {
 		// eslint-disable-next-line no-param-reassign
 		if (resolver == null) resolver = this.apResolverService.createResolver();
 
@@ -163,7 +162,7 @@ export class ApNoteService {
 		// 添付ファイル
 		// TODO: attachmentは必ずしもImageではない
 		// TODO: attachmentは必ずしも配列ではない
-		const limit = promiseLimit<T2P<DriveFile, drive_file>>(2);
+		const limit = promiseLimit<drive_file>(2);
 		const files = (await Promise.all(toArray(note.attachment).map(attach => (
 			limit(() => this.apImageService.resolveImage(actor, {
 				...attach,
@@ -172,7 +171,7 @@ export class ApNoteService {
 		))));
 
 		// リプライ
-		const reply: T2P<Note, note> | null = note.inReplyTo
+		const reply: note | null = note.inReplyTo
 			? await this.resolveNote(note.inReplyTo, { resolver })
 				.then(x => {
 					if (x == null) {
@@ -193,7 +192,7 @@ export class ApNoteService {
 
 		if (note._misskey_quote || note.quoteUrl) {
 			const tryResolveNote = async (uri: string): Promise<
-				| { status: 'ok'; res: T2P<Note, note> }
+				| { status: 'ok'; res: note }
 				| { status: 'permerror' | 'temperror' }
 			> => {
 				if (!/^https?:/.test(uri)) return { status: 'permerror' };
@@ -289,7 +288,7 @@ export class ApNoteService {
 	 * リモートサーバーからフェッチしてMisskeyに登録しそれを返します。
 	 */
 	@bindThis
-	public async resolveNote(value: string | IObject, options: { sentFrom?: URL, resolver?: Resolver } = {}): Promise<T2P<Note, note> | null> {
+	public async resolveNote(value: string | IObject, options: { sentFrom?: URL, resolver?: Resolver } = {}): Promise<note | null> {
 		const uri = getApId(value);
 
 		// ブロックしていたら中断

@@ -13,7 +13,6 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import type { channel, drive_file, note, user } from '@prisma/client';
 
 const res = z.object({ createdNote: NoteSchema });
@@ -131,14 +130,14 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			let visibleUsers: T2P<User, user>[] = [];
+			let visibleUsers: user[] = [];
 			if (ps.visibleUserIds) {
 				visibleUsers = await this.prismaService.client.user.findMany({
 					where: { id: { in: ps.visibleUserIds } },
 				});
 			}
 
-			let files: T2P<DriveFile, drive_file>[] = [];
+			let files: drive_file[] = [];
 			const fileIds =
 				ps.fileIds != null
 					? ps.fileIds
@@ -162,7 +161,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			let renote: T2P<Note, note> | null = null;
+			let renote: note | null = null;
 			if (ps.renoteId != null) {
 				// Fetch renote to note
 				renote = await this.prismaService.client.note.findUnique({
@@ -193,7 +192,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			let reply: T2P<Note, note> | null = null;
+			let reply: note | null = null;
 			if (ps.replyId != null) {
 				// Fetch reply
 				reply = await this.prismaService.client.note.findUnique({
@@ -237,7 +236,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			let channel: T2P<Channel, channel> | null = null;
+			let channel: channel | null = null;
 			if (ps.channelId != null) {
 				channel = await this.prismaService.client.channel.findUnique({
 					where: {

@@ -9,7 +9,6 @@ import type { Poll } from '@/models/entities/Poll.js';
 import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbJobDataWithUser } from '../types.js';
@@ -81,7 +80,7 @@ export class ExportFavoritesProcessorService {
 				cursor = favorites.at(-1)?.id ?? null;
 
 				for (const favorite of favorites) {
-					let poll: T2P<Poll, poll> | undefined;
+					let poll: poll | undefined;
 					if (favorite.note.hasPoll) {
 						poll = await this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: favorite.note.id } });
 					}
@@ -115,7 +114,7 @@ export class ExportFavoritesProcessorService {
 	}
 }
 
-function serialize(favorite: T2P<NoteFavorite, note_favorite> & { note: T2P<Note, note> & { user: T2P<User, user> } }, poll: T2P<Poll, poll> | null = null): Record<string, unknown> {
+function serialize(favorite: note_favorite & { note: note & { user: user } }, poll: poll | null = null): Record<string, unknown> {
 	return {
 		id: favorite.id,
 		createdAt: favorite.createdAt,

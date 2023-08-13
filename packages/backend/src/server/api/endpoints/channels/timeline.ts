@@ -12,7 +12,6 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
-import type { T2P } from '@/types.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -64,7 +63,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			let timeline: T2P<Note, note>[] = [];
+			let timeline: note[] = [];
 
 			const limit = ps.limit + (ps.untilId ? 1 : 0); // untilIdに指定したものも含まれるため+1
 			let noteIdsRes: [string, string[]][] = [];

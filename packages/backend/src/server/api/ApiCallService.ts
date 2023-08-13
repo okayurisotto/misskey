@@ -19,7 +19,6 @@ import type { OnApplicationShutdown } from '@nestjs/common';
 import type { IEndpointMeta, IEndpoint } from './endpoints.js';
 import { generateOpenApiSpec } from 'zod2spec';
 import { PrismaService } from '@/core/PrismaService.js';
-import { T2P } from '@/types.js';
 import { access_token } from '@prisma/client';
 
 const accessDenied = {
@@ -220,7 +219,7 @@ export class ApiCallService implements OnApplicationShutdown {
 	private async call(
 		ep: IEndpoint & { exec: any },
 		user: LocalUser | null | undefined,
-		token: T2P<AccessToken, access_token> | null | undefined,
+		token: access_token | null | undefined,
 		data: any,
 		file: {
 			name: string;

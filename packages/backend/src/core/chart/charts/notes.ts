@@ -4,7 +4,6 @@ import type { Note } from '@/models/entities/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
@@ -46,7 +45,7 @@ export default class NotesChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async update(note: T2P<Note, note>, isAdditional: boolean): Promise<void> {
+	public async update(note: note, isAdditional: boolean): Promise<void> {
 		const prefix = note.userHost === null ? 'local' : 'remote';
 
 		await this.commit({

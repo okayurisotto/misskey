@@ -10,7 +10,6 @@ import { LoggerService } from '@/core/LoggerService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { bindThis } from '@/decorators.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
-import type { T2P } from '@/types.js';
 import type { DOMWindow } from 'jsdom';
 import type { instance } from '@prisma/client';
 
@@ -59,7 +58,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	public async fetchInstanceMetadata(instance: T2P<Instance, instance>, force = false): Promise<void> {
+	public async fetchInstanceMetadata(instance: instance, force = false): Promise<void> {
 		const host = instance.host;
 		// Acquire mutex to ensure no parallel runs
 		if (!await this.tryLock(host)) return;
@@ -120,7 +119,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchNodeinfo(instance: T2P<Instance, instance>): Promise<NodeInfo> {
+	private async fetchNodeinfo(instance: instance): Promise<NodeInfo> {
 		this.logger.info(`Fetching nodeinfo of ${instance.host} ...`);
 
 		try {
@@ -164,7 +163,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchDom(instance: T2P<Instance, instance>): Promise<DOMWindow['document']> {
+	private async fetchDom(instance: instance): Promise<DOMWindow['document']> {
 		this.logger.info(`Fetching HTML of ${instance.host} ...`);
 
 		const url = 'https://' + instance.host;
@@ -178,7 +177,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchManifest(instance: T2P<Instance, instance>): Promise<Record<string, unknown> | null> {
+	private async fetchManifest(instance: instance): Promise<Record<string, unknown> | null> {
 		const url = 'https://' + instance.host;
 
 		const manifestUrl = url + '/manifest.json';
@@ -189,7 +188,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchFaviconUrl(instance: T2P<Instance, instance>, doc: DOMWindow['document'] | null): Promise<string | null> {
+	private async fetchFaviconUrl(instance: instance, doc: DOMWindow['document'] | null): Promise<string | null> {
 		const url = 'https://' + instance.host;
 
 		if (doc) {
@@ -215,7 +214,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchIconUrl(instance: T2P<Instance, instance>, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
+	private async fetchIconUrl(instance: instance, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
 		if (manifest && manifest.icons && manifest.icons.length > 0 && manifest.icons[0].src) {
 			const url = 'https://' + instance.host;
 			return (new URL(manifest.icons[0].src, url)).href;

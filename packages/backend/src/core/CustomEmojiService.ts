@@ -11,7 +11,6 @@ import { bindThis } from '@/decorators.js';
 import { MemoryKVCache, RedisSingleCache } from '@/misc/cache.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import type { Serialized } from '@/server/api/stream/types.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma, drive_file, emoji } from '@prisma/client';
 
@@ -19,8 +18,8 @@ const parseEmojiStrRegexp = /^(\w+)(?:@([\w.-]+))?$/;
 
 @Injectable()
 export class CustomEmojiService implements OnApplicationShutdown {
-	private cache: MemoryKVCache<T2P<Emoji, emoji> | null>;
-	public localEmojisCache: RedisSingleCache<Map<string, T2P<Emoji, emoji>>>;
+	private cache: MemoryKVCache<emoji | null>;
+	public localEmojisCache: RedisSingleCache<Map<string, emoji>>;
 
 	constructor(
 		@Inject(DI.redis)
@@ -32,9 +31,9 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.cache = new MemoryKVCache<T2P<Emoji, emoji> | null>(1000 * 60 * 60 * 12);
+		this.cache = new MemoryKVCache<emoji | null>(1000 * 60 * 60 * 12);
 
-		this.localEmojisCache = new RedisSingleCache<Map<string, T2P<Emoji, emoji>>>(this.redisClient, 'localEmojis', {
+		this.localEmojisCache = new RedisSingleCache<Map<string, emoji>>(this.redisClient, 'localEmojis', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60 * 3, // 3m
 			fetcher: () => this.prismaService.client.emoji.findMany({ where: { host: null } }).then(emojis => new Map(emojis.map(emoji => [emoji.name, emoji]))),
@@ -51,7 +50,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async add(data: {
-		driveFile: T2P<DriveFile, drive_file>;
+		driveFile: drive_file;
 		name: string;
 		category: string | null;
 		aliases: string[];
@@ -60,7 +59,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		isSensitive: boolean;
 		localOnly: boolean;
 		roleIdsThatCanBeUsedThisEmojiAsReaction: Role['id'][];
-	}): Promise<T2P<Emoji, emoji>> {
+	}): Promise<emoji> {
 		const emoji = await this.prismaService.client.emoji.create({
 			data: {
 				id: this.idService.genId(),
@@ -92,7 +91,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	public async update(id: Emoji['id'], data: {
-		driveFile?: T2P<DriveFile, drive_file>;
+		driveFile?: drive_file;
 		name?: string;
 		category?: string | null;
 		aliases?: string[];

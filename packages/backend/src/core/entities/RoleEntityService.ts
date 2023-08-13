@@ -4,7 +4,6 @@ import type { User } from '@/models/entities/User.js';
 import type { Role } from '@/models/entities/Role.js';
 import { bindThis } from '@/decorators.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { role } from '@prisma/client';
 
@@ -14,7 +13,7 @@ export class RoleEntityService {
 
 	@bindThis
 	public async pack(
-		src: Role['id'] | T2P<Role, role>,
+		src: Role['id'] | role,
 		me?: { id: User['id'] } | null | undefined,
 	) {
 		const role =

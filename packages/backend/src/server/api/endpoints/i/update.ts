@@ -7,7 +7,7 @@ import { extractHashtags } from '@/misc/extract-hashtags.js';
 import * as Acct from '@/misc/acct.js';
 import type { User } from '@/models/entities/User.js';
 import type { UserProfile } from '@/models/entities/UserProfile.js';
-import { T2P, notificationTypes } from '@/types.js';
+import { notificationTypes } from '@/types.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { langmap } from '@/misc/langmap.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';

@@ -21,7 +21,6 @@ import { CacheService } from '@/core/CacheService.js';
 import type { Config } from '@/config.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import Logger from '../logger.js';
 import type { z } from 'zod';
@@ -377,8 +376,8 @@ export class UserFollowingService implements OnModuleInit {
 
 	@bindThis
 	private async decrementFollowing(
-		follower: T2P<User, user>,
-		followee: T2P<User, user>,
+		follower: user,
+		followee: user,
 	): Promise<void> {
 		this.globalEventService.publishInternalEvent('unfollow', { followerId: follower.id, followeeId: followee.id });
 
@@ -561,7 +560,7 @@ export class UserFollowingService implements OnModuleInit {
 		followee: {
 			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox'];
 		},
-		follower: T2P<User, user>,
+		follower: user,
 	): Promise<void> {
 		const request = await this.prismaService.client.follow_request.findUnique({
 			where: {

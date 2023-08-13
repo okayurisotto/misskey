@@ -5,7 +5,6 @@ import type { User } from '@/models/entities/User.js';
 import type { Flash } from '@/models/entities/Flash.js';
 import { bindThis } from '@/decorators.js';
 import type { FlashSchema } from '@/models/zod/FlashSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
@@ -20,7 +19,7 @@ export class FlashEntityService {
 
 	@bindThis
 	public async pack(
-		src: Flash['id'] | T2P<Flash, flash>,
+		src: Flash['id'] | flash,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof FlashSchema>> {
 		const meId = me ? me.id : null;

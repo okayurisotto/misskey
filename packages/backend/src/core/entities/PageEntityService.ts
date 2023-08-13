@@ -6,7 +6,6 @@ import type { Page } from '@/models/entities/Page.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { bindThis } from '@/decorators.js';
 import type { PageSchema } from '@/models/zod/PageSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
@@ -22,7 +21,7 @@ export class PageEntityService {
 
 	@bindThis
 	public async pack(
-		src: Page['id'] | T2P<Page, page>,
+		src: Page['id'] | page,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof PageSchema>> {
 		const meId = me ? me.id : null;
@@ -31,7 +30,7 @@ export class PageEntityService {
 				? src
 				: await this.prismaService.client.page.findUniqueOrThrow({ where: { id: src } });
 
-		const attachedFiles: Promise<T2P<DriveFile, drive_file> | null>[] = [];
+		const attachedFiles: Promise<drive_file | null>[] = [];
 		const collectFile = (xs: any[]) => {
 			for (const x of xs) {
 				if (x.type === 'image') {

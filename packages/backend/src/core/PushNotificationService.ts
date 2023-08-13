@@ -12,7 +12,6 @@ import { RedisKVCache } from '@/misc/cache.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import type { z } from 'zod';
 
 // Defined also packages/sw/types.ts#L13
@@ -48,7 +47,7 @@ function truncateBody<T extends keyof PushNotificationsTypes>(type: T, body: Pus
 
 @Injectable()
 export class PushNotificationService implements OnApplicationShutdown {
-	private subscriptionsCache: RedisKVCache<T2P<SwSubscription, sw_subscription>[]>;
+	private subscriptionsCache: RedisKVCache<sw_subscription[]>;
 
 	constructor(
 		@Inject(DI.config)
@@ -60,7 +59,7 @@ export class PushNotificationService implements OnApplicationShutdown {
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.subscriptionsCache = new RedisKVCache<T2P<SwSubscription, sw_subscription>[]>(this.redisClient, 'userSwSubscriptions', {
+		this.subscriptionsCache = new RedisKVCache<sw_subscription[]>(this.redisClient, 'userSwSubscriptions', {
 			lifetime: 1000 * 60 * 60 * 1, // 1h
 			memoryCacheLifetime: 1000 * 60 * 3, // 3m
 			fetcher: (key) => this.prismaService.client.sw_subscription.findMany({ where: { userId: key } }),

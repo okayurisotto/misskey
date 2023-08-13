@@ -3,7 +3,6 @@ import type { Instance } from '@/models/entities/Instance.js';
 import { MetaService } from '@/core/MetaService.js';
 import { bindThis } from '@/decorators.js';
 import type { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
-import type { T2P } from '@/types.js';
 import { UtilityService } from '../UtilityService.js';
 import type { z } from 'zod';
 import type { instance } from '@prisma/client';
@@ -17,7 +16,7 @@ export class InstanceEntityService {
 
 	@bindThis
 	public async pack(
-		instance: T2P<Instance, instance>,
+		instance: instance,
 	): Promise<z.infer<typeof FederationInstanceSchema>> {
 		const meta = await this.metaService.fetch();
 		return {

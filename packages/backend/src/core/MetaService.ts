@@ -7,13 +7,12 @@ import { Meta } from '@/models/entities/Meta.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
-import type { T2P } from '@/types.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { meta } from '@prisma/client';
 
 @Injectable()
 export class MetaService implements OnApplicationShutdown {
-	private cache: T2P<Meta, meta> | undefined;
+	private cache: meta | undefined;
 	private intervalId: NodeJS.Timer;
 
 	constructor(
@@ -57,7 +56,7 @@ export class MetaService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async fetch(noCache = false): Promise<T2P<Meta, meta>> {
+	public async fetch(noCache = false): Promise<meta> {
 		if (!noCache && this.cache) return this.cache;
 
 		return await this.db.transaction(async transactionalEntityManager => {
@@ -92,7 +91,7 @@ export class MetaService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async update(data: Partial<T2P<Meta, meta>>): Promise<Meta> {
+	public async update(data: Partial<meta>): Promise<Meta> {
 		const updated = await this.db.transaction(async transactionalEntityManager => {
 			const metas = await transactionalEntityManager.find(Meta, {
 				order: {

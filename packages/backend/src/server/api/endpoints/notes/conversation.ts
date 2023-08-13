@@ -8,7 +8,6 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import type { note } from '@prisma/client';
 
 const res = z.array(NoteSchema);
@@ -51,7 +50,7 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			const conversation: T2P<Note, note>[] = [];
+			const conversation: note[] = [];
 			let i = 0;
 
 			const get = async (id: any) => {

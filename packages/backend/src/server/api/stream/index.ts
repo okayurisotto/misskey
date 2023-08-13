@@ -12,21 +12,20 @@ import type { EventEmitter } from 'events';
 import type Channel from './channel.js';
 import type { StreamEventEmitter, StreamMessages } from './types.js';
 import type { z } from 'zod';
-import type { T2P } from '@/types.js';
 import type { access_token, user, user_profile } from '@prisma/client';
 
 /**
  * Main stream connection
  */
 export default class Connection {
-	public user?: T2P<User, user>;
-	public token?: T2P<AccessToken, access_token>;
+	public user?: user;
+	public token?: access_token;
 	private wsConnection: WebSocket.WebSocket;
 	public subscriber: StreamEventEmitter;
 	private channels: Channel[] = [];
 	private subscribingNotes: any = {};
 	private cachedNotes: z.infer<typeof NoteSchema>[] = [];
-	public userProfile: T2P<UserProfile, user_profile> | null = null;
+	public userProfile: user_profile | null = null;
 	public following: Set<string> = new Set();
 	public followingChannels: Set<string> = new Set();
 	public userIdsWhoMeMuting: Set<string> = new Set();
@@ -40,8 +39,8 @@ export default class Connection {
 		private notificationService: NotificationService,
 		private cacheService: CacheService,
 
-		user: T2P<User, user> | null | undefined,
-		token: T2P<AccessToken, access_token> | null | undefined,
+		user: user | null | undefined,
+		token: access_token | null | undefined,
 	) {
 		if (user) this.user = user;
 		if (token) this.token = token;

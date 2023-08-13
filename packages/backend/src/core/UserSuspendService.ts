@@ -5,7 +5,6 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -52,7 +51,7 @@ export class UserSuspendService {
 	}
 
 	@bindThis
-	public async doPostUnsuspend(user: T2P<User, user>): Promise<void> {
+	public async doPostUnsuspend(user: user): Promise<void> {
 		this.globalEventService.publishInternalEvent('userChangeSuspendedState', { id: user.id, isSuspended: false });
 
 		if (this.userEntityService.isLocalUser(user)) {

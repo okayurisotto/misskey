@@ -7,7 +7,6 @@ import { UserSchema } from '@/models/zod/UserSchema.js';
 import { LocalUsernameSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
-import type { T2P } from '@/types.js';
 
 const res = z.array(UserSchema);
 export const meta = {
@@ -42,7 +41,7 @@ export default class extends Endpoint<
 			ps.query = ps.query.trim();
 			const isUsername = ps.query.startsWith('@');
 
-			let users: T2P<User, user>[] = [];
+			let users: user[] = [];
 
 			if (isUsername) {
 				users = await this.prismaService.client.user.findMany({

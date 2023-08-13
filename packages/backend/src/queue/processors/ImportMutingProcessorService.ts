@@ -7,7 +7,6 @@ import { DownloadService } from '@/core/DownloadService.js';
 import { UserMutingService } from '@/core/UserMutingService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
@@ -60,7 +59,7 @@ export class ImportMutingProcessorService {
 
 				if (!host) continue;
 
-				let target: T2P<User, user> | null = this.utilityService.isSelfHost(host)
+				let target: user | null = this.utilityService.isSelfHost(host)
 					? await this.prismaService.client.user.findFirst({
 						where: {
 							host: null,

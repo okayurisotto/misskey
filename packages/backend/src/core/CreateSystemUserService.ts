@@ -6,7 +6,6 @@ import { User } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import generateNativeUserToken from '@/misc/generate-native-user-token.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from './PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -18,7 +17,7 @@ export class CreateSystemUserService {
 	) {}
 
 	@bindThis
-	public async createSystemUser(username: string): Promise<T2P<User, user>> {
+	public async createSystemUser(username: string): Promise<user> {
 		const password = randomUUID();
 		const salt = await bcrypt.genSalt(8);
 		const hash = await bcrypt.hash(password, salt);

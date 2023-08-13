@@ -8,7 +8,6 @@ import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityServi
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import type { drive_file } from '@prisma/client';
 
 const res = GalleryPostSchema;
@@ -56,7 +55,7 @@ export default class extends Endpoint<
 						}),
 					),
 				)
-			).filter((file): file is T2P<DriveFile, drive_file> => file != null);
+			).filter((file): file is drive_file => file != null);
 
 			if (files.length === 0) {
 				throw new Error();

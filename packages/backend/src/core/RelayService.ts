@@ -8,7 +8,6 @@ import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { deepClone } from '@/misc/clone.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { relay } from '@prisma/client';
 
@@ -16,7 +15,7 @@ const ACTOR_USERNAME = 'relay.actor' as const;
 
 @Injectable()
 export class RelayService {
-	private relaysCache: MemorySingleCache<T2P<Relay, relay>[]>;
+	private relaysCache: MemorySingleCache<relay[]>;
 
 	constructor(
 		private readonly idService: IdService,
@@ -25,7 +24,7 @@ export class RelayService {
 		private readonly apRendererService: ApRendererService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.relaysCache = new MemorySingleCache<T2P<Relay, relay>[]>(1000 * 60 * 10);
+		this.relaysCache = new MemorySingleCache<relay[]>(1000 * 60 * 10);
 	}
 
 	@bindThis
@@ -44,7 +43,7 @@ export class RelayService {
 	}
 
 	@bindThis
-	public async addRelay(inbox: string): Promise<T2P<Relay, relay>> {
+	public async addRelay(inbox: string): Promise<relay> {
 		const relay = await this.prismaService.client.relay.create({
 			data: {
 				id: this.idService.genId(),
@@ -81,7 +80,7 @@ export class RelayService {
 	}
 
 	@bindThis
-	public async listRelay(): Promise<T2P<Relay, relay>[]> {
+	public async listRelay(): Promise<relay[]> {
 		const relays = await this.prismaService.client.relay.findMany();
 		return relays;
 	}

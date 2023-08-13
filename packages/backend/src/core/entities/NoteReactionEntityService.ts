@@ -4,7 +4,6 @@ import { bindThis } from '@/decorators.js';
 import type { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
 import type { User } from '@/models/entities/User.js';
 import type { NoteReaction } from '@/models/entities/NoteReaction.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { ReactionService } from '../ReactionService.js';
@@ -32,7 +31,7 @@ export class NoteReactionEntityService implements OnModuleInit {
 
 	@bindThis
 	public async pack(
-		src: NoteReaction['id'] | T2P<NoteReaction, note_reaction>,
+		src: NoteReaction['id'] | note_reaction,
 		me?: { id: User['id'] } | null | undefined,
 		options?: {
 			withNote: boolean;

@@ -8,7 +8,6 @@ import { ProxyAccountService } from '@/core/ProxyAccountService.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { QueueService } from '@/core/QueueService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user, user_list } from '@prisma/client';
 
@@ -27,7 +26,7 @@ export class UserListService {
 	) {}
 
 	@bindThis
-	public async push(target: T2P<User, user>, list: T2P<UserList, user_list>, me: T2P<User, user>) {
+	public async push(target: user, list: user_list, me: user) {
 		const currentCount = await this.prismaService.client.user_list_joining.count({
 			where: { userListId: list.id },
 		});

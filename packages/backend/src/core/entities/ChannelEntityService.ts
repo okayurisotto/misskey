@@ -3,7 +3,6 @@ import type { User } from '@/models/entities/User.js';
 import type { Channel } from '@/models/entities/Channel.js';
 import { bindThis } from '@/decorators.js';
 import type { ChannelSchema } from '@/models/zod/ChannelSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
 import { NoteEntityService } from './NoteEntityService.js';
@@ -21,7 +20,7 @@ export class ChannelEntityService {
 
 	@bindThis
 	public async pack(
-		src: Channel['id'] | T2P<Channel, channel>,
+		src: Channel['id'] | channel,
 		me?: { id: User['id'] } | null | undefined,
 		detailed?: boolean,
 	): Promise<z.infer<typeof ChannelSchema>> {

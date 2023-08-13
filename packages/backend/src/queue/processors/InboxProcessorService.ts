@@ -19,7 +19,6 @@ import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { LdSignatureService } from '@/core/activitypub/LdSignatureService.js';
 import { ApInboxService } from '@/core/activitypub/ApInboxService.js';
 import { bindThis } from '@/decorators.js';
-import type { T2P } from '@/types.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { InboxJobData } from '../types.js';
 import type { user_publickey } from '@prisma/client';
@@ -72,7 +71,7 @@ export class InboxProcessorService {
 		// HTTP-Signature keyIdを元にDBから取得
 		let authUser: {
 			user: RemoteUser;
-			key: T2P<UserPublickey, user_publickey> | null;
+			key: user_publickey | null;
 		} | null = await this.apDbResolverService.getAuthUserFromKeyId(signature.keyId);
 
 		// keyIdでわからなければ、activity.actorを元にDBから取得 || activity.actorを元にリモートから取得

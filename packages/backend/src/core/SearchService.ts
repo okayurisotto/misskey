@@ -5,7 +5,6 @@ import { bindThis } from '@/decorators.js';
 import { Note } from '@/models/entities/Note.js';
 import type { User } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import type { Index, MeiliSearch } from 'meilisearch';
@@ -98,7 +97,7 @@ export class SearchService {
 	}
 
 	@bindThis
-	public async indexNote(note: T2P<Note, note>): Promise<void> {
+	public async indexNote(note: note): Promise<void> {
 		if (note.text == null && note.cw == null) return;
 		if (!['home', 'public'].includes(note.visibility)) return;
 
@@ -134,7 +133,7 @@ export class SearchService {
 	}
 
 	@bindThis
-	public async unindexNote(note: T2P<Note, note>): Promise<void> {
+	public async unindexNote(note: note): Promise<void> {
 		if (!['home', 'public'].includes(note.visibility)) return;
 
 		if (this.meilisearch) {
@@ -143,7 +142,7 @@ export class SearchService {
 	}
 
 	@bindThis
-	public async searchNote(q: string, me: T2P<User, user> | null, opts: {
+	public async searchNote(q: string, me: user | null, opts: {
 		userId?: Note['userId'] | null;
 		channelId?: Note['channelId'] | null;
 		host?: string | null;
@@ -151,7 +150,7 @@ export class SearchService {
 		untilId?: Note['id'];
 		sinceId?: Note['id'];
 		limit?: number;
-	}): Promise<T2P<Note, note>[]> {
+	}): Promise<note[]> {
 		if (this.meilisearch) {
 			const filter: Q = {
 				op: 'and',

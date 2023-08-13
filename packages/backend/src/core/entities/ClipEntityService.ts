@@ -5,7 +5,6 @@ import type {} from '@/models/entities/Blocking.js';
 import type { Clip } from '@/models/entities/Clip.js';
 import { bindThis } from '@/decorators.js';
 import type { ClipSchema } from '@/models/zod/ClipSchema.js';
-import type { T2P } from '@/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
@@ -20,7 +19,7 @@ export class ClipEntityService {
 
 	@bindThis
 	public async pack(
-		src: Clip['id'] | T2P<Clip, clip>,
+		src: Clip['id'] | clip,
 		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof ClipSchema>> {
 		const meId = me ? me.id : null;

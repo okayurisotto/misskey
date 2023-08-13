@@ -10,7 +10,6 @@ import { bindThis } from '@/decorators.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { T2P } from '@/types.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbJobDataWithUser } from '../types.js';
@@ -83,7 +82,7 @@ export class ExportNotesProcessorService {
 				cursor = notes.at(-1)?.id ?? null;
 
 				for (const note of notes) {
-					let poll: T2P<Poll, poll> | undefined;
+					let poll: poll | undefined;
 					if (note.hasPoll) {
 						poll = await this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: note.id } });
 					}
@@ -116,7 +115,7 @@ export class ExportNotesProcessorService {
 	}
 }
 
-function serialize(note: T2P<Note, note>, poll: T2P<Poll, poll> | null = null, files: z.infer<typeof DriveFileSchema>[]): Record<string, unknown> {
+function serialize(note: note, poll: poll | null = null, files: z.infer<typeof DriveFileSchema>[]): Record<string, unknown> {
 	return {
 		id: note.id,
 		text: note.text,
