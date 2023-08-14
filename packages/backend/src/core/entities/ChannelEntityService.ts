@@ -13,9 +13,16 @@ export class ChannelEntityService {
 		private readonly driveFileEntityService: DriveFileEntityService,
 		private readonly noteEntityService: NoteEntityService,
 		private readonly prismaService: PrismaService,
-	) {
-	}
+	) {}
 
+	/**
+	 * `channel`をpackする。
+	 *
+	 * @param src
+	 * @param me       渡された場合、返り値に`isFollowing`と`isFavorited`と`hasUnreadNote`が含まれるようになる。
+	 * @param detailed `true`だった場合、返り値に`pinnedNotes`が含まれるようになる。
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: channel['id'] | channel,
@@ -92,7 +99,8 @@ export class ChannelEntityService {
 			} : {}),
 
 			...(detailed ? {
-				pinnedNotes: (await this.noteEntityService.packMany(pinnedNotes, me)).sort((a, b) => channel.pinnedNoteIds.indexOf(a.id) - channel.pinnedNoteIds.indexOf(b.id)),
+				pinnedNotes: (await this.noteEntityService.packMany(pinnedNotes, me))
+					.sort((a, b) => channel.pinnedNoteIds.indexOf(a.id) - channel.pinnedNoteIds.indexOf(b.id)),
 			} : {}),
 		};
 	}

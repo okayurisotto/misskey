@@ -14,14 +14,20 @@ export class AbuseUserReportEntityService {
 		private readonly userEntityService: UserEntityService,
 	) {}
 
+	/**
+	 * `abuse_user_report`をpackする。
+	 * `reporter`や`targetUser`、いた場合は`assignee`も含まれる。
+	 *
+	 * @param src
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: abuse_user_report['id'] | abuse_user_report,
 	): Promise<z.infer<typeof AbuseUserReportSchema>> {
-		const report =
-			typeof src === 'object'
-				? src
-				: await this.prismaService.client.abuse_user_report.findUniqueOrThrow({ where: { id: src } });
+		const report = typeof src === 'object'
+			? src
+			: await this.prismaService.client.abuse_user_report.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
 			reporter: () =>

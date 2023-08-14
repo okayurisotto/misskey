@@ -15,7 +15,14 @@ import type { NoteEntityService } from './NoteEntityService.js';
 import type { z } from 'zod';
 import type { note, user } from '@prisma/client';
 
-const NOTE_REQUIRED_NOTIFICATION_TYPES = new Set(['mention', 'reply', 'renote', 'quote', 'reaction', 'pollEnded'] as (typeof notificationTypes[number])[]);
+const NOTE_REQUIRED_NOTIFICATION_TYPES = new Set<typeof notificationTypes[number]>([
+	'mention',
+	'reply',
+	'renote',
+	'quote',
+	'reaction',
+	'pollEnded',
+]);
 
 @Injectable()
 export class NotificationEntityService implements OnModuleInit {
@@ -25,22 +32,27 @@ export class NotificationEntityService implements OnModuleInit {
 	constructor(
 		private readonly moduleRef: ModuleRef,
 		private readonly prismaService: PrismaService,
-	) {
-	}
+	) {}
 
 	onModuleInit(): void {
 		this.userEntityService = this.moduleRef.get('UserEntityService');
 		this.noteEntityService = this.moduleRef.get('NoteEntityService');
 	}
 
+	/**
+	 * `Notification`をpackする。
+	 *
+	 * @param src
+	 * @param meId
+	 * @param _options 使われていない。
+	 * @param hint
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: Notification,
 		meId: user['id'],
-		// eslint-disable-next-line @typescript-eslint/ban-types
-		options: {
-
-		},
+		_options: Record<PropertyKey, never>,
 		hint?: {
 			packedNotes: Map<note['id'], z.infer<typeof NoteSchema>>;
 			packedUsers: Map<user['id'], z.infer<typeof UserSchema>>;
@@ -71,8 +83,8 @@ export class NotificationEntityService implements OnModuleInit {
 			createdAt: new Date(notification.createdAt).toISOString(),
 			type: notification.type,
 			userId: notification.notifierId,
-			...(result.userIfNeed != null ? { user: result.userIfNeed } : {}),
-			...(result.noteIfNeed != null ? { note: result.noteIfNeed } : {}),
+			...(result.userIfNeed !== undefined ? { user: result.userIfNeed } : {}),
+			...(result.noteIfNeed !== undefined ? { note: result.noteIfNeed } : {}),
 			...(notification.type === 'reaction' ? { reaction: notification.reaction } : {}),
 			...(notification.type === 'achievementEarned' ? { achievement: notification.achievement } : {}),
 			...(notification.type === 'app' ? {
@@ -83,30 +95,39 @@ export class NotificationEntityService implements OnModuleInit {
 		};
 	}
 
+	/**
+	 * `Notification[]`をpackする。
+	 *
+	 * @param notifications
+	 * @param meId
+	 * @returns
+	 */
 	@bindThis
 	public async packMany(
 		notifications: Notification[],
 		meId: user['id'],
-	) {
+	): Promise<z.infer<typeof NotificationSchema>[]> {
 		if (notifications.length === 0) return [];
 
 		let validNotifications = notifications;
 
 		const noteIds = validNotifications.map(x => x.noteId).filter(isNotNull);
-		const notes = noteIds.length > 0 ? await this.prismaService.client.note.findMany({
-			where: { id: { in: noteIds } },
-		}) : [];
-		const packedNotesArray = await this.noteEntityService.packMany(notes, { id: meId }, {
-			detail: true,
-		});
+		const notes = noteIds.length > 0
+			? await this.prismaService.client.note.findMany({ where: { id: { in: noteIds } } })
+			: [];
+		const packedNotesArray = await this.noteEntityService.packMany(
+			notes,
+			{ id: meId },
+			{ detail: true },
+		);
 		const packedNotes = new Map(packedNotesArray.map(p => [p.id, p]));
 
 		validNotifications = validNotifications.filter(x => x.noteId == null || packedNotes.has(x.noteId));
 
 		const userIds = validNotifications.map(x => x.notifierId).filter(isNotNull);
-		const users = userIds.length > 0 ? await this.prismaService.client.user.findMany({
-			where: { id: { in: userIds } },
-		}) : [];
+		const users = userIds.length > 0
+			? await this.prismaService.client.user.findMany({ where: { id: { in: userIds } } })
+			: [];
 		const packedUsersArray = await Promise.all(
 			users.map((user) => this.userEntityService.pack(user, { id: meId }, { detail: false })),
 		);

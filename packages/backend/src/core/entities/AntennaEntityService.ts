@@ -5,10 +5,19 @@ import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { antenna } from '@prisma/client';
 
+const AntennaKeywordsSchema = z.array(z.array(z.string()));
+
 @Injectable()
 export class AntennaEntityService {
 	constructor(private readonly prismaService: PrismaService) {}
 
+	/**
+	 * `antenna`をpackする。
+	 * 現状、`hasUnreadNote`は常に`false`になる。
+	 *
+	 * @param src
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: antenna['id'] | antenna,
@@ -21,8 +30,8 @@ export class AntennaEntityService {
 			id: antenna.id,
 			createdAt: antenna.createdAt.toISOString(),
 			name: antenna.name,
-			keywords: z.array(z.array(z.string())).parse(antenna.keywords),
-			excludeKeywords: z.array(z.array(z.string())).parse(antenna.excludeKeywords),
+			keywords: AntennaKeywordsSchema.parse(antenna.keywords),
+			excludeKeywords: AntennaKeywordsSchema.parse(antenna.excludeKeywords),
 			src: antenna.src,
 			userListId: antenna.userListId,
 			users: antenna.users,

@@ -13,15 +13,21 @@ export class BlockingEntityService {
 		private readonly prismaService: PrismaService,
 	) {}
 
+	/**
+	 * `blocking`をpackする。
+	 *
+	 * @param src
+	 * @param me
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: blocking['id'] | blocking,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof BlockingSchema>> {
-		const blocking =
-			typeof src === 'object'
-				? src
-				: await this.prismaService.client.blocking.findUniqueOrThrow({ where: { id: src } });
+		const blocking = typeof src === 'object'
+			? src
+			: await this.prismaService.client.blocking.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: blocking.id,

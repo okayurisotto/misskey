@@ -13,6 +13,13 @@ export class InstanceEntityService {
 		private readonly utilityService: UtilityService,
 	) {}
 
+	/**
+	 * `instance`をpackする。
+	 * その`instance`がブロックされているか判定するために`meta.blockedHosts`を読み込む。
+	 *
+	 * @param instance
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		instance: instance,

@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { moderation_log } from '@prisma/client';
+import type { z } from 'zod';
 
 @Injectable()
 export class ModerationLogEntityService {
@@ -11,12 +13,26 @@ export class ModerationLogEntityService {
 		private readonly userEntityService: UserEntityService,
 	) {}
 
+	/**
+	 * `moderation_log`をpackする。
+	 *
+	 * @param src
+	 * @returns
+	 */
 	@bindThis
-	public async pack(src: moderation_log['id'] | moderation_log) {
-		const log =
-			typeof src === 'object'
-				? src
-				: await this.prismaService.client.moderation_log.findUniqueOrThrow({ where: { id: src } });
+	public async pack(
+		src: moderation_log['id'] | moderation_log
+	): Promise<{
+		id: string;
+		createdAt: string;
+		type: string;
+		info: unknown;
+		userId: string;
+		user: z.infer<typeof UserDetailedSchema>;
+	}> {
+		const log = typeof src === 'object'
+			? src
+			: await this.prismaService.client.moderation_log.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: log.id,

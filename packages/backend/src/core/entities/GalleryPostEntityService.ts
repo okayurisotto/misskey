@@ -16,20 +16,26 @@ export class GalleryPostEntityService {
 		private readonly userEntityService: UserEntityService,
 	) {}
 
+	/**
+	 * `gallery_post`をpackする。
+	 *
+	 * @param src
+	 * @param me 渡された場合、返り値の`isLiked`が`boolean`になる。
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: gallery_post['id'] | gallery_post,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof GalleryPostSchema>> {
 		const meId = me ? me.id : null;
-		const post =
-			typeof src === 'object'
-				? src
-				: await this.prismaService.client.gallery_post.findUniqueOrThrow({ where: { id: src } });
+		const post = typeof src === 'object'
+			? src
+			: await this.prismaService.client.gallery_post.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
 			user: () => this.userEntityService.pack(post.userId, me),
-			files: () => this.driveFileEntityService.packManyByIds(post.fileIds), // TODO: packMany causes N+1 queries
+			files: () => this.driveFileEntityService.packManyByIds(post.fileIds),
 			isLiked: async () =>
 				meId
 					? (await this.prismaService.client.gallery_like.count({

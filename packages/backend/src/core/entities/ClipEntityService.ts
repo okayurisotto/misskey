@@ -14,16 +14,22 @@ export class ClipEntityService {
 		private readonly prismaService: PrismaService,
 	) {}
 
+	/**
+	 * `clip`をpackする。
+	 *
+	 * @param src
+	 * @param me  渡された場合、返り値の`isFavorited`が`undefined`でなくなる。
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: clip['id'] | clip,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof ClipSchema>> {
 		const meId = me ? me.id : null;
-		const clip =
-			typeof src === 'object'
-				? src
-				: await this.prismaService.client.clip.findUniqueOrThrow({ where: { id: src } });
+		const clip = typeof src === 'object'
+			? src
+			: await this.prismaService.client.clip.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
 			user: () => this.userEntityService.pack(clip.userId),
@@ -41,9 +47,7 @@ export class ClipEntityService {
 		return {
 			id: clip.id,
 			createdAt: clip.createdAt.toISOString(),
-			lastClippedAt: clip.lastClippedAt
-				? clip.lastClippedAt.toISOString()
-				: null,
+			lastClippedAt: clip.lastClippedAt?.toISOString() ?? null,
 			userId: clip.userId,
 			user: result.user,
 			name: clip.name,

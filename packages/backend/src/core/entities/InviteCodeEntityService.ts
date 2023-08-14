@@ -14,17 +14,21 @@ export class InviteCodeEntityService {
 		private readonly userEntityService: UserEntityService,
 	) {}
 
+	/**
+	 * `registration_ticket`をpackする。
+	 *
+	 * @param src
+	 * @param me
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
-		src:
-			| registration_ticket['id']
-			| registration_ticket,
+		src: registration_ticket['id'] | registration_ticket,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof InviteCodeSchema>> {
-		const target =
-			typeof src === 'object'
-				? src
-				: await this.prismaService.client.registration_ticket.findUniqueOrThrow({ where: { id: src } });
+		const target = typeof src === 'object'
+			? src
+			: await this.prismaService.client.registration_ticket.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
 			createdBy: () =>
@@ -40,12 +44,12 @@ export class InviteCodeEntityService {
 		return {
 			id: target.id,
 			code: target.code,
-			expiresAt: target.expiresAt ? target.expiresAt.toISOString() : null,
+			expiresAt: target.expiresAt?.toISOString() ?? null,
 			createdAt: target.createdAt.toISOString(),
 			createdBy: result.createdBy,
 			usedBy: result.usedBy,
 			usedAt: target.usedAt ? target.usedAt.toISOString() : null,
-			used: !!target.usedAt,
+			used: target.usedAt !== null,
 		};
 	}
 }

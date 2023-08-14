@@ -6,8 +6,12 @@ import type { hashtag } from '@prisma/client';
 
 @Injectable()
 export class HashtagEntityService {
-	constructor() {}
-
+	/**
+	 * `hashtag`をpackする。
+	 *
+	 * @param src
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: hashtag,

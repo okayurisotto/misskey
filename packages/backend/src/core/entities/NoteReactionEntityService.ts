@@ -27,6 +27,14 @@ export class NoteReactionEntityService implements OnModuleInit {
 		this.reactionService = this.moduleRef.get('ReactionService');
 	}
 
+	/**
+	 * `note_reaction`をpackする。
+	 *
+	 * @param src
+	 * @param me
+	 * @param options.withNote `true`だった場合、返り値に`note`が含まれるようになる
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: note_reaction['id'] | note_reaction,
@@ -35,9 +43,10 @@ export class NoteReactionEntityService implements OnModuleInit {
 			withNote: boolean;
 		},
 	): Promise<z.infer<typeof NoteReactionSchema>> {
-		const opts = Object.assign({
+		const opts = {
 			withNote: false,
-		}, options);
+			...options,
+		};
 
 		const reaction = typeof src === 'object'
 			? src

@@ -9,6 +9,16 @@ import type { app, user } from '@prisma/client';
 export class AppEntityService {
 	constructor(private readonly prismaService: PrismaService) {}
 
+	/**
+	 * `app`をpackする。
+	 *
+	 * @param src
+	 * @param me                             渡された場合、返り値には`isAuthorized`が含まれる。
+	 * @param options.detail                 使われていない。
+	 * @param options.includeSecret
+	 * @param options.includeProfileImageIds 使われていない。
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: app['id'] | app,
@@ -19,11 +29,12 @@ export class AppEntityService {
 			includeProfileImageIds?: boolean
 		},
 	): Promise<z.infer<typeof AppSchema>> {
-		const opts = Object.assign({
+		const opts = {
 			detail: false,
 			includeSecret: false,
 			includeProfileImageIds: false,
-		}, options);
+			...options,
+		};
 
 		const app = typeof src === 'object'
 			? src

@@ -10,6 +10,13 @@ import type { drive_folder } from '@prisma/client';
 export class DriveFolderEntityService {
 	constructor(private readonly prismaService: PrismaService) {}
 
+	/**
+	 * `drive_folder`をpackする。
+	 *
+	 * @param src
+	 * @param options.detail `true`だった場合、`parent`が再帰的に解決される。
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: drive_folder['id'] | drive_folder,
@@ -17,15 +24,16 @@ export class DriveFolderEntityService {
 			detail: boolean
 		},
 	): Promise<z.infer<typeof DriveFolderSchema>> {
-		const opts = Object.assign({
+		const opts = {
 			detail: false,
-		}, options);
+			...options,
+		};
 
 		const folder = typeof src === 'object'
 			? src
 			: await this.prismaService.client.drive_folder.findUniqueOrThrow({ where: { id: src } });
 
-		const getDetail = async () => {
+		const getDetail = async (): Promise<Record<string, never> | { foldersCount: number; filesCount: number; parent?: z.infer<typeof DriveFolderSchema> }> => {
 			if (!opts.detail) return {};
 
 			const result = await awaitAll({

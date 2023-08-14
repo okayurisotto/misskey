@@ -14,16 +14,22 @@ export class FlashEntityService {
 		private readonly userEntityService: UserEntityService,
 	) {}
 
+	/**
+	 * `flash`をpackする。
+	 *
+	 * @param src
+	 * @param me 渡された場合、返り値に`isLiked`が含まれるようになる。
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: flash['id'] | flash,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof FlashSchema>> {
 		const meId = me ? me.id : null;
-		const flash =
-			typeof src === 'object'
-				? src
-				: await this.prismaService.client.flash.findUniqueOrThrow({ where: { id: src } });
+		const flash = typeof src === 'object'
+			? src
+			: await this.prismaService.client.flash.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
 			user: () => this.userEntityService.pack(flash.userId, me), // { detail: true } すると無限ループするので注意

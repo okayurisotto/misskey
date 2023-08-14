@@ -13,20 +13,26 @@ export class MutingEntityService {
 		private readonly userEntityService: UserEntityService,
 	) {}
 
+	/**
+	 * `muting`をpackする。
+	 *
+	 * @param src
+	 * @param me
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: muting['id'] | muting,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof MutingSchema>> {
-		const muting =
-			typeof src === 'object'
+		const muting = typeof src === 'object'
 				? src
 				: await this.prismaService.client.muting.findUniqueOrThrow({ where: { id: src } });
 
 		return {
 			id: muting.id,
 			createdAt: muting.createdAt.toISOString(),
-			expiresAt: muting.expiresAt ? muting.expiresAt.toISOString() : null,
+			expiresAt: muting.expiresAt?.toISOString() ?? null,
 			muteeId: muting.muteeId,
 			mutee: await this.userEntityService.pack(muting.muteeId, me, {
 				detail: true,

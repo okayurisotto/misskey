@@ -10,6 +10,12 @@ import type { emoji } from '@prisma/client';
 export class EmojiEntityService {
 	constructor(private readonly prismaService: PrismaService) {}
 
+	/**
+	 * `emoji`を`packする
+	 *
+	 * @param src
+	 * @returns
+	 */
 	@bindThis
 	public async packSimple(
 		src: emoji['id'] | emoji,
@@ -22,13 +28,20 @@ export class EmojiEntityService {
 			aliases: emoji.aliases,
 			name: emoji.name,
 			category: emoji.category,
-			// || emoji.originalUrl してるのは後方互換性のため（publicUrlはstringなので??はだめ）
-			url: emoji.publicUrl || emoji.originalUrl,
+			url: emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl, // 後方互換性
 			isSensitive: emoji.isSensitive ? true : undefined,
-			roleIdsThatCanBeUsedThisEmojiAsReaction: emoji.roleIdsThatCanBeUsedThisEmojiAsReaction.length > 0 ? emoji.roleIdsThatCanBeUsedThisEmojiAsReaction : undefined,
+			roleIdsThatCanBeUsedThisEmojiAsReaction: emoji.roleIdsThatCanBeUsedThisEmojiAsReaction.length > 0
+				? emoji.roleIdsThatCanBeUsedThisEmojiAsReaction
+				: undefined,
 		};
 	}
 
+	/**
+	 * `emoji`を`packする
+	 *
+	 * @param src
+	 * @returns
+	 */
 	@bindThis
 	public async packDetailed(
 		src: emoji['id'] | emoji,
@@ -43,8 +56,7 @@ export class EmojiEntityService {
 			name: emoji.name,
 			category: emoji.category,
 			host: emoji.host,
-			// || emoji.originalUrl してるのは後方互換性のため（publicUrlはstringなので??はだめ）
-			url: emoji.publicUrl || emoji.originalUrl,
+			url: emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl, // 後方互換性
 			license: emoji.license,
 			isSensitive: emoji.isSensitive,
 			localOnly: emoji.localOnly,
