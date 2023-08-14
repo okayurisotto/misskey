@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type { RemoteUser } from '@/models/entities/User.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { MetaService } from '@/core/MetaService.js';
 import { truncate } from '@/misc/truncate.js';
 import { DB_MAX_IMAGE_COMMENT_LENGTH } from '@/const.js';

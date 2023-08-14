@@ -1,12 +1,10 @@
 import * as fs from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
-import type { NoteFavorite, User } from '@/models/index.js';
+import type { NoteFavorite } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
-import type { Poll } from '@/models/entities/Poll.js';
-import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';

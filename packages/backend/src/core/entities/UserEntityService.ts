@@ -6,7 +6,6 @@ import type { Config } from '@/config.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { USER_ACTIVE_THRESHOLD, USER_ONLINE_THRESHOLD } from '@/const.js';
 import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser, User } from '@/models/entities/User.js';
-import type { UserProfile } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';

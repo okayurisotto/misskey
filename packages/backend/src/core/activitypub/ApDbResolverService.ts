@@ -1,16 +1,14 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import type { note, user_publickey } from '@prisma/client';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { MemoryKVCache } from '@/misc/cache.js';
-import type { UserPublickey } from '@/models/entities/UserPublickey.js';
 import { CacheService } from '@/core/CacheService.js';
-import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
 import { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { getApId } from './type.js';
 import { ApPersonService } from './models/ApPersonService.js';
+import type { note, user_publickey } from '@prisma/client';
 import type { IObject } from './type.js';
 
 export type UriParseResult = {

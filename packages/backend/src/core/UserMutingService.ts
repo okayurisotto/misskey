@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Muting } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
-import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { PrismaService } from '@/core/PrismaService.js';

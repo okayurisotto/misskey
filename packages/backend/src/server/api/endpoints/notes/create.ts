@@ -1,18 +1,14 @@
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import z from 'zod';
-import type { User } from '@/models/entities/User.js';
-import type { Note } from '@/models/index.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
-import type { Channel } from '@/models/entities/Channel.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
-import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ApiError } from '../../error.js';
 import type { channel, drive_file, note, user } from '@prisma/client';
 
 const res = z.object({ createdNote: NoteSchema });

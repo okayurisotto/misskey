@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { DriveService } from '@/core/DriveService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';

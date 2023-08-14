@@ -2,12 +2,11 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Feed } from 'feed';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import type { User } from '@/models/entities/User.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { bindThis } from '@/decorators.js';
-import type { user } from '@prisma/client';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
 
 @Injectable()
 export class FeedService {

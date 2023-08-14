@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import promiseLimit from 'promise-limit';
-import type { RemoteUser, User } from '@/models/entities/User.js';
+import type { RemoteUser } from '@/models/entities/User.js';
 import { concat, unique } from '@/misc/prelude/array.js';
 import { bindThis } from '@/decorators.js';
 import { getApIds } from './type.js';

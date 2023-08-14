@@ -3,7 +3,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { JSDOM } from 'jsdom';
 import tinycolor from 'tinycolor2';
 import * as Redis from 'ioredis';
-import type { Instance } from '@/models/entities/Instance.js';
 import type Logger from '@/logger.js';
 import { DI } from '@/di-symbols.js';
 import { LoggerService } from '@/core/LoggerService.js';

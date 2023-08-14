@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import type { UserProfile } from '@/models/index.js';
 import { MemoryKVCache, RedisKVCache } from '@/misc/cache.js';
 import type { LocalUser, User } from '@/models/entities/User.js';
 import { DI } from '@/di-symbols.js';

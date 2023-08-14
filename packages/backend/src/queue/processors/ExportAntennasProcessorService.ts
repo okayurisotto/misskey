@@ -1,8 +1,6 @@
 import fs from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { format as DateFormat } from 'date-fns';
-import type { user } from '@prisma/client';
-import type { User } from '@/models/index.js';
 import Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { bindThis } from '@/decorators.js';
@@ -10,6 +8,7 @@ import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
+import type { user } from '@prisma/client';
 import type { DBExportAntennasData } from '../types.js';
 import type * as Bull from 'bullmq';
 

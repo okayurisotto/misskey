@@ -4,7 +4,6 @@ import { format as dateFormat } from 'date-fns';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
-import type { Poll } from '@/models/entities/Poll.js';
 import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';

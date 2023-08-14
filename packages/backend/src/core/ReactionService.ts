@@ -3,9 +3,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js
 import { z } from 'zod';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import type { RemoteUser, User } from '@/models/entities/User.js';
-import type { Note } from '@/models/entities/Note.js';
 import { IdService } from '@/core/IdService.js';
-import type { NoteReaction } from '@/models/entities/NoteReaction.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import PerUserReactionsChart from '@/core/chart/charts/per-user-reactions.js';

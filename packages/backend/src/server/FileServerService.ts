@@ -6,7 +6,6 @@ import rename from 'rename';
 import sharp from 'sharp';
 import { sharpBmp } from 'sharp-read-bmp';
 import type { Config } from '@/config.js';
-import type { DriveFile } from '@/models/index.js';
 import { DI } from '@/di-symbols.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { FILE_TYPE_BROWSERSAFE } from '@/const.js';

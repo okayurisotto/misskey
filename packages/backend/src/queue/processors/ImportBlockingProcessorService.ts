@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import * as Acct from '@/misc/acct.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';

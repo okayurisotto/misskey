@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { Instance } from '@/models/entities/Instance.js';
 import { MetaService } from '@/core/MetaService.js';
 import { bindThis } from '@/decorators.js';
 import type { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';

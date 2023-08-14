@@ -1,7 +1,6 @@
 import { setTimeout } from 'node:timers/promises';
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import type { User } from '@/models/entities/User.js';
-import type { Note } from '@/models/entities/Note.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { bindThis } from '@/decorators.js';

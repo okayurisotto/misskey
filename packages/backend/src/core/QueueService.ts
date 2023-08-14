@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { IActivity } from '@/core/activitypub/type.js';
 import type { DriveFile } from '@/models/entities/DriveFile.js';
-import type { Webhook, webhookEventTypes } from '@/models/entities/Webhook.js';
+import type { webhookEventTypes } from '@/models/entities/Webhook.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';

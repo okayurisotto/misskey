@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
-import type { LocalUser, RemoteUser, User } from '@/models/entities/User.js';
+import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { RelationshipJobData, ThinUser } from '@/queue/types.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';

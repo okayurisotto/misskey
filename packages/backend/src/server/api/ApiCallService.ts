@@ -2,14 +2,15 @@ import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
 import * as stream from 'node:stream/promises';
 import { Injectable } from '@nestjs/common';
+import { generateOpenApiSpec } from 'zod2spec';
 import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser, User } from '@/models/entities/User.js';
-import type { AccessToken } from '@/models/entities/AccessToken.js';
 import type Logger from '@/logger.js';
 import { MetaService } from '@/core/MetaService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from './error.js';
 import { RateLimiterService } from './RateLimiterService.js';
 import { ApiLoggerService } from './ApiLoggerService.js';
@@ -17,9 +18,7 @@ import { AuthenticateService, AuthenticationError } from './AuthenticateService.
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { IEndpointMeta, IEndpoint } from './endpoints.js';
-import { generateOpenApiSpec } from 'zod2spec';
-import { PrismaService } from '@/core/PrismaService.js';
-import { access_token } from '@prisma/client';
+import type { access_token } from '@prisma/client';
 
 const accessDenied = {
 	message: 'Access denied.',

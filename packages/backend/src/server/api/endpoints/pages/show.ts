@@ -1,12 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import type { Page } from '@/models/entities/Page.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { PageSchema } from '@/models/zod/PageSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ApiError } from '../../error.js';
 import type { page } from '@prisma/client';
 
 const res = PageSchema;

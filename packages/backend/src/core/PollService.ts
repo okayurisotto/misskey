@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/index.js';
 import type { Note } from '@/models/entities/Note.js';
 import { RelayService } from '@/core/RelayService.js';
 import { IdService } from '@/core/IdService.js';

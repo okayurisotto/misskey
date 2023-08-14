@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';

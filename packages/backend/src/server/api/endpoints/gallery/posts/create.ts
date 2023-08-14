@@ -2,7 +2,6 @@ import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { IdService } from '@/core/IdService.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';

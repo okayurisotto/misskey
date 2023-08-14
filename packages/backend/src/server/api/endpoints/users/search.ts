@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';

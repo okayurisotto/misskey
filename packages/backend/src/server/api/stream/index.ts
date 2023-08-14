@@ -1,11 +1,8 @@
 import * as WebSocket from 'ws';
-import type { User } from '@/models/entities/User.js';
-import type { AccessToken } from '@/models/entities/AccessToken.js';
 import type { NoteReadService } from '@/core/NoteReadService.js';
 import type { NotificationService } from '@/core/NotificationService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
-import type { UserProfile } from '@/models/index.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { ChannelsService } from './ChannelsService.js';
 import type { EventEmitter } from 'events';

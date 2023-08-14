@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
-import type { UserList } from '@/models/entities/UserList.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';

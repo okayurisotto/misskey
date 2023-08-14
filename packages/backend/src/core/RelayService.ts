@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import type { LocalUser, User } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { MemorySingleCache } from '@/misc/cache.js';
-import type { Relay } from '@/models/entities/Relay.js';
 import { QueueService } from '@/core/QueueService.js';
 import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';

@@ -3,7 +3,6 @@ import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
 import { Note } from '@/models/entities/Note.js';
-import type { User } from '@/models/index.js';
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';

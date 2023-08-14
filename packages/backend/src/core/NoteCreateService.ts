@@ -9,15 +9,12 @@ import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mf
 import { extractHashtags } from '@/misc/extract-hashtags.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
 import { Note } from '@/models/entities/Note.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
-import type { App } from '@/models/entities/App.js';
 import { concat } from '@/misc/prelude/array.js';
 import { IdService } from '@/core/IdService.js';
 import type { User, LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { IPoll } from '@/models/entities/Poll.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import { checkWordMute } from '@/misc/check-word-mute.js';
-import type { Channel } from '@/models/entities/Channel.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { MemorySingleCache } from '@/misc/cache.js';
 import type { UserProfile } from '@/models/entities/UserProfile.js';

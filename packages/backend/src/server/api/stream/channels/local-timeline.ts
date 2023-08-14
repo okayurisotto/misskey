@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import { checkWordMute } from '@/misc/check-word-mute.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -7,7 +8,6 @@ import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import Channel from '../channel.js';
-import { z } from 'zod';
 
 class LocalTimelineChannel extends Channel {
 	public readonly chName = 'localTimeline';

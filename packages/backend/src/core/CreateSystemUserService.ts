@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { genRsaKeyPair } from '@/misc/gen-key-pair.js';
-import { User } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import generateNativeUserToken from '@/misc/generate-native-user-token.js';
 import { bindThis } from '@/decorators.js';

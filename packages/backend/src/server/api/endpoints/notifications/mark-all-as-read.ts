@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { NotificationService } from '@/core/NotificationService.js';
 
 export const meta = {

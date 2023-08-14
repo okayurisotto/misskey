@@ -1,17 +1,16 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import push from 'web-push';
 import * as Redis from 'ioredis';
-import type { sw_subscription } from '@prisma/client';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
-import type { SwSubscription } from '@/models/index.js';
 import { MetaService } from '@/core/MetaService.js';
 import { bindThis } from '@/decorators.js';
 import { RedisKVCache } from '@/misc/cache.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { sw_subscription } from '@prisma/client';
 import type { z } from 'zod';
 
 // Defined also packages/sw/types.ts#L13

@@ -2,7 +2,6 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { IdService } from '@/core/IdService.js';
 import type { User } from '@/models/entities/User.js';
-import type { Blocking } from '@/models/entities/Blocking.js';
 import { QueueService } from '@/core/QueueService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import Logger from '@/logger.js';

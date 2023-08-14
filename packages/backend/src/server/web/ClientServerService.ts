@@ -25,7 +25,6 @@ import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
-import type { Meta } from '@/models/index.js';
 import { deepClone } from '@/misc/clone.js';
 import { bindThis } from '@/decorators.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';

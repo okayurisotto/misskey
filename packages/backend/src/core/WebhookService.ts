@@ -1,6 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import type { Webhook } from '@/models/entities/Webhook.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';

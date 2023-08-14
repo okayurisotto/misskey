@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { z } from 'zod';
-import type { Antenna } from '@/models/entities/Antenna.js';
-import type { Note } from '@/models/entities/Note.js';
 import type { User } from '@/models/entities/User.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import * as Acct from '@/misc/acct.js';

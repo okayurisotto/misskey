@@ -8,7 +8,6 @@ import { toArray, toSingle, unique } from '@/misc/prelude/array.js';
 import type { Emoji } from '@/models/entities/Emoji.js';
 import { MetaService } from '@/core/MetaService.js';
 import { AppLockService } from '@/core/AppLockService.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
 import type Logger from '@/logger.js';
 import { IdService } from '@/core/IdService.js';

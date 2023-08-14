@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { Signin } from '@/models/entities/Signin.js';
 import { bindThis } from '@/decorators.js';
 import type { signin } from '@prisma/client';
 

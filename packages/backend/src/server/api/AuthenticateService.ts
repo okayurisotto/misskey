@@ -1,12 +1,11 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import type { LocalUser } from '@/models/entities/User.js';
-import type { AccessToken } from '@/models/entities/AccessToken.js';
 import { MemoryKVCache } from '@/misc/cache.js';
 import { CacheService } from '@/core/CacheService.js';
 import isNativeToken from '@/misc/is-native-token.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { access_token, app } from '@prisma/client';
+import type { access_token, app } from '@prisma/client';
 
 export class AuthenticationError extends Error {
 	constructor(message: string) {

@@ -2,7 +2,6 @@ import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import type { User } from '@/models/entities/User.js';
 import { RedisKVCache } from '@/misc/cache.js';
-import type { UserKeypair } from '@/models/entities/UserKeypair.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';

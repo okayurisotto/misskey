@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { User } from '@/models/entities/User.js';
 import type { RelationshipJobData } from '@/queue/types.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';

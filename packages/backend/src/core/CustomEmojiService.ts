@@ -4,7 +4,6 @@ import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import type { Emoji } from '@/models/entities/Emoji.js';
 import type { Role } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';

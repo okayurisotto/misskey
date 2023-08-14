@@ -1,9 +1,7 @@
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import type { note } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { Note } from '@/models/index.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { DI } from '@/di-symbols.js';
@@ -13,6 +11,7 @@ import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { ApiError } from '../../error.js';
+import type { note } from '@prisma/client';
 
 const res = z.array(NoteSchema);
 export const meta = {

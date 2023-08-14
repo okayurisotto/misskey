@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { RoleService } from '@/core/RoleService.js';
