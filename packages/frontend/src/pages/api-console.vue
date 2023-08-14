@@ -7,7 +7,7 @@
 				<MkInput v-model="endpoint" :datalist="endpoints" @update:modelValue="onEndpointChange()">
 					<template #label>Endpoint</template>
 				</MkInput>
-				<MkTextarea v-model="body" code>
+				<MkTextarea v-model="body" :placeholder="placeholder" code>
 					<template #label>Params (JSON or JSON5)</template>
 				</MkTextarea>
 				<MkSwitch v-model="withCredential">
@@ -39,7 +39,8 @@ import MkSwitch from '@/components/MkSwitch.vue';
 import * as os from '@/os';
 import { definePageMetadata } from '@/scripts/page-metadata';
 
-const body = ref('{}');
+const placeholder = ref('{}');
+const body = ref('');
 const endpoint = ref('');
 const endpoints = ref<any[]>([]);
 const sending = ref(false);
@@ -64,17 +65,7 @@ function send() {
 
 function onEndpointChange() {
 	os.api('endpoint', { endpoint: endpoint.value }, withCredential.value ? undefined : null).then(resp => {
-		const endpointBody = {};
-		for (const p of resp.params) {
-			endpointBody[p.name] =
-				p.type === 'String' ? '' :
-				p.type === 'Number' ? 0 :
-				p.type === 'Boolean' ? false :
-				p.type === 'Array' ? [] :
-				p.type === 'Object' ? {} :
-				null;
-		}
-		body.value = JSON5.stringify(endpointBody, null, 2);
+		placeholder.value = JSON5.stringify(resp.spec, null, 2);
 	});
 }
 
