@@ -289,7 +289,7 @@ export class ApPersonService implements OnModuleInit {
 					uri: person.id,
 					tags,
 					isBot,
-					isCat: (person as any).isCat === true,
+					isCat: person.isCat === true,
 					emojis,
 
 					user_profile: {
@@ -418,7 +418,7 @@ export class ApPersonService implements OnModuleInit {
 			throw new Error('unexpected schema of person url: ' + url);
 		}
 
-		const updates: Omit<Partial<RemoteUser>, 'alsoKnownAs'> & { alsoKnownAs: string[] | null } & Pick<RemoteUser, 'isBot' | 'isCat' | 'isLocked' | 'movedToUri' | 'alsoKnownAs' | 'isExplorable'> = {
+		const updates: Partial<RemoteUser> = {
 			lastFetchedAt: new Date(),
 			inbox: person.inbox,
 			sharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox,
@@ -431,7 +431,7 @@ export class ApPersonService implements OnModuleInit {
 			isCat: person.isCat === true,
 			isLocked: person.manuallyApprovesFollowers,
 			movedToUri: person.movedTo ?? null,
-			alsoKnownAs: person.alsoKnownAs ?? null,
+			alsoKnownAs: person.alsoKnownAs?.join(',') ?? null,
 			isExplorable: person.discoverable,
 			...(await this.resolveAvatarAndBanner(exist, person.icon, person.image).catch(() => ({}))),
 		};
@@ -459,10 +459,7 @@ export class ApPersonService implements OnModuleInit {
 		// Update user
 		await this.prismaService.client.user.update({
 			where: { id: exist.id },
-			data: {
-				...updates,
-				alsoKnownAs: updates.alsoKnownAs?.join(','),
-			},
+			data: updates,
 		});
 
 		if (person.publicKey) {
@@ -645,10 +642,10 @@ export class ApPersonService implements OnModuleInit {
 		if (dst.movedToUri === dst.uri) return 'skip: movedTo itself (dst)'; // ？？？
 		if (src.movedToUri !== dst.uri) return 'skip: missmatch uri'; // ？？？
 		if (dst.movedToUri === src.uri) return 'skip: dst.movedToUri === src.uri';
-		if (!dst.alsoKnownAs || dst.alsoKnownAs.length === 0) {
+		if (!dst.alsoKnownAs || dst.alsoKnownAs.split(',').length === 0) {
 			return 'skip: dst.alsoKnownAs is empty';
 		}
-		if (!dst.alsoKnownAs.includes(src.uri)) {
+		if (!dst.alsoKnownAs.split(',').includes(src.uri)) {
 			return 'skip: alsoKnownAs does not include from.uri';
 		}
 

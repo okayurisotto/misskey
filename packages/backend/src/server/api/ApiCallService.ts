@@ -336,9 +336,12 @@ export class ApiCallService implements OnApplicationShutdown {
 		// Cast non JSON input
 		if ((ep.meta.requireFile || request.method === 'GET')){
 			const params = generateOpenApiSpec([])(ep.params);
-			if (params.properties) {
+			if ('properties' in params && params.properties !== undefined) {
 				for (const k of Object.keys(params.properties)) {
-					const param = params.properties![k];
+					const param = params.properties[k];
+					if ('$ref' in param) continue; // throw new Error();
+					if (Array.isArray(param.type)) continue; // throw new Error();
+
 					if (['boolean', 'number', 'integer'].includes(param.type ?? '') && typeof data[k] === 'string') {
 						try {
 							data[k] = JSON.parse(data[k]);

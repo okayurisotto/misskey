@@ -48,7 +48,12 @@ export function genOpenapiSpec(config: Config) {
 				},
 				...Object.fromEntries(
 					models.map(({ key, schema }) => {
-						return [key, generateOpenApiSpec(models.filter((model) => model.schema !== schema))(schema)]; // TODO: 計算量を減らす
+						return [
+							key,
+							generateOpenApiSpec(
+								models.filter((model) => model.schema !== schema),
+							)(schema),
+						]; // TODO: 計算量を減らす
 					}),
 				),
 			},
@@ -95,18 +100,24 @@ export function genOpenapiSpec(config: Config) {
 		const requestType = endpoint.meta.requireFile
 			? 'multipart/form-data'
 			: 'application/json';
-		const reqSpec = generateOpenApiSpec(models)(endpoint.params);
+		let reqSpec = generateOpenApiSpec(models)(endpoint.params);
 
 		if (endpoint.meta.requireFile) {
-			reqSpec.properties = {
-				...reqSpec.properties,
-				file: {
-					type: 'string',
-					format: 'binary',
-					description: 'The file contents.',
+			reqSpec = {
+				...reqSpec,
+				properties: {
+					...('properties' in reqSpec ? reqSpec.properties : {}),
+					file: {
+						type: 'string',
+						format: 'binary',
+						description: 'The file contents.',
+					},
 				},
+				required: [
+					...('required' in reqSpec ? reqSpec.required ?? [] : []),
+					'file',
+				],
 			};
-			reqSpec.required = [...(reqSpec.required ?? []), 'file'];
 		}
 
 		const info = {

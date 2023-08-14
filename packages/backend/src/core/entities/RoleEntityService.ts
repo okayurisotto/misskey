@@ -34,14 +34,18 @@ export class RoleEntityService {
 			},
 		});
 
-		const policies = RolePoliciesSchema.parse(role.policies);
+		let policies = RolePoliciesSchema.parse(role.policies);
 		for (const [k, v] of Object.entries(DEFAULT_POLICIES)) {
-			if (policies[k] == null)
-				policies[k] = {
-					useDefault: true,
-					priority: 0,
-					value: v,
-				};
+			if (!(k in policies)) {
+				policies = {
+					...policies,
+					[k]: {
+						useDefault: true,
+						priority: 0,
+						value: v,
+					},
+				}
+			}
 		}
 
 		return {

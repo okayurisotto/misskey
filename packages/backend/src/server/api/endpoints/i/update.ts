@@ -5,8 +5,6 @@ import { Injectable } from '@nestjs/common';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
 import { extractHashtags } from '@/misc/extract-hashtags.js';
 import * as Acct from '@/misc/acct.js';
-import type { User } from '@/models/entities/User.js';
-import type { UserProfile } from '@/models/entities/UserProfile.js';
 import { notificationTypes } from '@/types.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { langmap } from '@/misc/langmap.js';
@@ -32,7 +30,7 @@ import { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiLoggerService } from '../../ApiLoggerService.js';
 import { ApiError } from '../../error.js';
-import type { user, user_profile } from '@prisma/client';
+import type { Prisma, user } from '@prisma/client';
 
 const res = MeDetailedSchema;
 export const meta = {
@@ -99,13 +97,15 @@ export const meta = {
 	res,
 } as const;
 
+type OneOrMore<T extends unknown[]> = [T[number], ...T[number][]];
+
 export const paramDef = z.object({
 	name: NameSchema.nullable().optional(),
 	description: DescriptionSchema.nullable().optional(),
 	location: LocationSchema.nullable().optional(),
 	birthday: BirthdaySchema.nullable().optional(),
 	lang: z
-		.enum([...Object.keys(langmap)])
+		.enum(Object.keys(langmap) as OneOrMore<(keyof typeof langmap)[]>)
 		.nullable()
 		.optional(),
 	avatarId: MisskeyIdSchema.nullable().optional(),
@@ -136,7 +136,7 @@ export const paramDef = z.object({
 	autoSensitive: z.boolean().optional(),
 	ffVisibility: z.enum(['public', 'followers', 'private']).optional(),
 	pinnedPageId: MisskeyIdSchema.nullable().optional(),
-	mutedWords: z.array(z.unknown()).optional(),
+	mutedWords: z.array(z.union([z.array(z.string()), z.string()])).optional(),
 	mutedInstances: z.array(z.string()).optional(),
 	mutingNotificationTypes: z.array(z.enum(notificationTypes)).optional(),
 	emailNotificationTypes: z.array(z.string()).optional(),
@@ -169,8 +169,8 @@ export default class extends Endpoint<
 			});
 			const isSecure = token == null;
 
-			const updates = {} as Partial<User>;
-			const profileUpdates = {} as Partial<UserProfile>;
+			const updates: Partial<user> = {};
+			const profileUpdates: Prisma.user_profileUncheckedUpdateInput = {};
 
 			const profile =
 				await this.prismaService.client.user_profile.findUniqueOrThrow({
@@ -199,7 +199,7 @@ export default class extends Endpoint<
 
 				// validate regular expression syntax
 				ps.mutedWords
-					.filter((x) => !Array.isArray(x))
+					.filter((x): x is string => !Array.isArray(x))
 					.forEach((x) => {
 						const regexp = x.match(/^\/(.+)\/(.*)$/);
 						if (!regexp) throw new ApiError(meta.errors.invalidRegexp);
@@ -373,29 +373,29 @@ export default class extends Endpoint<
 				}
 
 				updates.alsoKnownAs =
-					newAlsoKnownAs.size > 0 ? Array.from(newAlsoKnownAs) : null;
+					newAlsoKnownAs.size > 0 ? Array.from(newAlsoKnownAs).join(',') : null;
 			}
 
 			//#region emojis/tags
 
-			let emojis = [] as string[];
-			let tags = [] as string[];
+			let emojis: string[] = [];
+			let tags: string[] = [];
 
 			const newName = updates.name === undefined ? user.name : updates.name;
 			const newDescription =
-				profileUpdates.description === undefined
+				typeof profileUpdates.description !== 'string'
 					? profile.description
 					: profileUpdates.description;
 
 			if (newName != null) {
 				const tokens = mfm.parseSimple(newName);
-				emojis = emojis.concat(extractCustomEmojisFromMfm(tokens!));
+				emojis = emojis.concat(extractCustomEmojisFromMfm(tokens));
 			}
 
 			if (newDescription != null) {
 				const tokens = mfm.parse(newDescription);
-				emojis = emojis.concat(extractCustomEmojisFromMfm(tokens!));
-				tags = extractHashtags(tokens!)
+				emojis = emojis.concat(extractCustomEmojisFromMfm(tokens));
+				tags = extractHashtags(tokens)
 					.map((tag) => normalizeForSearch(tag))
 					.splice(0, 32);
 			}
@@ -410,10 +410,7 @@ export default class extends Endpoint<
 			if (Object.keys(updates).length > 0) {
 				await this.prismaService.client.user.update({
 					where: { id: user.id },
-					data: {
-						...updates,
-						alsoKnownAs: updates.alsoKnownAs?.join(','),
-					},
+					data: updates,
 				});
 			}
 			if (Object.keys(updates).includes('alsoKnownAs')) {
@@ -425,11 +422,7 @@ export default class extends Endpoint<
 			if (Object.keys(profileUpdates).length > 0) {
 				await this.prismaService.client.user_profile.update({
 					where: { userId: user.id },
-					data: {
-						...profileUpdates,
-						user: undefined,
-						moderationNote: profileUpdates.moderationNote === null ? '' : profileUpdates.moderationNote,
-					},
+					data: profileUpdates,
 				});
 			}
 

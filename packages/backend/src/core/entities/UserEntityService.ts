@@ -280,7 +280,7 @@ export class UserEntityService implements OnModuleInit {
 						: Promise.resolve(null),
 				alsoKnownAs: () =>
 					user.alsoKnownAs
-						? Promise.all((typeof user.alsoKnownAs === 'string' ? user.alsoKnownAs.split(',') : user.alsoKnownAs).map(uri => this.apPersonService.fetchPerson(uri).then(user => user?.id).catch(() => null)))
+						? Promise.all(user.alsoKnownAs.split(',').map(uri => this.apPersonService.fetchPerson(uri).then(user => user?.id).catch(() => null)))
 							.then(xs => xs.length === 0 ? null : xs.filter((x): x is string => x != null))
 						: Promise.resolve(null),
 				isSilenced: () =>

@@ -50,9 +50,9 @@ export class AccountMoveService {
 		const dstUri = this.userEntityService.getUserUri(dst);
 
 		// add movedToUri to indicate that the user has moved
-		const alsoKnownAs = typeof src.alsoKnownAs === 'string' ? src.alsoKnownAs.split(',') : src.alsoKnownAs;
+		const alsoKnownAsArray = src.alsoKnownAs?.split(',') ?? null;
 		const update: Omit<Partial<LocalUser>, 'alsoKnownAs'> & { alsoKnownAs: string[] } = {
-			alsoKnownAs: alsoKnownAs?.includes(dstUri) ? alsoKnownAs : alsoKnownAs?.concat([dstUri]) ?? [dstUri],
+			alsoKnownAs: alsoKnownAsArray?.includes(dstUri) ? alsoKnownAsArray : alsoKnownAsArray?.concat([dstUri]) ?? [dstUri],
 			movedToUri: dstUri,
 			movedAt: new Date(),
 		};
@@ -63,7 +63,7 @@ export class AccountMoveService {
 				alsoKnownAs: update.alsoKnownAs.join(','),
 			},
 		});
-		Object.assign(src, update);
+		Object.assign(src, { ...update, alsoKnownAs: update.alsoKnownAs.join(',') });
 
 		// Update cache
 		this.cacheService.uriPersonCache.set(srcUri, src);
@@ -311,12 +311,11 @@ export class AccountMoveService {
 		}
 
 		if (!dst.alsoKnownAs) return null;
-		if (Array.isArray(dst.alsoKnownAs) && dst.alsoKnownAs.length === 0) return null;
-		if (typeof dst.alsoKnownAs === 'string' && dst.alsoKnownAs.split(',').length === 0) return null;
+		if (dst.alsoKnownAs.split(',').length === 0) return null;
 
 		const dstUri = this.userEntityService.getUserUri(dst);
 
-		for (const srcUri of typeof dst.alsoKnownAs === 'string' ? dst.alsoKnownAs.split(',') : dst.alsoKnownAs) {
+		for (const srcUri of dst.alsoKnownAs.split(',')) {
 			try {
 				let src = await this.apPersonService.fetchPerson(srcUri);
 				if (!src) continue; // oldAccountを探してもこのサーバーに存在しない場合はフォロー関係もないということなのでスルー

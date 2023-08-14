@@ -41,4 +41,7 @@ export const UserDetailedNotMeOnlySchema = z.object({
 	isMuted: z.boolean().optional(),
 	isRenoteMuted: z.boolean().optional(),
 	memo: z.string().optional(),
+	instance: z.unknown(),
+	emojis: z.record(z.string(), z.string()),
+	badgeRoles: z.unknown(),
 });

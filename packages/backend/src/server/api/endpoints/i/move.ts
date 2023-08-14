@@ -120,7 +120,7 @@ export default class extends Endpoint<
 			const fromUrl = this.userEntityService.genLocalUserUri(me.id);
 			let allowed = false;
 			if (moveTo.alsoKnownAs) {
-				for (const knownAs of moveTo.alsoKnownAs) {
+				for (const knownAs of moveTo.alsoKnownAs.split(',')) {
 					if (knownAs.includes(fromUrl)) {
 						allowed = true;
 						break;

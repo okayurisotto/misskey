@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
@@ -8,9 +7,9 @@ import PerUserPvChart from '@/core/chart/charts/per-user-pv.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
 import { ApiLoggerService } from '../../ApiLoggerService.js';
-import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
 const res = z.union([UserDetailedSchema, z.array(UserDetailedSchema)]);
@@ -104,13 +103,12 @@ export default class extends Endpoint<
 				);
 			}
 
-			const username = 'username' in ps ? ps.username?.trim() : null;
 			let user: user | null;
 
 			// Lookup user
-			if (ps.host != null && username !== null) {
+			if (ps.host != null && 'username' in ps) {
 				user = await this.remoteUserResolveService
-					.resolveUser(username, ps.host)
+					.resolveUser(ps.username.trim(), ps.host)
 					.catch((err) => {
 						this.apiLoggerService.logger.warn(
 							`failed to resolve remote user: ${err}`,
@@ -120,9 +118,9 @@ export default class extends Endpoint<
 			} else {
 				user = await this.prismaService.client.user.findFirst({
 					where:
-						'userId' in ps && ps.userId != null
-							? { id: ps.userId }
-							: { usernameLower: username.toLowerCase(), host: null },
+						'username' in ps
+							? { usernameLower: ps.username.trim().toLowerCase(), host: null }
+							: { id: ps.userId },
 				});
 			}
 

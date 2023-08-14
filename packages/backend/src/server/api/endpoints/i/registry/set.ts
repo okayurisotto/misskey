@@ -12,7 +12,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	key: z.string().min(1),
-	value: z.unknown(),
+	value: z.any(),
 	scope: z.array(z.string().regex(/^[a-zA-Z0-9_]+$/)).default([]),
 });
 
