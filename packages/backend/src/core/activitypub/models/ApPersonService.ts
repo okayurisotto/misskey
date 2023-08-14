@@ -4,13 +4,11 @@ import { ModuleRef } from '@nestjs/core';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
-import { User } from '@/models/entities/User.js';
 import { truncate } from '@/misc/truncate.js';
 import type { CacheService } from '@/core/CacheService.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import type Logger from '@/logger.js';
-import type { Note } from '@/models/entities/Note.js';
 import type { IdService } from '@/core/IdService.js';
 import type { MfmService } from '@/core/MfmService.js';
 import { toArray } from '@/misc/prelude/array.js';
@@ -38,7 +36,7 @@ import type { ApResolverService, Resolver } from '../ApResolverService.js';
 import type { ApLoggerService } from '../ApLoggerService.js';
 import type { ApImageService } from './ApImageService.js';
 import type { IActor, IObject } from '../type.js';
-import type { note } from '@prisma/client';
+import type { note, user } from '@prisma/client';
 
 const nameLength = 128;
 const summaryLength = 2048;
@@ -559,7 +557,7 @@ export class ApPersonService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async updateFeatured(userId: User['id'], resolver?: Resolver): Promise<void> {
+	public async updateFeatured(userId: user['id'], resolver?: Resolver): Promise<void> {
 		const user = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: userId } });
 		if (!this.userEntityService.isRemoteUser(user)) return;
 		if (!user.featured) return;
@@ -591,7 +589,7 @@ export class ApPersonService implements OnModuleInit {
 
 			// とりあえずidを別の時間で生成して順番を維持
 			let td = 0;
-			for (const note of featuredNotes.filter((note): note is Note => note != null)) {
+			for (const note of featuredNotes.filter((note): note is note => note != null)) {
 				td -= 1000;
 				client.user_note_pining.create({
 					data: {

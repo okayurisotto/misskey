@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { drive_file } from '@prisma/client';
-import type { DriveFile } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { bindThis } from '@/decorators.js';
@@ -31,7 +30,7 @@ export class DeleteDriveFilesProcessorService {
 		}
 
 		let deletedCount = 0;
-		let cursor: DriveFile['id'] | null = null;
+		let cursor: drive_file['id'] | null = null;
 
 		while (true) {
 			const files: drive_file[] = await this.prismaService.client.drive_file.findMany({

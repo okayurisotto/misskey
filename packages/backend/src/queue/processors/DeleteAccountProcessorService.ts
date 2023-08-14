@@ -1,8 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
-import type { Note } from '@/models/entities/Note.js';
 import { EmailService } from '@/core/EmailService.js';
 import { bindThis } from '@/decorators.js';
 import { SearchService } from '@/core/SearchService.js';
@@ -37,7 +35,7 @@ export class DeleteAccountProcessorService {
 
 		{
 			// Delete notes
-			let cursor: Note['id'] | null = null;
+			let cursor: note['id'] | null = null;
 
 			while (true) {
 				const notes: note[] = await this.prismaService.client.note.findMany({
@@ -69,7 +67,7 @@ export class DeleteAccountProcessorService {
 
 		{
 			// Delete files
-			let cursor: DriveFile['id'] | null = null;
+			let cursor: drive_file['id'] | null = null;
 
 			while (true) {
 				const files: drive_file[] = await this.prismaService.client.drive_file.findMany({

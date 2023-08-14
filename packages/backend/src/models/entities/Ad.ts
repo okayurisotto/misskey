@@ -59,11 +59,4 @@ export class Ad {
 		default: 0, nullable: false,
 	})
 	public dayOfWeek: number;
-	constructor(data: Partial<Ad>) {
-		if (data == null) return;
-
-		for (const [k, v] of Object.entries(data)) {
-			(this as any)[k] = v;
-		}
-	}
 }

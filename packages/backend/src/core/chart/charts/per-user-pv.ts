@@ -1,6 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import type { User } from '@/models/entities/User.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
@@ -8,6 +7,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-pv.js';
 import type { KVs } from '../core.js';
+import type { user } from '@prisma/client';
 
 /**
  * ユーザーごとのプロフィール被閲覧数に関するチャート
@@ -34,7 +34,7 @@ export default class PerUserPvChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async commitByUser(user: { id: User['id'] }, key: string): Promise<void> {
+	public async commitByUser(user: { id: user['id'] }, key: string): Promise<void> {
 		await this.commit({
 			'upv.user': [key],
 			'pv.user': 1,
@@ -42,7 +42,7 @@ export default class PerUserPvChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async commitByVisitor(user: { id: User['id'] }, key: string): Promise<void> {
+	public async commitByVisitor(user: { id: user['id'] }, key: string): Promise<void> {
 		await this.commit({
 			'upv.visitor': [key],
 			'pv.visitor': 1,

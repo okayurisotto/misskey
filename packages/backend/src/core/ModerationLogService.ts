@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
 
 @Injectable()
 export class ModerationLogService {
@@ -12,7 +12,7 @@ export class ModerationLogService {
 	) {}
 
 	@bindThis
-	public async insertModerationLog(moderator: { id: User['id'] }, type: string, info?: Record<string, any>) {
+	public async insertModerationLog(moderator: { id: user['id'] }, type: string, info?: Record<string, any>) {
 		await this.prismaService.client.moderation_log.create({
 			data: {
 				id: this.idService.genId(),

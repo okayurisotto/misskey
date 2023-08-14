@@ -8,16 +8,14 @@ import { extractMentions } from '@/misc/extract-mentions.js';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
 import { extractHashtags } from '@/misc/extract-hashtags.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
-import { Note } from '@/models/entities/Note.js';
 import { concat } from '@/misc/prelude/array.js';
 import { IdService } from '@/core/IdService.js';
-import type { User, LocalUser, RemoteUser } from '@/models/entities/User.js';
+import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { IPoll } from '@/models/entities/Poll.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import { checkWordMute } from '@/misc/check-word-mute.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { MemorySingleCache } from '@/misc/cache.js';
-import type { UserProfile } from '@/models/entities/UserProfile.js';
 import { RelayService } from '@/core/RelayService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { DI } from '@/di-symbols.js';
@@ -44,14 +42,14 @@ import { RoleService } from '@/core/RoleService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { Prisma, app, channel, drive_file, note, user } from '@prisma/client';
+import type { Prisma, app, channel, drive_file, note, user, user_profile } from '@prisma/client';
 
-const mutedWordsCache = new MemorySingleCache<{ userId: UserProfile['userId']; mutedWords: UserProfile['mutedWords']; }[]>(1000 * 60 * 5);
+const mutedWordsCache = new MemorySingleCache<{ userId: user_profile['userId']; mutedWords: user_profile['mutedWords']; }[]>(1000 * 60 * 5);
 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
 class NotificationManager {
-	private notifier: { id: User['id']; };
+	private notifier: { id: user['id']; };
 	private note: note;
 	private queue: {
 		target: LocalUser['id'];
@@ -61,7 +59,7 @@ class NotificationManager {
 	constructor(
 		private notificationService: NotificationService,
 		private readonly prismaService: PrismaService,
-		notifier: { id: User['id']; },
+		notifier: { id: user['id']; },
 		note: note,
 	) {
 		this.notifier = notifier;
@@ -111,10 +109,10 @@ class NotificationManager {
 }
 
 type MinimumUser = {
-	id: User['id'];
-	host: User['host'];
-	username: User['username'];
-	uri: User['uri'];
+	id: user['id'];
+	host: user['host'];
+	username: user['username'];
+	uri: user['uri'];
 };
 
 type Option = {
@@ -126,7 +124,7 @@ type Option = {
 	files?: drive_file[] | null;
 	poll?: IPoll | null;
 	localOnly?: boolean | null;
-	reactionAcceptance?: Note['reactionAcceptance'];
+	reactionAcceptance?: note['reactionAcceptance'];
 	cw?: string | null;
 	visibility?: string;
 	visibleUsers?: MinimumUser[] | null;
@@ -177,11 +175,11 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 	@bindThis
 	public async create(user: {
-		id: User['id'];
-		username: User['username'];
-		host: User['host'];
-		createdAt: User['createdAt'];
-		isBot: User['isBot'];
+		id: user['id'];
+		username: user['username'];
+		host: user['host'];
+		createdAt: user['createdAt'];
+		isBot: user['isBot'];
 	}, data: Option, silent = false): Promise<note> {
 		// チャンネル外にリプライしたら対象のスコープに合わせる
 		// (クライアントサイドでやっても良い処理だと思うけどとりあえずサーバーサイドで)
@@ -314,7 +312,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async insertNote(user: { id: User['id']; host: User['host']; }, data: Option, tags: string[], emojis: string[], mentionedUsers: MinimumUser[]) {
+	private async insertNote(user: { id: user['id']; host: user['host']; }, data: Option, tags: string[], emojis: string[], mentionedUsers: MinimumUser[]) {
 		const insert: Prisma.noteUncheckedCreateInput = {
 			id: this.idService.genId(data.createdAt!),
 			createdAt: data.createdAt!,
@@ -419,11 +417,11 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 	@bindThis
 	private async postNoteCreated(note: note, user: {
-		id: User['id'];
-		username: User['username'];
-		host: User['host'];
-		createdAt: User['createdAt'];
-		isBot: User['isBot'];
+		id: user['id'];
+		username: user['username'];
+		host: user['host'];
+		createdAt: user['createdAt'];
+		isBot: user['isBot'];
 	}, data: Option, silent: boolean, tags: string[], mentionedUsers: MinimumUser[]) {
 		const meta = await this.metaService.fetch();
 
@@ -463,7 +461,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 			});
 		}).then(us => {
 			for (const u of us) {
-				checkWordMute(note, { id: u.userId }, u.mutedWords).then(shouldMute => {
+				checkWordMute(note, { id: u.userId }, z.array(z.array(z.string())).parse(u.mutedWords)).then(shouldMute => {
 					if (shouldMute) {
 						this.prismaService.client.muted_note.create({
 							data: {
@@ -762,7 +760,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async incNotesCountOfUser(user: { id: User['id']; }) {
+	private async incNotesCountOfUser(user: { id: user['id']; }) {
 		await this.prismaService.client.user.update({
 			where: { id: user.id },
 			data: {
@@ -773,7 +771,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async extractMentionedUsers(user: { host: User['host']; }, tokens: mfm.MfmNode[]): Promise<user[]> {
+	private async extractMentionedUsers(user: { host: user['host']; }, tokens: mfm.MfmNode[]): Promise<user[]> {
 		if (tokens == null) return [];
 
 		const mentions = extractMentions(tokens);

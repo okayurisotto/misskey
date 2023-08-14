@@ -1,34 +1,31 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type {} from '@/models/entities/Blocking.js';
-import type { User } from '@/models/entities/User.js';
-import type { Following } from '@/models/entities/Following.js';
 import { bindThis } from '@/decorators.js';
 import type { FollowingSchema } from '@/models/zod/FollowingSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
-import type { following } from '@prisma/client';
+import type { following, user } from '@prisma/client';
 
-type LocalFollowerFollowing = Following & {
+type LocalFollowerFollowing = following & {
 	followerHost: null;
 	followerInbox: null;
 	followerSharedInbox: null;
 };
 
-type RemoteFollowerFollowing = Following & {
+type RemoteFollowerFollowing = following & {
 	followerHost: string;
 	followerInbox: string;
 	followerSharedInbox: string;
 };
 
-type LocalFolloweeFollowing = Following & {
+type LocalFolloweeFollowing = following & {
 	followeeHost: null;
 	followeeInbox: null;
 	followeeSharedInbox: null;
 };
 
-type RemoteFolloweeFollowing = Following & {
+type RemoteFolloweeFollowing = following & {
 	followeeHost: string;
 	followeeInbox: string;
 	followeeSharedInbox: string;
@@ -71,8 +68,8 @@ export class FollowingEntityService {
 
 	@bindThis
 	public async pack(
-		src: Following['id'] | following,
-		me?: { id: User['id'] } | null | undefined,
+		src: following['id'] | following,
+		me?: { id: user['id'] } | null | undefined,
 		opts?: {
 			populateFollowee?: boolean;
 			populateFollower?: boolean;

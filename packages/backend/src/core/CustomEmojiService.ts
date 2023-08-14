@@ -4,14 +4,12 @@ import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import type { Emoji } from '@/models/entities/Emoji.js';
-import type { Role } from '@/models/index.js';
 import { bindThis } from '@/decorators.js';
 import { MemoryKVCache, RedisSingleCache } from '@/misc/cache.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import type { Serialized } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { Prisma, drive_file, emoji } from '@prisma/client';
+import type { Prisma, role, drive_file, emoji } from '@prisma/client';
 
 const parseEmojiStrRegexp = /^(\w+)(?:@([\w.-]+))?$/;
 
@@ -39,7 +37,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			toRedisConverter: (value) => JSON.stringify(Array.from(value.values())),
 			fromRedisConverter: (value) => {
 				if (!Array.isArray(JSON.parse(value))) return undefined; // 古いバージョンの壊れたキャッシュが残っていることがある(そのうち消す)
-				return new Map(JSON.parse(value).map((x: Serialized<Emoji>) => [x.name, {
+				return new Map(JSON.parse(value).map((x: Serialized<emoji>) => [x.name, {
 					...x,
 					updatedAt: x.updatedAt ? new Date(x.updatedAt) : null,
 				}]));
@@ -57,7 +55,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		license: string | null;
 		isSensitive: boolean;
 		localOnly: boolean;
-		roleIdsThatCanBeUsedThisEmojiAsReaction: Role['id'][];
+		roleIdsThatCanBeUsedThisEmojiAsReaction: role['id'][];
 	}): Promise<emoji> {
 		const emoji = await this.prismaService.client.emoji.create({
 			data: {
@@ -89,7 +87,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async update(id: Emoji['id'], data: {
+	public async update(id: emoji['id'], data: {
 		driveFile?: drive_file;
 		name?: string;
 		category?: string | null;
@@ -97,7 +95,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		license?: string | null;
 		isSensitive?: boolean;
 		localOnly?: boolean;
-		roleIdsThatCanBeUsedThisEmojiAsReaction?: Role['id'][];
+		roleIdsThatCanBeUsedThisEmojiAsReaction?: role['id'][];
 	}): Promise<void> {
 		const emoji = await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: id } });
 		const sameNameEmoji = await this.prismaService.client.emoji.findFirst({ where: { name: data.name, host: null } });
@@ -140,7 +138,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async addAliasesBulk(ids: Emoji['id'][], aliases: string[]) {
+	public async addAliasesBulk(ids: emoji['id'][], aliases: string[]) {
 		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
 		for (const emoji of emojis) {
@@ -161,7 +159,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async setAliasesBulk(ids: Emoji['id'][], aliases: string[]) {
+	public async setAliasesBulk(ids: emoji['id'][], aliases: string[]) {
 		await this.prismaService.client.emoji.updateMany({
 			where: { id: { in: ids } },
 			data: {
@@ -178,7 +176,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async removeAliasesBulk(ids: Emoji['id'][], aliases: string[]) {
+	public async removeAliasesBulk(ids: emoji['id'][], aliases: string[]) {
 		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
 		for (const emoji of emojis) {
@@ -199,7 +197,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async setCategoryBulk(ids: Emoji['id'][], category: string | null) {
+	public async setCategoryBulk(ids: emoji['id'][], category: string | null) {
 		await this.prismaService.client.emoji.updateMany({
 			where: { id: { in: ids } },
 			data: {
@@ -216,7 +214,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async setLicenseBulk(ids: Emoji['id'][], license: string | null) {
+	public async setLicenseBulk(ids: emoji['id'][], license: string | null) {
 		await this.prismaService.client.emoji.updateMany({
 			where: { id: { in: ids } },
 			data: {
@@ -233,7 +231,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async delete(id: Emoji['id']) {
+	public async delete(id: emoji['id']) {
 		const emoji = await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: id } });
 
 		await this.prismaService.client.emoji.delete({ where: { id: emoji.id } });
@@ -246,7 +244,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async deleteBulk(ids: Emoji['id'][]) {
+	public async deleteBulk(ids: emoji['id'][]) {
 		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
 		for (const emoji of emojis) {

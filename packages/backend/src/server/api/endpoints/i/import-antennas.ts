@@ -9,6 +9,7 @@ import { DownloadService } from '@/core/DownloadService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
+import { ExportedAntennaSchema } from '@/models/zod/ExportedAntenna.js';
 
 export const meta = {
 	secure: true,
@@ -73,8 +74,11 @@ export default class extends Endpoint<
 			if (file === null) throw new ApiError(meta.errors.noSuchFile);
 			if (file.size === 0) throw new ApiError(meta.errors.emptyFile);
 
-			const antennas: (_Antenna & { userListAccts: string[] | null })[] =
-				JSON.parse(await this.downloadService.downloadTextFile(file.url));
+			const antennas = z
+				.array(ExportedAntennaSchema)
+				.parse(
+					JSON.parse(await this.downloadService.downloadTextFile(file.url)),
+				);
 
 			const currentAntennasCount =
 				await this.prismaService.client.antenna.count({

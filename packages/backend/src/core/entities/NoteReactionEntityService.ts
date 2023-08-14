@@ -2,15 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { bindThis } from '@/decorators.js';
 import type { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
-import type { User } from '@/models/entities/User.js';
-import type { NoteReaction } from '@/models/entities/NoteReaction.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { ReactionService } from '../ReactionService.js';
 import type { UserEntityService } from './UserEntityService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
 import type { z } from 'zod';
-import type { note_reaction } from '@prisma/client';
+import type { note_reaction, user } from '@prisma/client';
 
 @Injectable()
 export class NoteReactionEntityService implements OnModuleInit {
@@ -31,8 +29,8 @@ export class NoteReactionEntityService implements OnModuleInit {
 
 	@bindThis
 	public async pack(
-		src: NoteReaction['id'] | note_reaction,
-		me?: { id: User['id'] } | null | undefined,
+		src: note_reaction['id'] | note_reaction,
+		me?: { id: user['id'] } | null | undefined,
 		options?: {
 			withNote: boolean;
 		},

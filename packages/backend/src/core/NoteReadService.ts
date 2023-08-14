@@ -1,13 +1,12 @@
 import { setTimeout } from 'node:timers/promises';
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
-import type { note } from '@prisma/client';
+import type { note, user } from '@prisma/client';
 
 @Injectable()
 export class NoteReadService implements OnApplicationShutdown {
@@ -21,7 +20,7 @@ export class NoteReadService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async insertNoteUnread(userId: User['id'], note: note, params: {
+	public async insertNoteUnread(userId: user['id'], note: note, params: {
 		// NOTE: isSpecifiedがtrueならisMentionedは必ずfalse
 		isSpecified: boolean;
 		isMentioned: boolean;
@@ -72,7 +71,7 @@ export class NoteReadService implements OnApplicationShutdown {
 
 	@bindThis
 	public async read(
-		userId: User['id'],
+		userId: user['id'],
 		notes: (note | z.infer<typeof NoteSchema>)[],
 	): Promise<void> {
 		const readMentions: (note | z.infer<typeof NoteSchema>)[] = [];

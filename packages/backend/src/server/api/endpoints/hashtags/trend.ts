@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { Note } from '@/models/entities/Note.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { MetaService } from '@/core/MetaService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { note } from '@prisma/client';
 
 /*
 トレンドに載るためには「『直近a分間のユニーク投稿数が今からa分前～今からb分前の間のユニーク投稿数のn倍以上』のハッシュタグの上位5位以内に入る」ことが必要
@@ -69,7 +69,7 @@ export default class extends Endpoint<
 
 			const tags: {
 				name: string;
-				users: Note['userId'][];
+				users: note['userId'][];
 			}[] = [];
 
 			for (const note of tagNotes) {

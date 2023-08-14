@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import type { Antenna } from '@/models/entities/Antenna.js';
 import type { AntennaSchema } from '@/models/zod/AntennaSchema.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -12,7 +11,7 @@ export class AntennaEntityService {
 
 	@bindThis
 	public async pack(
-		src: Antenna['id'] | antenna,
+		src: antenna['id'] | antenna,
 	): Promise<z.infer<typeof AntennaSchema>> {
 		const antenna = typeof src === 'object'
 			? src

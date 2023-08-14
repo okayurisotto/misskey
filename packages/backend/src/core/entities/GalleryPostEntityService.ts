@@ -1,15 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type {} from '@/models/entities/Blocking.js';
-import type { User } from '@/models/entities/User.js';
-import type { GalleryPost } from '@/models/entities/GalleryPost.js';
 import { bindThis } from '@/decorators.js';
 import type { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
 import type { z } from 'zod';
-import type { gallery_post } from '@prisma/client';
+import type { gallery_post, user } from '@prisma/client';
 
 @Injectable()
 export class GalleryPostEntityService {
@@ -21,8 +18,8 @@ export class GalleryPostEntityService {
 
 	@bindThis
 	public async pack(
-		src: GalleryPost['id'] | gallery_post,
-		me?: { id: User['id'] } | null | undefined,
+		src: gallery_post['id'] | gallery_post,
+		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof GalleryPostSchema>> {
 		const meId = me ? me.id : null;
 		const post =

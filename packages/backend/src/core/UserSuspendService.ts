@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
 import { QueueService } from '@/core/QueueService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
@@ -20,7 +19,7 @@ export class UserSuspendService {
 	}
 
 	@bindThis
-	public async doPostSuspend(user: { id: User['id']; host: User['host'] }): Promise<void> {
+	public async doPostSuspend(user: { id: user['id']; host: user['host'] }): Promise<void> {
 		this.globalEventService.publishInternalEvent('userChangeSuspendedState', { id: user.id, isSuspended: true });
 
 		if (this.userEntityService.isLocalUser(user)) {

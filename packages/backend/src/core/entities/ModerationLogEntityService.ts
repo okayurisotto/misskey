@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { ModerationLog } from '@/models/entities/ModerationLog.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -13,7 +12,7 @@ export class ModerationLogEntityService {
 	) {}
 
 	@bindThis
-	public async pack(src: ModerationLog['id'] | moderation_log) {
+	public async pack(src: moderation_log['id'] | moderation_log) {
 		const log =
 			typeof src === 'object'
 				? src

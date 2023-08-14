@@ -3,18 +3,17 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import * as WebSocket from 'ws';
 import { DI } from '@/di-symbols.js';
-import type { AccessToken } from '@/models/index.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { LocalUser } from '@/models/entities/User.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { AuthenticateService, AuthenticationError } from './AuthenticateService.js';
 import MainStreamConnection from './stream/index.js';
 import { ChannelsService } from './stream/ChannelsService.js';
 import type * as http from 'node:http';
-import { access_token } from '@prisma/client';
-import { PrismaService } from '@/core/PrismaService.js';
+import type { access_token } from '@prisma/client';
 
 @Injectable()
 export class StreamingApiServerService {
@@ -107,7 +106,7 @@ export class StreamingApiServerService {
 		this.#wss.on('connection', async (connection: WebSocket.WebSocket, request: http.IncomingMessage, ctx: {
 			stream: MainStreamConnection,
 			user: LocalUser | null;
-			app: AccessToken | null
+			app: access_token | null
 		}) => {
 			const { stream, user, app } = ctx;
 

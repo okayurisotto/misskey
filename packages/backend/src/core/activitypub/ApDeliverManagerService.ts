@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { LocalUser, RemoteUser, User } from '@/models/entities/User.js';
+import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { QueueService } from '@/core/QueueService.js';
 import { bindThis } from '@/decorators.js';
 import type { IActivity } from '@/core/activitypub/type.js';
 import { ThinUser } from '@/queue/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
 
 interface IRecipe {
 	type: string;
@@ -41,7 +42,7 @@ class DeliverManager {
 		private prismaService: PrismaService,
 		private queueService: QueueService,
 
-		actor: { id: User['id']; host: null; },
+		actor: { id: user['id']; host: null; },
 		activity: IActivity | null,
 	) {
 		// 型で弾いてはいるが一応ローカルユーザーかチェック
@@ -177,7 +178,7 @@ export class ApDeliverManagerService {
 	}
 
 	@bindThis
-	public createDeliverManager(actor: { id: User['id']; host: null; }, activity: IActivity | null): DeliverManager {
+	public createDeliverManager(actor: { id: user['id']; host: null; }, activity: IActivity | null): DeliverManager {
 		return new DeliverManager(
 			this.prismaService,
 			this.queueService,

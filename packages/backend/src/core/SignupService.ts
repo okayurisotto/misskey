@@ -1,8 +1,6 @@
 import { generateKeyPair } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
-import { User } from '@/models/entities/User.js';
-import { UserProfile } from '@/models/entities/UserProfile.js';
 import { IdService } from '@/core/IdService.js';
 import generateUserToken from '@/misc/generate-native-user-token.js';
 import { bindThis } from '@/decorators.js';
@@ -11,6 +9,7 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { LocalUsernameSchema, PasswordSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { user, user_profile } from '@prisma/client';
 
 @Injectable()
 export class SignupService {
@@ -24,9 +23,9 @@ export class SignupService {
 
 	@bindThis
 	public async signup(opts: {
-		username: User['username'];
+		username: user['username'];
 		password?: string | null;
-		passwordHash?: UserProfile['password'] | null;
+		passwordHash?: user_profile['password'] | null;
 		host?: string | null;
 		ignorePreservedUsernames?: boolean;
 	}) {

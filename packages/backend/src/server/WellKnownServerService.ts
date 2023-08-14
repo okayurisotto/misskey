@@ -4,14 +4,13 @@ import fastifyAccepts from '@fastify/accepts';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { escapeAttribute, escapeValue } from '@/misc/prelude/xml.js';
-import type { User } from '@/models/entities/User.js';
 import * as Acct from '@/misc/acct.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { NodeinfoServerService } from './NodeinfoServerService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import type { Prisma } from '@prisma/client';
+import type { Prisma, user } from '@prisma/client';
 
 @Injectable()
 export class WellKnownServerService {
@@ -83,7 +82,7 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 */
 
 		fastify.get<{ Querystring: { resource: string } }>(webFingerPath, async (request, reply) => {
-			const fromId = (id: User['id']): Prisma.userWhereInput => ({
+			const fromId = (id: user['id']): Prisma.userWhereInput => ({
 				id,
 				host: null,
 				isSuspended: false,

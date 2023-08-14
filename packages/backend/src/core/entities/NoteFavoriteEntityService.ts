@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type {} from '@/models/entities/Blocking.js';
-import type { User } from '@/models/entities/User.js';
-import type { NoteFavorite } from '@/models/entities/NoteFavorite.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { NoteEntityService } from './NoteEntityService.js';
-import type { note_favorite } from '@prisma/client';
+import type { note_favorite, user } from '@prisma/client';
 
 @Injectable()
 export class NoteFavoriteEntityService {
@@ -16,8 +13,8 @@ export class NoteFavoriteEntityService {
 
 	@bindThis
 	public async pack(
-		src: NoteFavorite['id'] | note_favorite,
-		me?: { id: User['id'] } | null | undefined,
+		src: note_favorite['id'] | note_favorite,
+		me?: { id: user['id'] } | null | undefined,
 	) {
 		const favorite =
 			typeof src === 'object'

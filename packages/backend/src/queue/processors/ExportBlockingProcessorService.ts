@@ -1,7 +1,6 @@
 import * as fs from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
-import type { Blocking } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
@@ -44,7 +43,7 @@ export class ExportBlockingProcessorService {
 			const stream = fs.createWriteStream(path, { flags: 'a' });
 
 			let exportedCount = 0;
-			let cursor: Blocking['id'] | null = null;
+			let cursor: blocking['id'] | null = null;
 
 			while (true) {
 				const blockings: blocking[] = await this.prismaService.client.blocking.findMany({

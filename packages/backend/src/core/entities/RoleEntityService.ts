@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import type { User } from '@/models/entities/User.js';
-import type { Role } from '@/models/entities/Role.js';
 import { bindThis } from '@/decorators.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RoleSchema } from '@/models/zod/RoleSchema.js';
 import { RoleCondForumaValueSchema } from '@/models/zod/RoleCondFormula.js';
 import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
-import type { role } from '@prisma/client';
+import type { role, user } from '@prisma/client';
 
 @Injectable()
 export class RoleEntityService {
@@ -16,8 +14,8 @@ export class RoleEntityService {
 
 	@bindThis
 	public async pack(
-		src: Role['id'] | role,
-		me?: { id: User['id'] } | null | undefined,
+		src: role['id'] | role,
+		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof RoleSchema>> {
 		const role =
 			typeof src === 'object'

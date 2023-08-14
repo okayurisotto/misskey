@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type {} from '@/models/entities/Blocking.js';
-import type { User } from '@/models/entities/User.js';
-import type { FlashLike } from '@/models/entities/FlashLike.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { FlashEntityService } from './FlashEntityService.js';
-import type { flash_like } from '@prisma/client';
+import type { flash_like, user } from '@prisma/client';
 
 @Injectable()
 export class FlashLikeEntityService {
@@ -16,8 +13,8 @@ export class FlashLikeEntityService {
 
 	@bindThis
 	public async pack(
-		src: FlashLike['id'] | flash_like,
-		me?: { id: User['id'] } | null | undefined,
+		src: flash_like['id'] | flash_like,
+		me?: { id: user['id'] } | null | undefined,
 	) {
 		const like =
 			typeof src === 'object'

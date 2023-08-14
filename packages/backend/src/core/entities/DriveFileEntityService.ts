@@ -3,8 +3,6 @@ import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { User } from '@/models/entities/User.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { appendQuery, query } from '@/misc/prelude/url.js';
 import { deepClone } from '@/misc/clone.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
@@ -16,7 +14,7 @@ import { UtilityService } from '../UtilityService.js';
 import { VideoProcessingService } from '../VideoProcessingService.js';
 import { UserEntityService } from './UserEntityService.js';
 import { DriveFolderEntityService } from './DriveFolderEntityService.js';
-import type { drive_file } from '@prisma/client';
+import type { drive_file, user } from '@prisma/client';
 
 type PackOptions = {
 	detail?: boolean,
@@ -133,7 +131,7 @@ export class DriveFileEntityService {
 	}
 
 	@bindThis
-	public async calcDriveUsageOf(user: User['id'] | { id: User['id'] }): Promise<number> {
+	public async calcDriveUsageOf(user: user['id'] | { id: user['id'] }): Promise<number> {
 		const id = typeof user === 'object' ? user.id : user;
 
 		const { _sum: { size } } = await this.prismaService.client.drive_file.aggregate({
@@ -185,7 +183,7 @@ export class DriveFileEntityService {
 
 	@bindThis
 	public async pack(
-		src: DriveFile['id'] | drive_file,
+		src: drive_file['id'] | drive_file,
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema>> {
 		const opts = Object.assign({
@@ -237,7 +235,7 @@ export class DriveFileEntityService {
 
 	@bindThis
 	public async packNullable(
-		src: DriveFile['id'] | drive_file,
+		src: drive_file['id'] | drive_file,
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema> | null> {
 		const opts = Object.assign({
@@ -299,7 +297,7 @@ export class DriveFileEntityService {
 
 	@bindThis
 	public async packManyByIdsMap(
-		fileIds: DriveFile['id'][],
+		fileIds: drive_file['id'][],
 		options?: PackOptions,
 	): Promise<Map<z.infer<typeof DriveFileSchema>['id'], z.infer<typeof DriveFileSchema> | null>> {
 		if (fileIds.length === 0) return new Map();
@@ -314,7 +312,7 @@ export class DriveFileEntityService {
 
 	@bindThis
 	public async packManyByIds(
-		fileIds: DriveFile['id'][],
+		fileIds: drive_file['id'][],
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema>[]> {
 		if (fileIds.length === 0) return [];

@@ -1,17 +1,17 @@
 import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { IActivity } from '@/core/activitypub/type.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import type { webhookEventTypes } from '@/models/entities/Webhook.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
-import type { Antenna } from '@/server/api/endpoints/i/import-antennas.js';
+import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntenna.js';
 import type { DbQueue, DeliverQueue, EndedPollNotificationQueue, InboxQueue, ObjectStorageQueue, RelationshipQueue, SystemQueue, WebhookDeliverQueue } from './QueueModule.js';
 import type { DbJobData, DeliverJobData, RelationshipJobData, ThinUser } from '../queue/types.js';
 import type httpSignature from '@peertube/http-signature';
 import type * as Bull from 'bullmq';
-import type { webhook } from '@prisma/client';
+import type { drive_file, webhook } from '@prisma/client';
+import type { z } from 'zod';
 
 @Injectable()
 export class QueueService {
@@ -233,7 +233,7 @@ export class QueueService {
 	}
 
 	@bindThis
-	public createImportFollowingJob(user: ThinUser, fileId: DriveFile['id']) {
+	public createImportFollowingJob(user: ThinUser, fileId: drive_file['id']) {
 		return this.dbQueue.add('importFollowing', {
 			user: { id: user.id },
 			fileId: fileId,
@@ -250,7 +250,7 @@ export class QueueService {
 	}
 
 	@bindThis
-	public createImportMutingJob(user: ThinUser, fileId: DriveFile['id']) {
+	public createImportMutingJob(user: ThinUser, fileId: drive_file['id']) {
 		return this.dbQueue.add('importMuting', {
 			user: { id: user.id },
 			fileId: fileId,
@@ -261,7 +261,7 @@ export class QueueService {
 	}
 
 	@bindThis
-	public createImportBlockingJob(user: ThinUser, fileId: DriveFile['id']) {
+	public createImportBlockingJob(user: ThinUser, fileId: drive_file['id']) {
 		return this.dbQueue.add('importBlocking', {
 			user: { id: user.id },
 			fileId: fileId,
@@ -294,7 +294,7 @@ export class QueueService {
 	}
 
 	@bindThis
-	public createImportUserListsJob(user: ThinUser, fileId: DriveFile['id']) {
+	public createImportUserListsJob(user: ThinUser, fileId: drive_file['id']) {
 		return this.dbQueue.add('importUserLists', {
 			user: { id: user.id },
 			fileId: fileId,
@@ -305,7 +305,7 @@ export class QueueService {
 	}
 
 	@bindThis
-	public createImportCustomEmojisJob(user: ThinUser, fileId: DriveFile['id']) {
+	public createImportCustomEmojisJob(user: ThinUser, fileId: drive_file['id']) {
 		return this.dbQueue.add('importCustomEmojis', {
 			user: { id: user.id },
 			fileId: fileId,
@@ -316,7 +316,7 @@ export class QueueService {
 	}
 
 	@bindThis
-	public createImportAntennasJob(user: ThinUser, antenna: Antenna) {
+	public createImportAntennasJob(user: ThinUser, antenna: z.infer<typeof ExportedAntennaSchema>[]) {
 		return this.dbQueue.add('importAntennas', {
 			user: { id: user.id },
 			antenna,

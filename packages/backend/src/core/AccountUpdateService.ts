@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { RelayService } from '@/core/RelayService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
 
 @Injectable()
 export class AccountUpdateService {
@@ -19,7 +19,7 @@ export class AccountUpdateService {
 	}
 
 	@bindThis
-	public async publishToFollowers(userId: User['id']) {
+	public async publishToFollowers(userId: user['id']) {
 		const user = await this.prismaService.client.user.findUnique({ where: { id: userId } });
 		if (user == null) throw new Error('user not found');
 

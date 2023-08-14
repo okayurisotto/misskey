@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import type { Meta } from '@/models/entities/Meta.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MetaService } from '@/core/MetaService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import type { meta as meta_ } from '@prisma/client';
 
 export const meta = {
 	tags: ['admin'],
@@ -110,7 +110,7 @@ export default class extends Endpoint<
 		private readonly moderationLogService: ModerationLogService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const set: Partial<Meta> = {};
+			const set: Partial<meta_> = {};
 
 			if (typeof ps.disableRegistration === 'boolean') {
 				set.disableRegistration = ps.disableRegistration;

@@ -1,15 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { User } from '@/models/entities/User.js';
-import type { Page } from '@/models/entities/Page.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { bindThis } from '@/decorators.js';
 import type { PageSchema } from '@/models/zod/PageSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
-import type { drive_file, page } from '@prisma/client';
+import type { drive_file, page, user } from '@prisma/client';
 
 @Injectable()
 export class PageEntityService {
@@ -21,8 +18,8 @@ export class PageEntityService {
 
 	@bindThis
 	public async pack(
-		src: Page['id'] | page,
-		me?: { id: User['id'] } | null | undefined,
+		src: page['id'] | page,
+		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof PageSchema>> {
 		const meId = me ? me.id : null;
 		const page =
@@ -88,7 +85,7 @@ export class PageEntityService {
 			attachedFiles: async () =>
 				this.driveFileEntityService.packMany(
 					(await Promise.all(attachedFiles)).filter(
-						(x): x is DriveFile => x != null,
+						(x): x is drive_file => x != null,
 					),
 				),
 			isLiked: async () =>

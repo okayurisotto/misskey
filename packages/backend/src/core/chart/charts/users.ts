@@ -1,6 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import type { User } from '@/models/entities/User.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -10,6 +9,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/users.js';
 import type { KVs } from '../core.js';
+import type { user } from '@prisma/client';
 
 /**
  * ユーザー数に関するチャート
@@ -46,7 +46,7 @@ export default class UsersChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async update(user: { id: User['id'], host: User['host'] }, isAdditional: boolean): Promise<void> {
+	public async update(user: { id: user['id'], host: user['host'] }, isAdditional: boolean): Promise<void> {
 		const prefix = this.userEntityService.isLocalUser(user) ? 'local' : 'remote';
 
 		this.commit({

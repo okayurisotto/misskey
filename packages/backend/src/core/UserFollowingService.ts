@@ -1,6 +1,6 @@
 import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser, User } from '@/models/entities/User.js';
+import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser } from '@/models/entities/User.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { QueueService } from '@/core/QueueService.js';
 import PerUserFollowingChart from '@/core/chart/charts/per-user-following.js';
@@ -72,7 +72,7 @@ export class UserFollowingService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async follow(_follower: { id: User['id'] }, _followee: { id: User['id'] }, requestId?: string, silent = false): Promise<void> {
+	public async follow(_follower: { id: user['id'] }, _followee: { id: user['id'] }, requestId?: string, silent = false): Promise<void> {
 		const [follower, followee] = await Promise.all([
 			this.prismaService.client.user.findUniqueOrThrow({ where: { id: _follower.id } }),
 			this.prismaService.client.user.findUniqueOrThrow({ where: { id: _followee.id } }),
@@ -164,10 +164,10 @@ export class UserFollowingService implements OnModuleInit {
 	@bindThis
 	private async insertFollowingDoc(
 		followee: {
-			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox']
+			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox']
 		},
 		follower: {
-			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox']
+			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox']
 		},
 		silent = false,
 	): Promise<void> {
@@ -315,10 +315,10 @@ export class UserFollowingService implements OnModuleInit {
 	@bindThis
 	public async unfollow(
 		follower: {
-			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox'];
+			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
 		},
 		followee: {
-			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox'];
+			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
 		},
 		silent = false,
 	): Promise<void> {
@@ -455,10 +455,10 @@ export class UserFollowingService implements OnModuleInit {
 	@bindThis
 	public async createFollowRequest(
 		follower: {
-			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox'];
+			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
 		},
 		followee: {
-			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox'];
+			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
 		},
 		requestId?: string,
 	): Promise<void> {
@@ -515,10 +515,10 @@ export class UserFollowingService implements OnModuleInit {
 	@bindThis
 	public async cancelFollowRequest(
 		followee: {
-			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']
+			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']
 		},
 		follower: {
-			id: User['id']; host: User['host']; uri: User['host']
+			id: user['id']; host: user['host']; uri: user['host']
 		},
 	): Promise<void> {
 		if (this.userEntityService.isRemoteUser(followee)) {
@@ -558,7 +558,7 @@ export class UserFollowingService implements OnModuleInit {
 	@bindThis
 	public async acceptFollowRequest(
 		followee: {
-			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox'];
+			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
 		},
 		follower: user,
 	): Promise<void> {
@@ -590,7 +590,7 @@ export class UserFollowingService implements OnModuleInit {
 	@bindThis
 	public async acceptAllFollowRequests(
 		user: {
-			id: User['id']; host: User['host']; uri: User['host']; inbox: User['inbox']; sharedInbox: User['sharedInbox'];
+			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
 		},
 	): Promise<void> {
 		const requests = await this.prismaService.client.follow_request.findMany({

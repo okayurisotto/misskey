@@ -4,9 +4,6 @@ import { ModuleRef } from '@nestjs/core';
 import { z } from 'zod';
 import { nyaize } from '@/misc/nyaize.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { User } from '@/models/entities/User.js';
-import type { Note } from '@/models/entities/Note.js';
-import type { NoteReaction } from '@/models/entities/NoteReaction.js';
 import { bindThis } from '@/decorators.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
@@ -39,7 +36,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async hideNote(packedNote: z.infer<typeof NoteSchema>, meId: User['id'] | null) {
+	private async hideNote(packedNote: z.infer<typeof NoteSchema>, meId: user['id'] | null) {
 		// TODO: isVisibleForMe を使うようにしても良さそう(型違うけど)
 		let hide = false;
 
@@ -99,7 +96,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async populatePoll(note: note, meId: User['id'] | null) {
+	private async populatePoll(note: note, meId: user['id'] | null) {
 		const poll = await this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: note.id } });
 		const choices = poll.choices.map(c => ({
 			text: c,
@@ -142,8 +139,8 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async populateMyReaction(note: note, meId: User['id'], _hint_?: {
-		myReactions: Map<Note['id'], NoteReaction | null>;
+	private async populateMyReaction(note: note, meId: user['id'], _hint_?: {
+		myReactions: Map<note['id'], note_reaction | null>;
 	}) {
 		if (_hint_?.myReactions) {
 			const reaction = _hint_.myReactions.get(note.id);
@@ -177,7 +174,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async isVisibleForMe(note: note, meId: User['id'] | null): Promise<boolean> {
+	public async isVisibleForMe(note: note, meId: user['id'] | null): Promise<boolean> {
 		// This code must always be synchronized with the checks in generateVisibilityQuery.
 		// visibility が specified かつ自分が指定されていなかったら非表示
 		if (note.visibility === 'specified') {
@@ -231,7 +228,7 @@ export class NoteEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async packAttachedFiles(fileIds: Note['fileIds'], packedFiles: Map<Note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>): Promise<z.infer<typeof DriveFileSchema>[]> {
+	public async packAttachedFiles(fileIds: note['fileIds'], packedFiles: Map<note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>): Promise<z.infer<typeof DriveFileSchema>[]> {
 		const missingIds = [];
 		for (const id of fileIds) {
 			if (!packedFiles.has(id)) missingIds.push(id);
@@ -247,14 +244,14 @@ export class NoteEntityService implements OnModuleInit {
 
 	@bindThis
 	public async pack(
-		src: Note['id'] | note,
-		me?: { id: User['id'] } | null | undefined,
+		src: note['id'] | note,
+		me?: { id: user['id'] } | null | undefined,
 		options?: {
 			detail?: boolean;
 			skipHide?: boolean;
 			_hint_?: {
-				myReactions: Map<Note['id'], note_reaction | null>;
-				packedFiles: Map<Note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>;
+				myReactions: Map<note['id'], note_reaction | null>;
+				packedFiles: Map<note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>;
 			};
 		},
 	): Promise<z.infer<typeof NoteSchema>> {
@@ -392,7 +389,7 @@ export class NoteEntityService implements OnModuleInit {
 	@bindThis
 	public async packMany(
 		notes: (note & { renote?: note | null; reply?: note | null })[],
-		me?: { id: User['id'] } | null | undefined,
+		me?: { id: user['id'] } | null | undefined,
 		options?: {
 			detail?: boolean;
 			skipHide?: boolean;
@@ -401,7 +398,7 @@ export class NoteEntityService implements OnModuleInit {
 		if (notes.length === 0) return [];
 
 		const meId = me ? me.id : null;
-		const myReactionsMap = new Map<Note['id'], NoteReaction | null>();
+		const myReactionsMap = new Map<note['id'], note_reaction | null>();
 		if (meId) {
 			const renoteIds = notes.filter(n => n.renoteId != null).map(n => n.renoteId!);
 			// パフォーマンスのためノートが作成されてから1秒以上経っていない場合はリアクションを取得しない

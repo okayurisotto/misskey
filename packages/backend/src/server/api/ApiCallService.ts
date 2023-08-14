@@ -4,7 +4,7 @@ import * as stream from 'node:stream/promises';
 import { Injectable } from '@nestjs/common';
 import { generateOpenApiSpec } from 'zod2spec';
 import { getIpHash } from '@/misc/get-ip-hash.js';
-import type { LocalUser, User } from '@/models/entities/User.js';
+import type { LocalUser } from '@/models/entities/User.js';
 import type Logger from '@/logger.js';
 import { MetaService } from '@/core/MetaService.js';
 import { createTemp } from '@/misc/create-temp.js';
@@ -18,7 +18,7 @@ import { AuthenticateService, AuthenticationError } from './AuthenticateService.
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { IEndpointMeta, IEndpoint } from './endpoints.js';
-import type { access_token } from '@prisma/client';
+import type { access_token, user } from '@prisma/client';
 
 const accessDenied = {
 	message: 'Access denied.',
@@ -29,7 +29,7 @@ const accessDenied = {
 @Injectable()
 export class ApiCallService implements OnApplicationShutdown {
 	private logger: Logger;
-	private userIpHistories: Map<User['id'], Set<string>>;
+	private userIpHistories: Map<user['id'], Set<string>>;
 	private userIpHistoriesClearIntervalId: NodeJS.Timer;
 
 	constructor(
@@ -41,7 +41,7 @@ export class ApiCallService implements OnApplicationShutdown {
 		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.apiLoggerService.logger;
-		this.userIpHistories = new Map<User['id'], Set<string>>();
+		this.userIpHistories = new Map<user['id'], Set<string>>();
 
 		this.userIpHistoriesClearIntervalId = setInterval(() => {
 			this.userIpHistories.clear();

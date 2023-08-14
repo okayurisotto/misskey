@@ -1,6 +1,5 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import type { Instance } from '@/models/entities/Instance.js';
 import { RedisKVCache } from '@/misc/cache.js';
 import { IdService } from '@/core/IdService.js';
 import { DI } from '@/di-symbols.js';
@@ -11,7 +10,7 @@ import type { instance } from '@prisma/client';
 
 @Injectable()
 export class FederatedInstanceService implements OnApplicationShutdown {
-	public federatedInstanceCache: RedisKVCache<Instance | null>;
+	public federatedInstanceCache: RedisKVCache<instance | null>;
 
 	constructor(
 		@Inject(DI.redis)
@@ -66,7 +65,7 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async update(id: Instance['id'], data: Partial<instance>): Promise<void> {
+	public async update(id: instance['id'], data: Partial<instance>): Promise<void> {
 		const result = await this.prismaService.client.instance.update({
 			where: { id },
 			data,

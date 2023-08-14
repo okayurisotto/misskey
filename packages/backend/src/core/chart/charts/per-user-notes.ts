@@ -1,7 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import type { User } from '@/models/entities/User.js';
-import type { Note } from '@/models/entities/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
@@ -10,7 +8,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-notes.js';
 import type { KVs } from '../core.js';
-import type { note } from '@prisma/client';
+import type { note, user } from '@prisma/client';
 
 /**
  * ユーザーごとのノートに関するチャート
@@ -44,7 +42,7 @@ export default class PerUserNotesChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public update(user: { id: User['id'] }, note: note, isAdditional: boolean): void {
+	public update(user: { id: user['id'] }, note: note, isAdditional: boolean): void {
 		this.commit({
 			'total': isAdditional ? 1 : -1,
 			'inc': isAdditional ? 1 : 0,

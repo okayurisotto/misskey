@@ -4,7 +4,6 @@ import { format as dateFormat } from 'date-fns';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
-import type { Following } from '@/models/entities/Following.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -43,7 +42,7 @@ export class ExportFollowingProcessorService {
 		try {
 			const stream = fs.createWriteStream(path, { flags: 'a' });
 
-			let cursor: Following['id'] | null = null;
+			let cursor: following['id'] | null = null;
 
 			const mutings = job.data.excludeMuting
 				? await this.prismaService.client.muting.findMany({

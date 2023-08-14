@@ -2,7 +2,6 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
-import { Note } from '@/models/entities/Note.js';
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -142,12 +141,12 @@ export class SearchService {
 
 	@bindThis
 	public async searchNote(q: string, me: user | null, opts: {
-		userId?: Note['userId'] | null;
-		channelId?: Note['channelId'] | null;
+		userId?: note['userId'] | null;
+		channelId?: note['channelId'] | null;
 		host?: string | null;
 	}, pagination: {
-		untilId?: Note['id'];
-		sinceId?: Note['id'];
+		untilId?: note['id'];
+		sinceId?: note['id'];
 		limit?: number;
 	}): Promise<note[]> {
 		if (this.meilisearch) {

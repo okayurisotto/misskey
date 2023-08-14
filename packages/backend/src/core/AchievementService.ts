@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
 
 export const ACHIEVEMENT_TYPES = [
 	'notes1',
@@ -91,7 +91,7 @@ export class AchievementService {
 
 	@bindThis
 	public async create(
-		userId: User['id'],
+		userId: user['id'],
 		type: typeof ACHIEVEMENT_TYPES[number],
 	): Promise<void> {
 		if (!ACHIEVEMENT_TYPES.includes(type)) return;

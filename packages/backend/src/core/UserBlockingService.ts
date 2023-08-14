@@ -1,7 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { IdService } from '@/core/IdService.js';
-import type { User } from '@/models/entities/User.js';
 import { QueueService } from '@/core/QueueService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import Logger from '@/logger.js';
@@ -186,7 +185,7 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async checkBlocked(blockerId: User['id'], blockeeId: User['id']): Promise<boolean> {
+	public async checkBlocked(blockerId: user['id'], blockeeId: user['id']): Promise<boolean> {
 		return (await this.cacheService.userBlockingCache.fetch(blockerId)).has(blockeeId);
 	}
 }

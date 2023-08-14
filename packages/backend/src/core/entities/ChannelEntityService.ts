@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
-import type { Channel } from '@/models/entities/Channel.js';
 import { bindThis } from '@/decorators.js';
 import type { ChannelSchema } from '@/models/zod/ChannelSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
 import { NoteEntityService } from './NoteEntityService.js';
 import type { z } from 'zod';
-import type { channel } from '@prisma/client';
+import type { channel, user } from '@prisma/client';
 
 @Injectable()
 export class ChannelEntityService {
@@ -20,8 +18,8 @@ export class ChannelEntityService {
 
 	@bindThis
 	public async pack(
-		src: Channel['id'] | channel,
-		me?: { id: User['id'] } | null | undefined,
+		src: channel['id'] | channel,
+		me?: { id: user['id'] } | null | undefined,
 		detailed?: boolean,
 	): Promise<z.infer<typeof ChannelSchema>> {
 		const channel = typeof src === 'object'

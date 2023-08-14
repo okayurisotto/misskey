@@ -239,14 +239,6 @@ export class User {
 		comment: 'The native access token of the User. It will be null if the origin of the user is local.',
 	})
 	public token: string | null;
-
-	constructor(data: Partial<User>) {
-		if (data == null) return;
-
-		for (const [k, v] of Object.entries(data)) {
-			(this as any)[k] = v;
-		}
-	}
 }
 
 export type LocalUser = user & {

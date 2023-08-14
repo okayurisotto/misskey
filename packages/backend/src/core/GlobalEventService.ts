@@ -1,9 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
-import type { User } from '@/models/entities/User.js';
-import type { Note } from '@/models/entities/Note.js';
-import type { UserList } from '@/models/entities/UserList.js';
-import type { Antenna } from '@/models/entities/Antenna.js';
 import type {
 	StreamChannels,
 	AdminStreamTypes,
@@ -19,9 +15,9 @@ import type {
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
-import type { Role } from '@/models/index.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { z } from 'zod';
+import type { role, note, antenna, user, user_list } from '@prisma/client';
 
 @Injectable()
 export class GlobalEventService {
@@ -57,17 +53,17 @@ export class GlobalEventService {
 	}
 
 	@bindThis
-	public publishMainStream<K extends keyof MainStreamTypes>(userId: User['id'], type: K, value?: MainStreamTypes[K]): void {
+	public publishMainStream<K extends keyof MainStreamTypes>(userId: user['id'], type: K, value?: MainStreamTypes[K]): void {
 		this.publish(`mainStream:${userId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishDriveStream<K extends keyof DriveStreamTypes>(userId: User['id'], type: K, value?: DriveStreamTypes[K]): void {
+	public publishDriveStream<K extends keyof DriveStreamTypes>(userId: user['id'], type: K, value?: DriveStreamTypes[K]): void {
 		this.publish(`driveStream:${userId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishNoteStream<K extends keyof NoteStreamTypes>(noteId: Note['id'], type: K, value?: NoteStreamTypes[K]): void {
+	public publishNoteStream<K extends keyof NoteStreamTypes>(noteId: note['id'], type: K, value?: NoteStreamTypes[K]): void {
 		this.publish(`noteStream:${noteId}`, type, {
 			id: noteId,
 			body: value,
@@ -75,17 +71,17 @@ export class GlobalEventService {
 	}
 
 	@bindThis
-	public publishUserListStream<K extends keyof UserListStreamTypes>(listId: UserList['id'], type: K, value?: UserListStreamTypes[K]): void {
+	public publishUserListStream<K extends keyof UserListStreamTypes>(listId: user_list['id'], type: K, value?: UserListStreamTypes[K]): void {
 		this.publish(`userListStream:${listId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishAntennaStream<K extends keyof AntennaStreamTypes>(antennaId: Antenna['id'], type: K, value?: AntennaStreamTypes[K]): void {
+	public publishAntennaStream<K extends keyof AntennaStreamTypes>(antennaId: antenna['id'], type: K, value?: AntennaStreamTypes[K]): void {
 		this.publish(`antennaStream:${antennaId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
 	@bindThis
-	public publishRoleTimelineStream<K extends keyof RoleTimelineStreamTypes>(roleId: Role['id'], type: K, value?: RoleTimelineStreamTypes[K]): void {
+	public publishRoleTimelineStream<K extends keyof RoleTimelineStreamTypes>(roleId: role['id'], type: K, value?: RoleTimelineStreamTypes[K]): void {
 		this.publish(`roleTimelineStream:${roleId}`, type, typeof value === 'undefined' ? null : value);
 	}
 
@@ -95,7 +91,7 @@ export class GlobalEventService {
 	}
 
 	@bindThis
-	public publishAdminStream<K extends keyof AdminStreamTypes>(userId: User['id'], type: K, value?: AdminStreamTypes[K]): void {
+	public publishAdminStream<K extends keyof AdminStreamTypes>(userId: user['id'], type: K, value?: AdminStreamTypes[K]): void {
 		this.publish(`adminStream:${userId}`, type, typeof value === 'undefined' ? null : value);
 	}
 }

@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import type { User } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Notification } from '@/models/entities/Notification.js';
-import type { Note } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { notificationTypes } from '@/types.js';
@@ -15,6 +13,7 @@ import type { OnModuleInit } from '@nestjs/common';
 import type { UserEntityService } from './UserEntityService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
 import type { z } from 'zod';
+import type { note, user } from '@prisma/client';
 
 const NOTE_REQUIRED_NOTIFICATION_TYPES = new Set(['mention', 'reply', 'renote', 'quote', 'reaction', 'pollEnded'] as (typeof notificationTypes[number])[]);
 
@@ -37,14 +36,14 @@ export class NotificationEntityService implements OnModuleInit {
 	@bindThis
 	public async pack(
 		src: Notification,
-		meId: User['id'],
+		meId: user['id'],
 		// eslint-disable-next-line @typescript-eslint/ban-types
 		options: {
 
 		},
 		hint?: {
-			packedNotes: Map<Note['id'], z.infer<typeof NoteSchema>>;
-			packedUsers: Map<User['id'], z.infer<typeof UserSchema>>;
+			packedNotes: Map<note['id'], z.infer<typeof NoteSchema>>;
+			packedUsers: Map<user['id'], z.infer<typeof UserSchema>>;
 		},
 	): Promise<z.infer<typeof NotificationSchema>> {
 		const notification = src;
@@ -87,7 +86,7 @@ export class NotificationEntityService implements OnModuleInit {
 	@bindThis
 	public async packMany(
 		notifications: Notification[],
-		meId: User['id'],
+		meId: user['id'],
 	) {
 		if (notifications.length === 0) return [];
 

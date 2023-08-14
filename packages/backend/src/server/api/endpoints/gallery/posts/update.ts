@@ -2,11 +2,11 @@ import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { drive_file } from '@prisma/client';
 
 const res = GalleryPostSchema;
 export const meta = {
@@ -53,7 +53,7 @@ export default class extends Endpoint<
 						}),
 					),
 				)
-			).filter((file): file is DriveFile => file != null);
+			).filter((file): file is drive_file => file != null);
 
 			if (files.length === 0) {
 				throw new Error();

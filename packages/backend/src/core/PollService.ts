@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { Note } from '@/models/entities/Note.js';
 import { RelayService } from '@/core/RelayService.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -91,7 +90,7 @@ export class PollService {
 	}
 
 	@bindThis
-	public async deliverQuestionUpdate(noteId: Note['id']) {
+	public async deliverQuestionUpdate(noteId: note['id']) {
 		const note = await this.prismaService.client.note.findUnique({ where: { id: noteId } });
 		if (note == null) throw new Error('note not found');
 

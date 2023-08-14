@@ -1,19 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import Channel from '../channel.js';
 import type { z } from 'zod';
-import { PrismaService } from '@/core/PrismaService.js';
+import type { user } from '@prisma/client';
 
 class UserListChannel extends Channel {
 	public readonly chName = 'userList';
 	public static override shouldShare = false;
 	public static override requireCredential = false;
 	private listId: string;
-	public listUsers: User['id'][] = [];
+	public listUsers: user['id'][] = [];
 	private listUsersClock: NodeJS.Timer;
 
 	constructor(

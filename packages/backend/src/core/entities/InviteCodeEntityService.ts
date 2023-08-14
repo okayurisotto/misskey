@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { User } from '@/models/entities/User.js';
-import type { RegistrationTicket } from '@/models/entities/RegistrationTicket.js';
 import { bindThis } from '@/decorators.js';
 import type { InviteCodeSchema } from '@/models/zod/InviteCodeSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
-import type { registration_ticket } from '@prisma/client';
+import type { registration_ticket, user } from '@prisma/client';
 
 @Injectable()
 export class InviteCodeEntityService {
@@ -19,9 +17,9 @@ export class InviteCodeEntityService {
 	@bindThis
 	public async pack(
 		src:
-			| RegistrationTicket['id']
+			| registration_ticket['id']
 			| registration_ticket,
-		me?: { id: User['id'] } | null | undefined,
+		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof InviteCodeSchema>> {
 		const target =
 			typeof src === 'object'

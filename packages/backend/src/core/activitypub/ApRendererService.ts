@@ -4,12 +4,8 @@ import * as mfm from 'mfm-js';
 import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import type { PartialLocalUser, LocalUser, PartialRemoteUser, RemoteUser, User } from '@/models/entities/User.js';
+import type { PartialLocalUser, LocalUser, PartialRemoteUser, RemoteUser } from '@/models/entities/User.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
-import type { Relay } from '@/models/entities/Relay.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
-import type { NoteReaction } from '@/models/entities/NoteReaction.js';
-import type { Emoji } from '@/models/entities/Emoji.js';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { MfmService } from '@/core/MfmService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -21,7 +17,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { LdSignatureService } from './LdSignatureService.js';
 import { ApMfmService } from './ApMfmService.js';
 import type { IAccept, IActivity, IAdd, IAnnounce, IApDocument, IApEmoji, IApHashtag, IApImage, IApMention, IBlock, ICreate, IDelete, IFlag, IFollow, IKey, ILike, IMove, IObject, IPost, IQuestion, IReject, IRemove, ITombstone, IUndo, IUpdate } from './type.js';
-import type { blocking, drive_file, note, poll, poll_vote, user, user_keypair } from '@prisma/client';
+import type { relay, note_reaction, emoji, blocking, drive_file, note, poll, poll_vote, user, user_keypair } from '@prisma/client';
 
 @Injectable()
 export class ApRendererService {
@@ -40,7 +36,7 @@ export class ApRendererService {
 	) {}
 
 	@bindThis
-	public renderAccept(object: string | IObject, user: { id: User['id']; host: null }): IAccept {
+	public renderAccept(object: string | IObject, user: { id: user['id']; host: null }): IAccept {
 		return {
 			type: 'Accept',
 			actor: this.userEntityService.genLocalUserUri(user.id),
@@ -125,7 +121,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderDelete(object: IObject | string, user: { id: User['id']; host: null }): IDelete {
+	public renderDelete(object: IObject | string, user: { id: user['id']; host: null }): IDelete {
 		return {
 			type: 'Delete',
 			actor: this.userEntityService.genLocalUserUri(user.id),
@@ -135,7 +131,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderDocument(file: DriveFile): IApDocument {
+	public renderDocument(file: drive_file): IApDocument {
 		return {
 			type: 'Document',
 			mediaType: file.webpublicType ?? file.type,
@@ -145,7 +141,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderEmoji(emoji: Emoji): IApEmoji {
+	public renderEmoji(emoji: emoji): IApEmoji {
 		return {
 			id: `${this.config.url}/emojis/${emoji.name}`,
 			type: 'Emoji',
@@ -172,7 +168,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderFollowRelay(relay: Relay, relayActor: LocalUser): IFollow {
+	public renderFollowRelay(relay: relay, relayActor: LocalUser): IFollow {
 		return {
 			id: `${this.config.url}/activities/follow-relay/${relay.id}`,
 			type: 'Follow',
@@ -186,7 +182,7 @@ export class ApRendererService {
 	 * @param id Follower|Followee ID
 	 */
 	@bindThis
-	public async renderFollowUser(id: User['id']): Promise<string> {
+	public async renderFollowUser(id: user['id']): Promise<string> {
 		const user = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: id } }) as PartialLocalUser | PartialRemoteUser;
 		return this.userEntityService.getUserUri(user);
 	}
@@ -238,7 +234,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public async renderLike(noteReaction: NoteReaction, note: { uri: string | null }): Promise<ILike> {
+	public async renderLike(noteReaction: note_reaction, note: { uri: string | null }): Promise<ILike> {
 		const reaction = noteReaction.reaction;
 
 		const object: ILike = {
@@ -287,10 +283,10 @@ export class ApRendererService {
 
 	@bindThis
 	public async renderNote(note: note, dive = true): Promise<IPost> {
-		const getPromisedFiles = async (ids: string[]): Promise<DriveFile[]> => {
+		const getPromisedFiles = async (ids: string[]): Promise<drive_file[]> => {
 			if (ids.length === 0) return [];
 			const items = await this.prismaService.client.drive_file.findMany({ where: { id: { in: ids } } });
-			return ids.map(id => items.find(item => item.id === id)).filter((item): item is DriveFile => item != null);
+			return ids.map(id => items.find(item => item.id === id)).filter((item): item is drive_file => item != null);
 		};
 
 		let inReplyTo;
@@ -503,7 +499,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderQuestion(user: { id: User['id'] }, note: note, poll: poll): IQuestion {
+	public renderQuestion(user: { id: user['id'] }, note: note, poll: poll): IQuestion {
 		return {
 			type: 'Question',
 			id: `${this.config.url}/questions/${note.id}`,
@@ -521,7 +517,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderReject(object: string | IObject, user: { id: User['id'] }): IReject {
+	public renderReject(object: string | IObject, user: { id: user['id'] }): IReject {
 		return {
 			type: 'Reject',
 			actor: this.userEntityService.genLocalUserUri(user.id),
@@ -530,7 +526,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderRemove(user: { id: User['id'] }, target: string | IObject | undefined, object: string | IObject): IRemove {
+	public renderRemove(user: { id: user['id'] }, target: string | IObject | undefined, object: string | IObject): IRemove {
 		return {
 			type: 'Remove',
 			actor: this.userEntityService.genLocalUserUri(user.id),
@@ -548,7 +544,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderUndo(object: string | IObject, user: { id: User['id'] }): IUndo {
+	public renderUndo(object: string | IObject, user: { id: user['id'] }): IUndo {
 		const id = typeof object !== 'string' && typeof object.id === 'string' && object.id.startsWith(this.config.url) ? `${object.id}/undo` : undefined;
 
 		return {
@@ -561,7 +557,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderUpdate(object: string | IObject, user: { id: User['id'] }): IUpdate {
+	public renderUpdate(object: string | IObject, user: { id: user['id'] }): IUpdate {
 		return {
 			id: `${this.config.url}/users/${user.id}#updates/${new Date().getTime()}`,
 			actor: this.userEntityService.genLocalUserUri(user.id),
@@ -573,7 +569,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public renderVote(user: { id: User['id'] }, vote: poll_vote, note: note, poll: poll, pollOwner: RemoteUser): ICreate {
+	public renderVote(user: { id: user['id'] }, vote: poll_vote, note: note, poll: poll, pollOwner: RemoteUser): ICreate {
 		return {
 			id: `${this.config.url}/users/${user.id}#votes/${vote.id}/activity`,
 			actor: this.userEntityService.genLocalUserUri(user.id),
@@ -631,7 +627,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public async attachLdSignature(activity: any, user: { id: User['id']; host: null; }): Promise<IActivity> {
+	public async attachLdSignature(activity: any, user: { id: user['id']; host: null; }): Promise<IActivity> {
 		const keypair = await this.userKeypairService.getUserKeypair(user.id);
 
 		const ldSignature = this.ldSignatureService.use();
@@ -690,7 +686,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	private async getEmojis(names: string[]): Promise<Emoji[]> {
+	private async getEmojis(names: string[]): Promise<emoji[]> {
 		if (names.length === 0) return [];
 
 		const allEmojis = await this.customEmojiService.localEmojisCache.fetch();

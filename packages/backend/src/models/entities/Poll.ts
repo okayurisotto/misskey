@@ -54,14 +54,6 @@ export class Poll {
 	})
 	public userHost: string | null;
 	//#endregion
-
-	constructor(data: Partial<Poll>) {
-		if (data == null) return;
-
-		for (const [k, v] of Object.entries(data)) {
-			(this as any)[k] = v;
-		}
-	}
 }
 
 export type IPoll = {

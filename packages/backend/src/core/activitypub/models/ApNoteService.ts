@@ -3,9 +3,7 @@ import promiseLimit from 'promise-limit';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import type { RemoteUser } from '@/models/entities/User.js';
-import type { Note } from '@/models/entities/Note.js';
 import { toArray, toSingle, unique } from '@/misc/prelude/array.js';
-import type { Emoji } from '@/models/entities/Emoji.js';
 import { MetaService } from '@/core/MetaService.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
@@ -30,7 +28,7 @@ import { ApQuestionService } from './ApQuestionService.js';
 import { ApImageService } from './ApImageService.js';
 import type { Resolver } from '../ApResolverService.js';
 import type { IObject, IPost } from '../type.js';
-import type { drive_file, note } from '@prisma/client';
+import type { emoji, drive_file, note } from '@prisma/client';
 
 @Injectable()
 export class ApNoteService {
@@ -187,7 +185,7 @@ export class ApNoteService {
 			: null;
 
 		// 引用
-		let quote: Note | undefined | null = null;
+		let quote: note | undefined | null = null;
 
 		if (note._misskey_quote || note.quoteUrl) {
 			const tryResolveNote = async (uri: string): Promise<
@@ -209,7 +207,7 @@ export class ApNoteService {
 			const uris = unique([note._misskey_quote, note.quoteUrl].filter((x): x is string => typeof x === 'string'));
 			const results = await Promise.all(uris.map(tryResolveNote));
 
-			quote = results.filter((x): x is { status: 'ok', res: Note } => x.status === 'ok').map(x => x.res).at(0);
+			quote = results.filter((x): x is { status: 'ok', res: note } => x.status === 'ok').map(x => x.res).at(0);
 			if (!quote) {
 				if (results.some(x => x.status === 'temperror')) {
 					throw new Error('quote resolve failed');
@@ -319,7 +317,7 @@ export class ApNoteService {
 	}
 
 	@bindThis
-	public async extractEmojis(tags: IObject | IObject[], host: string): Promise<Emoji[]> {
+	public async extractEmojis(tags: IObject | IObject[], host: string): Promise<emoji[]> {
 		// eslint-disable-next-line no-param-reassign
 		host = this.utilityService.toPuny(host);
 

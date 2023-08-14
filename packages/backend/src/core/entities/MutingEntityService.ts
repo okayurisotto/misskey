@@ -1,13 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import type {} from '@/models/entities/Blocking.js';
-import type { User } from '@/models/entities/User.js';
-import type { Muting } from '@/models/entities/Muting.js';
 import { bindThis } from '@/decorators.js';
 import type { MutingSchema } from '@/models/zod/MutingSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
-import type { muting } from '@prisma/client';
+import type { muting, user } from '@prisma/client';
 
 @Injectable()
 export class MutingEntityService {
@@ -18,8 +15,8 @@ export class MutingEntityService {
 
 	@bindThis
 	public async pack(
-		src: Muting['id'] | muting,
-		me?: { id: User['id'] } | null | undefined,
+		src: muting['id'] | muting,
+		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof MutingSchema>> {
 		const muting =
 			typeof src === 'object'

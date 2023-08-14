@@ -1,6 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import type { User } from '@/models/entities/User.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -10,6 +9,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-following.js';
 import type { KVs } from '../core.js';
+import type { user } from '@prisma/client';
 
 /**
  * ユーザーごとのフォローに関するチャート
@@ -55,7 +55,7 @@ export default class PerUserFollowingChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async update(follower: { id: User['id']; host: User['host']; }, followee: { id: User['id']; host: User['host']; }, isFollow: boolean): Promise<void> {
+	public async update(follower: { id: user['id']; host: user['host']; }, followee: { id: user['id']; host: user['host']; }, isFollow: boolean): Promise<void> {
 		const prefixFollower = this.userEntityService.isLocalUser(follower) ? 'local' : 'remote';
 		const prefixFollowee = this.userEntityService.isLocalUser(followee) ? 'local' : 'remote';
 

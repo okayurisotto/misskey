@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { LocalUser, User } from '@/models/entities/User.js';
+import type { LocalUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { MemorySingleCache } from '@/misc/cache.js';
 import { QueueService } from '@/core/QueueService.js';
@@ -8,7 +8,7 @@ import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { deepClone } from '@/misc/clone.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { relay } from '@prisma/client';
+import type { relay, user } from '@prisma/client';
 
 const ACTOR_USERNAME = 'relay.actor' as const;
 
@@ -105,7 +105,7 @@ export class RelayService {
 	}
 
 	@bindThis
-	public async deliverToRelays(user: { id: User['id']; host: null; }, activity: any): Promise<void> {
+	public async deliverToRelays(user: { id: user['id']; host: null; }, activity: any): Promise<void> {
 		if (activity == null) return;
 
 		const relays = await this.relaysCache.fetch(() => this.prismaService.client.relay.findMany({

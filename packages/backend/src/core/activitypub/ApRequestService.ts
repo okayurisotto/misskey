@@ -3,12 +3,12 @@ import { URL } from 'node:url';
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import type { User } from '@/models/entities/User.js';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
 import type Logger from '@/logger.js';
+import type { user } from '@prisma/client';
 
 type Request = {
 	url: string;
@@ -140,7 +140,7 @@ export class ApRequestService {
 	}
 
 	@bindThis
-	public async signedPost(user: { id: User['id'] }, url: string, object: unknown): Promise<void> {
+	public async signedPost(user: { id: user['id'] }, url: string, object: unknown): Promise<void> {
 		const body = JSON.stringify(object);
 
 		const keypair = await this.userKeypairService.getUserKeypair(user.id);
@@ -169,7 +169,7 @@ export class ApRequestService {
 	 * @param url URL to fetch
 	 */
 	@bindThis
-	public async signedGet(url: string, user: { id: User['id'] }): Promise<unknown> {
+	public async signedGet(url: string, user: { id: user['id'] }): Promise<unknown> {
 		const keypair = await this.userKeypairService.getUserKeypair(user.id);
 
 		const req = ApRequestCreator.createSignedGet({

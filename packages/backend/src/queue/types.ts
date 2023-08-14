@@ -1,10 +1,8 @@
-import type { Antenna } from '@/server/api/endpoints/i/import-antennas.js';
-import type { DriveFile } from '@/models/entities/DriveFile.js';
-import type { Note } from '@/models/entities/Note.js';
-import type { User } from '@/models/entities/User.js';
-import type { Webhook } from '@/models/entities/Webhook.js';
 import type { IActivity } from '@/core/activitypub/type.js';
+import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntenna.js';
 import type httpSignature from '@peertube/http-signature';
+import type { note, webhook, drive_file, user } from '@prisma/client';
+import type { z } from 'zod';
 
 export type DeliverJobData = {
 	/** Actor */
@@ -27,7 +25,7 @@ export type RelationshipJobData = {
 	to: ThinUser;
 	silent?: boolean;
 	requestId?: string;
-}
+};
 
 export type DbJobData<T extends keyof DbJobMap> = DbJobMap[T];
 
@@ -50,11 +48,11 @@ export type DbJobMap = {
 	importUserLists: DbUserImportJobData;
 	importCustomEmojis: DbUserImportJobData;
 	deleteAccount: DbUserDeleteJobData;
-}
+};
 
 export type DbJobDataWithUser = {
 	user: ThinUser;
-}
+};
 
 export type DbExportFollowingData = {
 	user: ThinUser;
@@ -63,8 +61,8 @@ export type DbExportFollowingData = {
 };
 
 export type DBExportAntennasData = {
-	user: ThinUser
-}
+	user: ThinUser;
+};
 
 export type DbUserDeleteJobData = {
 	user: ThinUser;
@@ -73,34 +71,36 @@ export type DbUserDeleteJobData = {
 
 export type DbUserImportJobData = {
 	user: ThinUser;
-	fileId: DriveFile['id'];
+	fileId: drive_file['id'];
 };
 
 export type DBAntennaImportJobData = {
-	user: ThinUser,
-	antenna: Antenna
-}
+	user: ThinUser;
+	antenna: z.infer<typeof ExportedAntennaSchema>[];
+};
 
 export type DbUserImportToDbJobData = {
 	user: ThinUser;
 	target: string;
 };
 
-export type ObjectStorageJobData = ObjectStorageFileJobData | Record<string, unknown>;
+export type ObjectStorageJobData =
+	| ObjectStorageFileJobData
+	| Record<string, unknown>;
 
 export type ObjectStorageFileJobData = {
 	key: string;
 };
 
 export type EndedPollNotificationJobData = {
-	noteId: Note['id'];
+	noteId: note['id'];
 };
 
 export type WebhookDeliverJobData = {
 	type: string;
 	content: unknown;
-	webhookId: Webhook['id'];
-	userId: User['id'];
+	webhookId: webhook['id'];
+	userId: user['id'];
 	to: string;
 	secret: string;
 	createdAt: number;
@@ -108,5 +108,5 @@ export type WebhookDeliverJobData = {
 };
 
 export type ThinUser = {
-	id: User['id'];
+	id: user['id'];
 };

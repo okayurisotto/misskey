@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { IdService } from '@/core/IdService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -17,7 +16,7 @@ export class HashtagService {
 	}
 
 	@bindThis
-	public async updateHashtags(user: { id: User['id']; host: User['host']; }, tags: string[]) {
+	public async updateHashtags(user: { id: user['id']; host: user['host']; }, tags: string[]) {
 		for (const tag of tags) {
 			await this.updateHashtag(user, tag);
 		}
@@ -35,7 +34,7 @@ export class HashtagService {
 	}
 
 	@bindThis
-	public async updateHashtag(user: { id: User['id']; host: User['host']; }, tag: string, isUserAttached = false, inc = true) {
+	public async updateHashtag(user: { id: user['id']; host: user['host']; }, tag: string, isUserAttached = false, inc = true) {
 		tag = normalizeForSearch(tag);
 
 		// TODO: transaction

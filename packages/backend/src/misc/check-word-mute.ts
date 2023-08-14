@@ -1,16 +1,15 @@
 import { AhoCorasick } from 'slacc';
 import RE2 from 're2';
-import type { Note } from '@/models/entities/Note.js';
-import type { User } from '@/models/entities/User.js';
+import type { note, user } from '@prisma/client';
 
 type NoteLike = {
-	userId: Note['userId'];
-	text: Note['text'];
-	cw?: Note['cw'];
+	userId: note['userId'];
+	text: note['text'];
+	cw?: note['cw'];
 };
 
 type UserLike = {
-	id: User['id'];
+	id: user['id'];
 };
 
 const acCache = new Map<string, AhoCorasick>();

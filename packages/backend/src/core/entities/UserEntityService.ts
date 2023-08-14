@@ -5,7 +5,7 @@ import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { USER_ACTIVE_THRESHOLD, USER_ONLINE_THRESHOLD } from '@/const.js';
-import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser, User } from '@/models/entities/User.js';
+import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
@@ -32,14 +32,14 @@ type IsMeAndIsUserDetailed<ExpectsMe extends boolean | null, Detailed extends bo
 	z.infer<typeof UserLiteSchema>;
 
 function isLocalUser(user: user): user is LocalUser;
-function isLocalUser<T extends { host: User['host'] }>(user: T): user is (T & { host: null; });
-function isLocalUser(user: user | { host: User['host'] }): boolean {
+function isLocalUser<T extends { host: user['host'] }>(user: T): user is (T & { host: null; });
+function isLocalUser(user: user | { host: user['host'] }): boolean {
 	return user.host == null;
 }
 
 function isRemoteUser(user: user): user is RemoteUser;
-function isRemoteUser<T extends { host: User['host'] }>(user: T): user is (T & { host: string; });
-function isRemoteUser(user: user | { host: User['host'] }): boolean {
+function isRemoteUser<T extends { host: user['host'] }>(user: T): user is (T & { host: string; });
+function isRemoteUser(user: user | { host: user['host'] }): boolean {
 	return !isLocalUser(user);
 }
 
@@ -80,7 +80,7 @@ export class UserEntityService implements OnModuleInit {
 	public isRemoteUser = isRemoteUser;
 
 	@bindThis
-	public async getRelation(me: User['id'], target: User['id']) {
+	public async getRelation(me: user['id'], target: user['id']) {
 		const result = await awaitAll({
 			isFollowing: (): Promise<boolean> =>
 				this.prismaService.client.following.count({
@@ -131,7 +131,7 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async getHasUnreadAnnouncement(userId: User['id']): Promise<boolean> {
+	public async getHasUnreadAnnouncement(userId: user['id']): Promise<boolean> {
 		const reads = await this.prismaService.client.announcement_read.findMany({
 			where: { userId: userId },
 		});
@@ -147,12 +147,12 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async getHasUnreadAntenna(userId: User['id']): Promise<boolean> {
+	public async getHasUnreadAntenna(userId: user['id']): Promise<boolean> {
 		return false; // TODO
 	}
 
 	@bindThis
-	public async getHasUnreadNotification(userId: User['id']): Promise<boolean> {
+	public async getHasUnreadNotification(userId: user['id']): Promise<boolean> {
 		const latestReadNotificationId = await this.redisClient.get(`latestReadNotification:${userId}`);
 
 		const latestNotificationIdsRes = await this.redisClient.xrevrange(
@@ -166,7 +166,7 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async getHasPendingReceivedFollowRequest(userId: User['id']): Promise<boolean> {
+	public async getHasPendingReceivedFollowRequest(userId: user['id']): Promise<boolean> {
 		const count = await this.prismaService.client.follow_request.count({
 			where: { followeeId: userId },
 			take: 1,
@@ -204,8 +204,8 @@ export class UserEntityService implements OnModuleInit {
 	}
 
 	public async pack<ExpectsMe extends boolean | null = null, D extends boolean = false>(
-		src: User['id'] | user,
-		me?: { id: User['id']; } | null | undefined,
+		src: user['id'] | user,
+		me?: { id: user['id']; } | null | undefined,
 		options?: {
 			detail?: D,
 			includeSecrets?: boolean,

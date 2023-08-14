@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { MemoryKVCache, RedisKVCache } from '@/misc/cache.js';
-import type { LocalUser, User } from '@/models/entities/User.js';
+import type { LocalUser } from '@/models/entities/User.js';
 import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
@@ -173,7 +173,7 @@ export class CacheService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public findUserById(userId: User['id']) {
+	public findUserById(userId: user['id']) {
 		return this.userByIdCache.fetch(userId, () => this.prismaService.client.user.findUniqueOrThrow({ where: { id: userId } }));
 	}
 

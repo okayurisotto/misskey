@@ -1,7 +1,6 @@
 import * as fs from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
-import type { NoteFavorite } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
@@ -57,7 +56,7 @@ export class ExportFavoritesProcessorService {
 			await write('[');
 
 			let exportedFavoritesCount = 0;
-			let cursor: NoteFavorite['id'] | null = null;
+			let cursor: note_favorite['id'] | null = null;
 
 			while (true) {
 				const favorites: (note_favorite & { note: note & { user: user } })[] = await this.prismaService.client.note_favorite.findMany({

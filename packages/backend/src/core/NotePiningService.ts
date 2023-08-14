@@ -1,8 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DI } from '@/di-symbols.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
-import type { User } from '@/models/entities/User.js';
-import type { Note } from '@/models/entities/Note.js';
 import { IdService } from '@/core/IdService.js';
 import { RelayService } from '@/core/RelayService.js';
 import type { Config } from '@/config.js';
@@ -12,6 +10,7 @@ import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { note, user } from '@prisma/client';
 
 @Injectable()
 export class NotePiningService {
@@ -35,7 +34,7 @@ export class NotePiningService {
 	 * @param noteId
 	 */
 	@bindThis
-	public async addPinned(user: { id: User['id']; host: User['host']; }, noteId: Note['id']) {
+	public async addPinned(user: { id: user['id']; host: user['host']; }, noteId: note['id']) {
 	// Fetch pinee
 		const note = await this.prismaService.client.note.findUnique({
 			where: {
@@ -79,7 +78,7 @@ export class NotePiningService {
 	 * @param noteId
 	 */
 	@bindThis
-	public async removePinned(user: { id: User['id']; host: User['host']; }, noteId: Note['id']) {
+	public async removePinned(user: { id: user['id']; host: user['host']; }, noteId: note['id']) {
 		// Fetch unpinee
 		const note = await this.prismaService.client.note.findUnique({
 			where: {
@@ -108,7 +107,7 @@ export class NotePiningService {
 	}
 
 	@bindThis
-	public async deliverPinnedChange(userId: User['id'], noteId: Note['id'], isAddition: boolean) {
+	public async deliverPinnedChange(userId: user['id'], noteId: note['id'], isAddition: boolean) {
 		const user = await this.prismaService.client.user.findUnique({ where: { id: userId } });
 		if (user == null) throw new Error('user not found');
 

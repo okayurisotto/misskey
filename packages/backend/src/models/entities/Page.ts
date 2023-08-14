@@ -110,12 +110,4 @@ export class Page {
 		default: 0,
 	})
 	public likedCount: number;
-
-	constructor(data: Partial<Page>) {
-		if (data == null) return;
-
-		for (const [k, v] of Object.entries(data)) {
-			(this as any)[k] = v;
-		}
-	}
 }

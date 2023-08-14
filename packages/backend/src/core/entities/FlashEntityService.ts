@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type {} from '@/models/entities/Blocking.js';
-import type { User } from '@/models/entities/User.js';
-import type { Flash } from '@/models/entities/Flash.js';
 import { bindThis } from '@/decorators.js';
 import type { FlashSchema } from '@/models/zod/FlashSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
-import type { flash } from '@prisma/client';
+import type { flash, user } from '@prisma/client';
 
 @Injectable()
 export class FlashEntityService {
@@ -19,8 +16,8 @@ export class FlashEntityService {
 
 	@bindThis
 	public async pack(
-		src: Flash['id'] | flash,
-		me?: { id: User['id'] } | null | undefined,
+		src: flash['id'] | flash,
+		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof FlashSchema>> {
 		const meId = me ? me.id : null;
 		const flash =

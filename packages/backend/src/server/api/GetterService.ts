@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
-import type { LocalUser, RemoteUser, User } from '@/models/entities/User.js';
-import type { Note } from '@/models/entities/Note.js';
+import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { note, user } from '@prisma/client';
 
 @Injectable()
 export class GetterService {
@@ -17,7 +17,7 @@ export class GetterService {
 	 * Get note for API processing
 	 */
 	@bindThis
-	public async getNote(noteId: Note['id']) {
+	public async getNote(noteId: note['id']) {
 		const note = await this.prismaService.client.note.findUnique({ where: { id: noteId } });
 
 		if (note == null) {
@@ -31,7 +31,7 @@ export class GetterService {
 	 * Get user for API processing
 	 */
 	@bindThis
-	public async getUser(userId: User['id']) {
+	public async getUser(userId: user['id']) {
 		const user = await this.prismaService.client.user.findUnique({ where: { id: userId } });
 
 		if (user == null) {
@@ -45,7 +45,7 @@ export class GetterService {
 	 * Get remote user for API processing
 	 */
 	@bindThis
-	public async getRemoteUser(userId: User['id']) {
+	public async getRemoteUser(userId: user['id']) {
 		const user = await this.getUser(userId);
 
 		if (!this.userEntityService.isRemoteUser(user)) {
@@ -59,7 +59,7 @@ export class GetterService {
 	 * Get local user for API processing
 	 */
 	@bindThis
-	public async getLocalUser(userId: User['id']) {
+	public async getLocalUser(userId: user['id']) {
 		const user = await this.getUser(userId);
 
 		if (!this.userEntityService.isLocalUser(user)) {

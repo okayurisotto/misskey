@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { UserList } from '@/models/entities/UserList.js';
 import { bindThis } from '@/decorators.js';
 import type { UserListSchema } from '@/models/zod/UserListSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -12,7 +11,7 @@ export class UserListEntityService {
 
 	@bindThis
 	public async pack(
-		src: UserList['id'] | user_list,
+		src: user_list['id'] | user_list,
 	): Promise<z.infer<typeof UserListSchema>> {
 		const userList = typeof src === 'object'
 			? src

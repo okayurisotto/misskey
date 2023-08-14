@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js';
 import { z } from 'zod';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
-import type { RemoteUser, User } from '@/models/entities/User.js';
+import type { RemoteUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { NotificationService } from '@/core/NotificationService.js';
@@ -19,7 +19,7 @@ import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { note, note_reaction } from '@prisma/client';
+import type { note, note_reaction, user } from '@prisma/client';
 
 const FALLBACK = '❤';
 
@@ -77,7 +77,7 @@ export class ReactionService {
 	) {}
 
 	@bindThis
-	public async create(user: { id: User['id']; host: User['host']; isBot: User['isBot'] }, note: note, _reaction?: string | null) {
+	public async create(user: { id: user['id']; host: user['host']; isBot: user['isBot'] }, note: note, _reaction?: string | null) {
 		// Check blocking
 		if (note.userId !== user.id) {
 			const blocked = await this.userBlockingService.checkBlocked(note.userId, user.id);
@@ -259,7 +259,7 @@ export class ReactionService {
 	}
 
 	@bindThis
-	public async delete(user: { id: User['id']; host: User['host']; isBot: User['isBot']; }, note: note) {
+	public async delete(user: { id: user['id']; host: user['host']; isBot: user['isBot']; }, note: note) {
 		// if already unreacted
 		const exist = await this.prismaService.client.note_reaction.findUnique({
 			where: {

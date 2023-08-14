@@ -1,7 +1,6 @@
 import * as fs from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
-import type { Muting } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
@@ -44,7 +43,7 @@ export class ExportMutingProcessorService {
 			const stream = fs.createWriteStream(path, { flags: 'a' });
 
 			let exportedCount = 0;
-			let cursor: Muting['id'] | null = null;
+			let cursor: muting['id'] | null = null;
 
 			while (true) {
 				const mutes: muting[] = await this.prismaService.client.muting.findMany({

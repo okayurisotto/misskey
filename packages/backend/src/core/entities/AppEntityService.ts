@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type { AppSchema } from '@/models/zod/AppSchema.js';
-import type { App } from '@/models/entities/App.js';
-import type { User } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
-import type { app } from '@prisma/client';
+import type { app, user } from '@prisma/client';
 
 @Injectable()
 export class AppEntityService {
@@ -13,8 +11,8 @@ export class AppEntityService {
 
 	@bindThis
 	public async pack(
-		src: App['id'] | app,
-		me?: { id: User['id'] } | null | undefined,
+		src: app['id'] | app,
+		me?: { id: user['id'] } | null | undefined,
 		options?: {
 			detail?: boolean,
 			includeSecret?: boolean,

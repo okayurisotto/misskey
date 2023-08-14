@@ -8,9 +8,8 @@ import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import Logger from '@/logger.js';
-import type { RemoteUser, User } from '@/models/entities/User.js';
+import type { RemoteUser } from '@/models/entities/User.js';
 import { MetaService } from '@/core/MetaService.js';
-import { DriveFile } from '@/models/entities/DriveFile.js';
 import { IdService } from '@/core/IdService.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import { FILE_TYPE_BROWSERSAFE } from '@/const.js';
@@ -21,7 +20,6 @@ import { VideoProcessingService } from '@/core/VideoProcessingService.js';
 import { ImageProcessingService } from '@/core/ImageProcessingService.js';
 import type { IImage } from '@/core/ImageProcessingService.js';
 import { QueueService } from '@/core/QueueService.js';
-import type { DriveFolder } from '@/models/entities/DriveFolder.js';
 import { createTemp } from '@/misc/create-temp.js';
 import DriveChart from '@/core/chart/charts/drive.js';
 import PerUserDriveChart from '@/core/chart/charts/per-user-drive.js';
@@ -37,11 +35,11 @@ import { RoleService } from '@/core/RoleService.js';
 import { correctFilename } from '@/misc/correct-filename.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { drive_file } from '@prisma/client';
+import type { Prisma, drive_file, drive_folder, user } from '@prisma/client';
 
 type AddFileArgs = {
 	/** User who wish to add file */
-	user: { id: User['id']; host: User['host'] } | null;
+	user: { id: user['id']; host: user['host'] } | null;
 	/** File path */
 	path: string;
 	/** Name */
@@ -69,8 +67,8 @@ type AddFileArgs = {
 
 type UploadFromUrlArgs = {
 	url: string;
-	user: { id: User['id']; host: User['host'] } | null;
-	folderId?: DriveFolder['id'] | null;
+	user: { id: user['id']; host: user['host'] } | null;
+	folderId?: drive_folder['id'] | null;
 	uri?: string | null;
 	sensitive?: boolean;
 	force?: boolean;
@@ -592,7 +590,7 @@ export class DriveService {
 
 		const folder = await fetchFolder();
 
-		let file: Omit<drive_file, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null } = new DriveFile();
+		let file: Prisma.drive_fileUncheckedCreateInput = {};
 		file.id = this.idService.genId();
 		file.createdAt = new Date();
 		file.userId = user ? user.id : null;

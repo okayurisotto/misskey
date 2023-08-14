@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type { DriveFile } from '@/models/index.js';
 import type Logger from '@/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { bindThis } from '@/decorators.js';
@@ -25,7 +24,7 @@ export class CleanRemoteFilesProcessorService {
 		this.logger.info('Deleting cached remote files...');
 
 		let deletedCount = 0;
-		let cursor: DriveFile['id'] | null = null;
+		let cursor: drive_file['id'] | null = null;
 		const take = 8;
 
 		while (true) {

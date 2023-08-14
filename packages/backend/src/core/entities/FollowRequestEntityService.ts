@@ -1,10 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/entities/User.js';
-import type { FollowRequest } from '@/models/entities/FollowRequest.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
-import type { follow_request } from '@prisma/client';
+import type { follow_request, user } from '@prisma/client';
 
 @Injectable()
 export class FollowRequestEntityService {
@@ -16,8 +14,8 @@ export class FollowRequestEntityService {
 
 	@bindThis
 	public async pack(
-		src: FollowRequest['id'] | follow_request,
-		me?: { id: User['id'] } | null | undefined,
+		src: follow_request['id'] | follow_request,
+		me?: { id: user['id'] } | null | undefined,
 	) {
 		const request = typeof src === 'object'
 			? src

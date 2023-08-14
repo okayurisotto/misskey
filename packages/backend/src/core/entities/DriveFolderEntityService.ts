@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { } from '@/models/entities/Blocking.js';
-import type { DriveFolder } from '@/models/entities/DriveFolder.js';
 import { bindThis } from '@/decorators.js';
 import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -14,7 +12,7 @@ export class DriveFolderEntityService {
 
 	@bindThis
 	public async pack(
-		src: DriveFolder['id'] | drive_folder,
+		src: drive_folder['id'] | drive_folder,
 		options?: {
 			detail: boolean
 		},

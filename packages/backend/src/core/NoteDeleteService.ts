@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
-import type { User, LocalUser, RemoteUser } from '@/models/entities/User.js';
-import type { Note, IMentionedRemoteUsers } from '@/models/entities/Note.js';
+import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
+import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
 import { RelayService } from '@/core/RelayService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { DI } from '@/di-symbols.js';
@@ -45,7 +45,7 @@ export class NoteDeleteService {
 	 * @param user 投稿者
 	 * @param note 投稿
 	 */
-	async delete(user: { id: User['id']; uri: User['uri']; host: User['host']; isBot: User['isBot']; }, note: note, quiet = false) {
+	async delete(user: { id: user['id']; uri: user['uri']; host: user['host']; isBot: user['isBot']; }, note: note, quiet = false) {
 		const deletedAt = new Date();
 		const cascadingNotes = await this.findCascadingNotes(note);
 

@@ -1,14 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import type { User } from '@/models/index.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type {} from '@/models/entities/Blocking.js';
-import type { Clip } from '@/models/entities/Clip.js';
 import { bindThis } from '@/decorators.js';
 import type { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
-import type { clip } from '@prisma/client';
+import type { clip, user } from '@prisma/client';
 
 @Injectable()
 export class ClipEntityService {
@@ -19,8 +16,8 @@ export class ClipEntityService {
 
 	@bindThis
 	public async pack(
-		src: Clip['id'] | clip,
-		me?: { id: User['id'] } | null | undefined,
+		src: clip['id'] | clip,
+		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof ClipSchema>> {
 		const meId = me ? me.id : null;
 		const clip =

@@ -1,9 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { z } from 'zod';
-import type { Role } from '@/models/index.js';
 import { MemoryKVCache, MemorySingleCache } from '@/misc/cache.js';
-import type { User } from '@/models/entities/User.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -196,7 +194,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getUserAssigns(userId: User['id']) {
+	public async getUserAssigns(userId: user['id']) {
 		const now = Date.now();
 		let assigns = await this.roleAssignmentByUserIdCache.fetch(
 			userId,
@@ -208,7 +206,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getUserRoles(userId: User['id']) {
+	public async getUserRoles(userId: user['id']) {
 		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const assigns = await this.getUserAssigns(userId);
 		const assignedRoles = roles.filter(r => assigns.map(x => x.roleId).includes(r.id));
@@ -221,7 +219,7 @@ export class RoleService implements OnApplicationShutdown {
 	 * 指定ユーザーのバッジロール一覧取得
 	 */
 	@bindThis
-	public async getUserBadgeRoles(userId: User['id']) {
+	public async getUserBadgeRoles(userId: user['id']) {
 		const now = Date.now();
 		let assigns = await this.roleAssignmentByUserIdCache.fetch(
 			userId,
@@ -243,7 +241,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getUserPolicies(userId: User['id'] | null): Promise<RolePolicies> {
+	public async getUserPolicies(userId: user['id'] | null): Promise<RolePolicies> {
 		const meta = await this.metaService.fetch();
 		const basePolicies = {
 			...DEFAULT_POLICIES,
@@ -257,7 +255,7 @@ export class RoleService implements OnApplicationShutdown {
 		function calc<T extends keyof RolePolicies>(name: T, aggregate: (values: RolePolicies[T][]) => RolePolicies[T]) {
 			if (roles.length === 0) return basePolicies[name];
 
-			const policies = roles.map(role => role.policies[name] ?? { priority: 0, useDefault: true });
+			const policies = roles.map(role => RolePoliciesSchema.parse(role.policies)[name] ?? { priority: 0, useDefault: true });
 
 			const p2 = policies.filter(policy => policy.priority === 2);
 			if (p2.length > 0) return aggregate(p2.map(policy => policy.useDefault ? basePolicies[name] : policy.value));
@@ -294,19 +292,19 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async isModerator(user: { id: User['id']; isRoot: User['isRoot'] } | null): Promise<boolean> {
+	public async isModerator(user: { id: user['id']; isRoot: user['isRoot'] } | null): Promise<boolean> {
 		if (user == null) return false;
 		return user.isRoot || (await this.getUserRoles(user.id)).some(r => r.isModerator || r.isAdministrator);
 	}
 
 	@bindThis
-	public async isAdministrator(user: { id: User['id']; isRoot: User['isRoot'] } | null): Promise<boolean> {
+	public async isAdministrator(user: { id: user['id']; isRoot: user['isRoot'] } | null): Promise<boolean> {
 		if (user == null) return false;
 		return user.isRoot || (await this.getUserRoles(user.id)).some(r => r.isAdministrator);
 	}
 
 	@bindThis
-	public async isExplorable(role: { id: Role['id']} | null): Promise<boolean> {
+	public async isExplorable(role: { id: role['id']} | null): Promise<boolean> {
 		if (role == null) return false;
 		const check = await this.prismaService.client.role.findUnique({ where: { id: role.id } });
 		if (check == null) return false;
@@ -314,7 +312,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getModeratorIds(includeAdmins = true): Promise<User['id'][]> {
+	public async getModeratorIds(includeAdmins = true): Promise<user['id'][]> {
 		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const moderatorRoles = includeAdmins ? roles.filter(r => r.isModerator || r.isAdministrator) : roles.filter(r => r.isModerator);
 		const assigns = moderatorRoles.length > 0
@@ -334,7 +332,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getAdministratorIds(): Promise<User['id'][]> {
+	public async getAdministratorIds(): Promise<user['id'][]> {
 		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const administratorRoles = roles.filter(r => r.isAdministrator);
 		const assigns = administratorRoles.length > 0
@@ -354,7 +352,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async assign(userId: User['id'], roleId: Role['id'], expiresAt: Date | null = null): Promise<void> {
+	public async assign(userId: user['id'], roleId: role['id'], expiresAt: Date | null = null): Promise<void> {
 		const now = new Date();
 
 		const existing = await this.prismaService.client.role_assignment.findUnique({
@@ -400,7 +398,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async unassign(userId: User['id'], roleId: Role['id']): Promise<void> {
+	public async unassign(userId: user['id'], roleId: role['id']): Promise<void> {
 		const now = new Date();
 
 		const existing = await this.prismaService.client.role_assignment.findUnique({ where: { userId_roleId: { roleId, userId } } });

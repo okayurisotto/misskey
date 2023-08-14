@@ -1,7 +1,5 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import type { User } from '@/models/entities/User.js';
-import type { Note } from '@/models/entities/Note.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -10,7 +8,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-reactions.js';
 import type { KVs } from '../core.js';
-import type { note } from '@prisma/client';
+import type { note, user } from '@prisma/client';
 
 /**
  * ユーザーごとのリアクションに関するチャート
@@ -38,7 +36,7 @@ export default class PerUserReactionsChart extends Chart<typeof schema> {
 	}
 
 	@bindThis
-	public async update(user: { id: User['id'], host: User['host'] }, note: note): Promise<void> {
+	public async update(user: { id: user['id'], host: user['host'] }, note: note): Promise<void> {
 		const prefix = this.userEntityService.isLocalUser(user) ? 'local' : 'remote';
 		this.commit({
 			[`${prefix}.count`]: 1,

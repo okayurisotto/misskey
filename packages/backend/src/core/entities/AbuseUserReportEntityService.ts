@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import type { AbuseUserReport } from '@/models/entities/AbuseUserReport.js';
 import { bindThis } from '@/decorators.js';
 import { AbuseUserReportSchema } from '@/models/zod/AbuseUserReportSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -17,7 +16,7 @@ export class AbuseUserReportEntityService {
 
 	@bindThis
 	public async pack(
-		src: AbuseUserReport['id'] | abuse_user_report,
+		src: abuse_user_report['id'] | abuse_user_report,
 	): Promise<z.infer<typeof AbuseUserReportSchema>> {
 		const report =
 			typeof src === 'object'
