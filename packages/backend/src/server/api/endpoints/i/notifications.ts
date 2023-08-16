@@ -8,10 +8,25 @@ import { NotificationEntityService } from '@/core/entities/NotificationEntitySer
 import { NotificationService } from '@/core/NotificationService.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
-import { Notification } from '@/models/entities/Notification.js';
 import { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+
+const RedisNotificationSchema = z.object({
+	id: z.string(),
+	createdAt: z.string(),
+	type: z.enum(notificationTypes),
+	notifierId: z.string().nullable().optional(),
+	noteId: z.string().nullable().optional(),
+	followRequestId: z.string().nullable().optional(),
+	reaction: z.string().nullable().optional(),
+	choice: z.number().nullable().optional(),
+	achievement: z.string().nullable().optional(),
+	customBody: z.string().nullable().optional(),
+	customHeader: z.string().nullable().optional(),
+	customIcon: z.string().nullable().optional(),
+	appAccessTokenId: z.string().nullable().optional(),
+});
 
 const res = z.array(NotificationSchema);
 export const meta = {
@@ -90,10 +105,8 @@ export default class extends Endpoint<
 			}
 
 			let notifications = notificationsRes
-				.map((x) => JSON.parse(x[1][1]))
-				.filter(
-					(x) => x.id !== ps.untilId && x !== ps.sinceId,
-				) as Notification[];
+				.map((x) => RedisNotificationSchema.parse(JSON.parse(x[1][1])))
+				.filter((x) => x.id !== ps.untilId && x.id !== ps.sinceId);
 
 			if (includeTypes && includeTypes.length > 0) {
 				notifications = notifications.filter((notification) =>

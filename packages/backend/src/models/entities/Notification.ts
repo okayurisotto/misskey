@@ -13,7 +13,7 @@ export type Notification = {
 	/**
 	 * 通知の送信者(initiator)
 	 */
-	notifierId: User['id'] | null;
+	notifierId?: User['id'] | null | undefined;
 
 	/**
 	 * 通知の種類。
@@ -31,35 +31,35 @@ export type Notification = {
 	 */
 	type: typeof notificationTypes[number];
 
-	noteId: Note['id'] | null;
+	noteId?: Note['id'] | null | undefined;
 
-	followRequestId: FollowRequest['id'] | null;
+	followRequestId?: FollowRequest['id'] | null | undefined;
 
-	reaction: string | null;
+	reaction?: string | null | undefined;
 
-	choice: number | null;
+	choice?: number | null | undefined;
 
-	achievement: string | null;
+	achievement?: string | null | undefined;
 
 	/**
 	 * アプリ通知のbody
 	 */
-	customBody: string | null;
+	customBody?: string | null | undefined;
 
 	/**
 	 * アプリ通知のheader
 	 * (省略時はアプリ名で表示されることを期待)
 	 */
-	customHeader: string | null;
+	customHeader?: string | null | undefined;
 
 	/**
 	 * アプリ通知のicon(URL)
 	 * (省略時はアプリアイコンで表示されることを期待)
 	 */
-	customIcon: string | null;
+	customIcon?: string | null | undefined;
 
 	/**
 	 * アプリ通知のアプリ(のトークン)
 	 */
-	appAccessTokenId: AccessToken['id'] | null;
+	appAccessTokenId?: AccessToken['id'] | null | undefined;
 }

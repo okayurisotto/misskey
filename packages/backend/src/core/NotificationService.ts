@@ -62,7 +62,7 @@ export class NotificationService implements OnApplicationShutdown {
 	public async createNotification(
 		notifieeId: user['id'],
 		type: Notification['type'],
-		data: Partial<Notification>,
+		data: Partial<Omit<Notification, 'id' | 'createdAt' | 'type'>>,
 	): Promise<Notification | null> {
 		const profile = await this.cacheService.userProfileCache.fetch(notifieeId);
 		const isMuted = profile.mutingNotificationTypes.includes(type);
@@ -79,12 +79,12 @@ export class NotificationService implements OnApplicationShutdown {
 			}
 		}
 
-		const notification = {
+		const notification: Notification = {
 			id: this.idService.genId(),
-			createdAt: new Date(),
+			createdAt: new Date().toISOString(),
 			type: type,
 			...data,
-		} as Notification;
+		};
 
 		const redisIdPromise = this.redisClient.xadd(
 			`notificationTimeline:${notifieeId}`,
