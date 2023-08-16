@@ -1,46 +1,58 @@
 import { AhoCorasick } from 'slacc';
 import RE2 from 're2';
+import { Memoize } from './Memoize.js';
 import type { note, user } from '@prisma/client';
 
-type NoteLike = {
-	userId: note['userId'];
-	text: note['text'];
-	cw?: note['cw'];
-};
+type CustomPartial<T, U extends keyof T> = Omit<T, U> & Partial<Pick<T, U>>;
 
-type UserLike = {
-	id: user['id'];
-};
+type NoteLike = CustomPartial<Pick<note, 'userId' | 'text' | 'cw'>, 'cw'>;
+type UserLike = Pick<user, 'id'>;
 
-const acCache = new Map<string, AhoCorasick>();
+const memoizedAcFn = new Memoize(
+	(patterns: string[]) => AhoCorasick.withPatterns(patterns),
+	1000,
+);
 
-export async function checkWordMute(note: NoteLike, me: UserLike | null | undefined, mutedWords: Array<string | string[]>): Promise<boolean> {
-	// 自分自身
-	if (me && (note.userId === me.id)) return false;
+/**
+ * ノートがワードミュートすべきものか判定する。
+ *
+ * @param note
+ * @param me
+ * @param mutedWords ワードミュート条件の配列
+ * @returns
+ */
+export const checkWordMute = (
+	note: NoteLike,
+	me: UserLike | null | undefined,
+	mutedWords: Array<string | string[]>,
+): boolean => {
+	if (me && note.userId === me.id) return false;
+	if (mutedWords.length === 0) return false;
 
-	if (mutedWords.length > 0) {
-		const text = ((note.cw ?? '') + '\n' + (note.text ?? '')).trim();
+	const text = ((note.cw ?? '') + '\n' + (note.text ?? '')).trim();
+	if (text === '') return false;
 
-		if (text === '') return false;
+	{
+		/** AhoCorasickで処理できる条件 */
+		const acable = mutedWords
+			.filter((filter) => Array.isArray(filter) && filter.length === 1)
+			.map((filter) => filter[0])
+			.sort();
 
-		const acable = mutedWords.filter(filter => Array.isArray(filter) && filter.length === 1).map(filter => filter[0]).sort();
-		const unacable = mutedWords.filter(filter => !Array.isArray(filter) || filter.length !== 1);
-		const acCacheKey = acable.join('\n');
-		const ac = acCache.get(acCacheKey) ?? AhoCorasick.withPatterns(acable);
-		acCache.delete(acCacheKey);
-		for (const obsoleteKeys of acCache.keys()) {
-			if (acCache.size > 1000) {
-				acCache.delete(obsoleteKeys);
-			}
-		}
-		acCache.set(acCacheKey, ac);
-		if (ac.isMatch(text)) {
-			return true;
-		}
+		const ac = memoizedAcFn.compute(acable);
 
-		const matched = unacable.some(filter => {
+		if (ac.isMatch(text)) return true;
+	}
+
+	{
+		/** AhoCorasickで処理できない条件 */
+		const unacable = mutedWords.filter(
+			(filter) => !Array.isArray(filter) || filter.length !== 1,
+		);
+
+		const matched = unacable.some((filter) => {
 			if (Array.isArray(filter)) {
-				return filter.every(keyword => text.includes(keyword));
+				return filter.every((keyword) => text.includes(keyword));
 			} else {
 				// represents RegExp
 				const regexp = filter.match(/^\/(.+)\/(.*)$/);
@@ -61,4 +73,4 @@ export async function checkWordMute(note: NoteLike, me: UserLike | null | undefi
 	}
 
 	return false;
-}
+};

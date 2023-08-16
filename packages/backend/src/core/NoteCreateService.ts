@@ -461,18 +461,17 @@ export class NoteCreateService implements OnApplicationShutdown {
 			});
 		}).then(us => {
 			for (const u of us) {
-				checkWordMute(note, { id: u.userId }, z.array(z.array(z.string())).parse(u.mutedWords)).then(shouldMute => {
-					if (shouldMute) {
-						this.prismaService.client.muted_note.create({
-							data: {
-								id: this.idService.genId(),
-								userId: u.userId,
-								noteId: note.id,
-								reason: 'word',
-							},
-						});
-					}
-				});
+				const shouldMute = checkWordMute(note, { id: u.userId }, z.array(z.array(z.string())).parse(u.mutedWords));
+				if (shouldMute) {
+					this.prismaService.client.muted_note.create({
+						data: {
+							id: this.idService.genId(),
+							userId: u.userId,
+							noteId: note.id,
+							reason: 'word',
+						},
+					});
+				}
 			}
 		});
 

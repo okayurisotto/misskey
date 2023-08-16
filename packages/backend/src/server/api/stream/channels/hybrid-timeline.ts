@@ -97,7 +97,7 @@ class HybridTimelineChannel extends Channel {
 		// 現状では、ワードミュートにおけるMutedNoteレコードの追加処理はストリーミングに流す処理と並列で行われるため、
 		// レコードが追加されるNoteでも追加されるより先にここのストリーミングの処理に到達することが起こる。
 		// そのためレコードが存在するかのチェックでは不十分なので、改めてcheckWordMuteを呼んでいる
-		if (this.userProfile && await checkWordMute(note, this.user, z.array(z.array(z.string())).parse(this.userProfile.mutedWords))) return;
+		if (this.userProfile && checkWordMute(note, this.user, z.array(z.array(z.string())).parse(this.userProfile.mutedWords))) return;
 
 		this.connection.cacheNote(note);
 
