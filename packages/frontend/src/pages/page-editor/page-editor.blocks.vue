@@ -15,8 +15,9 @@ import XSection from './els/page-editor.el.section.vue';
 import XText from './els/page-editor.el.text.vue';
 import XImage from './els/page-editor.el.image.vue';
 import XNote from './els/page-editor.el.note.vue';
+import { PageBlock } from './page-editor.vue';
 
-function getComponent(type: string) {
+function getComponent(type: string): typeof XSection | typeof XText | typeof XImage | typeof XNote | null {
 	switch (type) {
 		case 'section': return XSection;
 		case 'text': return XText;
@@ -29,14 +30,14 @@ function getComponent(type: string) {
 const Sortable = defineAsyncComponent(() => import('vuedraggable').then(x => x.default));
 
 const props = defineProps<{
-	modelValue: any[];
+	modelValue: PageBlock[];
 }>();
 
 const emit = defineEmits<{
-	(ev: 'update:modelValue', value: any[]): void;
+	(ev: 'update:modelValue', value: unknown[]): void;
 }>();
 
-function updateItem(v) {
+function updateItem(v: PageBlock): void {
 	const i = props.modelValue.findIndex(x => x.id === v.id);
 	const newValue = [
 		...props.modelValue.slice(0, i),
@@ -46,7 +47,7 @@ function updateItem(v) {
 	emit('update:modelValue', newValue);
 }
 
-function removeItem(el) {
+function removeItem(el: PageBlock): void {
 	const i = props.modelValue.findIndex(x => x.id === el.id);
 	const newValue = [
 		...props.modelValue.slice(0, i),

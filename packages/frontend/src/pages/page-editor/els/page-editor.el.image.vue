@@ -18,21 +18,23 @@
 /* eslint-disable vue/no-mutating-props */
 import { onMounted } from 'vue';
 import XContainer from '../page-editor.container.vue';
+import type { DriveFile } from 'misskey-js/built/entities';
+import type { PageBlock } from '../page-editor.vue';
 import MkDriveFileThumbnail from '@/components/MkDriveFileThumbnail.vue';
 import * as os from '@/os';
 import { i18n } from '@/i18n';
 
 const props = defineProps<{
-	modelValue: any
+	modelValue: PageBlock;
 }>();
 
 const emit = defineEmits<{
-	(ev: 'update:modelValue', value: any): void;
+	(ev: 'update:modelValue', value: unknown): void;
 }>();
 
-let file: any = $ref(null);
+let file = $ref<DriveFile | null>(null);
 
-async function choose() {
+async function choose(): Promise<void> {
 	os.selectDriveFile(false).then((fileResponse) => {
 		file = fileResponse[0];
 		emit('update:modelValue', {

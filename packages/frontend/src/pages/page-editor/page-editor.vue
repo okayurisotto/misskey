@@ -59,6 +59,7 @@
 import { computed, provide, watch } from 'vue';
 import { v4 as uuid } from 'uuid';
 import XBlocks from './page-editor.blocks.vue';
+import type { DriveFile, Page, User } from 'misskey-js/built/entities';
 import MkButton from '@/components/MkButton.vue';
 import MkSelect from '@/components/MkSelect.vue';
 import MkSwitch from '@/components/MkSwitch.vue';
@@ -78,18 +79,18 @@ const props = defineProps<{
 }>();
 
 let tab = $ref('settings');
-let author = $ref($i);
+let author = $ref<User | null>($i);
 let readonly = $ref(false);
-let page = $ref(null);
-let pageId = $ref(null);
-let currentName = $ref(null);
+let page = $ref<Page | null>(null);
+let pageId = $ref<string | null>(null);
+let currentName = $ref<string | null>(null);
 let title = $ref('');
-let summary = $ref(null);
+let summary = $ref<string | null>(null);
 let name = $ref(Date.now().toString());
-let eyeCatchingImage = $ref(null);
-let eyeCatchingImageId = $ref(null);
-let font = $ref('sans-serif');
-let content = $ref([]);
+let eyeCatchingImage = $ref<DriveFile | null>(null);
+let eyeCatchingImageId = $ref<string | null>(null);
+let font = $ref<'sans-serif' | 'serif'>('sans-serif');
+let content = $ref<{ id: string; type: PageBlockType; text?: string }[]>([]);
 let alignCenter = $ref(false);
 let hideTitleWhenPinned = $ref(false);
 
@@ -106,7 +107,34 @@ watch($$(eyeCatchingImageId), async () => {
 	}
 });
 
-function getSaveOptions() {
+export type PageBlockType = 'section' | 'text' | 'image' | 'note';
+
+export type PageBlock = {
+	id: string;
+	type: PageBlockType;
+	text?: string;
+	note?: string;
+	fileId?: string;
+	detailed?: boolean;
+	children?: PageBlock[];
+	title?: string;
+};
+
+type SaveOptions = {
+	pageId?: string;
+	title: string;
+	name: string;
+	summary: string | null;
+	font: 'sans-serif' | 'serif';
+	script: string;
+	hideTitleWhenPinned: boolean;
+	alignCenter: boolean;
+	content: PageBlock[];
+	variables: unknown[];
+	eyeCatchingImageId: string | null;
+};
+
+function getSaveOptions(): SaveOptions {
 	return {
 		title: title.trim(),
 		name: name.trim(),
@@ -121,10 +149,10 @@ function getSaveOptions() {
 	};
 }
 
-function save() {
+function save(): void {
 	const options = getSaveOptions();
 
-	const onError = err => {
+	const onError = (err: unknown): void => {
 		if (err.id === '3d81ceae-475f-4600-b2a8-2bc116157532') {
 			if (err.info.param === 'name') {
 				os.alert({
@@ -144,7 +172,7 @@ function save() {
 	if (pageId) {
 		options.pageId = pageId;
 		os.api('pages/update', options)
-			.then(page => {
+			.then(() => {
 				currentName = name.trim();
 				os.alert({
 					type: 'success',
@@ -165,7 +193,7 @@ function save() {
 	}
 }
 
-function del() {
+function del(): void {
 	os.confirm({
 		type: 'warning',
 		text: i18n.t('removeAreYouSure', { x: title.trim() }),
@@ -183,7 +211,7 @@ function del() {
 	});
 }
 
-function duplicate() {
+function duplicate(): void {
 	title = title + ' - copy';
 	name = name + '-copy';
 	os.api('pages/create', getSaveOptions()).then(created => {
@@ -197,7 +225,7 @@ function duplicate() {
 	});
 }
 
-async function add() {
+async function add(): Promise<void> {
 	const { canceled, result: type } = await os.select({
 		type: null,
 		title: i18n.ts._pages.chooseBlock,
@@ -209,7 +237,7 @@ async function add() {
 	content.push({ id, type });
 }
 
-function getPageBlockList() {
+function getPageBlockList(): { value: PageBlockType; text: string }[] {
 	return [
 		{ value: 'section', text: i18n.ts._pages.blocks.section },
 		{ value: 'text', text: i18n.ts._pages.blocks.text },
@@ -218,17 +246,17 @@ function getPageBlockList() {
 	];
 }
 
-function setEyeCatchingImage(img) {
+function setEyeCatchingImage(img): void {
 	selectFile(img.currentTarget ?? img.target, null).then(file => {
 		eyeCatchingImageId = file.id;
 	});
 }
 
-function removeEyeCatchingImage() {
+function removeEyeCatchingImage(): void {
 	eyeCatchingImageId = null;
 }
 
-async function init() {
+async function init(): Promise<void> {
 	if (props.initPageId) {
 		page = await os.api('pages/show', {
 			pageId: props.initPageId,
@@ -278,15 +306,14 @@ const headerTabs = $computed(() => [{
 }]);
 
 definePageMetadata(computed(() => {
-	let title = i18n.ts._pages.newPage;
-	if (props.initPageId) {
-		title = i18n.ts._pages.editPage;
-	}
-	else if (props.initPageName && props.initUser) {
-		title = i18n.ts._pages.readPage;
-	}
+	const title_ = props.initPageId
+		? i18n.ts._pages.editPage
+		: props.initPageName && props.initUser
+			? i18n.ts._pages.readPage
+			: i18n.ts._pages.newPage;
+
 	return {
-		title: title,
+		title: title_,
 		icon: 'ti ti-pencil',
 	};
 }));

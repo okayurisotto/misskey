@@ -20,6 +20,7 @@
 import { defineAsyncComponent, inject, onMounted, watch } from 'vue';
 import { v4 as uuid } from 'uuid';
 import XContainer from '../page-editor.container.vue';
+import type { PageBlock, PageBlockType } from '../page-editor.vue';
 import * as os from '@/os';
 import { i18n } from '@/i18n';
 import { deepClone } from '@/scripts/clone';
@@ -28,13 +29,13 @@ import MkButton from '@/components/MkButton.vue';
 const XBlocks = defineAsyncComponent(() => import('../page-editor.blocks.vue'));
 
 const props = withDefaults(defineProps<{
-	modelValue: any,
+	modelValue: PageBlock | Record<string, never>,
 }>(), {
-	modelValue: {},
+	modelValue: () => ({}),
 });
 
 const emit = defineEmits<{
-	(ev: 'update:modelValue', value: any): void;
+	(ev: 'update:modelValue', value: unknown): void;
 }>();
 
 const children = $ref(deepClone(props.modelValue.children ?? []));
@@ -48,9 +49,9 @@ watch($$(children), () => {
 	deep: true,
 });
 
-const getPageBlockList = inject<(any) => any>('getPageBlockList');
+const getPageBlockList = inject<(any?: unknown) => { value: PageBlockType; text: string }[]>('getPageBlockList');
 
-async function rename() {
+async function rename(): Promise<void> {
 	const { canceled, result: title } = await os.inputText({
 		title: 'Enter title',
 		default: props.modelValue.title,
@@ -62,7 +63,7 @@ async function rename() {
 	});
 }
 
-async function add() {
+async function add(): Promise<void> {
 	const { canceled, result: type } = await os.select({
 		title: i18n.ts._pages.chooseBlock,
 		items: getPageBlockList(),

@@ -13,14 +13,15 @@
 /* eslint-disable vue/no-mutating-props */
 import { watch } from 'vue';
 import XContainer from '../page-editor.container.vue';
+import type { PageBlock } from '../page-editor.vue';
 import { i18n } from '@/i18n';
 
 const props = defineProps<{
-	modelValue: any
+	modelValue: PageBlock;
 }>();
 
 const emit = defineEmits<{
-	(ev: 'update:modelValue', value: any): void;
+	(ev: 'update:modelValue', value: unknown): void;
 }>();
 
 const text = $ref(props.modelValue.text ?? '');

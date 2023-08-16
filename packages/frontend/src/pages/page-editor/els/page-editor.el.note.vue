@@ -20,6 +20,8 @@
 /* eslint-disable vue/no-mutating-props */
 import { watch } from 'vue';
 import XContainer from '../page-editor.container.vue';
+import type { Note } from 'misskey-js/built/entities';
+import type { PageBlock } from '../page-editor.vue';
 import MkInput from '@/components/MkInput.vue';
 import MkSwitch from '@/components/MkSwitch.vue';
 import MkNote from '@/components/MkNote.vue';
@@ -28,15 +30,15 @@ import * as os from '@/os';
 import { i18n } from '@/i18n';
 
 const props = defineProps<{
-	modelValue: any
+	modelValue: PageBlock;
 }>();
 
 const emit = defineEmits<{
-	(ev: 'update:modelValue', value: any): void;
+	(ev: 'update:modelValue', value: unknown): void;
 }>();
 
-let id: any = $ref(props.modelValue.note);
-let note: any = $ref(null);
+let id = $ref<string | undefined>(props.modelValue.note);
+let note = $ref<Note | null>(null);
 
 watch($$(id), async () => {
 	if (id && (id.startsWith('http://') || id.startsWith('https://'))) {
