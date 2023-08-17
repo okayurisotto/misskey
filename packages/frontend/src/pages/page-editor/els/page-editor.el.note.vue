@@ -21,7 +21,7 @@
 import { watch } from 'vue';
 import XContainer from '../page-editor.container.vue';
 import type { Note } from 'misskey-js/built/entities';
-import type { PageBlock } from '../page-editor.vue';
+import type { PageBlock, PickPageBlock } from '../page-editor.vue';
 import MkInput from '@/components/MkInput.vue';
 import MkSwitch from '@/components/MkSwitch.vue';
 import MkNote from '@/components/MkNote.vue';
@@ -30,7 +30,7 @@ import * as os from '@/os';
 import { i18n } from '@/i18n';
 
 const props = defineProps<{
-	modelValue: PageBlock;
+	modelValue: PickPageBlock<PageBlock, 'note'>;
 }>();
 
 const emit = defineEmits<{

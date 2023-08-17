@@ -13,11 +13,11 @@
 /* eslint-disable vue/no-mutating-props */
 import { watch } from 'vue';
 import XContainer from '../page-editor.container.vue';
-import type { PageBlock } from '../page-editor.vue';
+import type { PageBlock, PickPageBlock } from '../page-editor.vue';
 import { i18n } from '@/i18n';
 
 const props = defineProps<{
-	modelValue: PageBlock;
+	modelValue: PickPageBlock<PageBlock, 'text'>;
 }>();
 
 const emit = defineEmits<{

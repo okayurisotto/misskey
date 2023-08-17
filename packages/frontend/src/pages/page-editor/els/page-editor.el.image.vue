@@ -19,13 +19,13 @@
 import { onMounted } from 'vue';
 import XContainer from '../page-editor.container.vue';
 import type { DriveFile } from 'misskey-js/built/entities';
-import type { PageBlock } from '../page-editor.vue';
+import type { PageBlock, PickPageBlock } from '../page-editor.vue';
 import MkDriveFileThumbnail from '@/components/MkDriveFileThumbnail.vue';
 import * as os from '@/os';
 import { i18n } from '@/i18n';
 
 const props = defineProps<{
-	modelValue: PageBlock;
+	modelValue: PickPageBlock<PageBlock, 'image'>;
 }>();
 
 const emit = defineEmits<{

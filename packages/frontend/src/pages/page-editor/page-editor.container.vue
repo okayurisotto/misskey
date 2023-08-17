@@ -24,7 +24,6 @@
 
 <script lang="ts" setup>
 import { ref } from 'vue';
-import { i18n } from '@/i18n';
 
 const props = withDefaults(defineProps<{
 	expanded?: boolean;

@@ -20,7 +20,8 @@
 import { defineAsyncComponent, inject, onMounted, watch } from 'vue';
 import { v4 as uuid } from 'uuid';
 import XContainer from '../page-editor.container.vue';
-import type { PageBlock, PageBlockType } from '../page-editor.vue';
+import type { PageBlock, PickPageBlock } from '../page-editor.vue';
+import type { Page } from 'misskey-js/built/entities';
 import * as os from '@/os';
 import { i18n } from '@/i18n';
 import { deepClone } from '@/scripts/clone';
@@ -29,7 +30,7 @@ import MkButton from '@/components/MkButton.vue';
 const XBlocks = defineAsyncComponent(() => import('../page-editor.blocks.vue'));
 
 const props = withDefaults(defineProps<{
-	modelValue: PageBlock | Record<string, never>,
+	modelValue: PickPageBlock<PageBlock, 'section'> | Record<string, never>,
 }>(), {
 	modelValue: () => ({}),
 });
@@ -49,7 +50,7 @@ watch($$(children), () => {
 	deep: true,
 });
 
-const getPageBlockList = inject<(any?: unknown) => { value: PageBlockType; text: string }[]>('getPageBlockList');
+const getPageBlockList = inject<(any?: unknown) => Page['content']>('getPageBlockList');
 
 async function rename(): Promise<void> {
 	const { canceled, result: title } = await os.inputText({

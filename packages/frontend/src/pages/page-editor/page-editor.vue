@@ -90,7 +90,7 @@ let name = $ref(Date.now().toString());
 let eyeCatchingImage = $ref<DriveFile | null>(null);
 let eyeCatchingImageId = $ref<string | null>(null);
 let font = $ref<'sans-serif' | 'serif'>('sans-serif');
-let content = $ref<{ id: string; type: PageBlockType; text?: string }[]>([]);
+let content = $ref<Page['content']>([]);
 let alignCenter = $ref(false);
 let hideTitleWhenPinned = $ref(false);
 
@@ -107,18 +107,9 @@ watch($$(eyeCatchingImageId), async () => {
 	}
 });
 
-export type PageBlockType = 'section' | 'text' | 'image' | 'note';
-
-export type PageBlock = {
-	id: string;
-	type: PageBlockType;
-	text?: string;
-	note?: string;
-	fileId?: string;
-	detailed?: boolean;
-	children?: PageBlock[];
-	title?: string;
-};
+export type PageBlockType = Page['content'][number]['type'];
+export type PageBlock = Page['content'][number];
+export type PickPageBlock<T extends PageBlock, U extends PageBlockType> = T extends unknown ? T['type'] extends U ? T : never : never;
 
 type SaveOptions = {
 	pageId?: string;
@@ -129,7 +120,7 @@ type SaveOptions = {
 	script: string;
 	hideTitleWhenPinned: boolean;
 	alignCenter: boolean;
-	content: PageBlock[];
+	content: Page['content'];
 	variables: unknown[];
 	eyeCatchingImageId: string | null;
 };
