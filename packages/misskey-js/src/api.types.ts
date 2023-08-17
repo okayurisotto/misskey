@@ -2716,8 +2716,36 @@ export interface components {
         id: string;
       };
     };
+    AbuseUserReport: {
+      id: components["schemas"]["MisskeyId"];
+      assignee?: components["schemas"]["User"];
+      assigneeId: components["schemas"]["MisskeyId"];
+      comment: string;
+      /** Format: date-time */
+      createdAt: string;
+      forwarded: boolean;
+      reporter: components["schemas"]["User"];
+      reporterId: components["schemas"]["MisskeyId"];
+      resolved: boolean;
+      targetUser: components["schemas"]["User"];
+      targetUserId: components["schemas"]["MisskeyId"];
+      [key: string]: unknown;
+    };
+    Ad: {
+      id: components["schemas"]["MisskeyId"];
+      dayOfWeek: number;
+      expiresAt?: unknown;
+      imageUrl: string;
+      memo: string;
+      place: string;
+      priority: string;
+      ratio: number;
+      startsAt?: unknown;
+      url: string;
+      [key: string]: unknown;
+    };
     Antenna: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       name: string;
@@ -2725,7 +2753,7 @@ export interface components {
       excludeKeywords: string[][];
       /** @enum {string} */
       src: "home" | "all" | "users" | "list";
-      userListId: components["schemas"]["misskeyIdPattern"];
+      userListId: components["schemas"]["MisskeyId"];
       users: string[];
       caseSensitive: boolean;
       notify: boolean;
@@ -2746,15 +2774,15 @@ export interface components {
     };
     Birthday: string;
     Blocking: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
-      blockeeId: components["schemas"]["misskeyIdPattern"];
+      blockeeId: components["schemas"]["MisskeyId"];
       blockee: components["schemas"]["UserDetailed"];
       [key: string]: unknown;
     };
     Channel: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -2768,18 +2796,18 @@ export interface components {
       usersCount: number;
       isFollowing?: boolean;
       isFavorited?: boolean;
-      userId: components["schemas"]["misskeyIdPattern"];
-      pinnedNoteIds: components["schemas"]["misskeyIdPattern"][];
+      userId: components["schemas"]["MisskeyId"];
+      pinnedNoteIds: components["schemas"]["MisskeyId"][];
       color: string;
       [key: string]: unknown;
     };
     Clip: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
       lastClippedAt: string | null;
-      userId: components["schemas"]["misskeyIdPattern"];
+      userId: components["schemas"]["MisskeyId"];
       user: components["schemas"]["UserLite"];
       name: string;
       description: string | null;
@@ -2790,12 +2818,12 @@ export interface components {
     };
     Description: string;
     DriveFile: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       name: string;
       type: string;
-      md5: components["schemas"]["md5Pattern"];
+      md5: components["schemas"]["MD5"];
       size: number;
       isSensitive: boolean;
       blurhash: string | null;
@@ -2811,26 +2839,26 @@ export interface components {
       /** Format: url */
       thumbnailUrl: string | null;
       comment: string | null;
-      folderId: components["schemas"]["misskeyIdPattern"];
+      folderId: components["schemas"]["MisskeyId"];
       folder?: components["schemas"]["DriveFolder"];
-      userId: components["schemas"]["misskeyIdPattern"];
+      userId: components["schemas"]["MisskeyId"];
       user?: components["schemas"]["UserLite"];
       [key: string]: unknown;
     };
     DriveFolder: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       name: string;
       foldersCount?: number;
       filesCount?: number;
-      parentId: components["schemas"]["misskeyIdPattern"];
+      parentId: components["schemas"]["MisskeyId"];
       parent?: components["schemas"]["DriveFolder"];
       [key: string]: unknown;
     };
     EmojiDetailed: {
-      id: components["schemas"]["misskeyIdPattern"];
-      aliases: components["schemas"]["misskeyIdPattern"][];
+      id: components["schemas"]["MisskeyId"];
+      aliases: components["schemas"]["MisskeyId"][];
       name: string;
       category: string | null;
       host: string | null;
@@ -2838,20 +2866,34 @@ export interface components {
       license: string | null;
       isSensitive: boolean;
       localOnly: boolean;
-      roleIdsThatCanBeUsedThisEmojiAsReaction: components["schemas"]["misskeyIdPattern"][];
+      roleIdsThatCanBeUsedThisEmojiAsReaction: components["schemas"]["MisskeyId"][];
       [key: string]: unknown;
     };
     EmojiSimple: {
-      aliases: components["schemas"]["misskeyIdPattern"][];
+      aliases: components["schemas"]["MisskeyId"][];
       name: string;
       category: string | null;
       url: string;
       isSensitive?: boolean;
-      roleIdsThatCanBeUsedThisEmojiAsReaction?: components["schemas"]["misskeyIdPattern"][];
+      roleIdsThatCanBeUsedThisEmojiAsReaction?: components["schemas"]["MisskeyId"][];
+      [key: string]: unknown;
+    };
+    ExportedAntenna: {
+      name: string;
+      /** @enum {string} */
+      src: "home" | "all" | "users" | "list";
+      keywords: string[][];
+      excludeKeywords: string[][];
+      users: string[];
+      userListAccts: string[] | null;
+      caseSensitive: boolean;
+      withReplies: boolean;
+      withFile: boolean;
+      notify: boolean;
       [key: string]: unknown;
     };
     FederationInstance: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       firstRetrievedAt: string;
       host: string;
@@ -2879,7 +2921,7 @@ export interface components {
       [key: string]: unknown;
     };
     Flash: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -2887,36 +2929,38 @@ export interface components {
       title: string;
       summary: string;
       script: string;
-      userId: components["schemas"]["misskeyIdPattern"];
+      userId: components["schemas"]["MisskeyId"];
       user: components["schemas"]["UserLite"];
       likedCount: number | null;
       isLiked?: boolean;
       [key: string]: unknown;
     };
     Following: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
-      followeeId: components["schemas"]["misskeyIdPattern"];
+      followeeId: components["schemas"]["MisskeyId"];
       followee?: components["schemas"]["UserDetailed"];
-      followerId: components["schemas"]["misskeyIdPattern"];
+      followerId: components["schemas"]["MisskeyId"];
       follower?: components["schemas"]["UserDetailed"];
       [key: string]: unknown;
     };
     GalleryPost: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
       updatedAt: string;
       title: string;
       description: string | null;
-      userId: components["schemas"]["misskeyIdPattern"];
+      userId: components["schemas"]["MisskeyId"];
       user: components["schemas"]["UserLite"];
-      fileIds?: components["schemas"]["misskeyIdPattern"][];
+      fileIds?: components["schemas"]["MisskeyId"][];
       files?: components["schemas"]["DriveFile"][];
       tags?: string[];
       isSensitive: boolean;
+      likedCount: number;
+      isLiked?: boolean;
       [key: string]: unknown;
     };
     Hashtag: {
@@ -2930,7 +2974,7 @@ export interface components {
       [key: string]: unknown;
     };
     InviteCode: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       code: string;
       /** Format: date-time */
       expiresAt: string | null;
@@ -2945,9 +2989,9 @@ export interface components {
     };
     LocalUsername: string;
     Location: string;
-    md5Pattern: string;
+    MD5: string;
     MeDetailed: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       name: string | null;
       username: string;
       host: string | null;
@@ -2966,7 +3010,7 @@ export interface components {
       uri: string | null;
       /** Format: url */
       movedToUri: string | null;
-      alsoKnownAs: components["schemas"]["misskeyIdPattern"][] | null;
+      alsoKnownAs: components["schemas"]["MisskeyId"][] | null;
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -2991,7 +3035,7 @@ export interface components {
       followersCount: number;
       followingCount: number;
       notesCount: number;
-      pinnedNoteIds: components["schemas"]["misskeyIdPattern"][];
+      pinnedNoteIds: components["schemas"]["MisskeyId"][];
       pinnedNotes: components["schemas"]["Note"][];
       pinnedPageId: string | null;
       pinnedPage: components["schemas"]["Page"];
@@ -3008,8 +3052,13 @@ export interface components {
       isMuted?: boolean;
       isRenoteMuted?: boolean;
       memo?: string;
-      avatarId: components["schemas"]["misskeyIdPattern"];
-      bannerId: components["schemas"]["misskeyIdPattern"];
+      instance?: unknown;
+      emojis: {
+        [key: string]: string;
+      };
+      badgeRoles?: unknown;
+      avatarId: components["schemas"]["MisskeyId"];
+      bannerId: components["schemas"]["MisskeyId"];
       injectFeaturedNote: boolean | null;
       receiveAnnouncementEmail: boolean | null;
       alwaysMarkNsfw: boolean | null;
@@ -3037,8 +3086,8 @@ export interface components {
       [key: string]: unknown;
     };
     MeDetailedOnly: {
-      avatarId: components["schemas"]["misskeyIdPattern"];
-      bannerId: components["schemas"]["misskeyIdPattern"];
+      avatarId: components["schemas"]["MisskeyId"];
+      bannerId: components["schemas"]["MisskeyId"];
       injectFeaturedNote: boolean | null;
       receiveAnnouncementEmail: boolean | null;
       alwaysMarkNsfw: boolean | null;
@@ -3065,42 +3114,43 @@ export interface components {
       securityKeysList?: unknown[];
       [key: string]: unknown;
     };
-    misskeyIdPattern: string;
+    MisskeyId: string;
     Muting: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
       expiresAt: string | null;
-      muteeId: components["schemas"]["misskeyIdPattern"];
+      muteeId: components["schemas"]["MisskeyId"];
       mutee: components["schemas"]["UserDetailed"];
       [key: string]: unknown;
     };
     Name: string;
     Note: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
       deletedAt?: string | null;
       text: string | null;
       cw?: string | null;
-      userId: components["schemas"]["misskeyIdPattern"];
+      userId: components["schemas"]["MisskeyId"];
       user: components["schemas"]["UserLite"];
-      replyId?: components["schemas"]["misskeyIdPattern"];
-      renoteId?: components["schemas"]["misskeyIdPattern"];
+      replyId?: components["schemas"]["MisskeyId"];
+      renoteId?: components["schemas"]["MisskeyId"];
       isHidden?: boolean;
       visibility: string;
-      mentions?: components["schemas"]["misskeyIdPattern"][];
-      visibleUserIds?: components["schemas"]["misskeyIdPattern"][];
-      fileIds?: components["schemas"]["misskeyIdPattern"][];
+      mentions?: components["schemas"]["MisskeyId"][];
+      visibleUserIds?: components["schemas"]["MisskeyId"][];
+      fileIds?: components["schemas"]["MisskeyId"][];
       files?: components["schemas"]["DriveFile"][];
       tags?: string[];
       poll?: Record<string, unknown> | null;
-      channelId?: components["schemas"]["misskeyIdPattern"];
+      channelId?: components["schemas"]["MisskeyId"];
       channel?: ({
         id: string;
         name: string | null;
+        color: string;
         [key: string]: unknown;
       }) | null;
       localOnly?: boolean;
@@ -3116,15 +3166,15 @@ export interface components {
       [key: string]: unknown;
     };
     NoteFavorite: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       note: components["schemas"]["Note"];
-      noteId: components["schemas"]["misskeyIdPattern"];
+      noteId: components["schemas"]["MisskeyId"];
       [key: string]: unknown;
     };
     NoteReaction: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       user: components["schemas"]["UserLite"];
@@ -3132,13 +3182,13 @@ export interface components {
       [key: string]: unknown;
     };
     Notification: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       /** @enum {string} */
       type: "follow" | "mention" | "reply" | "renote" | "quote" | "reaction" | "pollEnded" | "receiveFollowRequest" | "followRequestAccepted" | "achievementEarned" | "app";
       user?: components["schemas"]["UserLite"];
-      userId?: components["schemas"]["misskeyIdPattern"];
+      userId?: components["schemas"]["MisskeyId"];
       note?: components["schemas"]["Note"];
       reaction?: string | null;
       choice?: number | null;
@@ -3149,7 +3199,7 @@ export interface components {
       [key: string]: unknown;
     };
     Page: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -3157,12 +3207,47 @@ export interface components {
       title: string;
       name: string;
       summary: string | null;
-      content: unknown[];
+      content: components["schemas"]["PageContent"];
       variables: unknown[];
-      userId: components["schemas"]["misskeyIdPattern"];
+      userId: components["schemas"]["MisskeyId"];
       user: components["schemas"]["UserLite"];
+      hideTitleWhenPinned: boolean;
+      alignCenter: boolean;
+      font: string;
+      script: string;
+      eyeCatchingImageId: string | null;
+      eyeCatchingImage: components["schemas"]["DriveFile"];
+      attachedFiles: components["schemas"]["DriveFile"][];
+      likedCount: number;
+      isLiked?: boolean;
       [key: string]: unknown;
     };
+    PageContent: (({
+        id: string;
+        /** @enum {unknown} */
+        type: "section";
+        title: string | null;
+        children: components["schemas"]["PageContent"];
+        [key: string]: unknown;
+      }) | {
+        id: string;
+        /** @enum {unknown} */
+        type: "text";
+        text?: string;
+        [key: string]: unknown;
+      } | {
+        id: string;
+        /** @enum {unknown} */
+        type: "note";
+        note?: string;
+        [key: string]: unknown;
+      } | {
+        id: string;
+        /** @enum {unknown} */
+        type: "image";
+        fileId?: string;
+        [key: string]: unknown;
+      })[];
     Password: string;
     QueueCount: {
       waiting: number;
@@ -3173,17 +3258,233 @@ export interface components {
       [key: string]: unknown;
     };
     RenoteMuting: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
-      muteeId: components["schemas"]["misskeyIdPattern"];
+      muteeId: components["schemas"]["MisskeyId"];
       mutee: components["schemas"]["UserDetailed"];
+      [key: string]: unknown;
+    };
+    Role: {
+      id: components["schemas"]["MisskeyId"];
+      createdAt: string;
+      updatedAt: string | null;
+      name: string;
+      description: string;
+      color: string | null;
+      iconUrl: string | null;
+      /** @enum {string} */
+      target: "manual" | "conditional";
+      condFormula: components["schemas"]["RoleCondFormulaValue"];
+      isPublic: boolean;
+      isModerator: boolean;
+      isAdministrator: boolean;
+      /** @default false */
+      isExplorable?: boolean;
+      asBadge: boolean;
+      canEditMembersByModerator: boolean;
+      displayOrder: number;
+      policies: components["schemas"]["RolePolicies"];
+      usersCount: number;
+      [key: string]: unknown;
+    };
+    RoleCondFormulaValue: Record<string, never> | {
+      /** @enum {unknown} */
+      type: "and";
+      values: components["schemas"]["RoleCondFormulaValue"][];
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "or";
+      values: components["schemas"]["RoleCondFormulaValue"][];
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "not";
+      value: components["schemas"]["RoleCondFormulaValue"];
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "isLocal";
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "isRemote";
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "createdLessThan";
+      sec: number;
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "createdMoreThan";
+      sec: number;
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "followersLessThanOrEq";
+      value: number;
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "followersMoreThanOrEq";
+      value: number;
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "followingLessThanOrEq";
+      value: number;
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "followingMoreThanOrEq";
+      value: number;
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "notesLessThanOrEq";
+      value: number;
+      [key: string]: unknown;
+    } | {
+      /** @enum {unknown} */
+      type: "notesMoreThanOrEq";
+      value: number;
+      [key: string]: unknown;
+    };
+    RolePolicies: {
+      gtlAvailable?: {
+        useDefault: boolean;
+        priority: number;
+        value: boolean;
+        [key: string]: unknown;
+      };
+      ltlAvailable?: {
+        useDefault: boolean;
+        priority: number;
+        value: boolean;
+        [key: string]: unknown;
+      };
+      canPublicNote?: {
+        useDefault: boolean;
+        priority: number;
+        value: boolean;
+        [key: string]: unknown;
+      };
+      canInvite?: {
+        useDefault: boolean;
+        priority: number;
+        value: boolean;
+        [key: string]: unknown;
+      };
+      inviteLimit?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      inviteLimitCycle?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      inviteExpirationTime?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      canManageCustomEmojis?: {
+        useDefault: boolean;
+        priority: number;
+        value: boolean;
+        [key: string]: unknown;
+      };
+      canSearchNotes?: {
+        useDefault: boolean;
+        priority: number;
+        value: boolean;
+        [key: string]: unknown;
+      };
+      canHideAds?: {
+        useDefault: boolean;
+        priority: number;
+        value: boolean;
+        [key: string]: unknown;
+      };
+      driveCapacityMb?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      alwaysMarkNsfw?: {
+        useDefault: boolean;
+        priority: number;
+        value: boolean;
+        [key: string]: unknown;
+      };
+      pinLimit?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      antennaLimit?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      wordMuteLimit?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      webhookLimit?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      clipLimit?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      noteEachClipsLimit?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      userListLimit?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      userEachUserListsLimit?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
+      rateLimitFactor?: {
+        useDefault: boolean;
+        priority: number;
+        value: number;
+        [key: string]: unknown;
+      };
       [key: string]: unknown;
     };
     User: components["schemas"]["UserLite"] | components["schemas"]["UserDetailed"];
     UserDetailed: components["schemas"]["UserDetailedNotMe"] | components["schemas"]["MeDetailed"];
     UserDetailedNotMe: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       name: string | null;
       username: string;
       host: string | null;
@@ -3202,7 +3503,7 @@ export interface components {
       uri: string | null;
       /** Format: url */
       movedToUri: string | null;
-      alsoKnownAs: components["schemas"]["misskeyIdPattern"][] | null;
+      alsoKnownAs: components["schemas"]["MisskeyId"][] | null;
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -3227,7 +3528,7 @@ export interface components {
       followersCount: number;
       followingCount: number;
       notesCount: number;
-      pinnedNoteIds: components["schemas"]["misskeyIdPattern"][];
+      pinnedNoteIds: components["schemas"]["MisskeyId"][];
       pinnedNotes: components["schemas"]["Note"][];
       pinnedPageId: string | null;
       pinnedPage: components["schemas"]["Page"];
@@ -3244,6 +3545,11 @@ export interface components {
       isMuted?: boolean;
       isRenoteMuted?: boolean;
       memo?: string;
+      instance?: unknown;
+      emojis: {
+        [key: string]: string;
+      };
+      badgeRoles?: unknown;
       [key: string]: unknown;
     };
     UserDetailedNotMeOnly: {
@@ -3253,7 +3559,7 @@ export interface components {
       uri: string | null;
       /** Format: url */
       movedToUri: string | null;
-      alsoKnownAs: components["schemas"]["misskeyIdPattern"][] | null;
+      alsoKnownAs: components["schemas"]["MisskeyId"][] | null;
       /** Format: date-time */
       createdAt: string;
       /** Format: date-time */
@@ -3278,7 +3584,7 @@ export interface components {
       followersCount: number;
       followingCount: number;
       notesCount: number;
-      pinnedNoteIds: components["schemas"]["misskeyIdPattern"][];
+      pinnedNoteIds: components["schemas"]["MisskeyId"][];
       pinnedNotes: components["schemas"]["Note"][];
       pinnedPageId: string | null;
       pinnedPage: components["schemas"]["Page"];
@@ -3295,19 +3601,24 @@ export interface components {
       isMuted?: boolean;
       isRenoteMuted?: boolean;
       memo?: string;
+      instance?: unknown;
+      emojis: {
+        [key: string]: string;
+      };
+      badgeRoles?: unknown;
       [key: string]: unknown;
     };
     UserList: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       /** Format: date-time */
       createdAt: string;
       name: string;
-      userIds?: components["schemas"]["misskeyIdPattern"][];
+      userIds?: components["schemas"]["MisskeyId"][];
       isPublic: boolean;
       [key: string]: unknown;
     };
     UserLite: {
-      id: components["schemas"]["misskeyIdPattern"];
+      id: components["schemas"]["MisskeyId"];
       name: string | null;
       username: string;
       host: string | null;
@@ -3343,7 +3654,9 @@ export interface operations {
   "admin/meta": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -3384,7 +3697,7 @@ export interface operations {
             sensitiveMediaDetectionSensitivity?: string;
             setSensitiveFlagAutomatically?: boolean;
             enableSensitiveMediaDetectionForVideos?: boolean;
-            proxyAccountId?: components["schemas"]["misskeyIdPattern"];
+            proxyAccountId?: components["schemas"]["MisskeyId"];
             summalyProxy?: string | null;
             email?: string | null;
             smtpSecure?: boolean;
@@ -3412,6 +3725,25 @@ export interface operations {
             enableServerMachineStats: boolean;
             enableIdenticonGeneration: boolean;
             policies?: unknown;
+            maintainerName: string | null;
+            maintainerEmail: string | null;
+            version: string;
+            name: string | null;
+            uri: string;
+            description: string | null;
+            langs: string[];
+            tosUrl: string | null;
+            repositoryUrl: string;
+            feedbackUrl: string | null;
+            disableRegistration: boolean;
+            themeColor: string | null;
+            backgroundImageUrl: string | null;
+            logoImageUrl: string | null;
+            defaultLightTheme: string | null;
+            defaultDarkTheme: string | null;
+            objectStorageS3ForcePathStyle: boolean;
+            deeplAuthKey: string | null;
+            deeplIsPro: boolean;
             [key: string]: unknown;
           };
         };
@@ -3460,8 +3792,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default null */
           state?: string | null;
           /**
@@ -3484,20 +3816,7 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": {
-              id: components["schemas"]["misskeyIdPattern"];
-              /** Format: date-time */
-              createdAt: string;
-              comment: string;
-              resolved: boolean;
-              reporterId: components["schemas"]["misskeyIdPattern"];
-              targetUserId: components["schemas"]["misskeyIdPattern"];
-              assigneeId: components["schemas"]["misskeyIdPattern"];
-              reporter: components["schemas"]["User"];
-              targetUser: components["schemas"]["User"];
-              assignee?: components["schemas"]["User"];
-              [key: string]: unknown;
-            }[];
+          "application/json": components["schemas"]["AbuseUserReport"][];
         };
       };
       /** @description Client error */
@@ -3597,14 +3916,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -3662,7 +3983,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -3705,14 +4028,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          id?: components["schemas"]["misskeyIdPattern"];
+          id: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -3757,8 +4082,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -3767,7 +4092,7 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown[];
+          "application/json": components["schemas"]["Ad"][];
         };
       };
       /** @description Client error */
@@ -3812,7 +4137,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          id: components["schemas"]["misskeyIdPattern"];
+          id: components["schemas"]["MisskeyId"];
           memo: string;
           url: string;
           imageUrl: string;
@@ -3828,7 +4153,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -3883,7 +4210,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            id: components["schemas"]["misskeyIdPattern"];
+            id: components["schemas"]["MisskeyId"];
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -3937,14 +4264,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          id?: components["schemas"]["misskeyIdPattern"];
+          id: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -3989,8 +4318,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -4000,7 +4329,7 @@ export interface operations {
       200: {
         content: {
           "application/json": ({
-              id: components["schemas"]["misskeyIdPattern"];
+              id: components["schemas"]["MisskeyId"];
               /** Format: date-time */
               createdAt: string;
               /** Format: date-time */
@@ -4055,7 +4384,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          id: components["schemas"]["misskeyIdPattern"];
+          id: components["schemas"]["MisskeyId"];
           title: string;
           text: string;
           imageUrl: string | null;
@@ -4065,7 +4394,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4108,14 +4439,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4157,12 +4490,16 @@ export interface operations {
   "admin/drive/clean-remote-files": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4204,12 +4541,16 @@ export interface operations {
   "admin/drive/cleanup": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4254,9 +4595,9 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
-          userId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
+          userId?: components["schemas"]["MisskeyId"];
           type?: string | null;
           /**
            * @default local
@@ -4318,10 +4659,10 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          fileId?: components["schemas"]["misskeyIdPattern"];
+          fileId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         } | {
-          url?: string;
+          url: string;
           [key: string]: unknown;
         };
       };
@@ -4331,12 +4672,12 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            id: components["schemas"]["misskeyIdPattern"];
+            id: components["schemas"]["MisskeyId"];
             /** Format: date-time */
             createdAt: string;
-            userId: components["schemas"]["misskeyIdPattern"];
+            userId: components["schemas"]["MisskeyId"];
             userHost: string | null;
-            md5: components["schemas"]["md5Pattern"];
+            md5: components["schemas"]["MD5"];
             name: string;
             type: string;
             size: number;
@@ -4355,9 +4696,16 @@ export interface operations {
             webpublicAccessKey: string | null;
             uri: string | null;
             src: string | null;
-            folderId: components["schemas"]["misskeyIdPattern"];
+            folderId: components["schemas"]["MisskeyId"];
             isSensitive: boolean;
             isLink: boolean;
+            maybePorn: boolean;
+            maybeSensitive: boolean;
+            webpublicType: string | null;
+            requestIp: string | null;
+            requestHeaders: {
+              [key: string]: string;
+            } | null;
             [key: string]: unknown;
           };
         };
@@ -4404,7 +4752,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          ids: components["schemas"]["misskeyIdPattern"][];
+          ids: components["schemas"]["MisskeyId"][];
           aliases: string[];
           [key: string]: unknown;
         };
@@ -4412,7 +4760,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4456,7 +4806,7 @@ export interface operations {
       content: {
         "application/json": {
           name: string;
-          fileId: components["schemas"]["misskeyIdPattern"];
+          fileId: components["schemas"]["MisskeyId"];
           category?: string | null;
           aliases?: string[];
           license?: string | null;
@@ -4471,7 +4821,7 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["EmojiDetailed"];
         };
       };
       /** @description Client error */
@@ -4516,7 +4866,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          emojiId?: components["schemas"]["misskeyIdPattern"];
+          emojiId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -4526,7 +4876,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            id?: components["schemas"]["misskeyIdPattern"];
+            id: components["schemas"]["MisskeyId"];
             [key: string]: unknown;
           };
         };
@@ -4573,14 +4923,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          ids?: components["schemas"]["misskeyIdPattern"][];
+          ids: components["schemas"]["MisskeyId"][];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4623,14 +4975,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          id?: components["schemas"]["misskeyIdPattern"];
+          id: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4679,8 +5033,8 @@ export interface operations {
           host?: string | null;
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -4690,7 +5044,7 @@ export interface operations {
       200: {
         content: {
           "application/json": ({
-              id: components["schemas"]["misskeyIdPattern"];
+              id: components["schemas"]["MisskeyId"];
               aliases: string[];
               name: string;
               category: string | null;
@@ -4746,8 +5100,8 @@ export interface operations {
           query?: string | null;
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -4757,7 +5111,7 @@ export interface operations {
       200: {
         content: {
           "application/json": ({
-              id: components["schemas"]["misskeyIdPattern"];
+              id: components["schemas"]["MisskeyId"];
               aliases: string[];
               name: string;
               category: string | null;
@@ -4809,7 +5163,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          ids: components["schemas"]["misskeyIdPattern"][];
+          ids: components["schemas"]["MisskeyId"][];
           aliases: string[];
           [key: string]: unknown;
         };
@@ -4817,7 +5171,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4860,7 +5216,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          ids: components["schemas"]["misskeyIdPattern"][];
+          ids: components["schemas"]["MisskeyId"][];
           aliases: string[];
           [key: string]: unknown;
         };
@@ -4868,7 +5224,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4911,7 +5269,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          ids?: components["schemas"]["misskeyIdPattern"][];
+          ids: components["schemas"]["MisskeyId"][];
           category?: string | null;
           [key: string]: unknown;
         };
@@ -4919,7 +5277,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -4962,7 +5322,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          ids?: components["schemas"]["misskeyIdPattern"][];
+          ids: components["schemas"]["MisskeyId"][];
           license?: string | null;
           [key: string]: unknown;
         };
@@ -4970,7 +5330,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -5013,9 +5375,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          id: components["schemas"]["misskeyIdPattern"];
+          id: components["schemas"]["MisskeyId"];
           name: string;
-          fileId?: components["schemas"]["misskeyIdPattern"];
+          fileId?: components["schemas"]["MisskeyId"];
           category?: string | null;
           aliases: string[];
           license?: string | null;
@@ -5028,7 +5390,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -5071,14 +5435,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          host?: string;
+          host: string;
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -5121,14 +5487,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          host?: string;
+          host: string;
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -5171,14 +5539,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          host?: string;
+          host: string;
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -5229,7 +5599,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -5271,14 +5643,20 @@ export interface operations {
   "admin/get-index-stats": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+              tablename: string;
+              indexname: string;
+              [key: string]: unknown;
+            }[];
         };
       };
       /** @description Client error */
@@ -5322,14 +5700,22 @@ export interface operations {
   "admin/get-table-stats": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: {
+              count: number;
+              size: number;
+              [key: string]: unknown;
+            };
+          };
         };
       };
       /** @description Client error */
@@ -5374,7 +5760,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -5383,7 +5769,11 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+              ip: string;
+              createdAt: string;
+              [key: string]: unknown;
+            }[];
         };
       };
       /** @description Client error */
@@ -5440,7 +5830,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-              code?: string;
+              code: string;
               [key: string]: unknown;
             }[];
         };
@@ -5551,7 +5941,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           expiresAt: number;
           [key: string]: unknown;
         };
@@ -5559,7 +5949,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -5601,12 +5993,16 @@ export interface operations {
   "admin/queue/clear": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -5648,7 +6044,9 @@ export interface operations {
   "admin/queue/deliver-delayed": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -5699,7 +6097,9 @@ export interface operations {
   "admin/queue/inbox-delayed": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -5752,14 +6152,16 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          type?: "deliver" | "inbox";
+          type: "deliver" | "inbox";
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -5801,7 +6203,9 @@ export interface operations {
   "admin/queue/stats": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -5859,7 +6263,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          inbox?: string;
+          inbox: string;
           [key: string]: unknown;
         };
       };
@@ -5869,7 +6273,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            id: components["schemas"]["misskeyIdPattern"];
+            id: components["schemas"]["MisskeyId"];
             /** Format: url */
             inbox: string;
             /**
@@ -5922,7 +6326,9 @@ export interface operations {
   "admin/relays/list": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -5930,7 +6336,7 @@ export interface operations {
       200: {
         content: {
           "application/json": ({
-              id: components["schemas"]["misskeyIdPattern"];
+              id: components["schemas"]["MisskeyId"];
               /** Format: url */
               inbox: string;
               /**
@@ -5984,14 +6390,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          inbox?: string;
+          inbox: string;
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -6034,7 +6442,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -6044,7 +6452,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            password?: string;
+            password: string;
             [key: string]: unknown;
           };
         };
@@ -6091,7 +6499,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          reportId?: components["schemas"]["misskeyIdPattern"];
+          reportId: components["schemas"]["MisskeyId"];
           /** @default false */
           forward?: boolean;
           [key: string]: unknown;
@@ -6100,7 +6508,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -6152,7 +6562,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -6194,7 +6606,9 @@ export interface operations {
   "admin/server-info": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -6212,7 +6626,7 @@ export interface operations {
               [key: string]: unknown;
             };
             mem: {
-              total?: number;
+              total: number;
               [key: string]: unknown;
             };
             fs: {
@@ -6221,9 +6635,10 @@ export interface operations {
               [key: string]: unknown;
             };
             net: {
-              interface?: string;
+              interface: string;
               [key: string]: unknown;
             };
+            redis?: string;
             [key: string]: unknown;
           };
         };
@@ -6272,8 +6687,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -6283,12 +6698,12 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-              id: components["schemas"]["misskeyIdPattern"];
+              id: components["schemas"]["MisskeyId"];
               /** Format: date-time */
               createdAt: string;
               type: string;
               info?: unknown;
-              userId: components["schemas"]["misskeyIdPattern"];
+              userId: components["schemas"]["MisskeyId"];
               user: components["schemas"]["UserDetailed"];
               [key: string]: unknown;
             }[];
@@ -6336,7 +6751,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -6345,7 +6760,9 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -6463,14 +6880,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -6513,14 +6932,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -6599,7 +7020,7 @@ export interface operations {
           sensitiveMediaDetectionSensitivity?: "medium" | "low" | "high" | "veryLow" | "veryHigh";
           setSensitiveFlagAutomatically?: boolean;
           enableSensitiveMediaDetectionForVideos?: boolean;
-          proxyAccountId?: components["schemas"]["misskeyIdPattern"];
+          proxyAccountId?: components["schemas"]["MisskeyId"];
           maintainerName?: string | null;
           maintainerEmail?: string | null;
           langs?: string[];
@@ -6646,7 +7067,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -6689,14 +7112,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -6739,7 +7164,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           text: string;
           [key: string]: unknown;
         };
@@ -6747,7 +7172,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -6796,7 +7223,7 @@ export interface operations {
           iconUrl: string | null;
           /** @enum {string} */
           target: "manual" | "conditional";
-          condFormula?: unknown;
+          condFormula: components["schemas"]["RoleCondFormulaValue"];
           isPublic: boolean;
           isModerator: boolean;
           isAdministrator: boolean;
@@ -6805,7 +7232,7 @@ export interface operations {
           asBadge: boolean;
           canEditMembersByModerator: boolean;
           displayOrder: number;
-          policies?: unknown;
+          policies: components["schemas"]["RolePolicies"];
           [key: string]: unknown;
         };
       };
@@ -6814,7 +7241,7 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["Role"];
         };
       };
       /** @description Client error */
@@ -6859,14 +7286,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          roleId?: components["schemas"]["misskeyIdPattern"];
+          roleId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -6908,14 +7337,16 @@ export interface operations {
   "admin/roles/list": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["Role"][];
         };
       };
       /** @description Client error */
@@ -6960,7 +7391,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          roleId?: components["schemas"]["misskeyIdPattern"];
+          roleId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -6969,7 +7400,7 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": components["schemas"]["Role"];
         };
       };
       /** @description Client error */
@@ -7014,14 +7445,14 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          roleId: components["schemas"]["misskeyIdPattern"];
+          roleId: components["schemas"]["MisskeyId"];
           name: string;
           description: string;
           color: string | null;
           iconUrl: string | null;
           /** @enum {string} */
           target: "manual" | "conditional";
-          condFormula?: unknown;
+          condFormula: components["schemas"]["RoleCondFormulaValue"];
           isPublic: boolean;
           isModerator: boolean;
           isAdministrator: boolean;
@@ -7029,14 +7460,16 @@ export interface operations {
           asBadge: boolean;
           canEditMembersByModerator: boolean;
           displayOrder: number;
-          policies?: unknown;
+          policies: components["schemas"]["RolePolicies"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -7079,8 +7512,8 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          roleId: components["schemas"]["misskeyIdPattern"];
-          userId: components["schemas"]["misskeyIdPattern"];
+          roleId: components["schemas"]["MisskeyId"];
+          userId: components["schemas"]["MisskeyId"];
           expiresAt?: number | null;
           [key: string]: unknown;
         };
@@ -7088,7 +7521,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -7131,15 +7566,17 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          roleId: components["schemas"]["misskeyIdPattern"];
-          userId: components["schemas"]["misskeyIdPattern"];
+          roleId: components["schemas"]["MisskeyId"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -7182,14 +7619,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          policies?: unknown;
+          policies: components["schemas"]["RolePolicies"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -7232,9 +7671,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          roleId?: components["schemas"]["misskeyIdPattern"];
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          roleId: components["schemas"]["MisskeyId"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           [key: string]: unknown;
@@ -7245,7 +7684,13 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+              id: components["schemas"]["MisskeyId"];
+              createdAt?: unknown;
+              user: components["schemas"]["UserDetailed"];
+              expiresAt?: unknown;
+              [key: string]: unknown;
+            }[];
         };
       };
       /** @description Client error */
@@ -7292,8 +7737,8 @@ export interface operations {
         "application/json": {
           limit?: number;
           withUnreads?: boolean;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -7360,7 +7805,7 @@ export interface operations {
           name: string;
           /** @enum {string} */
           src: "home" | "all" | "users" | "list";
-          userListId?: components["schemas"]["misskeyIdPattern"];
+          userListId?: components["schemas"]["MisskeyId"];
           keywords: string[][];
           excludeKeywords: string[][];
           users: string[];
@@ -7421,14 +7866,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          antennaId?: components["schemas"]["misskeyIdPattern"];
+          antennaId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -7470,7 +7917,9 @@ export interface operations {
   "antennas/list": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -7522,11 +7971,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          antennaId?: components["schemas"]["misskeyIdPattern"];
+          antennaId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           [key: string]: unknown;
@@ -7582,7 +8031,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          antennaId?: components["schemas"]["misskeyIdPattern"];
+          antennaId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -7636,11 +8085,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          antennaId: components["schemas"]["misskeyIdPattern"];
+          antennaId: components["schemas"]["MisskeyId"];
           name: string;
           /** @enum {string} */
           src: "home" | "all" | "users" | "list";
-          userListId?: components["schemas"]["misskeyIdPattern"];
+          userListId?: components["schemas"]["MisskeyId"];
           keywords: string[][];
           excludeKeywords: string[][];
           users: string[];
@@ -7701,7 +8150,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          uri?: string;
+          uri: string;
           [key: string]: unknown;
         };
       };
@@ -7761,7 +8210,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          uri?: string;
+          uri: string;
           [key: string]: unknown;
         };
       };
@@ -7888,7 +8337,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          appId?: components["schemas"]["misskeyIdPattern"];
+          appId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -7942,7 +8391,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          appSecret?: string;
+          appSecret: string;
           [key: string]: unknown;
         };
       };
@@ -8000,7 +8449,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          token?: string;
+          token: string;
           [key: string]: unknown;
         };
       };
@@ -8010,7 +8459,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            id: components["schemas"]["misskeyIdPattern"];
+            id: components["schemas"]["MisskeyId"];
             app: components["schemas"]["App"];
             token: string;
             [key: string]: unknown;
@@ -8118,7 +8567,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -8178,7 +8627,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -8240,8 +8689,8 @@ export interface operations {
         "application/json": {
           /** @default 30 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -8295,9 +8744,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          name?: string;
+          name: string;
           description?: string | null;
-          bannerId?: components["schemas"]["misskeyIdPattern"];
+          bannerId?: components["schemas"]["MisskeyId"];
           color?: string;
           [key: string]: unknown;
         };
@@ -8357,7 +8806,9 @@ export interface operations {
   "channels/featured": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -8409,14 +8860,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -8459,8 +8912,8 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 5 */
           limit?: number;
           [key: string]: unknown;
@@ -8516,8 +8969,8 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 5 */
           limit?: number;
           [key: string]: unknown;
@@ -8573,7 +9026,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -8627,11 +9080,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           [key: string]: unknown;
@@ -8687,14 +9140,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -8737,12 +9192,12 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId: components["schemas"]["MisskeyId"];
           name?: string;
           description?: string | null;
-          bannerId?: components["schemas"]["misskeyIdPattern"];
+          bannerId?: components["schemas"]["MisskeyId"];
           isArchived?: boolean | null;
-          pinnedNoteIds?: components["schemas"]["misskeyIdPattern"][];
+          pinnedNoteIds?: components["schemas"]["MisskeyId"][];
           color?: string;
           [key: string]: unknown;
         };
@@ -8797,14 +9252,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -8847,14 +9304,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -8896,7 +9355,9 @@ export interface operations {
   "channels/my-favorites": {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -8948,14 +9409,14 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          query?: string;
+          query: string;
           /**
            * @default nameAndDescription
            * @enum {string}
            */
           type?: "nameAndDescription" | "nameOnly";
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 5 */
           limit?: number;
           [key: string]: unknown;
@@ -9012,7 +9473,7 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          span?: "day" | "hour";
+          span: "day" | "hour";
           /** @default 30 */
           limit?: number;
           /** @default null */
@@ -9082,7 +9543,7 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          span?: "day" | "hour";
+          span: "day" | "hour";
           /** @default 30 */
           limit?: number;
           /** @default null */
@@ -9146,7 +9607,7 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          span?: "day" | "hour";
+          span: "day" | "hour";
           /** @default 30 */
           limit?: number;
           /** @default null */
@@ -9221,7 +9682,7 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          span?: "day" | "hour";
+          span: "day" | "hour";
           /** @default 30 */
           limit?: number;
           /** @default null */
@@ -9397,7 +9858,7 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          span?: "day" | "hour";
+          span: "day" | "hour";
           /** @default 30 */
           limit?: number;
           /** @default null */
@@ -9489,7 +9950,7 @@ export interface operations {
           limit?: number;
           /** @default null */
           offset?: number | null;
-          userId: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -9557,7 +10018,7 @@ export interface operations {
           limit?: number;
           /** @default null */
           offset?: number | null;
-          userId: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -9649,7 +10110,7 @@ export interface operations {
           limit?: number;
           /** @default null */
           offset?: number | null;
-          userId: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -9721,7 +10182,7 @@ export interface operations {
           limit?: number;
           /** @default null */
           offset?: number | null;
-          userId: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -9793,7 +10254,7 @@ export interface operations {
           limit?: number;
           /** @default null */
           offset?: number | null;
-          userId: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -9804,11 +10265,11 @@ export interface operations {
         content: {
           "application/json": {
             local: {
-              count?: number[];
+              count: number[];
               [key: string]: unknown;
             };
             remote: {
-              count?: number[];
+              count: number[];
               [key: string]: unknown;
             };
             [key: string]: unknown;
@@ -9858,7 +10319,7 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          span?: "day" | "hour";
+          span: "day" | "hour";
           /** @default 30 */
           limit?: number;
           /** @default null */
@@ -9930,15 +10391,17 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          clipId: components["schemas"]["misskeyIdPattern"];
-          noteId: components["schemas"]["misskeyIdPattern"];
+          clipId: components["schemas"]["MisskeyId"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -9987,15 +10450,17 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          clipId: components["schemas"]["misskeyIdPattern"];
-          noteId: components["schemas"]["misskeyIdPattern"];
+          clipId: components["schemas"]["MisskeyId"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -10038,7 +10503,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          name?: string;
+          name: string;
           /** @default false */
           isPublic?: boolean;
           description?: string | null;
@@ -10095,14 +10560,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          clipId?: components["schemas"]["misskeyIdPattern"];
+          clipId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -10198,11 +10665,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          clipId?: components["schemas"]["misskeyIdPattern"];
+          clipId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -10256,7 +10723,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          clipId?: components["schemas"]["misskeyIdPattern"];
+          clipId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -10310,7 +10777,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          clipId: components["schemas"]["misskeyIdPattern"];
+          clipId: components["schemas"]["MisskeyId"];
           name: string;
           isPublic?: boolean;
           description?: string | null;
@@ -10367,14 +10834,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          clipId?: components["schemas"]["misskeyIdPattern"];
+          clipId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -10417,14 +10886,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          clipId?: components["schemas"]["misskeyIdPattern"];
+          clipId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -10519,7 +10990,9 @@ export interface operations {
   drive: {
     requestBody: {
       content: {
-        "application/json": unknown;
+        "application/json": {
+          [key: string]: unknown;
+        };
       };
     };
     responses: {
@@ -10577,10 +11050,10 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default null */
-          folderId?: components["schemas"]["misskeyIdPattern"];
+          folderId?: components["schemas"]["MisskeyId"];
           type?: string | null;
           /** @enum {string} */
           sort?: "+createdAt" | "-createdAt" | "+name" | "-name" | "+size" | "-size";
@@ -10637,7 +11110,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          fileId?: components["schemas"]["misskeyIdPattern"];
+          fileId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -10691,7 +11164,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          md5?: components["schemas"]["md5Pattern"];
+          md5: components["schemas"]["MD5"];
           [key: string]: unknown;
         };
       };
@@ -10746,7 +11219,7 @@ export interface operations {
       content: {
         "multipart/form-data": {
           /** @default null */
-          folderId?: components["schemas"]["misskeyIdPattern"];
+          folderId?: components["schemas"]["MisskeyId"];
           /** @default null */
           name?: string | null;
           /** @default null */
@@ -10819,14 +11292,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          fileId?: components["schemas"]["misskeyIdPattern"];
+          fileId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -10869,7 +11344,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          md5?: components["schemas"]["md5Pattern"];
+          md5: components["schemas"]["MD5"];
           [key: string]: unknown;
         };
       };
@@ -10923,9 +11398,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          name?: string;
+          name: string;
           /** @default null */
-          folderId?: components["schemas"]["misskeyIdPattern"];
+          folderId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -10979,10 +11454,10 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          fileId?: components["schemas"]["misskeyIdPattern"];
+          fileId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         } | {
-          url?: string;
+          url: string;
           [key: string]: unknown;
         };
       };
@@ -11036,8 +11511,8 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          fileId?: components["schemas"]["misskeyIdPattern"];
-          folderId?: components["schemas"]["misskeyIdPattern"];
+          fileId: components["schemas"]["MisskeyId"];
+          folderId?: components["schemas"]["MisskeyId"];
           name?: string;
           isSensitive?: boolean;
           comment?: string | null;
@@ -11094,9 +11569,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          url?: string;
+          url: string;
           /** @default null */
-          folderId?: components["schemas"]["misskeyIdPattern"];
+          folderId?: components["schemas"]["MisskeyId"];
           /** @default false */
           isSensitive?: boolean;
           /** @default null */
@@ -11111,7 +11586,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -11162,10 +11639,10 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default null */
-          folderId?: components["schemas"]["misskeyIdPattern"];
+          folderId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -11221,7 +11698,7 @@ export interface operations {
         "application/json": {
           /** @default Untitled */
           name?: string;
-          parentId?: components["schemas"]["misskeyIdPattern"];
+          parentId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -11281,14 +11758,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          folderId?: components["schemas"]["misskeyIdPattern"];
+          folderId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -11331,9 +11810,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          name?: string;
+          name: string;
           /** @default null */
-          parentId?: components["schemas"]["misskeyIdPattern"];
+          parentId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -11387,7 +11866,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          folderId?: components["schemas"]["misskeyIdPattern"];
+          folderId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -11441,9 +11920,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          folderId?: components["schemas"]["misskeyIdPattern"];
+          folderId: components["schemas"]["MisskeyId"];
           name?: string;
-          parentId?: components["schemas"]["misskeyIdPattern"];
+          parentId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -11499,8 +11978,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           type?: string;
           [key: string]: unknown;
         };
@@ -11555,7 +12034,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          emailAddress?: string;
+          emailAddress: string;
           [key: string]: unknown;
         };
       };
@@ -11613,7 +12092,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          endpoint?: string;
+          endpoint: string;
           [key: string]: unknown;
         };
       };
@@ -11622,7 +12101,10 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            spec?: unknown;
+            [key: string]: unknown;
+          } | null;
         };
       };
       /** @description Client error */
@@ -11720,9 +12202,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          host?: string;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          host: string;
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           [key: string]: unknown;
@@ -11778,9 +12260,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          host?: string;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          host: string;
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           [key: string]: unknown;
@@ -11901,7 +12383,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          host?: string;
+          host: string;
           [key: string]: unknown;
         };
       };
@@ -11955,14 +12437,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -12005,9 +12489,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          host?: string;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          host: string;
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           [key: string]: unknown;
@@ -12073,7 +12557,13 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            topSubInstances: unknown[];
+            otherFollowersCount: number;
+            topPubInstances: unknown[];
+            otherFollowingCount: number;
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -12118,7 +12608,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -12178,7 +12668,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -12238,7 +12728,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -12298,14 +12788,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -12348,7 +12840,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -12402,8 +12894,8 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           [key: string]: unknown;
@@ -12415,7 +12907,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-              id: components["schemas"]["misskeyIdPattern"];
+              id: components["schemas"]["MisskeyId"];
               follower: components["schemas"]["UserLite"];
               followee: components["schemas"]["UserLite"];
               [key: string]: unknown;
@@ -12464,14 +12956,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -12622,8 +13116,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -12679,7 +13173,7 @@ export interface operations {
         "application/json": {
           title: string;
           description?: string | null;
-          fileIds: components["schemas"]["misskeyIdPattern"][];
+          fileIds: components["schemas"]["MisskeyId"][];
           /** @default false */
           isSensitive?: boolean;
           [key: string]: unknown;
@@ -12741,14 +13235,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          postId?: components["schemas"]["misskeyIdPattern"];
+          postId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -12791,14 +13287,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          postId?: components["schemas"]["misskeyIdPattern"];
+          postId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -12841,7 +13339,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          postId?: components["schemas"]["misskeyIdPattern"];
+          postId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -12895,14 +13393,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          postId?: components["schemas"]["misskeyIdPattern"];
+          postId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -12945,10 +13445,10 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          postId: components["schemas"]["misskeyIdPattern"];
+          postId: components["schemas"]["MisskeyId"];
           title: string;
           description?: string | null;
-          fileIds: components["schemas"]["misskeyIdPattern"][];
+          fileIds: components["schemas"]["MisskeyId"][];
           /** @default false */
           isSensitive?: boolean;
           [key: string]: unknown;
@@ -13018,7 +13518,10 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            count: number;
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -13072,7 +13575,7 @@ export interface operations {
           /** @default false */
           attachedToRemoteUserOnly?: boolean;
           /** @enum {string} */
-          sort?: "+mentionedUsers" | "-mentionedUsers" | "+mentionedLocalUsers" | "-mentionedLocalUsers" | "+mentionedRemoteUsers" | "-mentionedRemoteUsers" | "+attachedUsers" | "-attachedUsers" | "+attachedLocalUsers" | "-attachedLocalUsers" | "+attachedRemoteUsers" | "-attachedRemoteUsers";
+          sort: "+mentionedUsers" | "-mentionedUsers" | "+mentionedLocalUsers" | "-mentionedLocalUsers" | "+mentionedRemoteUsers" | "-mentionedRemoteUsers" | "+attachedUsers" | "-attachedUsers" | "+attachedLocalUsers" | "-attachedLocalUsers" | "+attachedRemoteUsers" | "-attachedRemoteUsers";
           [key: string]: unknown;
         };
       };
@@ -13128,7 +13631,7 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          query?: string;
+          query: string;
           /** @default 0 */
           offset?: number;
           [key: string]: unknown;
@@ -13184,7 +13687,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          tag?: string;
+          tag: string;
           [key: string]: unknown;
         };
       };
@@ -13418,14 +13921,16 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          name?: "notes1" | "notes10" | "notes100" | "notes500" | "notes1000" | "notes5000" | "notes10000" | "notes20000" | "notes30000" | "notes40000" | "notes50000" | "notes60000" | "notes70000" | "notes80000" | "notes90000" | "notes100000" | "login3" | "login7" | "login15" | "login30" | "login60" | "login100" | "login200" | "login300" | "login400" | "login500" | "login600" | "login700" | "login800" | "login900" | "login1000" | "passedSinceAccountCreated1" | "passedSinceAccountCreated2" | "passedSinceAccountCreated3" | "loggedInOnBirthday" | "loggedInOnNewYearsDay" | "noteClipped1" | "noteFavorited1" | "myNoteFavorited1" | "profileFilled" | "markedAsCat" | "following1" | "following10" | "following50" | "following100" | "following300" | "followers1" | "followers10" | "followers50" | "followers100" | "followers300" | "followers500" | "followers1000" | "collectAchievements30" | "viewAchievements3min" | "iLoveMisskey" | "foundTreasure" | "client30min" | "client60min" | "noteDeletedWithin1min" | "postedAtLateNight" | "postedAt0min0sec" | "selfQuote" | "htl20npm" | "viewInstanceChart" | "outputHelloWorldOnScratchpad" | "open3windows" | "driveFolderCircularReference" | "reactWithoutRead" | "clickedClickHere" | "justPlainLucky" | "setNameToSyuilo" | "cookieClicked" | "brainDiver";
+          name: "notes1" | "notes10" | "notes100" | "notes500" | "notes1000" | "notes5000" | "notes10000" | "notes20000" | "notes30000" | "notes40000" | "notes50000" | "notes60000" | "notes70000" | "notes80000" | "notes90000" | "notes100000" | "login3" | "login7" | "login15" | "login30" | "login60" | "login100" | "login200" | "login300" | "login400" | "login500" | "login600" | "login700" | "login800" | "login900" | "login1000" | "passedSinceAccountCreated1" | "passedSinceAccountCreated2" | "passedSinceAccountCreated3" | "loggedInOnBirthday" | "loggedInOnNewYearsDay" | "noteClipped1" | "noteFavorited1" | "myNoteFavorited1" | "profileFilled" | "markedAsCat" | "following1" | "following10" | "following50" | "following100" | "following300" | "followers1" | "followers10" | "followers50" | "followers100" | "followers300" | "followers500" | "followers1000" | "collectAchievements30" | "viewAchievements3min" | "iLoveMisskey" | "foundTreasure" | "client30min" | "client60min" | "noteDeletedWithin1min" | "postedAtLateNight" | "postedAt0min0sec" | "selfQuote" | "htl20npm" | "viewInstanceChart" | "outputHelloWorldOnScratchpad" | "open3windows" | "driveFolderCircularReference" | "reactWithoutRead" | "clickedClickHere" | "justPlainLucky" | "setNameToSyuilo" | "cookieClicked" | "brainDiver";
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -13470,8 +13975,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -13527,8 +14032,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -13538,7 +14043,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-              id: components["schemas"]["misskeyIdPattern"];
+              id: components["schemas"]["MisskeyId"];
               post: components["schemas"]["GalleryPost"];
               [key: string]: unknown;
             }[];
@@ -13588,8 +14093,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -13652,7 +14157,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            count?: number;
+            count: number;
             [key: string]: unknown;
           };
         };
@@ -13701,8 +14206,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default true */
           markAsRead?: boolean;
           includeTypes?: ("follow" | "mention" | "reply" | "renote" | "quote" | "reaction" | "pollEnded" | "receiveFollowRequest" | "followRequestAccepted" | "achievementEarned" | "app" | "pollVote" | "groupInvited")[];
@@ -13768,8 +14273,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -13779,7 +14284,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-              id: components["schemas"]["misskeyIdPattern"];
+              id: components["schemas"]["MisskeyId"];
               page: components["schemas"]["Page"];
               [key: string]: unknown;
             }[];
@@ -13829,8 +14334,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -13884,7 +14389,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -13944,7 +14449,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -13987,14 +14494,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          announcementId?: components["schemas"]["misskeyIdPattern"];
+          announcementId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -14037,7 +14546,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -14097,8 +14606,8 @@ export interface operations {
           birthday?: components["schemas"]["Birthday"];
           /** @enum {string|null} */
           lang?: "ach" | "ady" | "af" | "af-NA" | "af-ZA" | "ak" | "ar" | "ar-AR" | "ar-MA" | "ar-SA" | "ay-BO" | "az" | "az-AZ" | "be-BY" | "bg" | "bg-BG" | "bn" | "bn-IN" | "bn-BD" | "br" | "bs-BA" | "ca" | "ca-ES" | "cak" | "ck-US" | "cs" | "cs-CZ" | "cy" | "cy-GB" | "da" | "da-DK" | "de" | "de-AT" | "de-DE" | "de-CH" | "dsb" | "el" | "el-GR" | "en" | "en-GB" | "en-AU" | "en-CA" | "en-IE" | "en-IN" | "en-PI" | "en-SG" | "en-UD" | "en-US" | "en-ZA" | "en@pirate" | "eo" | "eo-EO" | "es" | "es-AR" | "es-419" | "es-CL" | "es-CO" | "es-EC" | "es-ES" | "es-LA" | "es-NI" | "es-MX" | "es-US" | "es-VE" | "et" | "et-EE" | "eu" | "eu-ES" | "fa" | "fa-IR" | "fb-LT" | "ff" | "fi" | "fi-FI" | "fo" | "fo-FO" | "fr" | "fr-CA" | "fr-FR" | "fr-BE" | "fr-CH" | "fy-NL" | "ga" | "ga-IE" | "gd" | "gl" | "gl-ES" | "gn-PY" | "gu-IN" | "gv" | "gx-GR" | "he" | "he-IL" | "hi" | "hi-IN" | "hr" | "hr-HR" | "hsb" | "ht" | "hu" | "hu-HU" | "hy" | "hy-AM" | "id" | "id-ID" | "is" | "is-IS" | "it" | "it-IT" | "ja" | "ja-JP" | "jv-ID" | "ka-GE" | "kk-KZ" | "km" | "kl" | "km-KH" | "kab" | "kn" | "kn-IN" | "ko" | "ko-KR" | "ku-TR" | "kw" | "la" | "la-VA" | "lb" | "li-NL" | "lt" | "lt-LT" | "lv" | "lv-LV" | "mai" | "mg-MG" | "mk" | "mk-MK" | "ml" | "ml-IN" | "mn-MN" | "mr" | "mr-IN" | "ms" | "ms-MY" | "mt" | "mt-MT" | "my" | "no" | "nb" | "nb-NO" | "ne" | "ne-NP" | "nl" | "nl-BE" | "nl-NL" | "nn-NO" | "oc" | "or-IN" | "pa" | "pa-IN" | "pl" | "pl-PL" | "ps-AF" | "pt" | "pt-BR" | "pt-PT" | "qu-PE" | "rm-CH" | "ro" | "ro-RO" | "ru" | "ru-RU" | "sa-IN" | "se-NO" | "sh" | "si-LK" | "sk" | "sk-SK" | "sl" | "sl-SI" | "so-SO" | "sq" | "sq-AL" | "sr" | "sr-RS" | "su" | "sv" | "sv-SE" | "sw" | "sw-KE" | "ta" | "ta-IN" | "te" | "te-IN" | "tg" | "tg-TJ" | "th" | "th-TH" | "fil" | "tlh" | "tr" | "tr-TR" | "tt-RU" | "uk" | "uk-UA" | "ur" | "ur-PK" | "uz" | "uz-UZ" | "vi" | "vi-VN" | "xh-ZA" | "yi" | "yi-DE" | "zh" | "zh-Hans" | "zh-Hant" | "zh-CN" | "zh-HK" | "zh-SG" | "zh-TW" | "zu-ZA" | null;
-          avatarId?: components["schemas"]["misskeyIdPattern"];
-          bannerId?: components["schemas"]["misskeyIdPattern"];
+          avatarId?: components["schemas"]["MisskeyId"];
+          bannerId?: components["schemas"]["MisskeyId"];
           fields?: {
               name: string;
               value: string;
@@ -14120,8 +14629,8 @@ export interface operations {
           autoSensitive?: boolean;
           /** @enum {string} */
           ffVisibility?: "public" | "followers" | "private";
-          pinnedPageId?: components["schemas"]["misskeyIdPattern"];
-          mutedWords?: unknown[];
+          pinnedPageId?: components["schemas"]["MisskeyId"];
+          mutedWords?: (string[] | string)[];
           mutedInstances?: string[];
           mutingNotificationTypes?: ("follow" | "mention" | "reply" | "renote" | "quote" | "reaction" | "pollEnded" | "receiveFollowRequest" | "followRequestAccepted" | "achievementEarned" | "app")[];
           emailNotificationTypes?: string[];
@@ -14191,7 +14700,9 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -14244,7 +14755,9 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+              [key: string]: unknown;
+            }[];
         };
       };
       /** @description Client error */
@@ -14289,7 +14802,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          webhookId?: components["schemas"]["misskeyIdPattern"];
+          webhookId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -14298,7 +14811,9 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -14343,7 +14858,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          webhookId: components["schemas"]["misskeyIdPattern"];
+          webhookId: components["schemas"]["MisskeyId"];
           name: string;
           url: string;
           secret: string;
@@ -14355,7 +14870,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -14398,14 +14915,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          webhookId?: components["schemas"]["misskeyIdPattern"];
+          webhookId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -14457,7 +14976,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            code?: string;
+            code: string;
             [key: string]: unknown;
           };
         };
@@ -14504,14 +15023,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          inviteId?: components["schemas"]["misskeyIdPattern"];
+          inviteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -14556,8 +15077,8 @@ export interface operations {
         "application/json": {
           /** @default 30 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -14620,7 +15141,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            remaining?: number | null;
+            remaining: number | null;
             [key: string]: unknown;
           };
         };
@@ -14681,21 +15202,19 @@ export interface operations {
             maintainerName: string | null;
             maintainerEmail: string | null;
             version: string;
-            name: string;
+            name: string | null;
             /** Format: url */
             uri: string;
             description: string | null;
             langs: string[];
             tosUrl: string | null;
-            /** @default https://github.com/misskey-dev/misskey */
-            repositoryUrl?: string;
-            /** @default https://github.com/misskey-dev/misskey/issues/new */
-            feedbackUrl?: string;
+            repositoryUrl: string;
+            feedbackUrl: string | null;
             defaultDarkTheme: string | null;
             defaultLightTheme: string | null;
             disableRegistration: boolean;
-            cacheRemoteFiles: boolean;
-            cacheRemoteSensitiveFiles: boolean;
+            cacheRemoteFiles?: boolean;
+            cacheRemoteSensitiveFiles?: boolean;
             emailRequiredForSignup: boolean;
             enableHcaptcha: boolean;
             hcaptchaSiteKey: string | null;
@@ -14704,9 +15223,8 @@ export interface operations {
             enableTurnstile: boolean;
             turnstileSiteKey: string | null;
             swPublickey: string | null;
-            /** @default /assets/ai.png */
-            mascotImageUrl?: string;
-            bannerUrl: string;
+            mascotImageUrl: string | null;
+            bannerUrl: string | null;
             serverErrorImageUrl: string | null;
             infoImageUrl: string | null;
             notFoundImageUrl: string | null;
@@ -14720,22 +15238,31 @@ export interface operations {
                 imageUrl: string;
                 [key: string]: unknown;
               }[];
-            requireSetup: boolean;
+            requireSetup?: boolean;
             enableEmail: boolean;
             enableServiceWorker: boolean;
             translatorAvailable: boolean;
-            proxyAccountName: string | null;
+            proxyAccountName?: string | null;
             mediaProxy: string;
-            features: {
+            features?: {
               registration: boolean;
-              localTimeLine: boolean;
-              globalTimeLine: boolean;
+              localTimeLine?: boolean;
+              globalTimeLine?: boolean;
               hcaptcha: boolean;
               recaptcha: boolean;
               objectStorage: boolean;
               serviceWorker: boolean;
               /** @default true */
               miauth?: boolean;
+              emailRequiredForSignup?: boolean;
+              turnstile?: boolean;
+              [key: string]: unknown;
+            };
+            themeColor: string | null;
+            backgroundImageUrl: string | null;
+            logoImageUrl: string | null;
+            serverRules: string[];
+            policies: {
               [key: string]: unknown;
             };
             [key: string]: unknown;
@@ -14793,7 +15320,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            emojis?: components["schemas"]["EmojiSimple"][];
+            emojis: components["schemas"]["EmojiSimple"][];
             [key: string]: unknown;
           };
         };
@@ -14840,7 +15367,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          name?: string;
+          name: string;
           [key: string]: unknown;
         };
       };
@@ -14894,7 +15421,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           expiresAt?: number | null;
           [key: string]: unknown;
         };
@@ -14902,7 +15429,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -14951,14 +15480,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -15003,8 +15534,8 @@ export interface operations {
         "application/json": {
           /** @default 30 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -15058,14 +15589,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -15114,14 +15647,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -15166,8 +15701,8 @@ export interface operations {
         "application/json": {
           /** @default 30 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -15286,8 +15821,8 @@ export interface operations {
           poll?: boolean;
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -15341,11 +15876,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -15399,7 +15934,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -15453,7 +15988,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           /** @default 0 */
@@ -15511,7 +16046,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": ({
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId?: components["schemas"]["MisskeyId"];
           cw?: string | null;
           /** @default false */
           localOnly?: boolean;
@@ -15526,27 +16061,27 @@ export interface operations {
            * @enum {string|null}
            */
           reactionAcceptance?: "likeOnly" | "likeOnlyForRemote" | "nonSensitiveOnly" | "nonSensitiveOnlyForLocalLikeOnlyForRemote" | null;
-          replyId?: components["schemas"]["misskeyIdPattern"];
+          replyId?: components["schemas"]["MisskeyId"];
           /**
            * @default public
            * @enum {string}
            */
           visibility?: "followers" | "home" | "public" | "specified";
-          visibleUserIds?: components["schemas"]["misskeyIdPattern"][];
-          fileIds?: components["schemas"]["misskeyIdPattern"][];
-          mediaIds?: components["schemas"]["misskeyIdPattern"][];
+          visibleUserIds?: components["schemas"]["MisskeyId"][];
+          fileIds: components["schemas"]["MisskeyId"][];
+          mediaIds?: components["schemas"]["MisskeyId"][];
           poll?: ({
-            choices?: string[];
+            choices: string[];
             expiredAfter?: number | null;
             expiresAt?: number | null;
             multiple?: boolean;
             [key: string]: unknown;
           }) | null;
-          renoteId?: components["schemas"]["misskeyIdPattern"];
+          renoteId?: components["schemas"]["MisskeyId"];
           text?: string;
           [key: string]: unknown;
         }) | ({
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId?: components["schemas"]["MisskeyId"];
           cw?: string | null;
           /** @default false */
           localOnly?: boolean;
@@ -15561,24 +16096,129 @@ export interface operations {
            * @enum {string|null}
            */
           reactionAcceptance?: "likeOnly" | "likeOnlyForRemote" | "nonSensitiveOnly" | "nonSensitiveOnlyForLocalLikeOnlyForRemote" | null;
-          replyId?: components["schemas"]["misskeyIdPattern"];
+          replyId?: components["schemas"]["MisskeyId"];
           /**
            * @default public
            * @enum {string}
            */
           visibility?: "followers" | "home" | "public" | "specified";
-          visibleUserIds?: components["schemas"]["misskeyIdPattern"][];
-          fileIds?: components["schemas"]["misskeyIdPattern"][];
-          mediaIds?: components["schemas"]["misskeyIdPattern"][];
-          poll?: {
-            choices?: string[];
+          visibleUserIds?: components["schemas"]["MisskeyId"][];
+          fileIds?: components["schemas"]["MisskeyId"][];
+          mediaIds: components["schemas"]["MisskeyId"][];
+          poll?: ({
+            choices: string[];
+            expiredAfter?: number | null;
+            expiresAt?: number | null;
+            multiple?: boolean;
+            [key: string]: unknown;
+          }) | null;
+          renoteId?: components["schemas"]["MisskeyId"];
+          text?: string;
+          [key: string]: unknown;
+        }) | ({
+          channelId?: components["schemas"]["MisskeyId"];
+          cw?: string | null;
+          /** @default false */
+          localOnly?: boolean;
+          /** @default false */
+          noExtractEmojis?: boolean;
+          /** @default false */
+          noExtractHashtags?: boolean;
+          /** @default false */
+          noExtractMentions?: boolean;
+          /**
+           * @default null
+           * @enum {string|null}
+           */
+          reactionAcceptance?: "likeOnly" | "likeOnlyForRemote" | "nonSensitiveOnly" | "nonSensitiveOnlyForLocalLikeOnlyForRemote" | null;
+          replyId?: components["schemas"]["MisskeyId"];
+          /**
+           * @default public
+           * @enum {string}
+           */
+          visibility?: "followers" | "home" | "public" | "specified";
+          visibleUserIds?: components["schemas"]["MisskeyId"][];
+          fileIds?: components["schemas"]["MisskeyId"][];
+          mediaIds?: components["schemas"]["MisskeyId"][];
+          poll: {
+            choices: string[];
             expiredAfter?: number | null;
             expiresAt?: number | null;
             multiple?: boolean;
             [key: string]: unknown;
           };
-          renoteId?: components["schemas"]["misskeyIdPattern"];
+          renoteId?: components["schemas"]["MisskeyId"];
           text?: string;
+          [key: string]: unknown;
+        }) | ({
+          channelId?: components["schemas"]["MisskeyId"];
+          cw?: string | null;
+          /** @default false */
+          localOnly?: boolean;
+          /** @default false */
+          noExtractEmojis?: boolean;
+          /** @default false */
+          noExtractHashtags?: boolean;
+          /** @default false */
+          noExtractMentions?: boolean;
+          /**
+           * @default null
+           * @enum {string|null}
+           */
+          reactionAcceptance?: "likeOnly" | "likeOnlyForRemote" | "nonSensitiveOnly" | "nonSensitiveOnlyForLocalLikeOnlyForRemote" | null;
+          replyId?: components["schemas"]["MisskeyId"];
+          /**
+           * @default public
+           * @enum {string}
+           */
+          visibility?: "followers" | "home" | "public" | "specified";
+          visibleUserIds?: components["schemas"]["MisskeyId"][];
+          fileIds?: components["schemas"]["MisskeyId"][];
+          mediaIds?: components["schemas"]["MisskeyId"][];
+          poll?: ({
+            choices: string[];
+            expiredAfter?: number | null;
+            expiresAt?: number | null;
+            multiple?: boolean;
+            [key: string]: unknown;
+          }) | null;
+          renoteId: components["schemas"]["MisskeyId"];
+          text?: string;
+          [key: string]: unknown;
+        }) | ({
+          channelId?: components["schemas"]["MisskeyId"];
+          cw?: string | null;
+          /** @default false */
+          localOnly?: boolean;
+          /** @default false */
+          noExtractEmojis?: boolean;
+          /** @default false */
+          noExtractHashtags?: boolean;
+          /** @default false */
+          noExtractMentions?: boolean;
+          /**
+           * @default null
+           * @enum {string|null}
+           */
+          reactionAcceptance?: "likeOnly" | "likeOnlyForRemote" | "nonSensitiveOnly" | "nonSensitiveOnlyForLocalLikeOnlyForRemote" | null;
+          replyId?: components["schemas"]["MisskeyId"];
+          /**
+           * @default public
+           * @enum {string}
+           */
+          visibility?: "followers" | "home" | "public" | "specified";
+          visibleUserIds?: components["schemas"]["MisskeyId"][];
+          fileIds?: components["schemas"]["MisskeyId"][];
+          mediaIds?: components["schemas"]["MisskeyId"][];
+          poll?: ({
+            choices: string[];
+            expiredAfter?: number | null;
+            expiresAt?: number | null;
+            multiple?: boolean;
+            [key: string]: unknown;
+          }) | null;
+          renoteId?: components["schemas"]["MisskeyId"];
+          text: string;
           [key: string]: unknown;
         });
       };
@@ -15588,7 +16228,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            createdNote?: components["schemas"]["Note"];
+            createdNote: components["schemas"]["Note"];
             [key: string]: unknown;
           };
         };
@@ -15641,14 +16281,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -15697,14 +16339,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -15753,14 +16397,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -15807,7 +16453,7 @@ export interface operations {
           limit?: number;
           /** @default 0 */
           offset?: number;
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -15867,8 +16513,8 @@ export interface operations {
           withReplies?: boolean;
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           [key: string]: unknown;
@@ -15926,8 +16572,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           /** @default true */
@@ -16002,8 +16648,8 @@ export interface operations {
           excludeNsfw?: boolean;
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           [key: string]: unknown;
@@ -16063,9 +16709,10 @@ export interface operations {
           following?: boolean;
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
-          visibility?: string;
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
+          /** @enum {string} */
+          visibility?: "public" | "home" | "followers" | "specified";
           [key: string]: unknown;
         };
       };
@@ -16176,7 +16823,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           choice: number;
           [key: string]: unknown;
         };
@@ -16184,7 +16831,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -16227,14 +16876,14 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           type?: string | null;
           /** @default 10 */
           limit?: number;
           /** @default 0 */
           offset?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -16288,7 +16937,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           reaction: string;
           [key: string]: unknown;
         };
@@ -16296,7 +16945,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -16339,14 +16990,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -16395,11 +17048,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -16453,11 +17106,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -16519,8 +17172,8 @@ export interface operations {
           withFiles?: boolean;
           /** @default null */
           poll?: boolean | null;
-          sinceId: components["schemas"]["misskeyIdPattern"];
-          untilId: components["schemas"]["misskeyIdPattern"];
+          sinceId: components["schemas"]["MisskeyId"];
+          untilId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           tag: string;
@@ -16534,8 +17187,8 @@ export interface operations {
           withFiles?: boolean;
           /** @default null */
           poll?: boolean | null;
-          sinceId: components["schemas"]["misskeyIdPattern"];
-          untilId: components["schemas"]["misskeyIdPattern"];
+          sinceId: components["schemas"]["MisskeyId"];
+          untilId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           /** @description The outer arrays are chained with OR, the inner arrays are chained with AND. */
@@ -16593,18 +17246,18 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          query?: string;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          query: string;
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           /** @default 0 */
           offset?: number;
           host?: string;
           /** @default null */
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId?: components["schemas"]["MisskeyId"];
           /** @default null */
-          channelId?: components["schemas"]["misskeyIdPattern"];
+          channelId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -16658,7 +17311,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -16712,7 +17365,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -16770,14 +17423,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -16826,14 +17481,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -16878,8 +17535,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           /** @default true */
@@ -16945,7 +17602,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           targetLang: string;
           [key: string]: unknown;
         };
@@ -16955,7 +17612,11 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": number | {
+            sourceLang: string;
+            text: string;
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -17000,14 +17661,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17056,11 +17719,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          listId?: components["schemas"]["misskeyIdPattern"];
+          listId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           /** @default true */
@@ -17124,7 +17787,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          body?: string;
+          body: string;
           header?: string | null;
           icon?: string | null;
           [key: string]: unknown;
@@ -17133,7 +17796,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17182,7 +17847,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17228,14 +17895,10 @@ export interface operations {
           title: string;
           name: string;
           summary?: string | null;
-          content: {
-              [key: string]: unknown;
-            }[];
-          variables: {
-              [key: string]: unknown;
-            }[];
+          content: components["schemas"]["PageContent"];
+          variables: unknown[];
           script: string;
-          eyeCatchingImageId?: components["schemas"]["misskeyIdPattern"];
+          eyeCatchingImageId?: components["schemas"]["MisskeyId"];
           /**
            * @default sans-serif
            * @enum {string}
@@ -17304,14 +17967,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          pageId?: components["schemas"]["misskeyIdPattern"];
+          pageId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17407,14 +18072,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          pageId?: components["schemas"]["misskeyIdPattern"];
+          pageId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17457,7 +18124,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          pageId?: components["schemas"]["misskeyIdPattern"];
+          pageId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         } | {
           name: string;
@@ -17515,14 +18182,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          pageId?: components["schemas"]["misskeyIdPattern"];
+          pageId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17565,18 +18234,14 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          pageId: components["schemas"]["misskeyIdPattern"];
+          pageId: components["schemas"]["MisskeyId"];
           title: string;
           name: string;
           summary?: string | null;
-          content: {
-              [key: string]: unknown;
-            }[];
-          variables: {
-              [key: string]: unknown;
-            }[];
+          content: components["schemas"]["PageContent"];
+          variables: unknown[];
           script: string;
-          eyeCatchingImageId?: components["schemas"]["misskeyIdPattern"];
+          eyeCatchingImageId?: components["schemas"]["MisskeyId"];
           /**
            * @default sans-serif
            * @enum {string}
@@ -17590,7 +18255,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17651,7 +18318,9 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -17702,14 +18371,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          flashId?: components["schemas"]["misskeyIdPattern"];
+          flashId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17805,14 +18476,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          flashId?: components["schemas"]["misskeyIdPattern"];
+          flashId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17855,7 +18528,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          flashId?: components["schemas"]["misskeyIdPattern"];
+          flashId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -17909,14 +18582,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          flashId?: components["schemas"]["misskeyIdPattern"];
+          flashId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -17959,7 +18634,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          flashId: components["schemas"]["misskeyIdPattern"];
+          flashId: components["schemas"]["MisskeyId"];
           title: string;
           summary: string;
           script: string;
@@ -17970,7 +18645,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -18021,8 +18698,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -18078,8 +18755,8 @@ export interface operations {
         "application/json": {
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -18146,7 +18823,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            pong?: number;
+            pong: number;
             [key: string]: unknown;
           };
         };
@@ -18246,14 +18923,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          noteId?: components["schemas"]["misskeyIdPattern"];
+          noteId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -18304,7 +18983,9 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+              [key: string]: unknown;
+            }[];
         };
       };
       /** @description Client error */
@@ -18349,7 +19030,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          roleId?: components["schemas"]["misskeyIdPattern"];
+          roleId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -18358,7 +19039,9 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -18403,9 +19086,9 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          roleId?: components["schemas"]["misskeyIdPattern"];
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          roleId: components["schemas"]["MisskeyId"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           [key: string]: unknown;
@@ -18416,7 +19099,11 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+              id: components["schemas"]["MisskeyId"];
+              user: components["schemas"]["UserDetailed"];
+              [key: string]: unknown;
+            }[];
         };
       };
       /** @description Client error */
@@ -18461,11 +19148,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          roleId?: components["schemas"]["misskeyIdPattern"];
+          roleId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           [key: string]: unknown;
@@ -18529,7 +19216,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -18584,7 +19273,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -18635,7 +19326,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -18686,7 +19379,24 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            machine: string;
+            cpu: {
+              model: string;
+              cores: number;
+              [key: string]: unknown;
+            };
+            mem: {
+              total: number;
+              [key: string]: unknown;
+            };
+            fs: {
+              total: number;
+              used: number;
+              [key: string]: unknown;
+            };
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -18747,6 +19457,7 @@ export interface operations {
             instances: number;
             driveUsageLocal: number;
             driveUsageRemote: number;
+            reactionsCount: number;
             [key: string]: unknown;
           };
         };
@@ -18793,7 +19504,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          endpoint?: string;
+          endpoint: string;
           [key: string]: unknown;
         };
       };
@@ -18807,7 +19518,7 @@ export interface operations {
             endpoint: string;
             sendReadMessage: boolean;
             [key: string]: unknown;
-          };
+          } | null;
         };
       };
       /** @description Client error */
@@ -18852,7 +19563,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          endpoint?: string;
+          endpoint: string;
           sendReadMessage?: boolean;
           [key: string]: unknown;
         };
@@ -18978,14 +19689,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          endpoint?: string;
+          endpoint: string;
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -19028,13 +19741,13 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          required?: boolean;
+          required: boolean;
           string?: string;
           /** @default hello */
           default?: string;
           /** @default hello */
           nullableDefault?: string | null;
-          id?: components["schemas"]["misskeyIdPattern"];
+          id?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -19043,7 +19756,16 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            required: boolean;
+            string?: string;
+            /** @default hello */
+            default?: string;
+            /** @default hello */
+            nullableDefault?: string | null;
+            id?: components["schemas"]["MisskeyId"];
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -19088,7 +19810,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          username?: components["schemas"]["LocalUsername"];
+          username: components["schemas"]["LocalUsername"];
           [key: string]: unknown;
         };
       };
@@ -19098,7 +19820,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            available?: boolean;
+            available: boolean;
             [key: string]: unknown;
           };
         };
@@ -19216,11 +19938,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -19274,15 +19996,15 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         } | ({
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           username: string;
@@ -19340,15 +20062,15 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         } | ({
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           username: string;
@@ -19406,11 +20128,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -19464,7 +20186,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
           [key: string]: unknown;
@@ -19524,7 +20246,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          name?: string;
+          name: string;
           [key: string]: unknown;
         };
       };
@@ -19578,14 +20300,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          listId?: components["schemas"]["misskeyIdPattern"];
+          listId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -19628,7 +20352,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -19682,15 +20406,17 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          listId: components["schemas"]["misskeyIdPattern"];
-          userId: components["schemas"]["misskeyIdPattern"];
+          listId: components["schemas"]["MisskeyId"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -19733,15 +20459,17 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          listId: components["schemas"]["misskeyIdPattern"];
-          userId: components["schemas"]["misskeyIdPattern"];
+          listId: components["schemas"]["MisskeyId"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -19790,7 +20518,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          listId?: components["schemas"]["misskeyIdPattern"];
+          listId: components["schemas"]["MisskeyId"];
           /** @default false */
           forPublic?: boolean;
           [key: string]: unknown;
@@ -19846,14 +20574,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          listId?: components["schemas"]["misskeyIdPattern"];
+          listId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -19896,14 +20626,16 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          listId?: components["schemas"]["misskeyIdPattern"];
+          listId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -19946,7 +20678,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          listId?: components["schemas"]["misskeyIdPattern"];
+          listId: components["schemas"]["MisskeyId"];
           name?: string;
           isPublic?: boolean;
           [key: string]: unknown;
@@ -20003,7 +20735,7 @@ export interface operations {
       content: {
         "application/json": {
           name: string;
-          listId: components["schemas"]["misskeyIdPattern"];
+          listId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -20057,13 +20789,13 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           /** @default true */
           includeReplies?: boolean;
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           /** @default true */
@@ -20126,11 +20858,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -20184,11 +20916,11 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           /** @default 10 */
           limit?: number;
-          sinceId?: components["schemas"]["misskeyIdPattern"];
-          untilId?: components["schemas"]["misskeyIdPattern"];
+          sinceId?: components["schemas"]["MisskeyId"];
+          untilId?: components["schemas"]["MisskeyId"];
           sinceDate?: number;
           untilDate?: number;
           [key: string]: unknown;
@@ -20301,7 +21033,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"] | components["schemas"]["misskeyIdPattern"][];
+          userId: components["schemas"]["MisskeyId"] | components["schemas"]["MisskeyId"][];
           [key: string]: unknown;
         };
       };
@@ -20311,7 +21043,7 @@ export interface operations {
       200: {
         content: {
           "application/json": {
-            id: components["schemas"]["misskeyIdPattern"];
+            id: components["schemas"]["MisskeyId"];
             isFollowing: boolean;
             hasPendingFollowRequestFromYou: boolean;
             hasPendingFollowRequestToYou: boolean;
@@ -20322,7 +21054,7 @@ export interface operations {
             isRenoteMuted: boolean;
             [key: string]: unknown;
           } | {
-              id: components["schemas"]["misskeyIdPattern"];
+              id: components["schemas"]["MisskeyId"];
               isFollowing: boolean;
               hasPendingFollowRequestFromYou: boolean;
               hasPendingFollowRequestToYou: boolean;
@@ -20377,7 +21109,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           comment: string;
           [key: string]: unknown;
         };
@@ -20385,7 +21117,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -20432,14 +21166,14 @@ export interface operations {
           limit?: number;
           /** @default true */
           detail?: boolean;
-          username?: string | null;
+          username: string | null;
           [key: string]: unknown;
         }) | ({
           /** @default 10 */
           limit?: number;
           /** @default true */
           detail?: boolean;
-          host?: string | null;
+          host: string | null;
           [key: string]: unknown;
         });
       };
@@ -20493,7 +21227,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          query?: string;
+          query: string;
           /** @default 0 */
           offset?: number;
           /** @default 10 */
@@ -20559,15 +21293,15 @@ export interface operations {
       content: {
         "application/json": ({
           host?: string | null;
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         }) | ({
           host?: string | null;
-          userIds?: components["schemas"]["misskeyIdPattern"][];
+          userIds: components["schemas"]["MisskeyId"][];
           [key: string]: unknown;
         }) | ({
           host?: string | null;
-          username?: string;
+          username: string;
           [key: string]: unknown;
         });
       };
@@ -20621,7 +21355,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId?: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           [key: string]: unknown;
         };
       };
@@ -20675,7 +21409,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          userId: components["schemas"]["misskeyIdPattern"];
+          userId: components["schemas"]["MisskeyId"];
           memo: string | null;
           [key: string]: unknown;
         };
@@ -20683,7 +21417,9 @@ export interface operations {
     };
     responses: {
       /** @description OK (without any results) */
-      204: never;
+      204: {
+        content: never;
+      };
       /** @description Client error */
       400: {
         content: {
@@ -20726,7 +21462,7 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          url?: string;
+          url: string;
           [key: string]: unknown;
         };
       };
@@ -20735,7 +21471,9 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+            [key: string]: unknown;
+          };
         };
       };
       /** @description Client error */
@@ -20788,7 +21526,12 @@ export interface operations {
       /** @description OK (with results) */
       200: {
         content: {
-          "application/json": unknown;
+          "application/json": {
+              /** Format: date-time */
+              createdAt: string;
+              users: number;
+              [key: string]: unknown;
+            }[];
         };
       };
       /** @description Client error */
