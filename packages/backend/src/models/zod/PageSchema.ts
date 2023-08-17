@@ -1,7 +1,9 @@
 import { z } from 'zod';
+import { defineOpenApiSpec } from 'zod2spec';
 import { MisskeyIdSchema } from './misc.js';
 import { UserLiteSchema } from './UserLiteSchema.js';
 import { DriveFileSchema } from './DriveFileSchema.js';
+import { PageContentSchema } from './PageContentSchema.js';
 
 export const PageSchema = z.object({
 	id: MisskeyIdSchema,
@@ -10,8 +12,11 @@ export const PageSchema = z.object({
 	title: z.string(),
 	name: z.string(),
 	summary: z.string().nullable(),
-	content: z.array(z.unknown()),
-	variables: z.array(z.unknown()),
+	content: PageContentSchema,
+	variables: defineOpenApiSpec(z.array(z.never()), {
+		type: 'array',
+		maxItems: 0,
+	}),
 	userId: MisskeyIdSchema,
 	user: UserLiteSchema,
 	hideTitleWhenPinned: z.boolean(),

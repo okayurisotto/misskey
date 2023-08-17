@@ -4,6 +4,8 @@ import { awaitAll } from '@/misc/prelude/await-all.js';
 import { bindThis } from '@/decorators.js';
 import type { PageSchema } from '@/models/zod/PageSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { PageContentSchema } from '@/models/zod/PageContentSchema.js';
+import { isNotNull } from '@/misc/is-not-null.js';
 import { UserEntityService } from './UserEntityService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
 import type { drive_file, page, user } from '@prisma/client';
@@ -25,56 +27,34 @@ export class PageEntityService {
 		const page =
 			typeof src === 'object'
 				? src
-				: await this.prismaService.client.page.findUniqueOrThrow({ where: { id: src } });
+				: await this.prismaService.client.page.findUniqueOrThrow({
+						where: { id: src },
+				  });
 
-		const attachedFiles: Promise<drive_file | null>[] = [];
-		const collectFile = (xs: any[]) => {
-			for (const x of xs) {
-				if (x.type === 'image') {
-					attachedFiles.push(
-						this.prismaService.client.drive_file.findUnique({
-							where: {
-								id: x.fileId,
-								userId: page.userId,
-							},
-						}),
-					);
-				}
-				if (x.children) {
-					collectFile(x.children);
-				}
-			}
+		const collectFiles = (
+			xs: z.infer<typeof PageContentSchema>,
+			userId: user['id'],
+		): Promise<drive_file | null>[] => {
+			return xs
+				.map((x) => {
+					return [
+						...(x.type === 'image' && x.fileId !== undefined
+							? [
+									this.prismaService.client.drive_file.findUnique({
+										where: { id: x.fileId, userId },
+									}),
+							  ]
+							: []),
+						...('children' in x && x.children !== undefined
+							? collectFiles(x.children, userId)
+							: []),
+					];
+				})
+				.flat();
 		};
-		collectFile(z.array(z.record(z.string(), z.any())).parse(page.content));
 
-		// 後方互換性のため
-		let migrated = false;
-		const migrate = (xs: any[]) => {
-			for (const x of xs) {
-				if (x.type === 'input') {
-					if (x.inputType === 'text') {
-						x.type = 'textInput';
-					}
-					if (x.inputType === 'number') {
-						x.type = 'numberInput';
-						if (x.default) x.default = parseInt(x.default, 10);
-					}
-					migrated = true;
-				}
-				if (x.children) {
-					migrate(x.children);
-				}
-			}
-		};
-		migrate(z.array(z.record(z.string(), z.any())).parse(page.content));
-		if (migrated) {
-			this.prismaService.client.page.update({
-				where: { id: page.id },
-				data: {
-					content: z.array(z.record(z.string(), z.any())).parse(page.content),
-				},
-			});
-		}
+		const content = PageContentSchema.parse(page.content);
+		const attachedFiles = collectFiles(content, page.userId);
 
 		const result = await awaitAll({
 			user: () => this.userEntityService.pack(page.userId, me), // { detail: true } すると無限ループするので注意
@@ -84,16 +64,14 @@ export class PageEntityService {
 					: Promise.resolve(null),
 			attachedFiles: async () =>
 				this.driveFileEntityService.packMany(
-					(await Promise.all(attachedFiles)).filter(
-						(x): x is drive_file => x != null,
-					),
+					(await Promise.all(attachedFiles)).filter(isNotNull),
 				),
 			isLiked: async () =>
 				meId
-					? await this.prismaService.client.page_like.count({
+					? (await this.prismaService.client.page_like.count({
 							where: { pageId: page.id, userId: meId },
 							take: 1,
-					  }) > 0
+					  })) > 0
 					: undefined,
 		});
 
@@ -103,8 +81,8 @@ export class PageEntityService {
 			updatedAt: page.updatedAt.toISOString(),
 			userId: page.userId,
 			user: result.user,
-			content: z.array(z.record(z.string(), z.any())).parse(page.content),
-			variables: z.array(z.record(z.string(), z.any())).parse(page.variables),
+			content: content,
+			variables: [],
 			title: page.title,
 			name: page.name,
 			summary: page.summary,

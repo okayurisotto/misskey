@@ -1,13 +1,15 @@
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
+import { defineOpenApiSpec } from 'zod2spec';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { PageSchema } from '@/models/zod/PageSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { PageContentSchema } from '@/models/zod/PageContentSchema.js';
+import { ApiError } from '../../error.js';
 
 const res = PageSchema;
 export const meta = {
@@ -38,8 +40,11 @@ export const paramDef = z.object({
 	title: z.string(),
 	name: z.string().min(1),
 	summary: z.string().nullable().optional(),
-	content: z.array(z.record(z.string(), z.any())),
-	variables: z.array(z.record(z.string(), z.any())),
+	content: PageContentSchema,
+	variables: defineOpenApiSpec(z.array(z.never()), {
+		type: 'array',
+		maxItems: 0,
+	}),
 	script: z.string(),
 	eyeCatchingImageId: MisskeyIdSchema.nullable().optional(),
 	font: z.enum(['serif', 'sans-serif']).default('sans-serif'),
