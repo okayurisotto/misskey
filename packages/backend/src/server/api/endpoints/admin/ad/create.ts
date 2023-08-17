@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { AdSchema } from '@/models/zod/AdSchema.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -10,17 +11,7 @@ export const meta = {
 	requireModerator: true,
 } as const;
 
-export const paramDef = z.object({
-	url: z.string().min(1),
-	memo: z.string(),
-	place: z.string(),
-	priority: z.string(),
-	ratio: z.number().int(),
-	expiresAt: z.number().int(),
-	startsAt: z.number().int(),
-	imageUrl: z.string().min(1),
-	dayOfWeek: z.number().int(),
-});
+export const paramDef = AdSchema.omit({ id: true });
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

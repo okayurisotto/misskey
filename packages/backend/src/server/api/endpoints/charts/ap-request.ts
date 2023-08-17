@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import ApRequestChart from '@/core/chart/charts/ap-request.js';
+import { limit } from '@/models/zod/misc.js';
 
 const res = z.object({
 	deliverFailed: z.array(z.number()),
@@ -17,7 +18,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	span: z.enum(['day', 'hour']),
-	limit: z.number().int().min(1).max(500).default(30),
+	limit: limit({ max: 500, default: 30 }),
 	offset: z.number().int().nullable().default(null),
 });
 

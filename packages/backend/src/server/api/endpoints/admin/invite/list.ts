@@ -4,6 +4,7 @@ import type { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { InviteCodeEntityService } from '@/core/entities/InviteCodeEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { limit } from '@/models/zod/misc.js';
 
 const res = z.array(z.unknown());
 export const meta = {
@@ -14,7 +15,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	limit: z.number().int().min(1).max(100).default(30),
+	limit: limit({ max: 100, default: 30 }),
 	offset: z.number().int().default(0),
 	type: z.enum(['unused', 'used', 'expired', 'all']).default('all'),
 	sort: z.enum(['+createdAt', '-createdAt', '+usedAt', '-usedAt']).optional(),

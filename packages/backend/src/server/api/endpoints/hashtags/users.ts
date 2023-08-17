@@ -6,6 +6,7 @@ import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { limit } from '@/models/zod/misc.js';
 
 const res = z.array(UserDetailedSchema);
 export const meta = {
@@ -16,7 +17,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	tag: z.string(),
-	limit: z.number().int().min(1).max(100).default(10),
+	limit: limit({ max: 100, default: 10 }),
 	sort: z.enum([
 		'+follower',
 		'-follower',

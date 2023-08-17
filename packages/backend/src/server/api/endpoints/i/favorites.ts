@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteFavoriteEntityService } from '@/core/entities/NoteFavoriteEntityService.js';
 import { NoteFavoriteSchema } from '@/models/zod/NoteFavoriteSchema.js';
-import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -16,7 +16,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	limit: z.number().int().min(1).max(60).default(10),
+	limit: limit({ max: 60, default: 10 }),
 	sinceId: MisskeyIdSchema.optional(),
 	untilId: MisskeyIdSchema.optional(),
 });

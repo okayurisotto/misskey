@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';
-import { LocalUsernameSchema } from '@/models/zod/misc.js';
+import { LocalUsernameSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -18,7 +18,7 @@ export const meta = {
 export const paramDef = z.object({
 	query: z.string(),
 	offset: z.number().int().default(0),
-	limit: z.number().int().min(1).max(100).default(10),
+	limit: limit({ max: 100, default: 10 }),
 	origin: z.enum(['local', 'remote', 'combined']).default('combined'),
 	detail: z.boolean().default(true),
 });

@@ -3,11 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { SignupService } from '@/core/SignupService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { PasswordSchema, LocalUsernameSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 
-const res = UserDetailedSchema;
+const res = UserDetailedNotMeSchema.extend({ token: z.string() });
 export const meta = {
 	tags: ['admin'],
 	res,

@@ -1,3 +1,4 @@
+import { OpenApiZod } from 'zod2spec/built/type.js';
 import {
 	AbuseUserReportSchema,
 	AdSchema,
@@ -94,4 +95,4 @@ export const models = [
 	{ key: 'UserDetailedNotMeOnly', schema: UserDetailedNotMeOnlySchema },
 	{ key: 'UserList', schema: UserListSchema },
 	{ key: 'UserLite', schema: UserLiteSchema },
-];
+] as { key: string; schema: OpenApiZod }[]; // VS Code上では型エラーにならないが`typecheck`したときにはエラーとして出力されてしまうため、`as`で黙らせている

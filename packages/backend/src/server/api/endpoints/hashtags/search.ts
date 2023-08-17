@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { limit } from '@/models/zod/misc.js';
 
 const res = z.array(z.string());
 export const meta = {
@@ -11,7 +12,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	limit: z.number().int().min(1).max(100).default(10),
+	limit: limit({ max: 100, default: 10 }),
 	query: z.string(),
 	offset: z.number().int().default(0),
 });

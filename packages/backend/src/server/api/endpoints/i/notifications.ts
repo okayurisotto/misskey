@@ -9,7 +9,7 @@ import { NotificationService } from '@/core/NotificationService.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { NotificationSchema } from '@/models/zod/NotificationSchema.js';
-import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
 const RedisNotificationSchema = z.object({
@@ -41,7 +41,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	limit: z.number().int().min(1).max(100).default(10),
+	limit: limit({ max: 100, default: 10 }),
 	sinceId: MisskeyIdSchema.optional(),
 	untilId: MisskeyIdSchema.optional(),
 	markAsRead: z.boolean().default(true),

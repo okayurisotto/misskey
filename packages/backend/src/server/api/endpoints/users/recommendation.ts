@@ -6,6 +6,7 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import { limit } from '@/models/zod/misc.js';
 
 const res = z.array(UserDetailedSchema);
 export const meta = {
@@ -18,7 +19,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	limit: z.number().int().min(1).max(100).default(10),
+	limit: limit({ max: 100, default: 10 }),
 	offset: z.number().int().default(0),
 });
 

@@ -3,7 +3,7 @@ import z from 'zod';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteReactionEntityService } from '@/core/entities/NoteReactionEntityService.js';
 import { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
-import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma } from '@prisma/client';
 
@@ -26,7 +26,7 @@ export const meta = {
 export const paramDef = z.object({
 	noteId: MisskeyIdSchema,
 	type: z.string().nullable().optional(),
-	limit: z.number().int().min(1).max(100).default(10),
+	limit: limit({ max: 100, default: 10 }),
 	offset: z.number().int().default(0),
 	sinceId: MisskeyIdSchema.optional(),
 	untilId: MisskeyIdSchema.optional(),

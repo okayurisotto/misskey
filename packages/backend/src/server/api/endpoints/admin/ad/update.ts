@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { AdSchema } from '@/models/zod/AdSchema.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -18,18 +18,7 @@ export const meta = {
 	},
 } as const;
 
-export const paramDef = z.object({
-	id: MisskeyIdSchema,
-	memo: z.string(),
-	url: z.string().min(1),
-	imageUrl: z.string().min(1),
-	place: z.string(),
-	priority: z.string(),
-	ratio: z.number().int(),
-	expiresAt: z.number().int(),
-	startsAt: z.number().int(),
-	dayOfWeek: z.number().int(),
-});
+export const paramDef = AdSchema;
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

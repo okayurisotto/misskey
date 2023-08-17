@@ -6,6 +6,7 @@ import { MetaService } from '@/core/MetaService.js';
 import { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma } from '@prisma/client';
+import { limit } from '@/models/zod/misc.js';
 
 const res = z.array(FederationInstanceSchema);
 export const meta = {
@@ -24,7 +25,7 @@ export const paramDef = z.object({
 	federating: z.boolean().nullable().optional(),
 	subscribing: z.boolean().nullable().optional(),
 	publishing: z.boolean().nullable().optional(),
-	limit: z.number().int().min(1).max(100).default(30),
+	limit: limit({ max: 100, default: 30 }),
 	offset: z.number().int().default(0),
 	sort: z.string().optional(),
 });

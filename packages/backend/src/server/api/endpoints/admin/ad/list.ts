@@ -2,9 +2,10 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { AdSchema } from '@/models/zod/AdSchema.js';
-import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import { AdEntityService } from '@/core/entities/AdEntityService.js';
 
 const res = z.array(AdSchema);
 export const meta = {
@@ -14,11 +15,9 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	limit: z.number().int().min(1).max(100).default(10),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-});
+export const paramDef = z
+	.object({ limit: limit({ max: 100, default: 10 }) })
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -28,6 +27,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
+		private readonly adEntityService: AdEntityService,
 		private readonly prismaService: PrismaService,
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
@@ -43,7 +43,7 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return ads satisfies z.infer<typeof res>;
+			return ads.map((ad) => this.adEntityService.pack(ad));
 		});
 	}
 }

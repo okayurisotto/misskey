@@ -7,7 +7,7 @@ import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -28,7 +28,7 @@ export const paramDef = z.object({
 	query: z.string(),
 	sinceId: MisskeyIdSchema.optional(),
 	untilId: MisskeyIdSchema.optional(),
-	limit: z.number().int().min(1).max(100).default(10),
+	limit: limit({ max: 100, default: 10 }),
 	offset: z.number().int().default(0),
 	host: z
 		.string()

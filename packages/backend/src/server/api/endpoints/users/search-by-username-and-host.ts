@@ -7,6 +7,7 @@ import { DI } from '@/di-symbols.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma, user } from '@prisma/client';
+import { limit } from '@/models/zod/misc.js';
 
 const res = z.array(UserSchema);
 export const meta = {
@@ -17,7 +18,7 @@ export const meta = {
 } as const;
 
 const paramDef_base = z.object({
-	limit: z.number().int().min(1).max(100).default(10),
+	limit: limit({ max: 100, default: 10 }),
 	detail: z.boolean().default(true),
 });
 export const paramDef = z.union([

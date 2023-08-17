@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import PerUserDriveChart from '@/core/chart/charts/per-user-drive.js';
-import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
 
 const res = z.object({
 	totalCount: z.array(z.number()),
@@ -21,7 +21,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	span: z.enum(['day', 'hour']),
-	limit: z.number().int().min(1).max(500).default(30),
+	limit: limit({ max: 500, default: 30 }),
 	offset: z.number().int().nullable().default(null),
 	userId: MisskeyIdSchema,
 });

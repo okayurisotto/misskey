@@ -4,7 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
-import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
@@ -31,7 +31,7 @@ export const meta = {
 
 export const paramDef = z.object({
 	userId: MisskeyIdSchema,
-	limit: z.number().int().min(1).max(100).default(10),
+	limit: limit({ max: 100, default: 10 }),
 });
 
 @Injectable()

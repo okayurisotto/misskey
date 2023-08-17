@@ -6,6 +6,7 @@ import { IdService } from '@/core/IdService.js';
 import { generateInviteCode } from '@/misc/generate-invite-code.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
+import { limit } from '@/models/zod/misc.js';
 
 const res = z.array(z.object({ code: z.string() }));
 export const meta = {
@@ -23,7 +24,7 @@ export const meta = {
 } as const;
 
 export const paramDef = z.object({
-	count: z.number().int().min(1).max(100).default(1),
+	count: limit({ max: 100, default: 1 }),
 	expiresAt: z.string().nullable().optional(),
 });
 
