@@ -42,9 +42,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
-				history.map((record) => this.signinEntityService.pack(record)),
-			)) satisfies z.infer<typeof res>;
+			return history.map((record) =>
+				this.signinEntityService.pack(record),
+			) satisfies z.infer<typeof res>;
 		});
 	}
 }

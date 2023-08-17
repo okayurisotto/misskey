@@ -7,7 +7,7 @@ export class SigninEntityService {
 	constructor() {}
 
 	@bindThis
-	public async pack(src: signin) {
+	public pack(src: signin): signin {
 		return src;
 	}
 }

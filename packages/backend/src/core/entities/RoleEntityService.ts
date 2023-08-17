@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
+import { fromEntries, toEntries } from 'omick';
 import { bindThis } from '@/decorators.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -12,39 +13,87 @@ import type { role, user } from '@prisma/client';
 export class RoleEntityService {
 	constructor(private readonly prismaService: PrismaService) {}
 
+	/**
+	 * `role`をpackする。
+	 *
+	 * @param src
+	 * @param _me 使われていない。
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: role['id'] | role,
-		me?: { id: user['id'] } | null | undefined,
+		_me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof RoleSchema>> {
 		const role =
 			typeof src === 'object'
 				? src
-				: await this.prismaService.client.role.findUniqueOrThrow({ where: { id: src } });
+				: await this.prismaService.client.role.findUniqueOrThrow({
+						where: { id: src },
+				  });
 
-		const assignedCount = await this.prismaService.client.role_assignment.count({
-			where: {
-				roleId: role.id,
-				OR: [
-					{ expiresAt: null },
-					{ expiresAt: { gt: new Date() } }
-				],
+		const assignedCount = await this.prismaService.client.role_assignment.count(
+			{
+				where: {
+					roleId: role.id,
+					OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+				},
 			},
-		});
+		);
 
-		let policies = RolePoliciesSchema.parse(role.policies);
-		for (const [k, v] of Object.entries(DEFAULT_POLICIES)) {
-			if (!(k in policies)) {
-				policies = {
-					...policies,
-					[k]: {
-						useDefault: true,
-						priority: 0,
-						value: v,
-					},
-				}
-			}
-		}
+		const policies = {
+			...fromEntries(
+				toEntries(DEFAULT_POLICIES).map(([k, v]) => {
+					switch (k) {
+						case 'gtlAvailable':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'ltlAvailable':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'canPublicNote':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'canInvite':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'inviteLimit':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'inviteLimitCycle':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'inviteExpirationTime':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'canManageCustomEmojis':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'canSearchNotes':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'canHideAds':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'driveCapacityMb':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'alwaysMarkNsfw':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'pinLimit':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'antennaLimit':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'wordMuteLimit':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'webhookLimit':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'clipLimit':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'noteEachClipsLimit':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'userListLimit':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'userEachUserListsLimit':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						case 'rateLimitFactor':
+							return [k, { useDefault: true, priority: 0, value: v }];
+						default:
+							return k satisfies never;
+					}
+				}),
+			),
+			...RolePoliciesSchema.parse(role.policies),
+		};
 
 		return {
 			id: role.id,

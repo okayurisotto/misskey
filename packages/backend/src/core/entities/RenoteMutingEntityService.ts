@@ -13,6 +13,13 @@ export class RenoteMutingEntityService {
 		private readonly userEntityService: UserEntityService,
 	) {}
 
+	/**
+	 * `renote_muting`をpackする。
+	 *
+	 * @param src
+	 * @param me
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: renote_muting['id'] | renote_muting,
@@ -21,7 +28,9 @@ export class RenoteMutingEntityService {
 		const muting =
 			typeof src === 'object'
 				? src
-				: await this.prismaService.client.renote_muting.findUniqueOrThrow({ where: { id: src } });
+				: await this.prismaService.client.renote_muting.findUniqueOrThrow({
+						where: { id: src },
+				  });
 
 		return {
 			id: muting.id,

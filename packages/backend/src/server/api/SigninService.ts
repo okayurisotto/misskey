@@ -32,7 +32,7 @@ export class SigninService {
 			});
 
 			// Publish signin event
-			this.globalEventService.publishMainStream(user.id, 'signin', await this.signinEntityService.pack(record));
+			this.globalEventService.publishMainStream(user.id, 'signin', this.signinEntityService.pack(record));
 		});
 
 		reply.code(200);

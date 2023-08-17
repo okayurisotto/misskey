@@ -63,8 +63,7 @@ export class UserEntityService implements OnModuleInit {
 		private readonly redisClient: Redis.Redis,
 
 		private readonly prismaService: PrismaService,
-	) {
-	}
+	) {}
 
 	onModuleInit(): void {
 		this.apPersonService = this.moduleRef.get('ApPersonService');
@@ -79,8 +78,28 @@ export class UserEntityService implements OnModuleInit {
 	public isLocalUser = isLocalUser;
 	public isRemoteUser = isRemoteUser;
 
+	/**
+	 * `me`と`target`の関係を取得する。
+	 *
+	 * @param me
+	 * @param target
+	 * @returns
+	 */
 	@bindThis
-	public async getRelation(me: user['id'], target: user['id']) {
+	public async getRelation(
+		me: user['id'],
+		target: user['id'],
+	): Promise<{
+		id: string;
+		isFollowing: boolean;
+		isFollowed: boolean;
+		hasPendingFollowRequestFromYou: boolean;
+		hasPendingFollowRequestToYou: boolean;
+		isBlocking: boolean;
+		isBlocked: boolean;
+		isMuted: boolean;
+		isRenoteMuted: boolean;
+	}> {
 		const result = await awaitAll({
 			isFollowing: (): Promise<boolean> =>
 				this.prismaService.client.following.count({
@@ -130,6 +149,12 @@ export class UserEntityService implements OnModuleInit {
 		};
 	}
 
+	/**
+	 * そのユーザーがまだ読んでいない`announcement`があるかどうか調べる。
+	 *
+	 * @param userId
+	 * @returns
+	 */
 	@bindThis
 	public async getHasUnreadAnnouncement(userId: user['id']): Promise<boolean> {
 		const reads = await this.prismaService.client.announcement_read.findMany({
@@ -146,11 +171,24 @@ export class UserEntityService implements OnModuleInit {
 		return count > 0;
 	}
 
+	/**
+	 * そのユーザーがまだ読んでいない`antenna`があるかどうか調べる。
+	 * 未実装
+	 *
+	 * @param userId 使われていない
+	 * @returns
+	 */
 	@bindThis
 	public async getHasUnreadAntenna(userId: user['id']): Promise<boolean> {
-		return false; // TODO
+		return false;
 	}
 
+	/**
+	 * そのユーザーがまだ読んでいない`notification`があるかどうか調べる。
+	 *
+	 * @param userId
+	 * @returns
+	 */
 	@bindThis
 	public async getHasUnreadNotification(userId: user['id']): Promise<boolean> {
 		const latestReadNotificationId = await this.redisClient.get(`latestReadNotification:${userId}`);
@@ -160,11 +198,17 @@ export class UserEntityService implements OnModuleInit {
 			'+',
 			'-',
 			'COUNT', 1);
-		const latestNotificationId = latestNotificationIdsRes[0]?.[0];
+		const latestNotificationId = latestNotificationIdsRes.at(0)?.at(0);
 
 		return latestNotificationId != null && (latestReadNotificationId == null || latestReadNotificationId < latestNotificationId);
 	}
 
+	/**
+	 * そのユーザーがまだ解決していない`follow_request`があるか調べる。
+	 *
+	 * @param userId
+	 * @returns
+	 */
 	@bindThis
 	public async getHasPendingReceivedFollowRequest(userId: user['id']): Promise<boolean> {
 		const count = await this.prismaService.client.follow_request.count({
@@ -175,6 +219,12 @@ export class UserEntityService implements OnModuleInit {
 		return count > 0;
 	}
 
+	/**
+	 * そのユーザーのオンライン状態を取得する。
+	 *
+	 * @param user
+	 * @returns
+	 */
 	@bindThis
 	public getOnlineStatus(user: user): 'unknown' | 'online' | 'active' | 'offline' {
 		if (user.hideOnlineStatus) return 'unknown';
@@ -187,17 +237,35 @@ export class UserEntityService implements OnModuleInit {
 		);
 	}
 
+	/**
+	 * `user`からidenticonのURLを得る。
+	 *
+	 * @param user
+	 * @returns
+	 */
 	@bindThis
 	public getIdenticonUrl(user: user): string {
 		return `${this.config.url}/identicon/${user.username.toLowerCase()}@${user.host ?? this.config.host}`;
 	}
 
+	/**
+	 * `user`からそのユーザーを表示するURLを得る
+	 *
+	 * @param user
+	 * @returns
+	 */
 	@bindThis
 	public getUserUri(user: LocalUser | PartialLocalUser | RemoteUser | PartialRemoteUser): string {
 		return this.isRemoteUser(user)
 			? user.uri : this.genLocalUserUri(user.id);
 	}
 
+	/**
+	 * `LocalUser`の`userId`からそのユーザーを表示するURLを得る
+	 *
+	 * @param userId
+	 * @returns
+	 */
 	@bindThis
 	public genLocalUserUri(userId: string): string {
 		return `${this.config.url}/users/${userId}`;
@@ -268,10 +336,10 @@ export class UserEntityService implements OnModuleInit {
 		const isModerator = isMe && opts.detail ? this.roleService.isModerator(user) : null;
 		const isAdmin = isMe && opts.detail ? this.roleService.isAdministrator(user) : null;
 
-		const falsy = opts.detail ? false : undefined;
-
+		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 		const getDetail = async () => {
 			if (!opts.detail) return {};
+			if (profile === null) throw new Error(`opts.detail is true, but profile is null.`);
 
 			const result = await awaitAll({
 				movedTo: () =>
@@ -288,11 +356,11 @@ export class UserEntityService implements OnModuleInit {
 				pinnedNotes: () =>
 					this.noteEntityService.packMany(pins.map(pin => pin.note), me, { detail: true }),
 				pinnedPage: () =>
-					profile!.pinnedPageId
-						? this.pageEntityService.pack(profile!.pinnedPageId, me)
+					profile.pinnedPageId
+						? this.pageEntityService.pack(profile.pinnedPageId, me)
 						: Promise.resolve(null),
 				securityKeys: () =>
-					profile!.twoFactorEnabled
+					profile.twoFactorEnabled
 						? this.prismaService.client.user_security_key.count({ where: { userId: user.id }, take: 1 }).then(result => result > 0)
 						: Promise.resolve(false),
 				roles: () =>
@@ -318,7 +386,7 @@ export class UserEntityService implements OnModuleInit {
 			});
 
 			return {
-				url: profile!.url,
+				url: profile.url,
 				uri: user.uri,
 				movedTo: result.movedTo,
 				alsoKnownAs: result.alsoKnownAs,
@@ -329,32 +397,34 @@ export class UserEntityService implements OnModuleInit {
 				bannerBlurhash: user.bannerBlurhash,
 				isLocked: user.isLocked,
 				isSilenced: result.isSilenced,
-				isSuspended: user.isSuspended ?? falsy,
-				description: profile!.description,
-				location: profile!.location,
-				birthday: profile!.birthday,
-				lang: profile!.lang,
-				fields: profile!.fields,
+				isSuspended: user.isSuspended,
+				description: profile.description,
+				location: profile.location,
+				birthday: profile.birthday,
+				lang: profile.lang,
+				fields: profile.fields,
 				followersCount: followersCount ?? 0,
 				followingCount: followingCount ?? 0,
 				notesCount: user.notesCount,
 				pinnedNoteIds: pins.map(pin => pin.noteId),
 				pinnedNotes: result.pinnedNotes,
-				pinnedPageId: profile!.pinnedPageId,
+				pinnedPageId: profile.pinnedPageId,
 				pinnedPage: result.pinnedPage,
-				publicReactions: profile!.publicReactions,
-				ffVisibility: profile!.ffVisibility,
-				twoFactorEnabled: profile!.twoFactorEnabled,
-				usePasswordLessLogin: profile!.usePasswordLessLogin,
+				publicReactions: profile.publicReactions,
+				ffVisibility: profile.ffVisibility,
+				twoFactorEnabled: profile.twoFactorEnabled,
+				usePasswordLessLogin: profile.usePasswordLessLogin,
 				securityKeys: result.securityKeys,
 				roles: result.roles,
 				memo: result.memos,
-				moderationNote: iAmModerator ? (profile!.moderationNote ?? '') : undefined,
+				moderationNote: iAmModerator ? profile.moderationNote : undefined,
 			};
 		};
 
+		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 		const getDetailMe = async () => {
 			if (!opts.detail) return {};
+			if (profile === null) throw new Error(`opts.detail is true, but profile is null.`);
 			if (!isMe) return {};
 
 			const result = await awaitAll({
@@ -381,14 +451,14 @@ export class UserEntityService implements OnModuleInit {
 				bannerId: user.bannerId,
 				isModerator: result.isModerator,
 				isAdmin: result.isAdmin,
-				injectFeaturedNote: profile!.injectFeaturedNote,
-				receiveAnnouncementEmail: profile!.receiveAnnouncementEmail,
-				alwaysMarkNsfw: profile!.alwaysMarkNsfw,
-				autoSensitive: profile!.autoSensitive,
-				carefulBot: profile!.carefulBot,
-				autoAcceptFollowed: profile!.autoAcceptFollowed,
-				noCrawle: profile!.noCrawle,
-				preventAiLearning: profile!.preventAiLearning,
+				injectFeaturedNote: profile.injectFeaturedNote,
+				receiveAnnouncementEmail: profile.receiveAnnouncementEmail,
+				alwaysMarkNsfw: profile.alwaysMarkNsfw,
+				autoSensitive: profile.autoSensitive,
+				carefulBot: profile.carefulBot,
+				autoAcceptFollowed: profile.autoAcceptFollowed,
+				noCrawle: profile.noCrawle,
+				preventAiLearning: profile.preventAiLearning,
 				isExplorable: user.isExplorable,
 				isDeleted: user.isDeleted,
 				hideOnlineStatus: user.hideOnlineStatus,
@@ -399,23 +469,25 @@ export class UserEntityService implements OnModuleInit {
 				hasUnreadChannel: false, // 後方互換性のため
 				hasUnreadNotification: result.hasUnreadNotification,
 				hasPendingReceivedFollowRequest: result.hasPendingReceivedFollowRequest,
-				mutedWords: profile!.mutedWords,
-				mutedInstances: profile!.mutedInstances,
-				mutingNotificationTypes: profile!.mutingNotificationTypes,
-				emailNotificationTypes: profile!.emailNotificationTypes,
-				achievements: profile!.achievements,
-				loggedInDays: profile!.loggedInDates.length,
+				mutedWords: profile.mutedWords,
+				mutedInstances: profile.mutedInstances,
+				mutingNotificationTypes: profile.mutingNotificationTypes,
+				emailNotificationTypes: profile.emailNotificationTypes,
+				achievements: profile.achievements,
+				loggedInDays: profile.loggedInDates.length,
 				policies: result.policies,
 			};
 		};
 
+		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 		const getSecrets = async () => {
 			if (!opts.includeSecrets) return {};
+			if (profile === null) throw new Error(`opts.includeSecrets is true, but profile is null.`);
 
 			return {
-				email: profile!.email,
-				emailVerified: profile!.emailVerified,
-				securityKeysList: profile!.twoFactorEnabled
+				email: profile.email,
+				emailVerified: profile.emailVerified,
+				securityKeysList: profile.twoFactorEnabled
 					? await this.prismaService.client.user_security_key.findMany({
 						where: { userId: user.id },
 						select: { id: true, name: true, lastUsed: true },
@@ -424,6 +496,7 @@ export class UserEntityService implements OnModuleInit {
 			};
 		};
 
+		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
 		const getRelation = async () => {
 			if (!relation) return {};
 
@@ -477,8 +550,8 @@ export class UserEntityService implements OnModuleInit {
 			host: user.host,
 			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
 			avatarBlurhash: user.avatarBlurhash,
-			isBot: user.isBot ?? falsy,
-			isCat: user.isCat ?? falsy,
+			isBot: user.isBot,
+			isCat: user.isCat,
 			instance: result.instance,
 			emojis: result.emojis,
 			onlineStatus: this.getOnlineStatus(user),

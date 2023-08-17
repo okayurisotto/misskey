@@ -18,6 +18,13 @@ export class PageEntityService {
 		private readonly userEntityService: UserEntityService,
 	) {}
 
+	/**
+	 * `page`をpackする。
+	 *
+	 * @param src
+	 * @param me
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: page['id'] | page,

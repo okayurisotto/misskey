@@ -13,6 +13,13 @@ export class PageLikeEntityService {
 		private readonly prismaService: PrismaService,
 	) {}
 
+	/**
+	 * `page_like`をpackする。
+	 *
+	 * @param src
+	 * @param me
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: page_like['id'] | page_like,
