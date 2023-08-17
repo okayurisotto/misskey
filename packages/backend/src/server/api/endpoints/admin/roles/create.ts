@@ -6,7 +6,7 @@ import { IdService } from '@/core/IdService.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RoleSchema } from '@/models/zod/RoleSchema.js';
-import { RoleCondForumaValueSchema } from '@/models/zod/RoleCondFormula.js';
+import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
 import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 
 const res = RoleSchema;
@@ -23,7 +23,7 @@ export const paramDef = z.object({
 	color: z.string().nullable(),
 	iconUrl: z.string().nullable(),
 	target: z.enum(['manual', 'conditional']),
-	condFormula: RoleCondForumaValueSchema,
+	condFormula: RoleCondFormulaValueSchema,
 	isPublic: z.boolean(),
 	isModerator: z.boolean(),
 	isAdministrator: z.boolean(),

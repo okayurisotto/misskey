@@ -8,8 +8,8 @@ import { RoleService } from '@/core/RoleService.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
 import { ApiError } from '../../error.js';
-import { ExportedAntennaSchema } from '@/models/zod/ExportedAntenna.js';
 
 export const meta = {
 	secure: true,

@@ -4,7 +4,7 @@ import { bindThis } from '@/decorators.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RoleSchema } from '@/models/zod/RoleSchema.js';
-import { RoleCondForumaValueSchema } from '@/models/zod/RoleCondFormula.js';
+import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
 import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 import type { role, user } from '@prisma/client';
 
@@ -55,7 +55,7 @@ export class RoleEntityService {
 			color: role.color,
 			iconUrl: role.iconUrl,
 			target: role.target,
-			condFormula: RoleCondForumaValueSchema.parse(role.condFormula),
+			condFormula: RoleCondFormulaValueSchema.parse(role.condFormula),
 			isPublic: role.isPublic,
 			isAdministrator: role.isAdministrator,
 			isModerator: role.isModerator,

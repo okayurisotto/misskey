@@ -1,5 +1,5 @@
 import type { IActivity } from '@/core/activitypub/type.js';
-import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntenna.js';
+import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
 import type httpSignature from '@peertube/http-signature';
 import type { note, webhook, drive_file, user } from '@prisma/client';
 import type { z } from 'zod';

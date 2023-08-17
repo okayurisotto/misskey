@@ -12,7 +12,7 @@ import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { RoleCondForumaValueSchema } from '@/models/zod/RoleCondFormula.js';
+import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
 import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { role, role_assignment, user } from '@prisma/client';
@@ -142,7 +142,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private evalCond(user: user, value: z.infer<typeof RoleCondForumaValueSchema>): boolean {
+	private evalCond(user: user, value: z.infer<typeof RoleCondFormulaValueSchema>): boolean {
 		try {
 			switch (value.type) {
 				case 'and': {
@@ -211,7 +211,7 @@ export class RoleService implements OnApplicationShutdown {
 		const assigns = await this.getUserAssigns(userId);
 		const assignedRoles = roles.filter(r => assigns.map(x => x.roleId).includes(r.id));
 		const user = roles.some(r => r.target === 'conditional') ? await this.cacheService.findUserById(userId) : null;
-		const matchedCondRoles = roles.filter(r => r.target === 'conditional' && this.evalCond(user!, RoleCondForumaValueSchema.parse(r.condFormula)));
+		const matchedCondRoles = roles.filter(r => r.target === 'conditional' && this.evalCond(user!, RoleCondFormulaValueSchema.parse(r.condFormula)));
 		return [...assignedRoles, ...matchedCondRoles];
 	}
 
@@ -233,7 +233,7 @@ export class RoleService implements OnApplicationShutdown {
 		const badgeCondRoles = roles.filter(r => r.asBadge && (r.target === 'conditional'));
 		if (badgeCondRoles.length > 0) {
 			const user = roles.some(r => r.target === 'conditional') ? await this.cacheService.findUserById(userId) : null;
-			const matchedBadgeCondRoles = badgeCondRoles.filter(r => this.evalCond(user!, RoleCondForumaValueSchema.parse(r.condFormula)));
+			const matchedBadgeCondRoles = badgeCondRoles.filter(r => this.evalCond(user!, RoleCondFormulaValueSchema.parse(r.condFormula)));
 			return [...assignedBadgeRoles, ...matchedBadgeCondRoles];
 		} else {
 			return assignedBadgeRoles;

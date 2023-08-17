@@ -5,7 +5,7 @@ import type { webhookEventTypes } from '@/models/entities/Webhook.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
-import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntenna.js';
+import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
 import type { DbQueue, DeliverQueue, EndedPollNotificationQueue, InboxQueue, ObjectStorageQueue, RelationshipQueue, SystemQueue, WebhookDeliverQueue } from './QueueModule.js';
 import type { DbJobData, DeliverJobData, RelationshipJobData, ThinUser } from '../queue/types.js';
 import type httpSignature from '@peertube/http-signature';

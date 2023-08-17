@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { RoleCondForumaValueSchema } from './RoleCondFormula.js';
+import { RoleCondFormulaValueSchema } from './RoleCondFormulaSchema.js';
 import { MisskeyIdSchema } from './misc.js';
 import { RolePoliciesSchema } from './RolePoliciesSchema.js';
 
@@ -12,7 +12,7 @@ export const RoleSchema = z.object({
 	color: z.string().nullable(),
 	iconUrl: z.string().nullable(),
 	target: z.enum(['manual', 'conditional']),
-	condFormula: RoleCondForumaValueSchema,
+	condFormula: RoleCondFormulaValueSchema,
 	isPublic: z.boolean(),
 	isModerator: z.boolean(),
 	isAdministrator: z.boolean(),

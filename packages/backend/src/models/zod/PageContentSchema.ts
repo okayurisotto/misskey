@@ -9,15 +9,13 @@ const PageContentSectionItemSchemaBase = z.object({
 type PageContentSectionItemSchemaType = z.infer<
 	typeof PageContentSectionItemSchemaBase
 > & {
-	children?: z.infer<typeof PageContentItemSchema>[];
+	children?: z.infer<typeof PageContentSchema>;
 };
 const PageContentSectionItemSchema: z.ZodType<PageContentSectionItemSchemaType> =
 	PageContentSectionItemSchemaBase.extend({
-		children: z.array(
-			defineOpenApiSpec(
-				z.lazy(() => PageContentItemSchema),
-				{ $ref: '#/components/schemas/PageContentItem' },
-			),
+		children: defineOpenApiSpec(
+			z.lazy(() => PageContentSchema),
+			{ $ref: '#/components/schemas/PageContent' },
 		),
 	});
 

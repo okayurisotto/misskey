@@ -5,7 +5,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApiError } from '@/server/api/error.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { RoleCondForumaValueSchema } from '@/models/zod/RoleCondFormula.js';
+import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
 import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 
 export const meta = {
@@ -28,7 +28,7 @@ export const paramDef = z.object({
 	color: z.string().nullable(),
 	iconUrl: z.string().nullable(),
 	target: z.enum(['manual', 'conditional']),
-	condFormula: RoleCondForumaValueSchema,
+	condFormula: RoleCondFormulaValueSchema,
 	isPublic: z.boolean(),
 	isModerator: z.boolean(),
 	isAdministrator: z.boolean(),

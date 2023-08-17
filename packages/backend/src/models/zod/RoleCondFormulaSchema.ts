@@ -13,12 +13,17 @@ const RoleCondFormulaValueAndSchema_ = z.object({
 type RoleCondFormulaValueAndSchemaType = z.infer<
 	typeof RoleCondFormulaValueAndSchema_
 > & {
-	values: RoleCondFormulaValue[];
+	values: z.infer<typeof RoleCondFormulaValueSchema>[];
 };
 
 const RoleCondFormulaValueAndSchema: z.ZodType<RoleCondFormulaValueAndSchemaType> =
 	RoleCondFormulaValueAndSchema_.extend({
-		values: z.array(z.lazy(() => RoleCondForumaValueSchema)),
+		values: z.array(
+			defineOpenApiSpec(
+				z.lazy(() => RoleCondFormulaValueSchema),
+				{ $ref: '#/components/schemas/RoleCondFormulaValue' },
+			),
+		),
 	});
 
 const RoleCondFormulaValueOrSchema_ = z.object({
@@ -28,12 +33,17 @@ const RoleCondFormulaValueOrSchema_ = z.object({
 type RoleCondFormulaValueOrSchemaType = z.infer<
 	typeof RoleCondFormulaValueOrSchema_
 > & {
-	values: RoleCondFormulaValue[];
+	values: z.infer<typeof RoleCondFormulaValueSchema>[];
 };
 
 const RoleCondFormulaValueOrSchema: z.ZodType<RoleCondFormulaValueOrSchemaType> =
 	RoleCondFormulaValueOrSchema_.extend({
-		values: z.array(z.lazy(() => RoleCondForumaValueSchema)),
+		values: z.array(
+			defineOpenApiSpec(
+				z.lazy(() => RoleCondFormulaValueSchema),
+				{ $ref: '#/components/schemas/RoleCondFormulaValue' },
+			),
+		),
 	});
 
 const RoleCondFormulaValueNotSchema_ = z.object({
@@ -43,12 +53,15 @@ const RoleCondFormulaValueNotSchema_ = z.object({
 type RoleCondFormulaValueNotSchemaType = z.infer<
 	typeof RoleCondFormulaValueNotSchema_
 > & {
-	value: RoleCondFormulaValue;
+	value: z.infer<typeof RoleCondFormulaValueSchema>;
 };
 
 const RoleCondFormulaValueNotSchema: z.ZodType<RoleCondFormulaValueNotSchemaType> =
 	RoleCondFormulaValueNotSchema_.extend({
-		value: z.lazy(() => RoleCondForumaValueSchema),
+		value: defineOpenApiSpec(
+			z.lazy(() => RoleCondFormulaValueSchema),
+			{ $ref: '#/components/schemas/RoleCondFormulaValue' },
+		),
 	});
 
 const RoleCondFormulaValueIsLocalSchema = z.object({
@@ -99,7 +112,7 @@ const RoleCondFormulaValueNotesMoreThanOrEqSchema = z.object({
 	value: z.number(),
 });
 
-export const RoleCondForumaValueSchema = z.union([
+export const RoleCondFormulaValueSchema = z.union([
 	RoleCondFormulaEmpty,
 	RoleCondFormulaValueAndSchema,
 	RoleCondFormulaValueOrSchema,
@@ -115,19 +128,3 @@ export const RoleCondForumaValueSchema = z.union([
 	RoleCondFormulaValueNotesLessThanOrEqSchema,
 	RoleCondFormulaValueNotesMoreThanOrEqSchema,
 ]);
-
-export type RoleCondFormulaValue =
-	| z.infer<typeof RoleCondFormulaEmpty>
-	| z.infer<typeof RoleCondFormulaValueAndSchema>
-	| z.infer<typeof RoleCondFormulaValueOrSchema>
-	| z.infer<typeof RoleCondFormulaValueNotSchema>
-	| z.infer<typeof RoleCondFormulaValueIsLocalSchema>
-	| z.infer<typeof RoleCondFormulaValueIsRemoteSchema>
-	| z.infer<typeof RoleCondFormulaValueCreatedLessThanSchema>
-	| z.infer<typeof RoleCondFormulaValueCreatedMoreThanSchema>
-	| z.infer<typeof RoleCondFormulaValueFollowersLessThanOrEqSchema>
-	| z.infer<typeof RoleCondFormulaValueFollowersMoreThanOrEqSchema>
-	| z.infer<typeof RoleCondFormulaValueFollowingLessThanOrEqSchema>
-	| z.infer<typeof RoleCondFormulaValueFollowingMoreThanOrEqSchema>
-	| z.infer<typeof RoleCondFormulaValueNotesLessThanOrEqSchema>
-	| z.infer<typeof RoleCondFormulaValueNotesMoreThanOrEqSchema>;

@@ -8,7 +8,7 @@ import { bindThis } from '@/decorators.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntenna.js';
+import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { user } from '@prisma/client';
 import type { DBExportAntennasData } from '../types.js';
