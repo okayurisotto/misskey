@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js';
 import { z } from 'zod';
+import { Prisma, type note, type note_reaction, type user } from '@prisma/client';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import type { RemoteUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
@@ -19,7 +19,6 @@ import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { note, note_reaction, user } from '@prisma/client';
 
 const FALLBACK = '❤';
 
@@ -144,7 +143,7 @@ export class ReactionService {
 		try {
 			await this.prismaService.client.note_reaction.create({ data: record });
 		} catch (e: any) {
-			if (e instanceof PrismaClientKnownRequestError) {
+			if (e instanceof Prisma.PrismaClientKnownRequestError) {
 				if (e.code === 'P2002') {
 					const exists = await this.prismaService.client.note_reaction.findUniqueOrThrow({
 						where: {
