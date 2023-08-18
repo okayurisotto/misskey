@@ -116,9 +116,13 @@ export default class extends Endpoint<
 			}
 
 			return (await Promise.all(
-				users.map((user) =>
-					this.userEntityService.pack(user, me, { detail: ps.detail }),
-				),
+				users.map((user) => {
+					if (ps.detail) {
+						return this.userEntityService.pack(user, me, { detail: ps.detail });
+					} else {
+						return this.userEntityService.packLite(user);
+					}
+				}),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { ModuleRef } from '@nestjs/core';
+import { pick } from 'omick';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
@@ -16,13 +17,14 @@ import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import type { UserSchema } from '@/models/zod/UserSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { InstanceEntityService } from './InstanceEntityService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
 import type { DriveFileEntityService } from './DriveFileEntityService.js';
 import type { PageEntityService } from './PageEntityService.js';
 import type { z } from 'zod';
-import type { user, user_profile } from '@prisma/client';
+import type { instance, user, user_profile } from '@prisma/client';
 
 type IsMeAndIsUserDetailed<ExpectsMe extends boolean | null, Detailed extends boolean> =
 	Detailed extends true ?
@@ -52,6 +54,7 @@ export class UserEntityService implements OnModuleInit {
 	private customEmojiService: CustomEmojiService;
 	private roleService: RoleService;
 	private federatedInstanceService: FederatedInstanceService;
+	private instanceEntityService: InstanceEntityService;
 
 	constructor(
 		private readonly moduleRef: ModuleRef,
@@ -73,6 +76,7 @@ export class UserEntityService implements OnModuleInit {
 		this.customEmojiService = this.moduleRef.get('CustomEmojiService');
 		this.roleService = this.moduleRef.get('RoleService');
 		this.federatedInstanceService = this.moduleRef.get('FederatedInstanceService');
+		this.instanceEntityService = this.moduleRef.get('InstanceEntityService');
 	}
 
 	public isLocalUser = isLocalUser;
@@ -271,49 +275,95 @@ export class UserEntityService implements OnModuleInit {
 		return `${this.config.url}/users/${userId}`;
 	}
 
-	public async pack<ExpectsMe extends boolean | null = null, D extends boolean = false>(
+	public async migrate(user: user): Promise<void> {
+		if (user.avatarId !== null && user.avatarUrl === null) {
+			const avatar = await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: user.avatarId } });
+			const avatarUrl = this.driveFileEntityService.getPublicUrl(avatar, 'avatar');
+			this.prismaService.client.user.update({
+				where: { id: user.id },
+				data: {
+					avatarUrl: avatarUrl,
+					avatarBlurhash: avatar.blurhash,
+				},
+			});
+		}
+
+		if (user.bannerId !== null && user.bannerUrl === null) {
+			const banner = await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: user.bannerId } });
+			const bannerUrl = this.driveFileEntityService.getPublicUrl(banner);
+			this.prismaService.client.user.update({
+				where: { id: user.id },
+				data: {
+					bannerUrl: bannerUrl,
+					bannerBlurhash: banner.blurhash,
+				},
+			});
+		}
+	}
+
+	async getInstance(user: user): Promise<instance | undefined> {
+		if (user.host === null) return undefined;
+
+		const instance = await this.federatedInstanceService.federatedInstanceCache.fetch(user.host);
+		if (instance === null) return undefined;
+
+		return instance;
+	}
+
+	public async packLite(src: user['id'] | user): Promise<z.infer<typeof UserLiteSchema>> {
+		const user = typeof src === 'object' ? src : await this.prismaService.client.user.findUniqueOrThrow({ where: { id: src } });
+
+		await this.migrate(user);
+
+		const [instance, badgeRoles, emojis] = await Promise.all([
+			this.getInstance(user),
+			user.host === null // パフォーマンス上の理由でローカルユーザーのみ
+				? this.roleService.getUserBadgeRoles(user.id).then(rs => rs
+						.sort((a, b) => b.displayOrder - a.displayOrder)
+						.map(r => ({
+							name: r.name,
+							iconUrl: r.iconUrl,
+							displayOrder: r.displayOrder,
+						}))
+					)
+				: Promise.resolve(undefined),
+			this.customEmojiService.populateEmojis(user.emojis, user.host),
+		]);
+
+		return {
+			...pick(user, ['id', 'name', 'username', 'host', 'avatarBlurhash', 'isBot', 'isCat']),
+
+			emojis: emojis,
+			badgeRoles: badgeRoles,
+
+			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
+			instance: instance !== undefined ? this.instanceEntityService.packLite(instance) : undefined,
+			onlineStatus: this.getOnlineStatus(user),
+		};
+	}
+
+	public async pack<ExpectsMe extends boolean | null, D extends true>(
 		src: user['id'] | user,
-		me?: { id: user['id']; } | null | undefined,
+		me?: Pick<user, 'id'> | null | undefined,
 		options?: {
 			detail?: D,
 			includeSecrets?: boolean,
 			userProfile?: user_profile,
 		},
 	): Promise<IsMeAndIsUserDetailed<ExpectsMe, D>> {
-		const opts = Object.assign({
+		const opts = {
 			detail: false,
 			includeSecrets: false,
-		}, options);
+			...options,
+		};
 
 		const user = typeof src === 'object' ? src : await this.prismaService.client.user.findUniqueOrThrow({ where: { id: src } });
 
-		// migration
-		if (user.avatarId != null && user.avatarUrl === null) {
-			const avatar = await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: user.avatarId } });
-			user.avatarUrl = this.driveFileEntityService.getPublicUrl(avatar, 'avatar');
-			this.prismaService.client.user.update({
-				where: { id: user.id },
-				data: {
-					avatarUrl: user.avatarUrl,
-					avatarBlurhash: avatar.blurhash,
-				},
-			});
-		}
-		if (user.bannerId != null && user.bannerUrl === null) {
-			const banner = await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: user.bannerId } });
-			user.bannerUrl = this.driveFileEntityService.getPublicUrl(banner);
-			this.prismaService.client.user.update({
-				where: { id: user.id },
-				data: {
-					bannerUrl: user.bannerUrl,
-					bannerBlurhash: banner.blurhash,
-				},
-			});
-		}
+		await this.migrate(user);
 
 		const meId = me ? me.id : null;
 		const isMe = meId === user.id;
-		const iAmModerator = me ? await this.roleService.isModerator(me as user) : false;
+		const iAmModerator = me ? await this.roleService.isModerator({ ...me, isRoot: false }) : false;
 
 		const relation = meId && !isMe && opts.detail ? await this.getRelation(meId, user.id) : null;
 		const pins = opts.detail ? await this.prismaService.client.user_note_pining.findMany({
@@ -386,38 +436,45 @@ export class UserEntityService implements OnModuleInit {
 			});
 
 			return {
-				url: profile.url,
-				uri: user.uri,
-				movedTo: result.movedTo,
+				...pick(user, [
+					'bannerBlurhash',
+					'bannerUrl',
+					'isLocked',
+					'isSuspended',
+					'notesCount',
+					'uri'
+				]),
+
+				...pick(profile, [
+					'birthday',
+					'description',
+					'ffVisibility',
+					'fields',
+					'lang',
+					'location',
+					'pinnedPageId',
+					'publicReactions',
+					'twoFactorEnabled',
+					'url',
+					'usePasswordLessLogin',
+				]),
+
 				alsoKnownAs: result.alsoKnownAs,
-				createdAt: user.createdAt.toISOString(),
-				updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
-				lastFetchedAt: user.lastFetchedAt ? user.lastFetchedAt.toISOString() : null,
-				bannerUrl: user.bannerUrl,
-				bannerBlurhash: user.bannerBlurhash,
-				isLocked: user.isLocked,
 				isSilenced: result.isSilenced,
-				isSuspended: user.isSuspended,
-				description: profile.description,
-				location: profile.location,
-				birthday: profile.birthday,
-				lang: profile.lang,
-				fields: profile.fields,
+				memo: result.memos,
+				movedTo: result.movedTo,
+				pinnedNotes: result.pinnedNotes,
+				pinnedPage: result.pinnedPage,
+				roles: result.roles,
+				securityKeys: result.securityKeys,
+
+				createdAt: user.createdAt.toISOString(),
 				followersCount: followersCount ?? 0,
 				followingCount: followingCount ?? 0,
-				notesCount: user.notesCount,
-				pinnedNoteIds: pins.map(pin => pin.noteId),
-				pinnedNotes: result.pinnedNotes,
-				pinnedPageId: profile.pinnedPageId,
-				pinnedPage: result.pinnedPage,
-				publicReactions: profile.publicReactions,
-				ffVisibility: profile.ffVisibility,
-				twoFactorEnabled: profile.twoFactorEnabled,
-				usePasswordLessLogin: profile.usePasswordLessLogin,
-				securityKeys: result.securityKeys,
-				roles: result.roles,
-				memo: result.memos,
+				lastFetchedAt: user.lastFetchedAt ? user.lastFetchedAt.toISOString() : null,
 				moderationNote: iAmModerator ? profile.moderationNote : undefined,
+				pinnedNoteIds: pins.map(pin => pin.noteId),
+				updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
 			};
 		};
 
@@ -447,35 +504,42 @@ export class UserEntityService implements OnModuleInit {
 			});
 
 			return {
-				avatarId: user.avatarId,
-				bannerId: user.bannerId,
-				isModerator: result.isModerator,
-				isAdmin: result.isAdmin,
-				injectFeaturedNote: profile.injectFeaturedNote,
-				receiveAnnouncementEmail: profile.receiveAnnouncementEmail,
-				alwaysMarkNsfw: profile.alwaysMarkNsfw,
-				autoSensitive: profile.autoSensitive,
-				carefulBot: profile.carefulBot,
-				autoAcceptFollowed: profile.autoAcceptFollowed,
-				noCrawle: profile.noCrawle,
-				preventAiLearning: profile.preventAiLearning,
-				isExplorable: user.isExplorable,
-				isDeleted: user.isDeleted,
-				hideOnlineStatus: user.hideOnlineStatus,
-				hasUnreadSpecifiedNotes: result.hasUnreadSpecifiedNotes,
-				hasUnreadMentions: result.hasUnreadMentions,
+				...pick(user, [
+					'avatarId',
+					'bannerId',
+					'hideOnlineStatus',
+					'isDeleted',
+					'isExplorable',
+				]),
+
+				...pick(profile, [
+					'achievements',
+					'alwaysMarkNsfw',
+					'autoAcceptFollowed',
+					'autoSensitive',
+					'carefulBot',
+					'emailNotificationTypes',
+					'injectFeaturedNote',
+					'mutedInstances',
+					'mutedWords',
+					'mutingNotificationTypes',
+					'noCrawle',
+					'preventAiLearning',
+					'receiveAnnouncementEmail',
+				]),
+
+				hasPendingReceivedFollowRequest: result.hasPendingReceivedFollowRequest,
 				hasUnreadAnnouncement: result.hasUnreadAnnouncement,
 				hasUnreadAntenna: result.hasUnreadAntenna,
-				hasUnreadChannel: false, // 後方互換性のため
+				hasUnreadMentions: result.hasUnreadMentions,
 				hasUnreadNotification: result.hasUnreadNotification,
-				hasPendingReceivedFollowRequest: result.hasPendingReceivedFollowRequest,
-				mutedWords: profile.mutedWords,
-				mutedInstances: profile.mutedInstances,
-				mutingNotificationTypes: profile.mutingNotificationTypes,
-				emailNotificationTypes: profile.emailNotificationTypes,
-				achievements: profile.achievements,
-				loggedInDays: profile.loggedInDates.length,
+				hasUnreadSpecifiedNotes: result.hasUnreadSpecifiedNotes,
+				isAdmin: result.isAdmin,
+				isModerator: result.isModerator,
 				policies: result.policies,
+
+				loggedInDays: profile.loggedInDates.length,
+				hasUnreadChannel: false, // 後方互換性のため
 			};
 		};
 
@@ -500,16 +564,16 @@ export class UserEntityService implements OnModuleInit {
 		const getRelation = async () => {
 			if (!relation) return {};
 
-			return {
-				isFollowing: relation.isFollowing,
-				isFollowed: relation.isFollowed,
-				hasPendingFollowRequestFromYou: relation.hasPendingFollowRequestFromYou,
-				hasPendingFollowRequestToYou: relation.hasPendingFollowRequestToYou,
-				isBlocking: relation.isBlocking,
-				isBlocked: relation.isBlocked,
-				isMuted: relation.isMuted,
-				isRenoteMuted: relation.isRenoteMuted,
-			};
+			return pick(relation, [
+				'hasPendingFollowRequestFromYou',
+				'hasPendingFollowRequestToYou',
+				'isBlocked',
+				'isBlocking',
+				'isFollowed',
+				'isFollowing',
+				'isMuted',
+				'isRenoteMuted',
+			]);
 		};
 
 		const result = await awaitAll({
@@ -548,14 +612,17 @@ export class UserEntityService implements OnModuleInit {
 			name: user.name,
 			username: user.username,
 			host: user.host,
-			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
 			avatarBlurhash: user.avatarBlurhash,
 			isBot: user.isBot,
 			isCat: user.isCat,
+
 			instance: result.instance,
 			emojis: result.emojis,
+
+			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
 			onlineStatus: this.getOnlineStatus(user),
 			badgeRoles: result.badgeRoles,
+
 			...result.detail,
 			...result.detailMe,
 			...result.secrets,

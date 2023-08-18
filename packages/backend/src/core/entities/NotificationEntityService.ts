@@ -74,7 +74,7 @@ export class NotificationEntityService implements OnModuleInit {
 				notification.notifierId != null
 					? hint?.packedUsers != null
 						? Promise.resolve(hint.packedUsers.get(notification.notifierId))
-						: this.userEntityService.pack(notification.notifierId, { id: meId }, { detail: false })
+						: this.userEntityService.packLite(notification.notifierId)
 					: Promise.resolve(undefined),
 		});
 
@@ -129,7 +129,7 @@ export class NotificationEntityService implements OnModuleInit {
 			? await this.prismaService.client.user.findMany({ where: { id: { in: userIds } } })
 			: [];
 		const packedUsersArray = await Promise.all(
-			users.map((user) => this.userEntityService.pack(user, { id: meId }, { detail: false })),
+			users.map((user) => this.userEntityService.packLite(user)),
 		);
 		const packedUsers = new Map(packedUsersArray.map(p => [p.id, p]));
 

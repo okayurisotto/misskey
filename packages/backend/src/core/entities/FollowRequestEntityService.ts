@@ -31,8 +31,8 @@ export class FollowRequestEntityService {
 
 		return {
 			id: request.id,
-			follower: await this.userEntityService.pack(request.followerId, me),
-			followee: await this.userEntityService.pack(request.followeeId, me),
+			follower: await this.userEntityService.packLite(request.followerId),
+			followee: await this.userEntityService.packLite(request.followeeId),
 		};
 	}
 }

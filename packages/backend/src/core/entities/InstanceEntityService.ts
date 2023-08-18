@@ -1,7 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { pick } from 'omick';
 import { MetaService } from '@/core/MetaService.js';
 import { bindThis } from '@/decorators.js';
 import type { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
+import type { FederationInstanceLiteSchema } from '@/models/zod/FederationInstanceLiteSchema.js';
 import { UtilityService } from '../UtilityService.js';
 import type { z } from 'zod';
 import type { instance } from '@prisma/client';
@@ -13,17 +15,19 @@ export class InstanceEntityService {
 		private readonly utilityService: UtilityService,
 	) {}
 
-	/**
-	 * `instance`をpackする。
-	 * その`instance`がブロックされているか判定するために`meta.blockedHosts`を読み込む。
-	 *
-	 * @param instance
-	 * @returns
-	 */
+	public packLite(instance: instance): z.infer<typeof FederationInstanceLiteSchema> {
+		return pick(instance, [
+			'name',
+			'softwareName',
+			'softwareVersion',
+			'iconUrl',
+			'faviconUrl',
+			'themeColor',
+		]);
+	}
+
 	@bindThis
-	public async pack(
-		instance: instance,
-	): Promise<z.infer<typeof FederationInstanceSchema>> {
+	public async pack(instance: instance): Promise<z.infer<typeof FederationInstanceSchema>> {
 		const meta = await this.metaService.fetch();
 		return {
 			id: instance.id,

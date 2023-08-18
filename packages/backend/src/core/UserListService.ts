@@ -41,7 +41,7 @@ export class UserListService {
 			},
 		});
 
-		this.globalEventService.publishUserListStream(list.id, 'userAdded', await this.userEntityService.pack(target));
+		this.globalEventService.publishUserListStream(list.id, 'userAdded', await this.userEntityService.packLite(target));
 
 		// このインスタンス内にこのリモートユーザーをフォローしているユーザーがいなくても投稿を受け取るためにダミーのユーザーがフォローしたということにする
 		if (this.userEntityService.isRemoteUser(target)) {

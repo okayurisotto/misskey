@@ -33,11 +33,11 @@ export class InviteCodeEntityService {
 		const result = await awaitAll({
 			createdBy: () =>
 				target.createdById
-					? this.userEntityService.pack(target.createdById, me)
+					? this.userEntityService.packLite(target.createdById)
 					: Promise.resolve(null),
 			usedBy: () =>
 				target.usedById
-					? this.userEntityService.pack(target.usedById, me)
+					? this.userEntityService.packLite(target.usedById)
 					: Promise.resolve(null),
 		});
 

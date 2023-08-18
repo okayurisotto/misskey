@@ -395,7 +395,7 @@ export class NoteEntityService implements OnModuleInit {
 
 		const result = await awaitAll({
 			user: () =>
-				this.userEntityService.pack(note.userId, me, { detail: false }),
+				this.userEntityService.packLite(note.userId),
 			reactionEmojis: () =>
 				this.customEmojiService.populateEmojis(reactionEmojiNames, host),
 			emojis: () =>
@@ -515,7 +515,7 @@ export class NoteEntityService implements OnModuleInit {
 		);
 	}
 
-	private parseNoteEmojis(emojis: string[], host: string | null): ({ name: null; host: null } | { name: string; host: string | null })[] {
+	private parseNoteEmojis(emojis: string[], host: string | null): ({ name: null; host: null; } | { name: string | undefined; host: string | null; })[] {
 		return emojis.map(e => this.customEmojiService.parseEmojiStr(e, host));
 	};
 
@@ -529,7 +529,7 @@ export class NoteEntityService implements OnModuleInit {
 	 */
 	@bindThis
 	public aggregateNoteEmojis(notes: (note & { renote?: (note & { user?: user }) | null; user?: user })[]): { name: string; host: string; }[] {
-		let emojis: { name: string | null; host: string | null }[] = [];
+		let emojis: ({ name: null; host: null; } | { name: string | undefined; host: string | null; })[] = [];
 
 		for (const note of notes) {
 			emojis = emojis.concat(this.parseNoteEmojis(note.emojis, note.userHost));

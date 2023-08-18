@@ -34,7 +34,7 @@ export class GalleryPostEntityService {
 			: await this.prismaService.client.gallery_post.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.pack(post.userId, me),
+			user: () => this.userEntityService.packLite(post.userId),
 			files: () => this.driveFileEntityService.packManyByIds(post.fileIds),
 			isLiked: async () =>
 				meId

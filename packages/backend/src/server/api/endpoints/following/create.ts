@@ -114,10 +114,7 @@ export default class extends Endpoint<
 				throw e;
 			}
 
-			return (await this.userEntityService.pack(
-				followee.id,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return (await this.userEntityService.packLite(followee.id)) satisfies z.infer<typeof res>;
 		});
 	}
 }

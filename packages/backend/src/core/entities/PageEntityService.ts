@@ -64,7 +64,7 @@ export class PageEntityService {
 		const attachedFiles = collectFiles(content, page.userId);
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.pack(page.userId, me), // { detail: true } すると無限ループするので注意
+			user: () => this.userEntityService.packLite(page.userId), // { detail: true } すると無限ループするので注意
 			eyeCatchingImage: () =>
 				page.eyeCatchingImageId
 					? this.driveFileEntityService.pack(page.eyeCatchingImageId)

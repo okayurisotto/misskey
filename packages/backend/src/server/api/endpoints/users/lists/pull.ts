@@ -80,7 +80,7 @@ export default class extends Endpoint<
 			this.globalEventService.publishUserListStream(
 				userList.id,
 				'userRemoved',
-				await this.userEntityService.pack(user),
+				await this.userEntityService.packLite(user),
 			);
 		});
 	}

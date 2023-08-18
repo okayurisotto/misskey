@@ -273,7 +273,7 @@ export class DriveFileEntityService {
 					: Promise.resolve(null),
 			user: () =>
 				opts.withUser && file.userId
-					? this.userEntityService.pack(file.userId)
+					? this.userEntityService.packLite(file.userId)
 					: Promise.resolve(null),
 		});
 

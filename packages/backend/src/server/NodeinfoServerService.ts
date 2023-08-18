@@ -65,7 +65,7 @@ export class NodeinfoServerService {
 			const activeHalfyear = null;
 			const activeMonth = null;
 
-			const proxyAccount = meta.proxyAccountId ? await this.userEntityService.pack(meta.proxyAccountId).catch(() => null) : null;
+			const proxyAccount = meta.proxyAccountId ? await this.userEntityService.packLite(meta.proxyAccountId).catch(() => null) : null;
 
 			const basePolicies = { ...DEFAULT_POLICIES, ...z.record(z.string(), z.any()).parse(meta.policies) };
 

@@ -90,10 +90,7 @@ export default class extends Endpoint<
 
 			await this.userFollowingService.unfollow(follower, followee);
 
-			return (await this.userEntityService.pack(
-				followee.id,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return (await this.userEntityService.packLite(followee.id)) satisfies z.infer<typeof res>;
 		});
 	}
 }

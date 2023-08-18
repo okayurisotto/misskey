@@ -294,7 +294,7 @@ export class UserFollowingService implements OnModuleInit {
 
 		// Publish followed event
 		if (this.userEntityService.isLocalUser(followee)) {
-			this.userEntityService.pack(follower.id, followee).then(async packed => {
+			this.userEntityService.packLite(follower.id).then(async packed => {
 				this.globalEventService.publishMainStream(followee.id, 'followed', packed);
 
 				const webhooks = (await this.webhookService.getActiveWebhooks()).filter(x => x.userId === followee.id && x.on.includes('followed'));
@@ -493,7 +493,7 @@ export class UserFollowingService implements OnModuleInit {
 
 		// Publish receiveRequest event
 		if (this.userEntityService.isLocalUser(followee)) {
-			this.userEntityService.pack(follower.id, followee).then(packed => this.globalEventService.publishMainStream(followee.id, 'receiveFollowRequest', packed));
+			this.userEntityService.packLite(follower.id).then(packed => this.globalEventService.publishMainStream(followee.id, 'receiveFollowRequest', packed));
 
 			this.userEntityService.pack(followee.id, followee, {
 				detail: true,

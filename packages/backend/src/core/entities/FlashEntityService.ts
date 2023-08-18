@@ -32,7 +32,7 @@ export class FlashEntityService {
 			: await this.prismaService.client.flash.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.pack(flash.userId, me), // { detail: true } すると無限ループするので注意
+			user: () => this.userEntityService.packLite(flash.userId), // { detail: true } すると無限ループするので注意
 			isLiked: async () =>
 				meId
 					? await this.prismaService.client.flash_like.count({

@@ -189,7 +189,7 @@ export default class extends Endpoint<
 			if (ps.detail) {
 				const proxyAccount = instance.proxyAccountId
 					? await this.userEntityService
-							.pack(instance.proxyAccountId)
+							.packLite(instance.proxyAccountId)
 							.catch(() => null)
 					: null;
 

@@ -32,7 +32,7 @@ export class ClipEntityService {
 			: await this.prismaService.client.clip.findUniqueOrThrow({ where: { id: src } });
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.pack(clip.userId),
+			user: () => this.userEntityService.packLite(clip.userId),
 			favoritedCount: () =>
 				this.prismaService.client.clip_favorite.count({ where: { clipId: clip.id } }),
 			isFavorited: async () =>
