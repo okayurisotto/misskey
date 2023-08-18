@@ -17,7 +17,9 @@ import { MetaService } from '@/core/MetaService.js';
 import InstanceChart from '@/core/chart/charts/instance.js';
 import PerUserFollowingChart from '@/core/chart/charts/per-user-following.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user } from '@prisma/client';
+import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
+import type { Prisma, user } from '@prisma/client';
+import type { z } from 'zod';
 
 @Injectable()
 export class AccountMoveService {
@@ -45,25 +47,25 @@ export class AccountMoveService {
 	 * After delivering Move activity, its local followers unfollow the old account and then follow the new one.
 	 */
 	@bindThis
-	public async moveFromLocal(src: LocalUser, dst: LocalUser | RemoteUser) {
+	public async moveFromLocal(
+		src: LocalUser,
+		dst: LocalUser | RemoteUser,
+	): Promise<z.infer<typeof MeDetailedSchema>> {
 		const srcUri = this.userEntityService.getUserUri(src);
 		const dstUri = this.userEntityService.getUserUri(dst);
 
 		// add movedToUri to indicate that the user has moved
-		const alsoKnownAsArray = src.alsoKnownAs?.split(',') ?? null;
-		const update: Omit<Partial<LocalUser>, 'alsoKnownAs'> & { alsoKnownAs: string[] } = {
-			alsoKnownAs: alsoKnownAsArray?.includes(dstUri) ? alsoKnownAsArray : alsoKnownAsArray?.concat([dstUri]) ?? [dstUri],
+		const alsoKnownAsArray = src.alsoKnownAs?.split(',') ?? [];
+		const update: Prisma.userUncheckedUpdateInput = {
+			alsoKnownAs: (alsoKnownAsArray.includes(dstUri) ? alsoKnownAsArray : [...alsoKnownAsArray, dstUri]).join(','),
 			movedToUri: dstUri,
 			movedAt: new Date(),
 		};
 		await this.prismaService.client.user.update({
 			where: { id: src.id },
-			data: {
-				...update,
-				alsoKnownAs: update.alsoKnownAs.join(','),
-			},
+			data: update,
 		});
-		Object.assign(src, { ...update, alsoKnownAs: update.alsoKnownAs.join(',') });
+		Object.assign(src, update);
 
 		// Update cache
 		this.cacheService.uriPersonCache.set(srcUri, src);
@@ -115,10 +117,10 @@ export class AccountMoveService {
 				followerId: { not: proxy?.id },
 			},
 		});
-		const followJobs = followings.map(following => ({
+		const followJobs = followings.map<RelationshipJobData>(following => ({
 			from: { id: following.followerId },
 			to: { id: dst.id },
-		})) as RelationshipJobData[];
+		}));
 
 		// Decrease following count instead of unfollowing.
 		try {
@@ -135,38 +137,47 @@ export class AccountMoveService {
 	public async copyBlocking(src: ThinUser, dst: ThinUser): Promise<void> {
 		// Followers shouldn't overlap with blockers, but the destination account, different from the blockee (i.e., old account), may have followed the local user before moving.
 		// So block the destination account here.
-		const srcBlockings = await this.prismaService.client.blocking.findMany({ where: { blockeeId: src.id } });
-		const dstBlockings = await this.prismaService.client.blocking.findMany({ where: { blockeeId: dst.id } });
-		const blockerIds = dstBlockings.map(blocking => blocking.blockerId);
+
+		const dstBlockings = await this.prismaService.client.blocking.findMany({
+			where: { blockeeId: dst.id },
+		});
+		const srcBlockings = await this.prismaService.client.blocking.findMany({
+			where: {
+				blockeeId: src.id,
+				blockerId: { notIn: dstBlockings.map(({ blockerId }) => blockerId) }, // skip
+			},
+		});
+
 		// reblock the destination account
-		const blockJobs: RelationshipJobData[] = [];
-		for (const blocking of srcBlockings) {
-			if (blockerIds.includes(blocking.blockerId)) continue; // skip if already blocked
-			blockJobs.push({ from: { id: blocking.blockerId }, to: { id: dst.id } });
-		}
-		// no need to unblock the old account because it may be still functional
+		const blockJobs = srcBlockings.map<RelationshipJobData>((srcBlocking) => ({
+			from: { id: srcBlocking.blockerId },
+			to: { id: dst.id },
+		}));
+
 		await this.queueService.createBlockJob(blockJobs);
+
+		// no need to unblock the old account because it may be still functional
 	}
 
 	@bindThis
 	public async copyMutings(src: ThinUser, dst: ThinUser): Promise<void> {
-		// Insert new mutings with the same values except mutee
-		const oldMutings = await this.prismaService.client.muting.findMany({
+		const dstMutings = await this.prismaService.client.muting.findMany({
+			where: { muteeId: dst.id, expiresAt: null },
+		});
+
+		const srcMutings = await this.prismaService.client.muting.findMany({
 			where: {
+				muteeId: src.id,
 				OR: [
-					{ muteeId: src.id, expiresAt: null },
-					{ muteeId: src.id, expiresAt: { gt: new Date() } },
-				]
+					{ expiresAt: null },
+					{ expiresAt: { gt: new Date() } },
+				],
+				muterId: { notIn: dstMutings.map(({ muterId }) => muterId) } // skip
 			},
 		});
-		if (oldMutings.length === 0) return;
+		if (srcMutings.length === 0) return;
 
-		// Check if the destination account is already indefinitely muted by the muter
-		const existingMutingsMuterUserIds = await this.prismaService.client.muting.findMany({
-			where: { muteeId: dst.id, expiresAt: null },
-		}).then(mutings => mutings.map(muting => muting.muterId));
-
-		const newMutings: Map<string, { muterId: string; muteeId: string; createdAt: Date; expiresAt: Date | null; }> = new Map();
+		const newMutings = new Map<string, Omit<Prisma.mutingCreateManyInput, 'id'>>();
 
 		// 重複しないようにIDを生成
 		const genId = (): string => {
@@ -176,8 +187,8 @@ export class AccountMoveService {
 			} while (newMutings.has(id));
 			return id;
 		};
-		for (const muting of oldMutings) {
-			if (existingMutingsMuterUserIds.includes(muting.muterId)) continue; // skip if already muted indefinitely
+
+		for (const muting of srcMutings) {
 			newMutings.set(genId(), {
 				...muting,
 				createdAt: new Date(),
@@ -185,8 +196,8 @@ export class AccountMoveService {
 			});
 		}
 
-		const arrayToInsert = Array.from(newMutings.entries()).map(entry => ({ ...entry[1], id: entry[0] }));
-		await this.prismaService.client.muting.createMany({ data: arrayToInsert });
+		const arrayToCreateMany: Prisma.mutingCreateManyInput[] = [...newMutings].map(entry => ({ ...entry[1], id: entry[0] }));
+		await this.prismaService.client.muting.createMany({ data: arrayToCreateMany });
 	}
 
 	/**
@@ -196,21 +207,23 @@ export class AccountMoveService {
 	 *
 	 * @param src ThinUser (old account)
 	 * @param dst User (new account)
-	 * @returns Promise<void>
+	 * @returns {Promise<void>}
 	 */
 	@bindThis
 	public async updateLists(src: ThinUser, dst: user): Promise<void> {
-		// Return if there is no list to be updated.
-		const oldJoinings = await this.prismaService.client.user_list_joining.findMany({
-			where: { userId: src.id },
-		});
-		if (oldJoinings.length === 0) return;
-
-		const existingUserListIds = await this.prismaService.client.user_list_joining.findMany({
+		const dstJoinings = await this.prismaService.client.user_list_joining.findMany({
 			where: { userId: dst.id },
-		}).then(joinings => joinings.map(joining => joining.userListId));
+		});
 
-		const newJoinings: Map<string, { createdAt: Date; userId: string; userListId: string; }> = new Map();
+		const srcJoinings = await this.prismaService.client.user_list_joining.findMany({
+			where: {
+				userId: src.id,
+				userListId: { notIn: dstJoinings.map(({ userListId }) => userListId) }, // skip
+			},
+		});
+		if (srcJoinings.length === 0) return;
+
+		const newJoinings = new Map<string, Omit<Prisma.user_list_joiningCreateManyInput, 'id'>>();
 
 		// 重複しないようにIDを生成
 		const genId = (): string => {
@@ -220,8 +233,7 @@ export class AccountMoveService {
 			} while (newJoinings.has(id));
 			return id;
 		};
-		for (const joining of oldJoinings) {
-			if (existingUserListIds.includes(joining.userListId)) continue; // skip if dst exists in this user's list
+		for (const joining of srcJoinings) {
 			newJoinings.set(genId(), {
 				createdAt: new Date(),
 				userId: dst.id,
@@ -229,7 +241,10 @@ export class AccountMoveService {
 			});
 		}
 
-		const arrayToInsert = Array.from(newJoinings.entries()).map(entry => ({ ...entry[1], id: entry[0] }));
+		const arrayToInsert: Prisma.user_list_joiningCreateManyInput[] = [...newJoinings].map(entry => ({
+			...entry[1],
+			id: entry[0],
+		}));
 		await this.prismaService.client.user_list_joining.createMany({ data: arrayToInsert });
 
 		// Have the proxy account follow the new account in the same way as UserListService.push
@@ -270,15 +285,14 @@ export class AccountMoveService {
 
 		// Update instance stats by decreasing remote followers count by the number of local followers who were following the old account.
 		if (this.userEntityService.isRemoteUser(oldAccount)) {
-			await this.federatedInstanceService.fetch(oldAccount.host).then(async i => {
-				await this.prismaService.client.instance.update({
-					where: { id: i.id },
-					data: { followersCount: { decrement: localFollowerIds.length } },
-				});
-				if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
-					await this.instanceChart.updateFollowers(i.host, false);
-				}
+			const instance = await this.federatedInstanceService.fetch(oldAccount.host);
+			await this.prismaService.client.instance.update({
+				where: { id: instance.id },
+				data: { followersCount: { decrement: localFollowerIds.length } },
 			});
+			if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
+				await this.instanceChart.updateFollowers(instance.host, false);
+			}
 		}
 
 		// FIXME: expensive?
@@ -293,12 +307,12 @@ export class AccountMoveService {
 	 * @param dst movedToUrlを指定するユーザー
 	 * @param check
 	 * @param instant checkがtrueであるユーザーが最初に見つかったら即座にreturnするかどうか
-	 * @returns Promise<LocalUser | RemoteUser | null>
+	 * @returns {Promise<LocalUser | RemoteUser | null>}
 	 */
 	@bindThis
 	public async validateAlsoKnownAs(
 		dst: LocalUser | RemoteUser,
-		check: (oldUser: LocalUser | RemoteUser | null, newUser: LocalUser | RemoteUser) => boolean | Promise<boolean> = () => true,
+		check: (oldUser: LocalUser | RemoteUser | null, newUser: LocalUser | RemoteUser) => boolean | Promise<boolean> = (): boolean => true,
 		instant = false,
 	): Promise<LocalUser | RemoteUser | null> {
 		let resultUser: LocalUser | RemoteUser | null = null;

@@ -89,9 +89,9 @@ export class FetchInstanceMetadataService {
 
 			this.logger.succ(`Successfuly fetched metadata of ${instance.host}`);
 
-			const updates = {
+			const updates: Record<string, unknown> = {
 				infoUpdatedAt: new Date(),
-			} as Record<string, any>;
+			};
 
 			if (info) {
 				updates['softwareName'] = typeof info.software?.name === 'string' ? info.software.name.toLowerCase() : '?';
@@ -135,7 +135,7 @@ export class FetchInstanceMetadataService {
 				throw new Error('No wellknown links');
 			}
 
-			const links = wellknown['links'] as any[];
+			const links: unknown[] = wellknown['links'];
 
 			const lnik1_0 = links.find(link => link.rel === 'http://nodeinfo.diaspora.software/ns/schema/1.0');
 			const lnik2_0 = links.find(link => link.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.0');
@@ -181,7 +181,7 @@ export class FetchInstanceMetadataService {
 
 		const manifestUrl = url + '/manifest.json';
 
-		const manifest = await this.httpRequestService.getJson(manifestUrl) as Record<string, unknown>;
+		const manifest: Record<string, unknown> = await this.httpRequestService.getJson(manifestUrl);
 
 		return manifest;
 	}
@@ -213,7 +213,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async fetchIconUrl(instance: instance, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
+	private async fetchIconUrl(instance: instance, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
 		if (manifest && manifest['icons'] && manifest['icons'].length > 0 && manifest['icons'][0].src) {
 			const url = 'https://' + instance.host;
 			return (new URL(manifest['icons'][0].src, url)).href;
@@ -242,7 +242,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async getThemeColor(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
+	private async getThemeColor(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
 		const themeColor = info?.metadata?.themeColor ?? doc?.querySelector('meta[name="theme-color"]')?.getAttribute('content') ?? manifest?.['theme_color'];
 
 		if (themeColor) {
@@ -254,7 +254,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async getSiteName(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
+	private async getSiteName(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
 		if (info && info.metadata) {
 			if (typeof info.metadata.nodeName === 'string') {
 				return info.metadata.nodeName;
@@ -279,7 +279,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	@bindThis
-	private async getDescription(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, any> | null): Promise<string | null> {
+	private async getDescription(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
 		if (info && info.metadata) {
 			if (typeof info.metadata.nodeDescription === 'string') {
 				return info.metadata.nodeDescription;

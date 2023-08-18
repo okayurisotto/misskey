@@ -12,135 +12,120 @@ export class HashtagService {
 		private readonly userEntityService: UserEntityService,
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
-	) {
+	) {}
+
+	@bindThis
+	public async updateHashtags(user: Pick<user, 'id' | 'host'>, tags: string[]): Promise<void> {
+		await Promise.all(tags.map((tag) => this.updateHashtag(user, tag)));
 	}
 
 	@bindThis
-	public async updateHashtags(user: { id: user['id']; host: user['host']; }, tags: string[]) {
-		for (const tag of tags) {
-			await this.updateHashtag(user, tag);
-		}
+	public async updateUsertags(user: Pick<user, 'id' | 'host' | 'tags'>, tags: string[]): Promise<void> {
+		await Promise.all([
+			...tags.map((tag) => this.updateHashtag(user, tag, true, true)),
+			...user.tags.filter((tag) => !tags.includes(tag)).map((tag) => this.updateHashtag(user, tag, true, false)),
+		]);
 	}
 
 	@bindThis
-	public async updateUsertags(user: user, tags: string[]) {
-		for (const tag of tags) {
-			await this.updateHashtag(user, tag, true, true);
-		}
+	public async updateHashtag(
+		user: Pick<user, 'id' | 'host'>,
+		tag: string,
+		isUserAttached = false,
+		inc = true,
+	): Promise<void> {
+		const name = normalizeForSearch(tag);
 
-		for (const tag of (user.tags ?? []).filter(x => !tags.includes(x))) {
-			await this.updateHashtag(user, tag, true, false);
-		}
-	}
+		await this.prismaService.client.$transaction(async (client) => {
+			const index = await client.hashtag.findUnique({ where: { name } });
 
-	@bindThis
-	public async updateHashtag(user: { id: user['id']; host: user['host']; }, tag: string, isUserAttached = false, inc = true) {
-		tag = normalizeForSearch(tag);
+			if (index === null && !inc) return;
 
-		// TODO: transaction
-		const index = await this.prismaService.client.hashtag.findUnique({ where: { name: tag } });
+			if (index !== null) {
+				const isLocalUser = this.userEntityService.isLocalUser(user);
+				const isRemoteUser = this.userEntityService.isRemoteUser(user);
 
-		if (index === null && !inc) return;
+				const attachedUserIds = new Set(index.attachedUserIds);
+				const attachedLocalUserIds = new Set(index.attachedLocalUserIds);
+				const attachedRemoteUserIds = new Set(index.attachedRemoteUserIds);
+				const mentionedUserIds = new Set(index.mentionedUserIds);
+				const mentionedLocalUserIds = new Set(index.mentionedLocalUserIds);
+				const mentionedRemoteUserIds = new Set(index.mentionedRemoteUserIds);
 
-		if (index !== null) {
-			const isLocalUser = this.userEntityService.isLocalUser(user);
-			const isRemoteUser = this.userEntityService.isRemoteUser(user);
-
-			const attachedUserIds = new Set(index.attachedUserIds);
-			const attachedLocalUserIds = new Set(index.attachedLocalUserIds);
-			const attachedRemoteUserIds = new Set(index.attachedRemoteUserIds);
-			const mentionedUserIds = new Set(index.mentionedUserIds);
-			const mentionedLocalUserIds = new Set(index.mentionedLocalUserIds);
-			const mentionedRemoteUserIds = new Set(index.mentionedRemoteUserIds);
-
-			if (isUserAttached) {
-				if (inc) {
-					attachedUserIds.add(user.id);
-					if (isLocalUser) attachedLocalUserIds.add(user.id);
-					if (isRemoteUser) attachedRemoteUserIds.add(user.id);
+				if (isUserAttached) {
+					if (inc) {
+						attachedUserIds.add(user.id);
+						if (isLocalUser) attachedLocalUserIds.add(user.id);
+						if (isRemoteUser) attachedRemoteUserIds.add(user.id);
+					} else {
+						attachedUserIds.delete(user.id);
+						if (isLocalUser) attachedLocalUserIds.delete(user.id);
+						if (isRemoteUser) attachedRemoteUserIds.delete(user.id);
+					}
 				} else {
-					attachedUserIds.delete(user.id);
-					if (isLocalUser) attachedLocalUserIds.delete(user.id);
-					if (isRemoteUser) attachedRemoteUserIds.delete(user.id);
+					mentionedUserIds.add(user.id);
+					if (isLocalUser) mentionedLocalUserIds.add(user.id);
+					if (isRemoteUser) mentionedRemoteUserIds.add(user.id);
 				}
-			} else {
-				mentionedUserIds.add(user.id);
-				if (isLocalUser) mentionedLocalUserIds.add(user.id);
-				if (isRemoteUser) mentionedRemoteUserIds.add(user.id);
-			}
 
-			// 更新されたものだけを含めるためにこういった書き方になってしまっている
-			const data = isUserAttached
-				? {
-					...({
+				await client.hashtag.update({
+					where: { id: index.id },
+					data: {
 						attachedUserIds: [...attachedUserIds],
 						attachedUsersCount: attachedUserIds.size,
-					}),
-					...(isLocalUser ? {
 						attachedLocalUserIds: [...attachedLocalUserIds],
 						attachedLocalUsersCount: attachedLocalUserIds.size,
-					} : {}),
-					...(isRemoteUser ? {
 						attachedRemoteUserIds: [...attachedRemoteUserIds],
 						attachedRemoteUsersCount: attachedRemoteUserIds.size,
-					} : {}),
-				}
-				: {
-					...({
 						mentionedUserIds: [...mentionedUserIds],
 						mentionedUsersCount: mentionedUserIds.size,
-					}),
-					...(isLocalUser ? {
 						mentionedLocalUserIds: [...mentionedLocalUserIds],
 						mentionedLocalUsersCount: mentionedLocalUserIds.size,
-					} : {}),
-					...(isRemoteUser ? {
 						mentionedRemoteUserIds: [...mentionedRemoteUserIds],
 						mentionedRemoteUsersCount: mentionedRemoteUserIds.size,
-					} : {}),
-				};
-
-			await this.prismaService.client.hashtag.update({ where: { id: index.id }, data });
-		} else {
-			if (isUserAttached) {
-				await this.prismaService.client.hashtag.create({
-					data: {
-						id: this.idService.genId(),
-						name: tag,
-						mentionedUserIds: [],
-						mentionedUsersCount: 0,
-						mentionedLocalUserIds: [],
-						mentionedLocalUsersCount: 0,
-						mentionedRemoteUserIds: [],
-						mentionedRemoteUsersCount: 0,
-						attachedUserIds: [user.id],
-						attachedUsersCount: 1,
-						attachedLocalUserIds: this.userEntityService.isLocalUser(user) ? [user.id] : [],
-						attachedLocalUsersCount: this.userEntityService.isLocalUser(user) ? 1 : 0,
-						attachedRemoteUserIds: this.userEntityService.isRemoteUser(user) ? [user.id] : [],
-						attachedRemoteUsersCount: this.userEntityService.isRemoteUser(user) ? 1 : 0,
-					}
+					},
 				});
 			} else {
-				await this.prismaService.client.hashtag.create({
-					data: {
-						id: this.idService.genId(),
-						name: tag,
-						mentionedUserIds: [user.id],
-						mentionedUsersCount: 1,
-						mentionedLocalUserIds: this.userEntityService.isLocalUser(user) ? [user.id] : [],
-						mentionedLocalUsersCount: this.userEntityService.isLocalUser(user) ? 1 : 0,
-						mentionedRemoteUserIds: this.userEntityService.isRemoteUser(user) ? [user.id] : [],
-						mentionedRemoteUsersCount: this.userEntityService.isRemoteUser(user) ? 1 : 0,
-						attachedUserIds: [],
-						attachedUsersCount: 0,
-						attachedLocalUserIds: [],
-						attachedLocalUsersCount: 0,
-						attachedRemoteUserIds: [],
-						attachedRemoteUsersCount: 0,
-					}
-				});
+				if (isUserAttached) {
+					await client.hashtag.create({
+						data: {
+							id: this.idService.genId(),
+							name,
+							mentionedUserIds: [],
+							mentionedUsersCount: 0,
+							mentionedLocalUserIds: [],
+							mentionedLocalUsersCount: 0,
+							mentionedRemoteUserIds: [],
+							mentionedRemoteUsersCount: 0,
+							attachedUserIds: [user.id],
+							attachedUsersCount: 1,
+							attachedLocalUserIds: this.userEntityService.isLocalUser(user) ? [user.id] : [],
+							attachedLocalUsersCount: this.userEntityService.isLocalUser(user) ? 1 : 0,
+							attachedRemoteUserIds: this.userEntityService.isRemoteUser(user) ? [user.id] : [],
+							attachedRemoteUsersCount: this.userEntityService.isRemoteUser(user) ? 1 : 0,
+						}
+					});
+				} else {
+					await client.hashtag.create({
+						data: {
+							id: this.idService.genId(),
+							name,
+							mentionedUserIds: [user.id],
+							mentionedUsersCount: 1,
+							mentionedLocalUserIds: this.userEntityService.isLocalUser(user) ? [user.id] : [],
+							mentionedLocalUsersCount: this.userEntityService.isLocalUser(user) ? 1 : 0,
+							mentionedRemoteUserIds: this.userEntityService.isRemoteUser(user) ? [user.id] : [],
+							mentionedRemoteUsersCount: this.userEntityService.isRemoteUser(user) ? 1 : 0,
+							attachedUserIds: [],
+							attachedUsersCount: 0,
+							attachedLocalUserIds: [],
+							attachedLocalUsersCount: 0,
+							attachedRemoteUserIds: [],
+							attachedRemoteUsersCount: 0,
+						}
+					});
+				}
 			}
-		}
+		});
 	}
 }

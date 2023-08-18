@@ -327,7 +327,7 @@ export class FileInfoService {
 		const type = await fileType.fileTypeFromFile(path);
 
 		if (type) {
-		// XMLはSVGかもしれない
+			// XMLはSVGかもしれない
 			if (type.mime === 'application/xml' && await this.checkSvg(path)) {
 				return TYPE_SVG;
 			}

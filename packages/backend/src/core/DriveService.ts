@@ -47,7 +47,7 @@ type AddFileArgs = {
 	/** Comment */
 	comment?: string | null;
 	/** Folder ID */
-	folderId?: any;
+	folderId?: string | null;
 	/** If set to true, forcibly upload the file even if there is a file with the same hash. */
 	force?: boolean;
 	/** Do not save file to local */
@@ -280,7 +280,11 @@ export class DriveService {
 	 * @param generateWeb Generate webpublic or not
 	 */
 	@bindThis
-	public async generateAlts(path: string, type: string, generateWeb: boolean) {
+	public async generateAlts(
+		path: string,
+		type: string,
+		generateWeb: boolean,
+	): Promise<{ webpublic: IImage | null; thumbnail: IImage | null; }> {
 		if (type.startsWith('video/')) {
 			if (this.config.videoThumbnailGenerator != null) {
 				// videoThumbnailGeneratorが指定されていたら動画サムネイル生成はスキップ
@@ -385,7 +389,13 @@ export class DriveService {
 	 * Upload to ObjectStorage
 	 */
 	@bindThis
-	private async upload(key: string, stream: fs.ReadStream | Buffer, type: string, ext?: string | null, filename?: string) {
+	private async upload(
+		key: string,
+		stream: fs.ReadStream | Buffer,
+		type: string,
+		ext?: string | null,
+		filename?: string,
+	): Promise<void> {
 		if (type === 'image/apng') type = 'image/png';
 		if (!FILE_TYPE_BROWSERSAFE.includes(type)) type = 'application/octet-stream';
 
@@ -425,7 +435,7 @@ export class DriveService {
 
 	// Expire oldest file (without avatar or banner) of remote user
 	@bindThis
-	private async expireOldFile(user: RemoteUser, driveCapacity: number) {
+	private async expireOldFile(user: RemoteUser, driveCapacity: number): Promise<void> {
 		const fileList = await this.prismaService.client.drive_file.findMany({
 			where: {
 				userId: user.id,
@@ -656,7 +666,7 @@ export class DriveService {
 					requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
 				};
 			} catch (err) {
-			// duplicate key error (when already registered)
+				// duplicate key error (when already registered)
 				if (isDuplicateKeyValueError(err)) {
 					this.registerLogger.info(`already registered ${file.uri}`);
 
@@ -709,7 +719,7 @@ export class DriveService {
 	}
 
 	@bindThis
-	public async deleteFile(file: drive_file, isExpired = false) {
+	public async deleteFile(file: drive_file, isExpired = false): Promise<void> {
 		if (file.storedInternal) {
 			this.internalStorageService.del(file.accessKey!);
 
@@ -736,7 +746,7 @@ export class DriveService {
 	}
 
 	@bindThis
-	public async deleteFileSync(file: drive_file, isExpired = false) {
+	public async deleteFileSync(file: drive_file, isExpired = false): Promise<void> {
 		if (file.storedInternal) {
 			this.internalStorageService.del(file.accessKey!);
 
@@ -767,7 +777,7 @@ export class DriveService {
 	}
 
 	@bindThis
-	private async deletePostProcess(file: drive_file, isExpired = false) {
+	private async deletePostProcess(file: drive_file, isExpired = false): Promise<void> {
 		// リモートファイル期限切れ削除後は直リンクにする
 		if (isExpired && file.userHost !== null && file.uri != null) {
 			this.prismaService.client.drive_file.update({
@@ -809,7 +819,7 @@ export class DriveService {
 			} as DeleteObjectCommandInput;
 
 			await this.s3Service.delete(meta, param);
-		} catch (err: any) {
+		} catch (err: unknown) {
 			if (err.name === 'NoSuchKey') {
 				this.deleteLogger.warn(`The object storage had no such key to delete: ${key}. Skipping this.`, err as Error);
 				return;
@@ -841,15 +851,22 @@ export class DriveService {
 			// write content at URL to temp file
 			const { filename: name } = await this.downloadService.downloadUrl(url, path);
 
-			// If the comment is same as the name, skip comment
-			// (image.name is passed in when receiving attachment)
-			if (comment !== null && name === comment) {
-				comment = null;
-			}
-
-			const driveFile = await this.addFile({ user, path, name, comment, folderId, force, isLink, url, uri, sensitive, requestIp, requestHeaders });
+			const driveFile = await this.addFile({
+				user,
+				path,
+				name,
+				comment: comment !== null && name === comment ? null : comment, // If the comment is same as the name, skip comment. (image.name is passed in when receiving attachment)
+				folderId,
+				force,
+				isLink,
+				url,
+				uri,
+				sensitive,
+				requestIp,
+				requestHeaders,
+			});
 			this.downloaderLogger.succ(`Got: ${driveFile.id}`);
-			return driveFile!;
+			return driveFile;
 		} catch (err) {
 			this.downloaderLogger.error(`Failed to create drive file: ${err}`, {
 				url: url,

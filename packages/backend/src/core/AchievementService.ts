@@ -5,6 +5,12 @@ import { NotificationService } from '@/core/NotificationService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
+const AchievementSchema = z.object({
+	name: z.string(),
+	unlockedAt: z.number(),
+});
+const AchievementsSchema = z.array(AchievementSchema);
+
 export const ACHIEVEMENT_TYPES = [
 	'notes1',
 	'notes10',
@@ -96,23 +102,18 @@ export class AchievementService {
 	): Promise<void> {
 		if (!ACHIEVEMENT_TYPES.includes(type)) return;
 
-		const date = Date.now();
-
 		const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: userId } });
 
-		const achievements = z.array(z.object({
-			name: z.string(),
-			unlockedAt: z.number(),
-		})).parse(profile.achievements);
+		const achievements = AchievementsSchema.parse(profile.achievements);
 
 		if (achievements.some(a => a.name === type)) return;
 
 		await this.prismaService.client.user_profile.update({
 			where: { userId: userId },
-			data: { achievements: [...achievements, { name: type, unlockedAt: date }] },
+			data: { achievements: [...achievements, { name: type, unlockedAt: Date.now() }] },
 		});
 
-		this.notificationService.createNotification(
+		await this.notificationService.createNotification(
 			userId,
 			'achievementEarned',
 			{ achievement: type },

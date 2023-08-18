@@ -27,14 +27,15 @@ export class GlobalEventService {
 
 		@Inject(DI.redisForPub)
 		private readonly redisForPub: Redis.Redis,
-	) {
-	}
+	) {}
 
 	@bindThis
-	private publish(channel: StreamChannels, type: string | null, value?: any): void {
-		const message = type == null ? value : value == null ?
-			{ type: type, body: null } :
-			{ type: type, body: value };
+	private publish(channel: StreamChannels, type: string | null, value?: unknown): void {
+		const message = type == null
+			? value
+			: value == null
+				? { type: type, body: null }
+				: { type: type, body: value };
 
 		this.redisForPub.publish(this.config.host, JSON.stringify({
 			channel: channel,

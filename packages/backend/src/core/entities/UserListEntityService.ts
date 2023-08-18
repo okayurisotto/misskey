@@ -9,6 +9,12 @@ import type { user_list } from '@prisma/client';
 export class UserListEntityService {
 	constructor(private readonly prismaService: PrismaService) {}
 
+	/**
+	 * `user_list`をpackする。
+	 *
+	 * @param src
+	 * @returns
+	 */
 	@bindThis
 	public async pack(
 		src: user_list['id'] | user_list,

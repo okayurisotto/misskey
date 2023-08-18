@@ -8,6 +8,7 @@ import type Logger from '@/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 
 @Injectable()
 export class EmailService {
@@ -25,7 +26,7 @@ export class EmailService {
 	}
 
 	@bindThis
-	public async sendEmail(to: string, subject: string, html: string, text: string) {
+	public async sendEmail(to: string, subject: string, html: string, text: string): Promise<void> {
 		const meta = await this.metaService.fetch(true);
 
 		const iconUrl = `${this.config.url}/static-assets/mi-white.png`;
@@ -43,7 +44,7 @@ export class EmailService {
 				user: meta.smtpUser,
 				pass: meta.smtpPass,
 			} : undefined,
-		} as any);
+		} satisfies SMTPTransport.Options);
 
 		try {
 			// TODO: htmlサニタイズ

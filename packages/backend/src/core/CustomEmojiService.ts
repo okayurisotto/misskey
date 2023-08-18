@@ -138,7 +138,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async addAliasesBulk(ids: emoji['id'][], aliases: string[]) {
+	public async addAliasesBulk(ids: emoji['id'][], aliases: string[]): Promise<void> {
 		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
 		for (const emoji of emojis) {
@@ -159,7 +159,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async setAliasesBulk(ids: emoji['id'][], aliases: string[]) {
+	public async setAliasesBulk(ids: emoji['id'][], aliases: string[]): Promise<void> {
 		await this.prismaService.client.emoji.updateMany({
 			where: { id: { in: ids } },
 			data: {
@@ -176,7 +176,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async removeAliasesBulk(ids: emoji['id'][], aliases: string[]) {
+	public async removeAliasesBulk(ids: emoji['id'][], aliases: string[]): Promise<void> {
 		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
 		for (const emoji of emojis) {
@@ -197,7 +197,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async setCategoryBulk(ids: emoji['id'][], category: string | null) {
+	public async setCategoryBulk(ids: emoji['id'][], category: string | null): Promise<void> {
 		await this.prismaService.client.emoji.updateMany({
 			where: { id: { in: ids } },
 			data: {
@@ -214,7 +214,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async setLicenseBulk(ids: emoji['id'][], license: string | null) {
+	public async setLicenseBulk(ids: emoji['id'][], license: string | null): Promise<void> {
 		await this.prismaService.client.emoji.updateMany({
 			where: { id: { in: ids } },
 			data: {
@@ -231,7 +231,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async delete(id: emoji['id']) {
+	public async delete(id: emoji['id']): Promise<void> {
 		const emoji = await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: id } });
 
 		await this.prismaService.client.emoji.delete({ where: { id: emoji.id } });
@@ -244,7 +244,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async deleteBulk(ids: emoji['id'][]) {
+	public async deleteBulk(ids: emoji['id'][]): Promise<void> {
 		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
 		for (const emoji of emojis) {
@@ -260,26 +260,30 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	private normalizeHost(src: string | undefined, noteUserHost: string | null): string | null {
-	// クエリに使うホスト
-		let host = src === '.' ? null	// .はローカルホスト (ここがマッチするのはリアクションのみ)
-			: src === undefined ? noteUserHost	// ノートなどでホスト省略表記の場合はローカルホスト (ここがリアクションにマッチすることはない)
-			: this.utilityService.isSelfHost(src) ? null	// 自ホスト指定
-			: (src || noteUserHost);	// 指定されたホスト || ノートなどの所有者のホスト (こっちがリアクションにマッチすることはない)
+		// クエリに使うホスト
+		const host = src === '.'
+			? null // .はローカルホスト (ここがマッチするのはリアクションのみ)
+			: src === undefined
+				? noteUserHost // ノートなどでホスト省略表記の場合はローカルホスト (ここがリアクションにマッチすることはない)
+				: this.utilityService.isSelfHost(src)
+					? null // 自ホスト指定
+					: (src || noteUserHost); // 指定されたホスト || ノートなどの所有者のホスト (こっちがリアクションにマッチすることはない)
 
-		host = this.utilityService.toPunyNullable(host);
-
-		return host;
+		return this.utilityService.toPunyNullable(host);
 	}
 
 	@bindThis
-	public parseEmojiStr(emojiName: string, noteUserHost: string | null) {
+	public parseEmojiStr(
+		emojiName: string,
+		noteUserHost: string | null,
+	): { name: null; host: null } | { name: string | undefined; host: string | null } {
 		const match = emojiName.match(parseEmojiStrRegexp);
 		if (!match) return { name: null, host: null };
 
-		const name = match[1];
+		const name = match.at(1);
 
 		// ホスト正規化
-		const host = this.utilityService.toPunyNullable(this.normalizeHost(match[2], noteUserHost));
+		const host = this.utilityService.toPunyNullable(this.normalizeHost(match.at(2), noteUserHost));
 
 		return { name, host };
 	}
@@ -296,14 +300,12 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		if (name == null) return null;
 		if (host == null) return null;
 
-		const queryOrNull = async () => (await this.prismaService.client.emoji.findFirst({
-			where: { name, host: host ?? null },
-		})) ?? null;
+		const queryOrNull = async (): Promise<emoji | null> => (await this.prismaService.client.emoji.findFirst({ where: { name, host } })) ?? null;
 
 		const emoji = await this.cache.fetch(`${name} ${host}`, queryOrNull);
 
 		if (emoji == null) return null;
-		return emoji.publicUrl || emoji.originalUrl; // || emoji.originalUrl してるのは後方互換性のため（publicUrlはstringなので??はだめ）
+		return emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl; // 後方互換性のため
 	}
 
 	/**
@@ -312,10 +314,11 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	@bindThis
 	public async populateEmojis(emojiNames: string[], noteUserHost: string | null): Promise<Record<string, string>> {
 		const emojis = await Promise.all(emojiNames.map(x => this.populateEmoji(x, noteUserHost)));
-		const res = {} as any;
+		const res: Record<string, string> = {};
 		for (let i = 0; i < emojiNames.length; i++) {
-			if (emojis[i] != null) {
-				res[emojiNames[i]] = emojis[i];
+			const emoji = emojis[i];
+			if (emoji != null) {
+				res[emojiNames[i]] = emoji;
 			}
 		}
 		return res;
@@ -350,7 +353,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(_signal?: string | undefined): void {
 		this.dispose();
 	}
 }

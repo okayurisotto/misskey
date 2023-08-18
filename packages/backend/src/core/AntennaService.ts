@@ -14,8 +14,8 @@ import type { antenna, note, user } from '@prisma/client';
 
 @Injectable()
 export class AntennaService implements OnApplicationShutdown {
-	private antennasFetched: boolean;
-	private antennas: antenna[];
+	private antennasFetched = false;
+	private antennas: antenna[] = [];
 
 	constructor(
 		@Inject(DI.redis)
@@ -28,9 +28,6 @@ export class AntennaService implements OnApplicationShutdown {
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.antennasFetched = false;
-		this.antennas = [];
-
 		this.redisForSub.on('message', this.onRedisMessage);
 	}
 
@@ -65,7 +62,10 @@ export class AntennaService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async addNoteToAntennas(note: note, noteUser: { id: user['id']; username: string; host: string | null; }): Promise<void> {
+	public async addNoteToAntennas(
+		note: note,
+		noteUser: { id: user['id']; username: string; host: string | null },
+	): Promise<void> {
 		const antennas = await this.getAntennas();
 		const antennasWithMatchResult = await Promise.all(antennas.map(antenna => this.checkHitAntenna(antenna, note, noteUser).then(hit => [antenna, hit] as const)));
 		const matchedAntennas = antennasWithMatchResult.filter(([, hit]) => hit).map(([antenna]) => antenna);
@@ -88,7 +88,11 @@ export class AntennaService implements OnApplicationShutdown {
 	// NOTE: フォローしているユーザーのノート、リストのユーザーのノート、グループのユーザーのノート指定はパフォーマンス上の理由で無効になっている
 
 	@bindThis
-	public async checkHitAntenna(antenna: antenna, note: (note | z.infer<typeof NoteSchema>), noteUser: { id: user['id']; username: string; host: string | null; }): Promise<boolean> {
+	public async checkHitAntenna(
+		antenna: antenna,
+		note: (note | z.infer<typeof NoteSchema>),
+		noteUser: { id: user['id']; username: string; host: string | null },
+	): Promise<boolean> {
 		if (note.visibility === 'specified') return false;
 		if (note.visibility === 'followers') return false;
 
@@ -160,7 +164,7 @@ export class AntennaService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getAntennas() {
+	public async getAntennas(): Promise<antenna[]> {
 		if (!this.antennasFetched) {
 			this.antennas = await this.prismaService.client.antenna.findMany({ where: { isActive: true } });
 			this.antennasFetched = true;
@@ -175,7 +179,7 @@ export class AntennaService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(_signal?: string | undefined): void {
 		this.dispose();
 	}
 }
