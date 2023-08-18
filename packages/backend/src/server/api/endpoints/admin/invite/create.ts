@@ -5,8 +5,8 @@ import { InviteCodeEntityService } from '@/core/entities/InviteCodeEntityService
 import { IdService } from '@/core/IdService.js';
 import { generateInviteCode } from '@/misc/generate-invite-code.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { ApiError } from '../../../error.js';
 import { limit } from '@/models/zod/misc.js';
+import { ApiError } from '../../../error.js';
 
 const res = z.array(z.object({ code: z.string() }));
 export const meta = {

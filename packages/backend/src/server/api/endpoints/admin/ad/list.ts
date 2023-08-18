@@ -31,7 +31,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({
 				sinceId: ps.sinceId,
 				untilId: ps.untilId,

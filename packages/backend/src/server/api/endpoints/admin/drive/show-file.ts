@@ -1,10 +1,13 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { pick } from 'omick';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MD5Schema, MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
+
+const RequestHeadersSchema = z.record(z.string(), z.string()).nullable();
 
 const res = z.object({
 	id: MisskeyIdSchema,
@@ -38,7 +41,7 @@ const res = z.object({
 	maybeSensitive: z.boolean(),
 	webpublicType: z.string().nullable(),
 	requestIp: z.string().nullable(),
-	requestHeaders: z.record(z.string(), z.string()).nullable(),
+	requestHeaders: RequestHeadersSchema,
 });
 export const meta = {
 	tags: ['admin'],
@@ -75,6 +78,7 @@ export default class extends Endpoint<
 				'fileId' in ps
 					? await this.prismaService.client.drive_file.findUnique({
 							where: { id: ps.fileId },
+							include: { user_drive_file_userIdTouser: true },
 					  })
 					: await this.prismaService.client.drive_file.findFirst({
 							where: {
@@ -84,59 +88,56 @@ export default class extends Endpoint<
 									{ webpublicUrl: ps.url },
 								],
 							},
+							include: { user_drive_file_userIdTouser: true },
 					  });
 
 			if (file === null) {
 				throw new ApiError(meta.errors.noSuchFile);
 			}
 
-			const owner = file.userId
-				? await this.prismaService.client.user.findUniqueOrThrow({
-						where: { id: file.userId },
-				  })
-				: null;
+			const owner = file.user_drive_file_userIdTouser;
 
-			const iAmModerator = await this.roleService.isModerator(me);
-			const ownerIsModerator = owner
-				? await this.roleService.isModerator(owner)
-				: false;
+			const [iAmModerator, ownerIsModerator] = await Promise.all([
+				this.roleService.isModerator(me),
+				(async (): Promise<boolean> =>
+					owner ? await this.roleService.isModerator(owner) : false)(),
+			]);
 
 			return {
-				id: file.id,
-				userId: file.userId,
-				userHost: file.userHost,
-				isLink: file.isLink,
-				maybePorn: file.maybePorn,
-				maybeSensitive: file.maybeSensitive,
-				isSensitive: file.isSensitive,
-				folderId: file.folderId,
-				src: file.src,
-				uri: file.uri,
-				webpublicAccessKey: file.webpublicAccessKey,
-				thumbnailAccessKey: file.thumbnailAccessKey,
-				accessKey: file.accessKey,
-				webpublicType: file.webpublicType,
-				webpublicUrl: file.webpublicUrl,
-				thumbnailUrl: file.thumbnailUrl,
-				url: file.url,
-				storedInternal: file.storedInternal,
-				properties: file.properties,
-				blurhash: file.blurhash,
-				comment: file.comment,
-				size: file.size,
-				type: file.type,
-				name: file.name,
-				md5: file.md5,
+				...pick(file, [
+					'id',
+					'userId',
+					'userHost',
+					'isLink',
+					'maybePorn',
+					'maybeSensitive',
+					'isSensitive',
+					'folderId',
+					'src',
+					'uri',
+					'webpublicAccessKey',
+					'thumbnailAccessKey',
+					'accessKey',
+					'webpublicType',
+					'webpublicUrl',
+					'thumbnailUrl',
+					'url',
+					'storedInternal',
+					'properties',
+					'blurhash',
+					'comment',
+					'size',
+					'type',
+					'name',
+					'md5',
+				]),
 				createdAt: file.createdAt.toISOString(),
 				requestIp: iAmModerator ? file.requestIp : null,
 				requestHeaders:
 					iAmModerator && !ownerIsModerator
-						? z
-								.record(z.string(), z.string())
-								.nullable()
-								.parse(file.requestHeaders)
+						? RequestHeadersSchema.parse(file.requestHeaders)
 						: null,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

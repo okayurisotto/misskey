@@ -31,9 +31,9 @@ export default class extends Endpoint<
 				where: { userId: me.id },
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				antennas.map((x) => this.antennaEntityService.pack(x)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

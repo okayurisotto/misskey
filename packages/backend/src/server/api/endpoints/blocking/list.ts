@@ -44,11 +44,11 @@ export default class extends Endpoint<
 				orderBy: { blockeeId: 'desc' },
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				blockings.map((blocking) =>
 					this.blockingEntityService.pack(blocking, me),
 				),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

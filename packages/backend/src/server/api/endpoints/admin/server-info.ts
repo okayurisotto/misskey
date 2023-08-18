@@ -52,24 +52,28 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async () => {
-			const memStats = await si.mem();
-			const fsStats = await si.fsSize();
-			const netInterface = await si.networkInterfaceDefault();
+			const [memStats, fsStats, netInterface, redisServerInfo, psqlServerInfo] =
+				await Promise.all([
+					si.mem(),
+					si.fsSize(),
+					si.networkInterfaceDefault(),
+					this.redisClient.info('Server'),
+					this.prismaService.client.$queryRaw`SHOW server_version`,
+				]);
 
-			const redisServerInfo = await this.redisClient.info('Server');
-			const m = redisServerInfo.match(new RegExp('^redis_version:(.*)', 'm'));
-			const redis_version = m?.[1];
+			const m = redisServerInfo.match(/^redis_version:(.*)/m);
+			const redisVersion = m?.at(1);
+
+			const psqlVersion = z
+				.tuple([z.object({ server_version: z.string() })])
+				.parse(psqlServerInfo)[0]['server_version'];
 
 			return {
 				machine: os.hostname(),
 				os: os.platform(),
 				node: process.version,
-				psql: z
-					.tuple([z.object({ server_version: z.string() })])
-					.parse(
-						await this.prismaService.client.$queryRaw`SHOW server_version`,
-					)[0]['server_version'],
-				redis: redis_version,
+				psql: psqlVersion,
+				redis: redisVersion,
 				cpu: {
 					model: os.cpus()[0].model,
 					cores: os.cpus().length,
@@ -84,7 +88,7 @@ export default class extends Endpoint<
 				net: {
 					interface: netInterface,
 				},
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

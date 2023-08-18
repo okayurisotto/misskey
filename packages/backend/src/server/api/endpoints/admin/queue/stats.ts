@@ -35,30 +35,40 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject('queue:system') public systemQueue: SystemQueue,
+		@Inject('queue:system')
+		public systemQueue: SystemQueue,
 		@Inject('queue:endedPollNotification')
 		public endedPollNotificationQueue: EndedPollNotificationQueue,
-		@Inject('queue:deliver') public deliverQueue: DeliverQueue,
-		@Inject('queue:inbox') public inboxQueue: InboxQueue,
-		@Inject('queue:db') public dbQueue: DbQueue,
+		@Inject('queue:deliver')
+		public deliverQueue: DeliverQueue,
+		@Inject('queue:inbox')
+		public inboxQueue: InboxQueue,
+		@Inject('queue:db')
+		public dbQueue: DbQueue,
 		@Inject('queue:objectStorage')
 		public objectStorageQueue: ObjectStorageQueue,
 		@Inject('queue:webhookDeliver')
 		public webhookDeliverQueue: WebhookDeliverQueue,
 	) {
-		super(meta, paramDef, async (ps, me) => {
-			const deliverJobCounts = await this.deliverQueue.getJobCounts();
-			const inboxJobCounts = await this.inboxQueue.getJobCounts();
-			const dbJobCounts = await this.dbQueue.getJobCounts();
-			const objectStorageJobCounts =
-				await this.objectStorageQueue.getJobCounts();
+		super(meta, paramDef, async () => {
+			const [
+				deliverJobCounts,
+				inboxJobCounts,
+				dbJobCounts,
+				objectStorageJobCounts,
+			] = await Promise.all([
+				this.deliverQueue.getJobCounts(),
+				this.inboxQueue.getJobCounts(),
+				this.dbQueue.getJobCounts(),
+				this.objectStorageQueue.getJobCounts(),
+			]);
 
 			return {
 				deliver: QueueCountSchema.parse(deliverJobCounts),
 				inbox: QueueCountSchema.parse(inboxJobCounts),
 				db: QueueCountSchema.parse(dbJobCounts),
 				objectStorage: QueueCountSchema.parse(objectStorageJobCounts),
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

@@ -62,7 +62,7 @@ export default class extends Endpoint<
 				text: announcement.text,
 				imageUrl: announcement.imageUrl,
 				reads: announcement.announcement_read.length,
-			})) satisfies z.infer<typeof res>;
+			}));
 		});
 	}
 }

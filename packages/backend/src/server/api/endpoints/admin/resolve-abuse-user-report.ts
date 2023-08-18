@@ -35,28 +35,26 @@ export default class extends Endpoint<
 			const report =
 				await this.prismaService.client.abuse_user_report.findUnique({
 					where: { id: ps.reportId },
+					include: { user_abuse_user_report_targetUserIdTouser: true },
 				});
 
-			if (report == null) {
-				throw new Error('report not found');
+			if (report === null) {
+				throw new Error('Unable to locate the requested report.');
 			}
 
-			if (ps.forward && report.targetUserHost != null) {
+			if (ps.forward && report.targetUserHost !== null) {
 				const actor = await this.instanceActorService.getInstanceActor();
-				const targetUser =
-					await this.prismaService.client.user.findUniqueOrThrow({
-						where: { id: report.targetUserId },
-					});
+				const targetUser = report.user_abuse_user_report_targetUserIdTouser;
 
-				this.queueService.deliver(
+				const flag = this.apRendererService.renderFlag(
 					actor,
-					this.apRendererService.addContext(
-						this.apRendererService.renderFlag(
-							actor,
-							targetUser.uri!,
-							report.comment,
-						),
-					),
+					targetUser.uri!,
+					report.comment,
+				);
+				const context = this.apRendererService.addContext(flag);
+				await this.queueService.deliver(
+					actor,
+					context,
 					targetUser.inbox,
 					false,
 				);

@@ -6,8 +6,8 @@ import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { ApiError } from '../../../error.js';
 import { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
+import { ApiError } from '../../../error.js';
 
 const res = EmojiDetailedSchema; // TODO
 export const meta = {
@@ -71,13 +71,14 @@ export default class extends Endpoint<
 					ps.roleIdsThatCanBeUsedThisEmojiAsReaction ?? [],
 			});
 
-			this.moderationLogService.insertModerationLog(me, 'addEmoji', {
-				emojiId: emoji.id,
-			});
+			const [packedEmoji] = await Promise.all([
+				this.emojiEntityService.packDetailed(emoji),
+				this.moderationLogService.insertModerationLog(me, 'addEmoji', {
+					emojiId: emoji.id,
+				}),
+			]);
 
-			return (await this.emojiEntityService.packDetailed(
-				emoji,
-			)) satisfies z.infer<typeof res>;
+			return packedEmoji;
 		});
 	}
 }

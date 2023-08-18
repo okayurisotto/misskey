@@ -28,9 +28,7 @@ export default class extends Endpoint<
 				where: { userId: null },
 			});
 
-			for (const file of files) {
-				await this.driveService.deleteFile(file);
-			}
+			await Promise.all(files.map((file) => this.driveService.deleteFile(file)));
 		});
 	}
 }

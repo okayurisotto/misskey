@@ -421,8 +421,10 @@ export default class extends Endpoint<
 				set.preservedUsernames = ps.preservedUsernames;
 			}
 
-			await this.metaService.update(set);
-			this.moderationLogService.insertModerationLog(me, 'updateMeta');
+			await Promise.all([
+				this.metaService.update(set),
+				this.moderationLogService.insertModerationLog(me, 'updateMeta'),
+			]);
 		});
 	}
 }

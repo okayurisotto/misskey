@@ -27,7 +27,7 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(private customEmojiService: CustomEmojiService) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			await this.customEmojiService.setCategoryBulk(
 				ps.ids,
 				ps.category ?? null,

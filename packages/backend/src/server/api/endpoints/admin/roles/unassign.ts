@@ -58,10 +58,9 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchRole);
 			}
 
-			if (
-				!role.canEditMembersByModerator &&
-				!(await this.roleService.isAdministrator(me))
-			) {
+			const iAmAdmin = await this.roleService.isAdministrator(me);
+
+			if (!role.canEditMembersByModerator && !iAmAdmin) {
 				throw new ApiError(meta.errors.accessDenied);
 			}
 

@@ -60,10 +60,10 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await this.appEntityService.pack(app, null, {
+			return await this.appEntityService.pack(app, null, {
 				detail: true,
 				includeSecret: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

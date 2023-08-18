@@ -28,7 +28,7 @@ export default class extends Endpoint<
 		private readonly userSuspendService: UserSuspendService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const user = await this.prismaService.client.user.findUnique({
 				where: { id: ps.userId },
 			});
@@ -43,6 +43,7 @@ export default class extends Endpoint<
 
 			if (this.userEntityService.isLocalUser(user)) {
 				// 物理削除する前にDelete activityを送信する
+				// TODO: `Promise.all`しても問題ないか確認する
 				await this.userSuspendService.doPostSuspend(user);
 				await this.queueService.createDeleteAccountJob(user, { soft: false });
 			} else {

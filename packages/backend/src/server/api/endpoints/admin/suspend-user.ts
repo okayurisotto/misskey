@@ -38,29 +38,28 @@ export default class extends Endpoint<
 				where: { id: ps.userId },
 			});
 
-			if (user == null) {
-				throw new Error('user not found');
+			if (user === null) {
+				throw new Error('Unable to locate the requested user.');
 			}
 
 			if (await this.roleService.isModerator(user)) {
-				throw new Error('cannot suspend moderator account');
+				throw new Error('You are not authorized to perform this operation.');
 			}
 
-			await this.prismaService.client.user.update({
-				where: { id: user.id },
-				data: { isSuspended: true },
-			});
-
-			await this.moderationLogService.insertModerationLog(me, 'suspend', {
-				targetId: user.id,
-			});
-
-			await this.userSuspendService.doPostSuspend(user);
-			await this.unFollowAll(user);
+			await Promise.all([
+				this.prismaService.client.user.update({
+					where: { id: user.id },
+					data: { isSuspended: true },
+				}),
+				this.moderationLogService.insertModerationLog(me, 'suspend', {
+					targetId: user.id,
+				}),
+				this.userSuspendService.doPostSuspend(user),
+				this.unFollowAll(user),
+			]);
 		});
 	}
 
-	@bindThis
 	private async unFollowAll(follower: user): Promise<void> {
 		const followings = await this.prismaService.client.following.findMany({
 			where: { followerId: follower.id },

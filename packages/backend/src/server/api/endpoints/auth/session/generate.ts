@@ -43,13 +43,13 @@ export default class extends Endpoint<
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			// Lookup app
 			const app = await this.prismaService.client.app.findFirst({
 				where: { secret: ps.appSecret },
 			});
 
-			if (app == null) {
+			if (app === null) {
 				throw new ApiError(meta.errors.noSuchApp);
 			}
 
@@ -69,7 +69,7 @@ export default class extends Endpoint<
 			return {
 				token: doc.token,
 				url: `${this.config.authUrl}/${doc.token}`,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

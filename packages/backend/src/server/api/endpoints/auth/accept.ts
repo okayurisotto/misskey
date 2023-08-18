@@ -39,6 +39,7 @@ export default class extends Endpoint<
 			// Fetch token
 			const session = await this.prismaService.client.auth_session.findFirst({
 				where: { token: ps.token },
+				include: { app: true },
 			});
 
 			if (session == null) {
@@ -49,22 +50,17 @@ export default class extends Endpoint<
 
 			// Fetch exist access token
 			const exist =
-				(await this.prismaService.client.access_token.count({
+				(await this.prismaService.client.access_token.findFirst({
 					where: {
 						appId: session.appId,
 						userId: me.id,
 					},
-					take: 1,
-				})) > 0;
+				})) !== null;
 
 			if (!exist) {
-				const app = await this.prismaService.client.app.findUniqueOrThrow({
-					where: { id: session.appId },
-				});
-
 				// Generate Hash
 				const sha256 = crypto.createHash('sha256');
-				sha256.update(accessToken + app.secret);
+				sha256.update(accessToken + session.app.secret);
 				const hash = sha256.digest('hex');
 
 				const now = new Date();

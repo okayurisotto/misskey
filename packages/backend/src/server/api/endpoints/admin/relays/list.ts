@@ -30,10 +30,8 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private relayService: RelayService) {
-		super(meta, paramDef, async (ps, me) => {
-			return (await this.relayService.listRelay()) satisfies z.infer<
-				typeof res
-			>;
+		super(meta, paramDef, async () => {
+			return await this.relayService.listRelay();
 		});
 	}
 }

@@ -48,10 +48,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchSession);
 			}
 
-			return (await this.authSessionEntityService.pack(
-				session,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.authSessionEntityService.pack(session, me);
 		});
 	}
 }

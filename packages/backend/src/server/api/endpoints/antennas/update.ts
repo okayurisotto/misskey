@@ -83,7 +83,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			await this.prismaService.client.antenna.update({
+			const updated = await this.prismaService.client.antenna.update({
 				where: { id: antenna.id },
 				data: {
 					name: ps.name,
@@ -101,16 +101,9 @@ export default class extends Endpoint<
 				},
 			});
 
-			this.globalEventService.publishInternalEvent(
-				'antennaUpdated',
-				await this.prismaService.client.antenna.findUniqueOrThrow({
-					where: { id: antenna.id },
-				}),
-			);
+			this.globalEventService.publishInternalEvent('antennaUpdated', updated);
 
-			return (await this.antennaEntityService.pack(
-				antenna.id,
-			)) satisfies z.infer<typeof res>;
+			return await this.antennaEntityService.pack(updated);
 		});
 	}
 }

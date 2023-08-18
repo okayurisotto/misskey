@@ -4,7 +4,6 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
-import { GetterService } from '@/server/api/GetterService.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -50,7 +49,6 @@ export default class extends Endpoint<
 > {
 	constructor(
 		private readonly userEntityService: UserEntityService,
-		private readonly getterService: GetterService,
 		private readonly userBlockingService: UserBlockingService,
 		private readonly prismaService: PrismaService,
 	) {
@@ -65,24 +63,23 @@ export default class extends Endpoint<
 			}
 
 			// Get blockee
-			const blockee = await this.getterService
-				.getUser(ps.userId)
-				.catch((err) => {
-					if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
-						throw new ApiError(meta.errors.noSuchUser);
-					}
-					throw err;
-				});
+			const blockee = await this.prismaService.client.user.findUnique({
+				where: { id: ps.userId },
+			});
+			if (blockee === null) {
+				throw new ApiError(meta.errors.noSuchUser);
+			}
 
 			// Check if already blocking
 			const exist =
-				(await this.prismaService.client.blocking.count({
+				(await this.prismaService.client.blocking.findUnique({
 					where: {
-						blockerId: blocker.id,
-						blockeeId: blockee.id,
+						blockerId_blockeeId: {
+							blockerId: blocker.id,
+							blockeeId: blockee.id,
+						},
 					},
-					take: 1,
-				})) > 0;
+				})) !== null;
 
 			if (exist) {
 				throw new ApiError(meta.errors.alreadyBlocking);
@@ -90,9 +87,9 @@ export default class extends Endpoint<
 
 			await this.userBlockingService.block(blocker, blockee);
 
-			return (await this.userEntityService.pack(blockee.id, blocker, {
+			return await this.userEntityService.pack(blockee.id, blocker, {
 				detail: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

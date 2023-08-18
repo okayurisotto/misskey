@@ -53,7 +53,7 @@ export default class extends Endpoint<
 				...announcement,
 				createdAt: announcement.createdAt.toISOString(),
 				updatedAt: null,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

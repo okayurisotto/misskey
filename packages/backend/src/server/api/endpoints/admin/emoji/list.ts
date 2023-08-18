@@ -45,7 +45,7 @@ export default class extends Endpoint<
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const emojis = await this.prismaService.client.emoji.findMany({
 				where: {
 					AND: [
@@ -53,7 +53,7 @@ export default class extends Endpoint<
 						ps.untilId ? { id: { lt: ps.untilId } } : {},
 						{ host: null },
 						ps.query
-							? /\:([a-z0-9_]*)\:/g.test(ps.query)
+							? /^:[a-z0-9_]+:$/g.test(ps.query)
 								? { name: ps.query.substring(1, ps.query.length - 1) }
 								: {
 										OR: [
@@ -68,9 +68,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

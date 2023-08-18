@@ -52,11 +52,14 @@ export default class extends Endpoint<
 				where: { AND: [paginationQuery.where] },
 				orderBy: paginationQuery.orderBy,
 				take: ps.limit,
+				include: { user: true },
 			});
 
-			return (await Promise.all(
-				reports.map((report) => this.moderationLogEntityService.pack(report)),
-			)) satisfies z.infer<typeof res>;
+			return await Promise.all(
+				reports.map((report) =>
+					this.moderationLogEntityService.pack(report, { user: report.user }),
+				),
+			);
 		});
 	}
 }

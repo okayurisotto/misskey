@@ -10,6 +10,7 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import { isNotNull } from '@/misc/is-not-null.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -61,11 +62,11 @@ export default class extends Endpoint<
 				},
 			});
 
-			if (antenna == null) {
+			if (antenna === null) {
 				throw new ApiError(meta.errors.noSuchAntenna);
 			}
 
-			this.prismaService.client.antenna.update({
+			await this.prismaService.client.antenna.update({
 				where: { id: antenna.id },
 				data: {
 					isActive: true,
@@ -91,7 +92,8 @@ export default class extends Endpoint<
 			}
 
 			const noteIds = noteIdsRes
-				.map((x) => x[1][1])
+				.map((x) => x.at(1)?.at(1))
+				.filter(isNotNull)
 				.filter((x) => x !== ps.untilId && x !== ps.sinceId);
 
 			if (noteIds.length === 0) {
@@ -122,10 +124,7 @@ export default class extends Endpoint<
 				this.noteReadService.read(me.id, notes);
 			}
 
-			return (await this.noteEntityService.packMany(
-				notes,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.noteEntityService.packMany(notes, me);
 		});
 	}
 }

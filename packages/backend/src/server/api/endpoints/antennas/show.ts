@@ -50,9 +50,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchAntenna);
 			}
 
-			return (await this.antennaEntityService.pack(antenna)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.antennaEntityService.pack(antenna);
 		});
 	}
 }

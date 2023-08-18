@@ -63,14 +63,12 @@ export default class extends Endpoint<
 				throw new Error('invalid param');
 			}
 
-			const currentAntennasCount =
-				await this.prismaService.client.antenna.count({
-					where: { userId: me.id },
-				});
-			if (
-				currentAntennasCount >
-				(await this.roleService.getUserPolicies(me.id)).antennaLimit
-			) {
+			const [currentAntennasCount, policies] = await Promise.all([
+				this.prismaService.client.antenna.count({ where: { userId: me.id } }),
+				this.roleService.getUserPolicies(me.id),
+			]);
+
+			if (currentAntennasCount > policies.antennaLimit) {
 				throw new ApiError(meta.errors.tooManyAntennas);
 			}
 
@@ -112,9 +110,7 @@ export default class extends Endpoint<
 
 			this.globalEventService.publishInternalEvent('antennaCreated', antenna);
 
-			return (await this.antennaEntityService.pack(antenna)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.antennaEntityService.pack(antenna);
 		});
 	}
 }

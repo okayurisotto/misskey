@@ -1,10 +1,10 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { InviteCodeEntityService } from '@/core/entities/InviteCodeEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { limit } from '@/models/zod/misc.js';
+import type { Prisma } from '@prisma/client';
 
 const res = z.array(z.unknown());
 export const meta = {
@@ -33,8 +33,8 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const orderBy: Prisma.registration_ticketOrderByWithRelationInput =
-				(() => {
+			const orderBy =
+				((): Prisma.registration_ticketOrderByWithRelationInput => {
 					switch (ps.sort) {
 						case '+createdAt':
 							return { createdAt: 'desc' };

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { Prisma, type role } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApiError } from '@/server/api/error.js';
@@ -35,15 +36,22 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const role = await this.prismaService.client.role.findUnique({
-				where: { id: ps.roleId },
-			});
-			if (role === null) {
-				throw new ApiError(meta.errors.noSuchRole);
+			let role: role;
+
+			try {
+				role = await this.prismaService.client.role.delete({
+					where: { id: ps.roleId },
+				});
+			} catch (e) {
+				if (e instanceof Prisma.PrismaClientKnownRequestError) {
+					if (e.code === 'P2025') {
+						throw new ApiError(meta.errors.noSuchRole);
+					}
+				}
+
+				throw e;
 			}
-			await this.prismaService.client.role.delete({
-				where: { id: ps.roleId },
-			});
+
 			this.globalEventService.publishInternalEvent('roleDeleted', role);
 		});
 	}

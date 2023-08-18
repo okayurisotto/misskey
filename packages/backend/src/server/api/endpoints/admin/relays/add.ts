@@ -37,18 +37,12 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private relayService: RelayService) {
-		super(meta, paramDef, async (ps, me) => {
-			try {
-				if (new URL(ps.inbox).protocol !== 'https:') {
-					throw new Error('https only');
-				}
-			} catch {
+		super(meta, paramDef, async (ps) => {
+			if (new URL(ps.inbox).protocol !== 'https:') {
 				throw new ApiError(meta.errors.invalidUrl);
 			}
 
-			return (await this.relayService.addRelay(ps.inbox)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.relayService.addRelay(ps.inbox);
 		});
 	}
 }

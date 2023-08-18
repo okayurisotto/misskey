@@ -5,8 +5,8 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { Prisma } from '@prisma/client';
 import { limit } from '@/models/zod/misc.js';
+import type { Prisma } from '@prisma/client';
 
 const res = z.array(UserDetailedSchema);
 export const meta = {
@@ -60,7 +60,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const orderBy: Prisma.userOrderByWithRelationInput = (() => {
+			const orderBy = ((): Prisma.userOrderByWithRelationInput => {
 				switch (ps.sort) {
 					case '+follower':
 						return { followersCount: 'desc' };
@@ -83,6 +83,22 @@ export default class extends Endpoint<
 				}
 			})();
 
+			const [adminFilter, moderatorFilter, adminAndModeratorFilter] =
+				await Promise.all([
+					(async (): Promise<Pick<Prisma.userWhereInput, 'id'>> =>
+						ps.state === 'admin'
+							? { id: { in: await this.roleService.getAdministratorIds() } }
+							: {})(),
+					(async (): Promise<Pick<Prisma.userWhereInput, 'id'>> =>
+						ps.state === 'moderator'
+							? { id: { in: await this.roleService.getModeratorIds(false) } }
+							: {})(),
+					(async (): Promise<Pick<Prisma.userWhereInput, 'id'>> =>
+						ps.state === 'adminOrModerator'
+							? { id: { in: await this.roleService.getModeratorIds(true) } }
+							: {})(),
+				]);
+
 			const users = await this.prismaService.client.user.findMany({
 				where: {
 					AND: [
@@ -95,20 +111,14 @@ export default class extends Endpoint<
 							  }
 							: {},
 						ps.state === 'suspended' ? { isSuspended: true } : {},
-						ps.state === 'admin'
-							? { id: { in: await this.roleService.getAdministratorIds() } }
-							: {},
-						ps.state === 'moderator'
-							? { id: { in: await this.roleService.getModeratorIds(false) } }
-							: {},
-						ps.state === 'adminOrModerator'
-							? { id: { in: await this.roleService.getModeratorIds(true) } }
-							: {},
+						adminFilter,
+						moderatorFilter,
+						adminAndModeratorFilter,
 						ps.origin === 'local' ? { host: null } : {},
 						ps.origin === 'remote' ? { host: { not: null } } : {},
-						ps.username === null
-							? {}
-							: { usernameLower: { startsWith: ps.username.toLowerCase() } },
+						ps.username !== null
+							? { usernameLower: { startsWith: ps.username.toLowerCase() } }
+							: {},
 						ps.hostname ? { host: ps.hostname.toLowerCase() } : {},
 					],
 				},
@@ -117,11 +127,11 @@ export default class extends Endpoint<
 				skip: ps.offset,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				users.map((user) =>
 					this.userEntityService.pack(user, me, { detail: true }),
 				),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

@@ -25,8 +25,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			this.queueService.destroy();
-
-			this.moderationLogService.insertModerationLog(me, 'clearQueue');
+			await this.moderationLogService.insertModerationLog(me, 'clearQueue');
 		});
 	}
 }

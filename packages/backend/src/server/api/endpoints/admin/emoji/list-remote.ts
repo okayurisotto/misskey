@@ -66,9 +66,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

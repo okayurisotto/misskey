@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { Prisma, type user } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
@@ -27,24 +28,29 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const user = await this.prismaService.client.user.findUnique({
-				where: { id: ps.userId },
-			});
+			const [user] = await Promise.all([
+				(async (): Promise<user> => {
+					try {
+						return await this.prismaService.client.user.update({
+							where: { id: ps.userId },
+							data: { isSuspended: false },
+						});
+					} catch (e) {
+						if (e instanceof Prisma.PrismaClientKnownRequestError) {
+							if (e.code === 'P2025') {
+								throw new Error('Unable to locate the requested user.');
+							}
+						}
 
-			if (user == null) {
-				throw new Error('user not found');
-			}
+						throw e;
+					}
+				})(),
+				this.moderationLogService.insertModerationLog(me, 'unsuspend', {
+					targetId: ps.userId,
+				}),
+			]);
 
-			await this.prismaService.client.user.update({
-				where: { id: user.id },
-				data: { isSuspended: false },
-			});
-
-			this.moderationLogService.insertModerationLog(me, 'unsuspend', {
-				targetId: user.id,
-			});
-
-			this.userSuspendService.doPostUnsuspend(user);
+			await this.userSuspendService.doPostUnsuspend(user);
 		});
 	}
 }

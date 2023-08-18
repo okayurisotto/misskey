@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { AdSchema } from '@/models/zod/AdSchema.js';
@@ -29,25 +30,30 @@ export default class extends Endpoint<
 > {
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps) => {
-			const ad = await this.prismaService.client.ad.findUnique({
-				where: { id: ps.id },
-			});
-			if (ad === null) throw new ApiError(meta.errors.noSuchAd);
+			try {
+				await this.prismaService.client.ad.update({
+					where: { id: ps.id },
+					data: {
+						url: ps.url,
+						place: ps.place,
+						priority: ps.priority,
+						ratio: ps.ratio,
+						memo: ps.memo,
+						imageUrl: ps.imageUrl,
+						expiresAt: new Date(ps.expiresAt),
+						startsAt: new Date(ps.startsAt),
+						dayOfWeek: ps.dayOfWeek,
+					},
+				});
+			} catch (e) {
+				if (e instanceof Prisma.PrismaClientKnownRequestError) {
+					if (e.code === 'P2025') {
+						throw new ApiError(meta.errors.noSuchAd);
+					}
+				}
 
-			await this.prismaService.client.ad.update({
-				where: { id: ad.id },
-				data: {
-					url: ps.url,
-					place: ps.place,
-					priority: ps.priority,
-					ratio: ps.ratio,
-					memo: ps.memo,
-					imageUrl: ps.imageUrl,
-					expiresAt: new Date(ps.expiresAt),
-					startsAt: new Date(ps.startsAt),
-					dayOfWeek: ps.dayOfWeek,
-				},
-			});
+				throw e;
+			}
 		});
 	}
 }

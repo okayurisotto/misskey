@@ -23,7 +23,7 @@ export default class extends Endpoint<
 > {
 	constructor(private queueService: QueueService) {
 		super(meta, paramDef, async (ps, me) => {
-			this.queueService.createImportCustomEmojisJob(me, ps.fileId);
+			await this.queueService.createImportCustomEmojisJob(me, ps.fileId);
 		});
 	}
 }

@@ -26,55 +26,33 @@ export default class extends Endpoint<
 		private queueService: QueueService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			let delayedQueues;
+			const jobs = (
+				await Promise.all([
+					ps.type === 'deliver'
+						? this.queueService.deliverQueue.getDelayed()
+						: [],
+					ps.type === 'inbox' ? this.queueService.inboxQueue.getDelayed() : [],
+				])
+			).flat();
 
-			switch (ps.type) {
-				case 'deliver':
-					delayedQueues = await this.queueService.deliverQueue.getDelayed();
-					for (
-						let queueIndex = 0;
-						queueIndex < delayedQueues.length;
-						queueIndex++
-					) {
-						const queue = delayedQueues[queueIndex];
-						try {
-							await queue.promote();
-						} catch (e) {
-							if (e instanceof Error) {
-								if (e.message.indexOf('not in a delayed state') !== -1) {
-									throw e;
-								}
-							} else {
-								throw e;
-							}
+			await Promise.all(
+				jobs.map(async (job) => {
+					try {
+						await job.promote();
+					} catch (e) {
+						if (
+							e instanceof Error &&
+							e.message.includes('not in a delayed state')
+						) {
+							// pass
+						} else {
+							throw e;
 						}
 					}
-					break;
+				}),
+			);
 
-				case 'inbox':
-					delayedQueues = await this.queueService.inboxQueue.getDelayed();
-					for (
-						let queueIndex = 0;
-						queueIndex < delayedQueues.length;
-						queueIndex++
-					) {
-						const queue = delayedQueues[queueIndex];
-						try {
-							await queue.promote();
-						} catch (e) {
-							if (e instanceof Error) {
-								if (e.message.indexOf('not in a delayed state') !== -1) {
-									throw e;
-								}
-							} else {
-								throw e;
-							}
-						}
-					}
-					break;
-			}
-
-			this.moderationLogService.insertModerationLog(me, 'promoteQueue');
+			await this.moderationLogService.insertModerationLog(me, 'promoteQueue');
 		});
 	}
 }

@@ -28,23 +28,18 @@ export default class extends Endpoint<
 				where: {
 					followerHost: ps.host,
 				},
+				include: {
+					user_following_followeeIdTouser: true,
+					user_following_followerIdTouser: true,
+				},
 			});
 
-			const pairs = await Promise.all(
-				followings.map((f) =>
-					Promise.all([
-						this.prismaService.client.user.findUniqueOrThrow({
-							where: { id: f.followerId },
-						}),
-						this.prismaService.client.user.findUniqueOrThrow({
-							where: { id: f.followeeId },
-						}),
-					]).then(([from, to]) => [{ id: from.id }, { id: to.id }]),
-				),
-			);
-
 			await this.queueService.createUnfollowJob(
-				pairs.map((p) => ({ from: p[0], to: p[1], silent: true })),
+				followings.map((f) => {
+					const from = f.user_following_followerIdTouser;
+					const to = f.user_following_followeeIdTouser;
+					return { from: { id: from.id }, to: { id: to.id }, silent: true };
+				}),
 			);
 		});
 	}

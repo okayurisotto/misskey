@@ -36,7 +36,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, user, token) => {
-			const isSecure = user != null && token == null;
+			const isSecure = user !== null && token === null;
 
 			// Lookup app
 			const ap = await this.prismaService.client.app.findUnique({
@@ -47,10 +47,10 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchApp);
 			}
 
-			return (await this.appEntityService.pack(ap, user, {
+			return await this.appEntityService.pack(ap, user, {
 				detail: true,
 				includeSecret: isSecure && ap.userId === user.id,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

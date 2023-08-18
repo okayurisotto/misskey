@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApiError } from '@/server/api/error.js';
@@ -51,39 +52,38 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const roleExist =
-				(await this.prismaService.client.role.count({
+			let updated;
+			try {
+				updated = await this.prismaService.client.role.update({
 					where: { id: ps.roleId },
-					take: 1,
-				})) > 0;
-			if (!roleExist) {
-				throw new ApiError(meta.errors.noSuchRole);
+					data: {
+						updatedAt: new Date(),
+						name: ps.name,
+						description: ps.description,
+						color: ps.color,
+						iconUrl: ps.iconUrl,
+						target: ps.target,
+						condFormula: ps.condFormula,
+						isPublic: ps.isPublic,
+						isModerator: ps.isModerator,
+						isAdministrator: ps.isAdministrator,
+						isExplorable: ps.isExplorable,
+						asBadge: ps.asBadge,
+						canEditMembersByModerator: ps.canEditMembersByModerator,
+						displayOrder: ps.displayOrder,
+						policies: ps.policies,
+					},
+				});
+			} catch (e) {
+				if (e instanceof Prisma.PrismaClientKnownRequestError) {
+					if (e.code === 'P2025') {
+						throw new ApiError(meta.errors.noSuchRole);
+					}
+				}
+
+				throw e;
 			}
 
-			const date = new Date();
-			await this.prismaService.client.role.update({
-				where: { id: ps.roleId },
-				data: {
-					updatedAt: date,
-					name: ps.name,
-					description: ps.description,
-					color: ps.color,
-					iconUrl: ps.iconUrl,
-					target: ps.target,
-					condFormula: ps.condFormula,
-					isPublic: ps.isPublic,
-					isModerator: ps.isModerator,
-					isAdministrator: ps.isAdministrator,
-					isExplorable: ps.isExplorable,
-					asBadge: ps.asBadge,
-					canEditMembersByModerator: ps.canEditMembersByModerator,
-					displayOrder: ps.displayOrder,
-					policies: ps.policies,
-				},
-			});
-			const updated = await this.prismaService.client.role.findUniqueOrThrow({
-				where: { id: ps.roleId },
-			});
 			this.globalEventService.publishInternalEvent('roleUpdated', updated);
 		});
 	}

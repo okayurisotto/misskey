@@ -63,7 +63,9 @@ export default class extends Endpoint<
 				const result = await this.prismaService.client.drive_file.findUnique({
 					where: { id: ps.fileId },
 				});
-				if (result === null) throw new ApiError(meta.errors.noSuchFile);
+				if (result === null) {
+					throw new ApiError(meta.errors.noSuchFile);
+				}
 
 				return result;
 			})();

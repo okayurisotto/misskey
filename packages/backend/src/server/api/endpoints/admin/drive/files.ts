@@ -50,6 +50,7 @@ export default class extends Endpoint<
 				sinceId: ps.sinceId,
 				untilId: ps.untilId,
 			});
+
 			const files = await this.prismaService.client.drive_file.findMany({
 				where: {
 					AND: [
@@ -74,11 +75,11 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await this.driveFileEntityService.packMany(files, {
+			return await this.driveFileEntityService.packMany(files, {
 				detail: true,
 				withUser: true,
 				self: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

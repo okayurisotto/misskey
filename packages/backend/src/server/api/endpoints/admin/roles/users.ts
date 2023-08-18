@@ -75,7 +75,7 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				assigns.map(async (assign) => ({
 					id: assign.id,
 					createdAt: assign.createdAt,
@@ -84,7 +84,7 @@ export default class extends Endpoint<
 					}),
 					expiresAt: assign.expiresAt,
 				})),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -29,18 +30,19 @@ export default class extends Endpoint<
 > {
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps) => {
-			const announcement =
-				await this.prismaService.client.announcement.findUnique({
+			try {
+				await this.prismaService.client.announcement.delete({
 					where: { id: ps.id },
 				});
+			} catch (e) {
+				if (e instanceof Prisma.PrismaClientKnownRequestError) {
+					if (e.code === 'P2025') {
+						throw new ApiError(meta.errors.noSuchAnnouncement);
+					}
+				}
 
-			if (announcement === null) {
-				throw new ApiError(meta.errors.noSuchAnnouncement);
+				throw e;
 			}
-
-			await this.prismaService.client.announcement.delete({
-				where: { id: announcement.id },
-			});
 		});
 	}
 }

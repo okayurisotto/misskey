@@ -31,9 +31,9 @@ export default class extends Endpoint<
 				orderBy: { lastUsedAt: 'desc' },
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				roles.map((role) => this.roleEntityService.pack(role, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

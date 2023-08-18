@@ -27,9 +27,8 @@ export default class extends Endpoint<
 		private readonly globalEventService: GlobalEventService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			await this.metaService.update({
-				policies: ps.policies,
-			});
+			await this.metaService.update({ policies: ps.policies });
+
 			this.globalEventService.publishInternalEvent(
 				'policiesUpdated',
 				ps.policies,

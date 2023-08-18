@@ -49,13 +49,13 @@ export default class extends Endpoint<
 		private readonly userEntityService: UserEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			// Lookup app
 			const app = await this.prismaService.client.app.findFirst({
 				where: { secret: ps.appSecret },
 			});
 
-			if (app == null) {
+			if (app === null) {
 				throw new ApiError(meta.errors.noSuchApp);
 			}
 
@@ -65,13 +65,14 @@ export default class extends Endpoint<
 					token: ps.token,
 					appId: app.id,
 				},
+				include: { user: true },
 			});
 
-			if (session == null) {
+			if (session === null) {
 				throw new ApiError(meta.errors.noSuchSession);
 			}
 
-			if (session.userId == null) {
+			if (session.user === null) {
 				throw new ApiError(meta.errors.pendingSession);
 			}
 
@@ -80,7 +81,7 @@ export default class extends Endpoint<
 				await this.prismaService.client.access_token.findFirstOrThrow({
 					where: {
 						appId: app.id,
-						userId: session.userId,
+						userId: session.user.id,
 					},
 				});
 
@@ -91,10 +92,10 @@ export default class extends Endpoint<
 
 			return {
 				accessToken: accessToken.token,
-				user: await this.userEntityService.pack(session.userId, null, {
+				user: await this.userEntityService.pack(session.user, null, {
 					detail: true,
 				}),
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

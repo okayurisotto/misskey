@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -24,18 +25,20 @@ export default class extends Endpoint<
 > {
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps) => {
-			const user = await this.prismaService.client.user.findUnique({
-				where: { id: ps.userId },
-			});
+			try {
+				await this.prismaService.client.user_profile.update({
+					where: { userId: ps.userId },
+					data: { moderationNote: ps.text },
+				});
+			} catch (e) {
+				if (e instanceof Prisma.PrismaClientKnownRequestError) {
+					if (e.code === 'P2025') {
+						throw new Error('Unable to locate the requested user.');
+					}
+				}
 
-			if (user === null) {
-				throw new Error('user not found');
+				throw e;
 			}
-
-			await this.prismaService.client.user_profile.update({
-				where: { userId: user.id },
-				data: { moderationNote: ps.text },
-			});
 		});
 	}
 }

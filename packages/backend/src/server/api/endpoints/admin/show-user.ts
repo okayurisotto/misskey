@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { pick } from 'omick';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { RoleService } from '@/core/RoleService.js';
 import { RoleEntityService } from '@/core/entities/RoleEntityService.js';
@@ -31,70 +32,78 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const [user, profile] = await Promise.all([
-				this.prismaService.client.user.findUnique({
-					where: { id: ps.userId },
+			const user = await this.prismaService.client.user.findUnique({
+				where: { id: ps.userId },
+				include: { user_profile: true, signin: true },
+			});
+
+			if (user === null) {
+				throw new Error('Unable to locate the requested user.');
+			}
+
+			if (user.user_profile === null) {
+				throw new Error('Unable to locate the requested user_profile.');
+			}
+
+			const [me_, userIsAdmin] = await Promise.all([
+				this.prismaService.client.user.findUniqueOrThrow({
+					where: { id: me.id },
 				}),
-				this.prismaService.client.user_profile.findUnique({
-					where: { userId: ps.userId },
-				}),
+				this.roleService.isAdministrator(user),
 			]);
 
-			if (user == null || profile == null) {
-				throw new Error('user not found');
+			const iAmNotAdmin = !(await this.roleService.isAdministrator(me_));
+
+			if (iAmNotAdmin && userIsAdmin) {
+				throw new Error('You are not authorized to access this information.');
 			}
 
-			const isModerator = await this.roleService.isModerator(user);
-			const isSilenced = !(await this.roleService.getUserPolicies(user.id))
-				.canPublicNote;
+			const [roleAssigns, roles, isModerator, policies] = await Promise.all([
+				this.roleService.getUserAssigns(user.id),
+				this.roleService.getUserRoles(user.id),
+				this.roleService.isModerator(user),
+				this.roleService.getUserPolicies(user.id),
+			]);
 
-			const me_ = await this.prismaService.client.user.findUniqueOrThrow({
-				where: { id: me.id },
-			});
-			if (
-				!(await this.roleService.isAdministrator(me_)) &&
-				(await this.roleService.isAdministrator(user))
-			) {
-				throw new Error('cannot show info of admin');
-			}
+			const packedRoles = await Promise.all(
+				roles.map((role) => this.roleEntityService.pack(role, me)),
+			);
 
-			const signins = await this.prismaService.client.signin.findMany({
-				where: { userId: user.id },
-			});
-
-			const roleAssigns = await this.roleService.getUserAssigns(user.id);
-			const roles = await this.roleService.getUserRoles(user.id);
+			const packedRoleAssigns = roleAssigns.map((a) => ({
+				createdAt: a.createdAt.toISOString(),
+				expiresAt: a.expiresAt ? a.expiresAt.toISOString() : null,
+				roleId: a.roleId,
+			}));
+			const isSilenced = !policies.canPublicNote;
 
 			return {
-				email: profile.email,
-				emailVerified: profile.emailVerified,
-				autoAcceptFollowed: profile.autoAcceptFollowed,
-				noCrawle: profile.noCrawle,
-				preventAiLearning: profile.preventAiLearning,
-				alwaysMarkNsfw: profile.alwaysMarkNsfw,
-				autoSensitive: profile.autoSensitive,
-				carefulBot: profile.carefulBot,
-				injectFeaturedNote: profile.injectFeaturedNote,
-				receiveAnnouncementEmail: profile.receiveAnnouncementEmail,
-				mutedWords: profile.mutedWords,
-				mutedInstances: profile.mutedInstances,
-				mutingNotificationTypes: profile.mutingNotificationTypes,
-				isModerator: isModerator,
-				isSilenced: isSilenced,
-				isSuspended: user.isSuspended,
-				lastActiveDate: user.lastActiveDate,
-				moderationNote: profile.moderationNote,
-				signins,
-				policies: await this.roleService.getUserPolicies(user.id),
-				roles: await Promise.all(
-					roles.map((role) => this.roleEntityService.pack(role, me)),
-				),
-				roleAssigns: roleAssigns.map((a) => ({
-					createdAt: a.createdAt.toISOString(),
-					expiresAt: a.expiresAt ? a.expiresAt.toISOString() : null,
-					roleId: a.roleId,
-				})),
-			} satisfies z.infer<typeof res>;
+				...pick(user.user_profile, [
+					'email',
+					'emailVerified',
+					'autoAcceptFollowed',
+					'noCrawle',
+					'preventAiLearning',
+					'alwaysMarkNsfw',
+					'autoSensitive',
+					'carefulBot',
+					'injectFeaturedNote',
+					'receiveAnnouncementEmail',
+					'mutedWords',
+					'mutedInstances',
+					'mutingNotificationTypes',
+					'moderationNote',
+				]),
+
+				...pick(user, ['isSuspended', 'lastActiveDate']),
+
+				isModerator,
+				isSilenced,
+				policies,
+
+				signins: user.signin,
+				roles: packedRoles,
+				roleAssigns: packedRoleAssigns,
+			};
 		});
 	}
 }

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
@@ -36,35 +36,32 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(
-		private readonly getterService: GetterService,
-		private readonly prismaService: PrismaService,
-	) {
+	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps) => {
-			const note = await this.getterService.getNote(ps.noteId).catch((e) => {
-				if (e.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
-					throw new ApiError(meta.errors.noSuchNote);
-				}
-				throw e;
+			const note = await this.prismaService.client.note.findUnique({
+				where: { id: ps.noteId },
 			});
-
-			const exist =
-				(await this.prismaService.client.promo_note.count({
-					where: { noteId: note.id },
-					take: 1,
-				})) > 0;
-
-			if (exist) {
-				throw new ApiError(meta.errors.alreadyPromoted);
+			if (note === null) {
+				throw new ApiError(meta.errors.noSuchNote);
 			}
 
-			await this.prismaService.client.promo_note.create({
-				data: {
-					noteId: note.id,
-					expiresAt: new Date(ps.expiresAt),
-					userId: note.userId,
-				},
-			});
+			try {
+				await this.prismaService.client.promo_note.create({
+					data: {
+						noteId: note.id,
+						expiresAt: new Date(ps.expiresAt),
+						userId: note.userId,
+					},
+				});
+			} catch (e) {
+				if (e instanceof Prisma.PrismaClientKnownRequestError) {
+					if (e.code === 'P2002') {
+						throw new ApiError(meta.errors.alreadyPromoted);
+					}
+				}
+
+				throw e;
+			}
 		});
 	}
 }

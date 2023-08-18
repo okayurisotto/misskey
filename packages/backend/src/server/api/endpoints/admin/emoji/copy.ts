@@ -78,12 +78,10 @@ export default class extends Endpoint<
 			});
 
 			this.globalEventService.publishBroadcastStream('emojiAdded', {
-				emoji: await this.emojiEntityService.packDetailed(copied.id),
+				emoji: await this.emojiEntityService.packDetailed(copied),
 			});
 
-			return {
-				id: copied.id,
-			} satisfies z.infer<typeof res>;
+			return { id: copied.id };
 		});
 	}
 }

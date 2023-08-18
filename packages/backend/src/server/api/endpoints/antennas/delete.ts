@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
@@ -33,20 +34,20 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const antenna = await this.prismaService.client.antenna.findUnique({
-				where: {
-					id: ps.antennaId,
-					userId: me.id,
-				},
-			});
+			let antenna;
+			try {
+				antenna = await this.prismaService.client.antenna.delete({
+					where: { id: ps.antennaId, userId: me.id },
+				});
+			} catch (e) {
+				if (e instanceof Prisma.PrismaClientKnownRequestError) {
+					if (e.code === 'P2025') {
+						throw new ApiError(meta.errors.noSuchAntenna);
+					}
+				}
 
-			if (antenna == null) {
-				throw new ApiError(meta.errors.noSuchAntenna);
+				throw e;
 			}
-
-			await this.prismaService.client.antenna.delete({
-				where: { id: antenna.id },
-			});
 
 			this.globalEventService.publishInternalEvent('antennaDeleted', antenna);
 		});

@@ -22,23 +22,16 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(@Inject('queue:deliver') public deliverQueue: DeliverQueue) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async () => {
 			const jobs = await this.deliverQueue.getJobs(['delayed']);
 
-			const res_ = [] as [string, number][];
+			const hosts = jobs
+				.map((job) => new URL(job.data.to).host)
+				.reduce<Map<string, number>>((map, host) => {
+					return map.set(host, (map.get(host) ?? 0) + 1);
+				}, new Map());
 
-			for (const job of jobs) {
-				const host = new URL(job.data.to).host;
-				if (res_.find((x) => x[0] === host)) {
-					res_.find((x) => x[0] === host)![1]++;
-				} else {
-					res_.push([host, 1]);
-				}
-			}
-
-			res_.sort((a, b) => b[1] - a[1]);
-
-			return res_ satisfies z.infer<typeof res>;
+			return [...hosts].sort((a, b) => b[1] - a[1]);
 		});
 	}
 }

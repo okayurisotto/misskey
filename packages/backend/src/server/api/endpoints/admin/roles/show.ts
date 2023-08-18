@@ -41,12 +41,12 @@ export default class extends Endpoint<
 			const role = await this.prismaService.client.role.findUnique({
 				where: { id: ps.roleId },
 			});
+
 			if (role == null) {
 				throw new ApiError(meta.errors.noSuchRole);
 			}
-			return (await this.roleEntityService.pack(role, me)) satisfies z.infer<
-				typeof res
-			>;
+
+			return await this.roleEntityService.pack(role, me);
 		});
 	}
 }
