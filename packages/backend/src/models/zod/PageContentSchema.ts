@@ -29,6 +29,7 @@ const PageContentNoteItemSchema = z.object({
 	id: z.string(),
 	type: z.literal('note'),
 	note: z.string().optional(),
+	detailed: z.boolean().optional(),
 });
 
 const PageContentImageItemSchema = z.object({
