@@ -1,69 +1,46 @@
 import { Injectable } from '@nestjs/common';
+import { pick } from 'omick';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import { bindThis } from '@/decorators.js';
 import { AbuseUserReportSchema } from '@/models/zod/AbuseUserReportSchema.js';
-import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
-import type { abuse_user_report } from '@prisma/client';
+import type { abuse_user_report, user } from '@prisma/client';
 
 @Injectable()
 export class AbuseUserReportEntityService {
-	constructor(
-		private readonly prismaService: PrismaService,
-		private readonly userEntityService: UserEntityService,
-	) {}
+	constructor(private readonly userEntityService: UserEntityService) {}
 
-	/**
-	 * `abuse_user_report`をpackする。
-	 * `reporter`や`targetUser`、いた場合は`assignee`も含まれる。
-	 *
-	 * @param src
-	 * @returns
-	 */
-	@bindThis
 	public async pack(
-		src: abuse_user_report['id'] | abuse_user_report,
+		report: abuse_user_report,
+		ext: {
+			assignee: user | null;
+			reporter: user;
+			targetUser: user;
+		},
 	): Promise<z.infer<typeof AbuseUserReportSchema>> {
-		const report = typeof src === 'object'
-			? src
-			: await this.prismaService.client.abuse_user_report.findUniqueOrThrow({ where: { id: src } });
-
 		const result = await awaitAll({
 			reporter: () =>
-				this.userEntityService.pack(
-					report.reporterId,
-					null,
-					{ detail: true },
-				),
+				this.userEntityService.pack(ext.reporter, null, { detail: true }),
 			targetUser: () =>
-				this.userEntityService.pack(
-					report.targetUserId,
-					null,
-					{ detail: true },
-				),
+				this.userEntityService.pack(ext.targetUser, null, { detail: true }),
 			assignee: () =>
-				report.assigneeId
-					? this.userEntityService.pack(
-							report.assigneeId,
-							null,
-							{ detail: true },
-					  )
+				ext.assignee
+					? this.userEntityService.pack(ext.assignee, null, { detail: true })
 					: Promise.resolve(null),
 		});
 
 		return {
-			id: report.id,
+			...pick(report, [
+				'id',
+				'comment',
+				'resolved',
+				'reporterId',
+				'targetUserId',
+				'assigneeId',
+				'forwarded',
+			]),
 			createdAt: report.createdAt.toISOString(),
-			comment: report.comment,
-			resolved: report.resolved,
-			reporterId: report.reporterId,
-			targetUserId: report.targetUserId,
-			assigneeId: report.assigneeId,
-			reporter: result.reporter,
-			targetUser: result.targetUser,
-			assignee: result.assignee,
-			forwarded: report.forwarded,
+			...result,
 		};
 	}
 }

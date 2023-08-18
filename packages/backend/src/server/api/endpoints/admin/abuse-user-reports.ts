@@ -61,11 +61,22 @@ export default class extends Endpoint<
 					},
 					orderBy: paginationQuery.orderBy,
 					take: ps.limit,
+					include: {
+						user_abuse_user_report_assigneeIdTouser: true,
+						user_abuse_user_report_reporterIdTouser: true,
+						user_abuse_user_report_targetUserIdTouser: true,
+					},
 				});
 
-			return (await Promise.all(
-				reports.map((report) => this.abuseUserReportEntityService.pack(report)),
-			)) satisfies z.infer<typeof res>;
+			return await Promise.all(
+				reports.map((report) =>
+					this.abuseUserReportEntityService.pack(report, {
+						assignee: report.user_abuse_user_report_assigneeIdTouser,
+						reporter: report.user_abuse_user_report_reporterIdTouser,
+						targetUser: report.user_abuse_user_report_targetUserIdTouser,
+					}),
+				),
+			);
 		});
 	}
 }
