@@ -77,9 +77,7 @@ export default class extends Endpoint<
 
 			return {
 				accessToken: accessToken.token,
-				user: await this.userEntityService.pack(session.user, null, {
-					detail: true,
-				}),
+				user: await this.userEntityService.packDetailed(session.user, null),
 			};
 		});
 	}

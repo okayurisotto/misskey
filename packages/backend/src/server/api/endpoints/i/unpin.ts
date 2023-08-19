@@ -13,7 +13,7 @@ export const meta = {
 	tags: ['account', 'notes'],
 	requireCredential: true,
 	kind: 'write:account',
-	errors: {noSuchNote:noSuchNote____},
+	errors: { noSuchNote: noSuchNote____ },
 	res,
 } as const;
 
@@ -40,9 +40,7 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			return (await this.userEntityService.pack<true, true>(me.id, me, {
-				detail: true,
-			})) satisfies z.infer<typeof res>;
+			return await this.userEntityService.packDetailedMe(me.id);
 		});
 	}
 }

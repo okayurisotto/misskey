@@ -33,7 +33,7 @@ export class BlockingEntityService {
 			id: blocking.id,
 			createdAt: blocking.createdAt.toISOString(),
 			blockeeId: blocking.blockeeId,
-			blockee: await this.userEntityService.pack(blocking.blockeeId, me, { detail: true }),
+			blockee: await this.userEntityService.packDetailed(blocking.blockeeId, me),
 		};
 	}
 }

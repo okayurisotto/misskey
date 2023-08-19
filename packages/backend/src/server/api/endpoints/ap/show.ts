@@ -132,7 +132,7 @@ export default class extends Endpoint<
 		if (user != null) {
 			return {
 				type: 'User',
-				object: await this.userEntityService.pack(user, me, { detail: true }),
+				object: await this.userEntityService.packDetailed(user, me),
 			};
 		} else if (note != null) {
 			try {

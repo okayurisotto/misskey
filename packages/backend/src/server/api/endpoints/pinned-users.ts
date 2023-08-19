@@ -48,9 +48,7 @@ export default class extends Endpoint<
 			return (await Promise.all(
 				users
 					.filter((user): user is user => user !== null)
-					.map((user) =>
-						this.userEntityService.pack(user, me, { detail: true }),
-					),
+					.map((user) => this.userEntityService.packDetailed(user, me)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

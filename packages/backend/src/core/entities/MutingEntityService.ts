@@ -34,9 +34,7 @@ export class MutingEntityService {
 			createdAt: muting.createdAt.toISOString(),
 			expiresAt: muting.expiresAt?.toISOString() ?? null,
 			muteeId: muting.muteeId,
-			mutee: await this.userEntityService.pack(muting.muteeId, me, {
-				detail: true,
-			}),
+			mutee: await this.userEntityService.packDetailed(muting.muteeId, me),
 		};
 	}
 }

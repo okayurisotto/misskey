@@ -20,12 +20,12 @@ export class AbuseUserReportEntityService {
 	): Promise<z.infer<typeof AbuseUserReportSchema>> {
 		const result = await awaitAll({
 			reporter: () =>
-				this.userEntityService.pack(ext.reporter, null, { detail: true }),
+				this.userEntityService.packDetailed(ext.reporter, null),
 			targetUser: () =>
-				this.userEntityService.pack(ext.targetUser, null, { detail: true }),
+				this.userEntityService.packDetailed(ext.targetUser, null),
 			assignee: () =>
 				ext.assignee
-					? this.userEntityService.pack(ext.assignee, null, { detail: true })
+					? this.userEntityService.packDetailed(ext.assignee, null)
 					: Promise.resolve(null),
 		});
 

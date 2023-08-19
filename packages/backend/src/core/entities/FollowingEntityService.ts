@@ -39,11 +39,11 @@ export class FollowingEntityService {
 		const result = await awaitAll({
 			followee: () =>
 				opts.populateFollowee
-					? this.userEntityService.pack(following.followeeId, me, { detail: true })
+					? this.userEntityService.packDetailed(following.followeeId, me)
 					: Promise.resolve(undefined),
 			follower: () =>
 				opts.populateFollower
-					? this.userEntityService.pack(following.followerId, me, { detail: true })
+					? this.userEntityService.packDetailed(following.followerId, me)
 					: Promise.resolve(undefined),
 		});
 

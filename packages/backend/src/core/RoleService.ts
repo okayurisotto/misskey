@@ -13,14 +13,11 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
-import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
+import { RolePoliciesSchema, UserPoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { role, role_assignment, user } from '@prisma/client';
 
-type ConvertRolePolicies<T extends Record<string, { value: unknown }>> = {
-	[K in keyof T]: T[K]["value"];
-};
-export type RolePolicies = ConvertRolePolicies<Required<z.infer<typeof RolePoliciesSchema>>>;
+export type RolePolicies = Required<z.infer<typeof UserPoliciesSchema>>;
 
 export const DEFAULT_POLICIES = {
 	gtlAvailable: true,

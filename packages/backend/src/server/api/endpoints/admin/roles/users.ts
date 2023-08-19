@@ -74,9 +74,7 @@ export default class extends Endpoint<
 				assigns.map(async (assign) => ({
 					id: assign.id,
 					createdAt: assign.createdAt,
-					user: await this.userEntityService.pack(assign.user, me, {
-						detail: true,
-					}),
+					user: await this.userEntityService.packDetailed(assign.user, me),
 					expiresAt: assign.expiresAt,
 				})),
 			);

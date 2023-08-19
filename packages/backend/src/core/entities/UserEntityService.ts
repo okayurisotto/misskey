@@ -2,41 +2,39 @@ import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { ModuleRef } from '@nestjs/core';
 import { pick } from 'omick';
+import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { USER_ACTIVE_THRESHOLD, USER_ONLINE_THRESHOLD } from '@/const.js';
-import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser } from '@/models/entities/User.js';
+import { type LocalUser, type PartialLocalUser, type PartialRemoteUser, type RemoteUser } from '@/models/entities/User.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import type { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
-import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
-import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
-import type { UserSchema } from '@/models/zod/UserSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { MeDetailedOnlySchema } from '@/models/zod/MeDetailedOnlySchema.js';
+import type { UserRelationSchema } from '@/models/zod/UserRelationSchema.js';
+import type { UserDetailedNotMeOnlySchema } from '@/models/zod/UserDetailedNotMeOnlySchema.js';
+import { UserFieldsSchema } from '@/models/zod/UserFieldsSchema.js';
+import type { UserSecretsSchema } from '@/models/zod/UserSecretsSchema.js';
+import { AchievementSchema } from '@/models/zod/AchievementSchema.js';
+import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
 import { InstanceEntityService } from './InstanceEntityService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
 import type { DriveFileEntityService } from './DriveFileEntityService.js';
 import type { PageEntityService } from './PageEntityService.js';
-import type { z } from 'zod';
-import type { instance, user, user_profile } from '@prisma/client';
-
-type IsMeAndIsUserDetailed<ExpectsMe extends boolean | null, Detailed extends boolean> =
-	Detailed extends true ?
-		ExpectsMe extends true ? z.infer<typeof MeDetailedSchema> :
-		ExpectsMe extends false ? z.infer<typeof UserDetailedNotMeSchema> :
-		z.infer<typeof UserDetailedSchema> :
-	z.infer<typeof UserLiteSchema>;
+import type { follow_request, instance, note, note_unread, user, user_memo, user_note_pining, user_profile, user_security_key } from '@prisma/client';
+import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 
 function isLocalUser(user: user): user is LocalUser;
 function isLocalUser<T extends { host: user['host'] }>(user: T): user is (T & { host: null; });
 function isLocalUser(user: user | { host: user['host'] }): boolean {
-	return user.host == null;
+	return user.host === null;
 }
 
 function isRemoteUser(user: user): user is RemoteUser;
@@ -68,7 +66,7 @@ export class UserEntityService implements OnModuleInit {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	onModuleInit(): void {
+	public onModuleInit(): void {
 		this.apPersonService = this.moduleRef.get('ApPersonService');
 		this.noteEntityService = this.moduleRef.get('NoteEntityService');
 		this.driveFileEntityService = this.moduleRef.get('DriveFileEntityService');
@@ -93,29 +91,19 @@ export class UserEntityService implements OnModuleInit {
 	public async getRelation(
 		meId: user['id'],
 		targetId: user['id'],
-	): Promise<{
-		id: string;
-		hasPendingFollowRequestFromYou: boolean;
-		hasPendingFollowRequestToYou: boolean;
-		isBlocked: boolean;
-		isBlocking: boolean;
-		isFollowed: boolean;
-		isFollowing: boolean;
-		isMuted: boolean;
-		isRenoteMuted: boolean;
-	}> {
+	): Promise<z.infer<typeof UserRelationSchema> & { id: string }> {
 		const [me, isRenoteMuted] = await Promise.all([
 			this.prismaService.client.user.findUniqueOrThrow({
 				where: { id: meId },
 				include: {
-					following_following_followerIdTouser: { where: { followeeId: targetId } },
-					following_following_followeeIdTouser: { where: { followerId: targetId } },
-					follow_request_follow_request_followerIdTouser: { where: { followeeId: targetId } },
-					follow_request_follow_request_followeeIdTouser: { where: { followerId: targetId } },
-					blocking_blocking_blockerIdTouser: { where: { blockeeId: targetId } },
-					blocking_blocking_blockeeIdTouser: { where: { blockerId: targetId } },
-					muting_muting_muterIdTouser: { where: { muteeId: targetId } },
-					// muting_muting_muteeIdTouser: { where: { muterId: target } },
+					blocking_blocking_blockeeIdTouser: { where: { blockerId: targetId }, take: 1 },
+					blocking_blocking_blockerIdTouser: { where: { blockeeId: targetId }, take: 1 },
+					follow_request_follow_request_followeeIdTouser: { where: { followerId: targetId }, take: 1 },
+					follow_request_follow_request_followerIdTouser: { where: { followeeId: targetId }, take: 1 },
+					following_following_followeeIdTouser: { where: { followerId: targetId }, take: 1 },
+					following_following_followerIdTouser: { where: { followeeId: targetId }, take: 1 },
+					// muting_muting_muteeIdTouser: { where: { muterId: targetId }, take: 1 },
+					muting_muting_muterIdTouser: { where: { muteeId: targetId }, take: 1 },
 				},
 			}),
 			this.prismaService.client.renote_muting.count({
@@ -124,20 +112,16 @@ export class UserEntityService implements OnModuleInit {
 			}).then(n => n !== 0),
 		]);
 
-		const result = {
-			isFollowing: me.following_following_followerIdTouser.length !== 0,
-			isFollowed: me.following_following_followeeIdTouser.length !== 0,
-			hasPendingFollowRequestFromYou: me.follow_request_follow_request_followerIdTouser.length !== 0,
-			hasPendingFollowRequestToYou: me.follow_request_follow_request_followeeIdTouser.length !== 0,
-			isBlocking: me.blocking_blocking_blockerIdTouser.length !== 0,
-			isBlocked: me.blocking_blocking_blockeeIdTouser.length !== 0,
-			isMuted: me.muting_muting_muterIdTouser.length !== 0,
-			isRenoteMuted: isRenoteMuted,
-		};
-
 		return {
 			id: targetId,
-			...result,
+			hasPendingFollowRequestFromYou: me.follow_request_follow_request_followerIdTouser.length !== 0,
+			hasPendingFollowRequestToYou: me.follow_request_follow_request_followeeIdTouser.length !== 0,
+			isBlocked: me.blocking_blocking_blockeeIdTouser.length !== 0,
+			isBlocking: me.blocking_blocking_blockerIdTouser.length !== 0,
+			isFollowed: me.following_following_followeeIdTouser.length !== 0,
+			isFollowing: me.following_following_followerIdTouser.length !== 0,
+			isMuted: me.muting_muting_muterIdTouser.length !== 0,
+			isRenoteMuted: isRenoteMuted,
 		};
 	}
 
@@ -149,30 +133,12 @@ export class UserEntityService implements OnModuleInit {
 	 */
 	@bindThis
 	public async getHasUnreadAnnouncement(userId: user['id']): Promise<boolean> {
-		const reads = await this.prismaService.client.announcement_read.findMany({
-			where: { userId: userId },
-		});
-
 		const count = await this.prismaService.client.announcement.count({
-			where: reads.length > 0
-				? { id: { notIn: reads.map((read) => read.announcementId) } }
-				: {},
+			where: { announcement_read: { none: { userId: userId } } },
 			take: 1,
 		});
 
-		return count > 0;
-	}
-
-	/**
-	 * そのユーザーがまだ読んでいない`antenna`があるかどうか調べる。
-	 * 未実装
-	 *
-	 * @param userId 使われていない
-	 * @returns
-	 */
-	@bindThis
-	public async getHasUnreadAntenna(userId: user['id']): Promise<boolean> {
-		return false;
+		return count !== 0;
 	}
 
 	/**
@@ -192,23 +158,10 @@ export class UserEntityService implements OnModuleInit {
 			'COUNT', 1);
 		const latestNotificationId = latestNotificationIdsRes.at(0)?.at(0);
 
-		return latestNotificationId != null && (latestReadNotificationId == null || latestReadNotificationId < latestNotificationId);
-	}
-
-	/**
-	 * そのユーザーがまだ解決していない`follow_request`があるか調べる。
-	 *
-	 * @param userId
-	 * @returns
-	 */
-	@bindThis
-	public async getHasPendingReceivedFollowRequest(userId: user['id']): Promise<boolean> {
-		const count = await this.prismaService.client.follow_request.count({
-			where: { followeeId: userId },
-			take: 1,
-		});
-
-		return count > 0;
+		if (latestNotificationId === undefined) return false;
+		if (latestReadNotificationId === null) return true;
+		if (latestReadNotificationId < latestNotificationId) return true;
+		return false;
 	}
 
 	/**
@@ -248,8 +201,8 @@ export class UserEntityService implements OnModuleInit {
 	 */
 	@bindThis
 	public getUserUri(user: LocalUser | PartialLocalUser | RemoteUser | PartialRemoteUser): string {
-		return this.isRemoteUser(user)
-			? user.uri : this.genLocalUserUri(user.id);
+		if (this.isRemoteUser(user)) return user.uri;
+		return this.genLocalUserUri(user.id);
 	}
 
 	/**
@@ -263,11 +216,14 @@ export class UserEntityService implements OnModuleInit {
 		return `${this.config.url}/users/${userId}`;
 	}
 
-	public async migrate(user: user): Promise<void> {
+	/**
+	 * `user`に`{avatar,banner}Id`があるのに`{avatar,banner}{Url,Blurhash}`がなかった場合に付け加える。
+	 */
+	private async migrate(user: user): Promise<void> {
 		if (user.avatarId !== null && user.avatarUrl === null) {
 			const avatar = await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: user.avatarId } });
 			const avatarUrl = this.driveFileEntityService.getPublicUrl(avatar, 'avatar');
-			this.prismaService.client.user.update({
+			await this.prismaService.client.user.update({
 				where: { id: user.id },
 				data: {
 					avatarUrl: avatarUrl,
@@ -279,7 +235,7 @@ export class UserEntityService implements OnModuleInit {
 		if (user.bannerId !== null && user.bannerUrl === null) {
 			const banner = await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: user.bannerId } });
 			const bannerUrl = this.driveFileEntityService.getPublicUrl(banner);
-			this.prismaService.client.user.update({
+			await this.prismaService.client.user.update({
 				where: { id: user.id },
 				data: {
 					bannerUrl: bannerUrl,
@@ -289,7 +245,7 @@ export class UserEntityService implements OnModuleInit {
 		}
 	}
 
-	async getInstance(user: user): Promise<instance | undefined> {
+	public async getInstance(user: user): Promise<instance | undefined> {
 		if (user.host === null) return undefined;
 
 		const instance = await this.federatedInstanceService.federatedInstanceCache.fetch(user.host);
@@ -297,6 +253,223 @@ export class UserEntityService implements OnModuleInit {
 
 		return instance;
 	}
+
+	private async packDetailsOnly(
+		userId: user['id'],
+		meId: user['id'] | null,
+		data: {
+			user: user[];
+			user_profile: user_profile[];
+			user_note_pining: user_note_pining[];
+			user_security_key: user_security_key[];
+			user_memo: user_memo[];
+			note: note[];
+		},
+	): Promise<z.infer<typeof UserDetailedNotMeOnlySchema>> {
+		const user = data.user.find((user) => user.id === userId);
+		if (user === undefined) throw new Error('user is undefined');
+
+		const profile = data.user_profile.find((profile) => profile.userId === userId);
+		if (profile === undefined) throw new Error('profile is undefined');
+
+		const isMe = meId !== null && userId === meId;
+		const memos = meId !== null ? data.user_memo.filter((memo) => memo.targetUserId === userId && memo.userId === meId) : null;
+		const piningNotes = data.user_note_pining.filter((pin) => pin.userId === userId);
+		const securityKeys = data.user_security_key.filter((key) => key.userId === userId);
+
+		const result = await awaitAll({
+			iAmModerator: () =>
+				meId !== null
+					? this.roleService.isModerator({ id: meId, isRoot: false })
+					: Promise.resolve(false),
+			movedTo: () =>
+				user.movedToUri
+					? this.apPersonService.resolvePerson(user.movedToUri).then(user => user.id).catch(() => null)
+					: Promise.resolve(null),
+			alsoKnownAs: () =>
+				user.alsoKnownAs
+					? Promise.all(user.alsoKnownAs.split(',').map(uri => this.apPersonService.fetchPerson(uri).then(user => user?.id).catch(() => null)))
+						.then(xs => xs.length === 0 ? null : xs.filter((x): x is string => x != null))
+					: Promise.resolve(null),
+			isSilenced: () =>
+				this.roleService.getUserPolicies(user.id).then(r => !r.canPublicNote),
+			pinnedNotes: () =>
+				this.noteEntityService.packMany(piningNotes.map((pin) => {
+					const note = data.note.find((note) => note.id === pin.noteId);
+					if (note === undefined) throw new Error('note is undefined');
+					return note;
+				})),
+			pinnedPage: () =>
+				profile.pinnedPageId
+					? this.pageEntityService.pack(profile.pinnedPageId, user)
+					: Promise.resolve(null),
+			roles: () =>
+				this.roleService.getUserRoles(user.id).then(roles =>
+					roles
+						.filter(role => role.isPublic)
+						.sort((a, b) => b.displayOrder - a.displayOrder)
+						.map(role => ({
+							id: role.id,
+							name: role.name,
+							color: role.color,
+							iconUrl: role.iconUrl,
+							description: role.description,
+							isModerator: role.isModerator,
+							isAdministrator: role.isAdministrator,
+							displayOrder: role.displayOrder,
+						})),
+				),
+			relation: async () => meId ? await this.getRelation(meId, userId) : undefined,
+		});
+
+		const followersCount = (profile.ffVisibility === 'public') || isMe
+			? user.followersCount
+			: (profile.ffVisibility === 'followers') && (result.relation !== undefined && result.relation.isFollowing)
+				? user.followersCount
+				: 0;
+
+		const followingCount = (profile.ffVisibility === 'public') || isMe
+			? user.followingCount
+			: (profile.ffVisibility === 'followers') && (result.relation !== undefined && result.relation.isFollowing)
+				? user.followingCount
+				: 0;
+
+		return {
+			...pick(user, [
+				'bannerBlurhash',
+				'bannerUrl',
+				'isLocked',
+				'isSuspended',
+				'notesCount',
+				'uri'
+			]),
+
+			...pick(profile, [
+				'birthday',
+				'description',
+				'ffVisibility',
+				'lang',
+				'location',
+				'pinnedPageId',
+				'publicReactions',
+				'twoFactorEnabled',
+				'url',
+				'usePasswordLessLogin',
+			]),
+
+			createdAt: user.createdAt.toISOString(),
+			fields: UserFieldsSchema.parse(profile.fields),
+			followersCount: followersCount,
+			followingCount: followingCount,
+			lastFetchedAt: user.lastFetchedAt ? user.lastFetchedAt.toISOString() : null,
+			memo: memos?.at(0)?.memo ?? null,
+			pinnedNoteIds: piningNotes.map(pin => pin.noteId),
+			securityKeys: securityKeys.length > 0,
+			updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
+
+			alsoKnownAs: result.alsoKnownAs,
+			isSilenced: result.isSilenced,
+			moderationNote: result.iAmModerator ? profile.moderationNote : undefined,
+			movedTo: result.movedTo,
+			pinnedNotes: result.pinnedNotes,
+			pinnedPage: result.pinnedPage,
+			roles: result.roles,
+		};
+	};
+
+	private async packDetailsMeOnly(
+		userId: string,
+		data: {
+			user: user[];
+			user_profile: user_profile[];
+			nore_unread: note_unread[];
+			follow_request: follow_request[];
+		},
+	): Promise<z.infer<typeof MeDetailedOnlySchema>> {
+		const user = data.user.find((user) => user.id === userId);
+		if (user === undefined) throw new Error();
+
+		const profile = data.user_profile.find((profile) => profile.userId === userId);
+		if (profile === undefined) throw new Error();
+
+		const hasUnreadMentions = data.nore_unread.some((unread) => unread.userId === userId && unread.isMentioned);
+		const hasUnreadSpecifiedNotes = data.nore_unread.some((unread) => unread.userId === userId && unread.isSpecified);
+		const hasPendingReceivedFollowRequest = data.follow_request.some((request) => request.followeeId === userId);
+
+		type AwaitKeys =
+			| 'hasUnreadAnnouncement'
+			| 'hasUnreadNotification'
+			| 'isAdmin'
+			| 'isModerator'
+			| 'policies';
+
+		const result = await awaitAll<Pick<z.infer<typeof MeDetailedOnlySchema>, AwaitKeys>>({
+			hasUnreadAnnouncement: () => this.getHasUnreadAnnouncement(userId),
+			hasUnreadNotification: () => this.getHasUnreadNotification(userId),
+			isAdmin: () => this.roleService.isAdministrator(user),
+			isModerator: () => this.roleService.isModerator(user),
+			policies: () => this.roleService.getUserPolicies(userId),
+		});
+
+		return {
+			...pick(user, [
+				'avatarId',
+				'bannerId',
+				'hideOnlineStatus',
+				'isDeleted',
+				'isExplorable',
+			]),
+
+			...pick(profile, [
+				'alwaysMarkNsfw',
+				'autoAcceptFollowed',
+				'autoSensitive',
+				'carefulBot',
+				'injectFeaturedNote',
+				'mutingNotificationTypes',
+				'noCrawle',
+				'preventAiLearning',
+				'receiveAnnouncementEmail',
+			]),
+
+			hasUnreadMentions,
+			hasUnreadSpecifiedNotes,
+			hasPendingReceivedFollowRequest,
+
+			hasUnreadAnnouncement: result.hasUnreadAnnouncement,
+			hasUnreadAntenna: false,
+			hasUnreadNotification: result.hasUnreadNotification,
+			isAdmin: result.isAdmin,
+			isModerator: result.isModerator,
+			policies: result.policies,
+
+			achievements: z.array(AchievementSchema).parse(profile.achievements),
+			emailNotificationTypes: z.array(z.string()).nullable().parse(profile.emailNotificationTypes),
+			hasUnreadChannel: false as const, // 後方互換性のため
+			loggedInDays: profile.loggedInDates.length,
+			mutedInstances: z.array(z.string()).nullable().parse(profile.mutedInstances),
+			mutedWords: z.array(z.array(z.string())).parse(profile.mutedWords),
+		};
+	};
+
+	private async packSecretsOnly(
+		userId: string,
+		data: {
+			user_profile: user_profile[],
+			user_security_key: user_security_key[],
+		},
+	): Promise<z.infer<typeof UserSecretsSchema>> {
+		const profile = data.user_profile.find((profile) => profile.userId === userId);
+		if (profile === undefined) throw new Error('profile is undefined');
+
+		const keys = data.user_security_key.filter((key) => key.userId === userId);
+
+		return {
+			email: profile.email,
+			emailVerified: profile.emailVerified,
+			securityKeysList: profile.twoFactorEnabled ? keys : [],
+		};
+	};
 
 	public async packLite(src: user['id'] | user): Promise<z.infer<typeof UserLiteSchema>> {
 		const user = typeof src === 'object' ? src : await this.prismaService.client.user.findUniqueOrThrow({ where: { id: src } });
@@ -330,228 +503,45 @@ export class UserEntityService implements OnModuleInit {
 		};
 	}
 
-	public async pack<ExpectsMe extends boolean | null, D extends true>(
+	public async packDetailed(
 		src: user['id'] | user,
 		me?: Pick<user, 'id'> | null | undefined,
 		options?: {
-			detail?: D,
-			includeSecrets?: boolean,
-			userProfile?: user_profile,
+			includeSecrets?: boolean;
 		},
-	): Promise<IsMeAndIsUserDetailed<ExpectsMe, D>> {
-		const opts = {
-			detail: false,
-			includeSecrets: false,
-			...options,
-		};
-
-		const user = typeof src === 'object' ? src : await this.prismaService.client.user.findUniqueOrThrow({ where: { id: src } });
-
-		await this.migrate(user);
-
+	): Promise<z.infer<typeof UserDetailedSchema>> {
+		const opts = { includeSecrets: false, ...options };
+		const userId = typeof src === 'string' ? src : src.id;
 		const meId = me ? me.id : null;
-		const isMe = meId === user.id;
-		const iAmModerator = me ? await this.roleService.isModerator({ ...me, isRoot: false }) : false;
+		const isMe = meId === userId;
+		const relation = meId && !isMe ? await this.getRelation(meId, userId) : undefined;
 
-		const relation = meId && !isMe && opts.detail ? await this.getRelation(meId, user.id) : null;
-		const pins = opts.detail ? await this.prismaService.client.user_note_pining.findMany({
-			where: { userId: user.id },
-			include: { note: true },
-			orderBy: { id: 'desc' },
-		}) : [];
-		const profile = opts.detail ? (opts.userProfile ?? await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } })) : null;
+		const result = await this.prismaService.client.user.findUniqueOrThrow({
+			where: { id: userId },
+			include: {
+				user_profile: true,
+				user_note_pining: { include: { note: true }, orderBy: { id: 'desc' } },
+				user_security_key: true,
+				user_memo_user_memo_targetUserIdTouser: { where: { targetUserId: userId } },
+				note_unread: true,
+				follow_request_follow_request_followeeIdTouser: true,
+			},
+		});
+		if (result.user_profile === null) throw new Error('data.user_profile is null');
 
-		const followingCount = profile == null ? null :
-			(profile.ffVisibility === 'public') || isMe ? user.followingCount :
-			(profile.ffVisibility === 'followers') && (relation && relation.isFollowing) ? user.followingCount :
-			null;
-
-		const followersCount = profile == null ? null :
-			(profile.ffVisibility === 'public') || isMe ? user.followersCount :
-			(profile.ffVisibility === 'followers') && (relation && relation.isFollowing) ? user.followersCount :
-			null;
-
-		const isModerator = isMe && opts.detail ? this.roleService.isModerator(user) : null;
-		const isAdmin = isMe && opts.detail ? this.roleService.isAdministrator(user) : null;
-
-		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-		const getDetail = async () => {
-			if (!opts.detail) return {};
-			if (profile === null) throw new Error(`opts.detail is true, but profile is null.`);
-
-			const result = await awaitAll({
-				movedTo: () =>
-					user.movedToUri
-						? this.apPersonService.resolvePerson(user.movedToUri).then(user => user.id).catch(() => null)
-						: Promise.resolve(null),
-				alsoKnownAs: () =>
-					user.alsoKnownAs
-						? Promise.all(user.alsoKnownAs.split(',').map(uri => this.apPersonService.fetchPerson(uri).then(user => user?.id).catch(() => null)))
-							.then(xs => xs.length === 0 ? null : xs.filter((x): x is string => x != null))
-						: Promise.resolve(null),
-				isSilenced: () =>
-					this.roleService.getUserPolicies(user.id).then(r => !r.canPublicNote),
-				pinnedNotes: () =>
-					this.noteEntityService.packMany(pins.map(pin => pin.note), me, { detail: true }),
-				pinnedPage: () =>
-					profile.pinnedPageId
-						? this.pageEntityService.pack(profile.pinnedPageId, me)
-						: Promise.resolve(null),
-				securityKeys: () =>
-					profile.twoFactorEnabled
-						? this.prismaService.client.user_security_key.count({ where: { userId: user.id }, take: 1 }).then(result => result > 0)
-						: Promise.resolve(false),
-				roles: () =>
-					this.roleService.getUserRoles(user.id).then(roles =>
-						roles
-							.filter(role => role.isPublic)
-							.sort((a, b) => b.displayOrder - a.displayOrder)
-							.map(role => ({
-								id: role.id,
-								name: role.name,
-								color: role.color,
-								iconUrl: role.iconUrl,
-								description: role.description,
-								isModerator: role.isModerator,
-								isAdministrator: role.isAdministrator,
-								displayOrder: role.displayOrder,
-							})),
-					),
-				memos: () =>
-					meId == null
-						? Promise.resolve(null)
-						: this.prismaService.client.user_memo.findUnique({ where: { userId_targetUserId: { userId: meId, targetUserId: user.id } } }).then(row => row?.memo ?? null),
-			});
-
-			return {
-				...pick(user, [
-					'bannerBlurhash',
-					'bannerUrl',
-					'isLocked',
-					'isSuspended',
-					'notesCount',
-					'uri'
-				]),
-
-				...pick(profile, [
-					'birthday',
-					'description',
-					'ffVisibility',
-					'fields',
-					'lang',
-					'location',
-					'pinnedPageId',
-					'publicReactions',
-					'twoFactorEnabled',
-					'url',
-					'usePasswordLessLogin',
-				]),
-
-				alsoKnownAs: result.alsoKnownAs,
-				isSilenced: result.isSilenced,
-				memo: result.memos,
-				movedTo: result.movedTo,
-				pinnedNotes: result.pinnedNotes,
-				pinnedPage: result.pinnedPage,
-				roles: result.roles,
-				securityKeys: result.securityKeys,
-
-				createdAt: user.createdAt.toISOString(),
-				followersCount: followersCount ?? 0,
-				followingCount: followingCount ?? 0,
-				lastFetchedAt: user.lastFetchedAt ? user.lastFetchedAt.toISOString() : null,
-				moderationNote: iAmModerator ? profile.moderationNote : undefined,
-				pinnedNoteIds: pins.map(pin => pin.noteId),
-				updatedAt: user.updatedAt ? user.updatedAt.toISOString() : null,
-			};
+		const data = {
+			follow_request: result.follow_request_follow_request_followeeIdTouser,
+			nore_unread: result.note_unread,
+			note: result.user_note_pining.map((pin) => pin.note),
+			relation,
+			user_memo: result.user_memo_user_memo_targetUserIdTouser,
+			user_note_pining: result.user_note_pining,
+			user_profile: [result.user_profile],
+			user_security_key: result.user_security_key,
+			user: [result],
 		};
 
-		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-		const getDetailMe = async () => {
-			if (!opts.detail) return {};
-			if (profile === null) throw new Error(`opts.detail is true, but profile is null.`);
-			if (!isMe) return {};
-
-			const result = await awaitAll({
-				isModerator: () => Promise.resolve(isModerator),
-				isAdmin: () => Promise.resolve(isAdmin),
-				hasUnreadSpecifiedNotes: () =>
-					this.prismaService.client.note_unread.count({ where: { userId: user.id, isSpecified: true }, take: 1 }).then(count => count > 0),
-				hasUnreadMentions: () =>
-					this.prismaService.client.note_unread.count({ where: { userId: user.id, isMentioned: true }, take: 1 }).then(count => count > 0),
-				hasUnreadAnnouncement: () =>
-					this.getHasUnreadAnnouncement(user.id),
-				hasUnreadAntenna: () =>
-					this.getHasUnreadAntenna(user.id),
-				hasUnreadNotification: () =>
-					this.getHasUnreadNotification(user.id),
-				hasPendingReceivedFollowRequest: () =>
-					this.getHasPendingReceivedFollowRequest(user.id),
-				policies: () =>
-					this.roleService.getUserPolicies(user.id),
-			});
-
-			return {
-				...pick(user, [
-					'avatarId',
-					'bannerId',
-					'hideOnlineStatus',
-					'isDeleted',
-					'isExplorable',
-				]),
-
-				...pick(profile, [
-					'achievements',
-					'alwaysMarkNsfw',
-					'autoAcceptFollowed',
-					'autoSensitive',
-					'carefulBot',
-					'emailNotificationTypes',
-					'injectFeaturedNote',
-					'mutedInstances',
-					'mutedWords',
-					'mutingNotificationTypes',
-					'noCrawle',
-					'preventAiLearning',
-					'receiveAnnouncementEmail',
-				]),
-
-				hasPendingReceivedFollowRequest: result.hasPendingReceivedFollowRequest,
-				hasUnreadAnnouncement: result.hasUnreadAnnouncement,
-				hasUnreadAntenna: result.hasUnreadAntenna,
-				hasUnreadMentions: result.hasUnreadMentions,
-				hasUnreadNotification: result.hasUnreadNotification,
-				hasUnreadSpecifiedNotes: result.hasUnreadSpecifiedNotes,
-				isAdmin: result.isAdmin,
-				isModerator: result.isModerator,
-				policies: result.policies,
-
-				loggedInDays: profile.loggedInDates.length,
-				hasUnreadChannel: false, // 後方互換性のため
-			};
-		};
-
-		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-		const getSecrets = async () => {
-			if (!opts.includeSecrets) return {};
-			if (profile === null) throw new Error(`opts.includeSecrets is true, but profile is null.`);
-
-			return {
-				email: profile.email,
-				emailVerified: profile.emailVerified,
-				securityKeysList: profile.twoFactorEnabled
-					? await this.prismaService.client.user_security_key.findMany({
-						where: { userId: user.id },
-						select: { id: true, name: true, lastUsed: true },
-					})
-					: [],
-			};
-		};
-
-		// eslint-disable-next-line @typescript-eslint/explicit-function-return-type
-		const getRelation = async () => {
-			if (!relation) return {};
-
+		const getRelation = (relation: z.infer<typeof UserRelationSchema>): z.infer<typeof UserRelationSchema> => {
 			return pick(relation, [
 				'hasPendingFollowRequestFromYou',
 				'hasPendingFollowRequestToYou',
@@ -564,59 +554,71 @@ export class UserEntityService implements OnModuleInit {
 			]);
 		};
 
-		const result = await awaitAll({
-			instance: () =>
-				user.host
-					? this.federatedInstanceService.federatedInstanceCache.fetch(user.host).then(instance =>
-						instance
-							? {
-								name: instance.name,
-								softwareName: instance.softwareName,
-								softwareVersion: instance.softwareVersion,
-								iconUrl: instance.iconUrl,
-								faviconUrl: instance.faviconUrl,
-								themeColor: instance.themeColor,
-							}
-							: undefined)
-					: Promise.resolve(undefined),
-			badgeRoles: () =>
-				user.host == null // パフォーマンス上の理由でローカルユーザーのみ
-					? this.roleService.getUserBadgeRoles(user.id).then(rs => rs.sort((a, b) => b.displayOrder - a.displayOrder).map(r => ({
-						name: r.name,
-						iconUrl: r.iconUrl,
-						displayOrder: r.displayOrder,
-					})))
-					: Promise.resolve(undefined),
-			emojis: () =>
-				this.customEmojiService.populateEmojis(user.emojis, user.host),
-			detail: getDetail,
-			detailMe: getDetailMe,
-			secrets: getSecrets,
-			relation: getRelation,
+		const [packedUserLite, detail, detailMe, secrets] = await Promise.all([
+			this.packLite(result),
+			this.packDetailsOnly(userId, meId, data),
+			isMe ? this.packDetailsMeOnly(userId, data) : {},
+			opts.includeSecrets ? this.packSecretsOnly(userId, data) : {},
+		]);
+
+		return {
+			...packedUserLite,
+			...detail,
+			...detailMe,
+			...secrets,
+			...(relation ? getRelation(relation) : {}),
+		};
+	}
+
+	/**
+	 * `MeDetailed`を返すpack系メソッド。
+	 * `packDetailed`メソッドでも現時点では事足りるが、そちらは`DetailedNotMe`とのunionが返されてしまうので。
+	 */
+	public async packDetailedMe(
+		src: user['id'] | user,
+		options?: {
+			includeSecrets?: boolean;
+		},
+	): Promise<z.infer<typeof MeDetailedSchema>> {
+		const userId = typeof src === 'string' ? src : src.id;
+		const includeSecrets = options?.includeSecrets ?? false;
+
+		const result = await this.prismaService.client.user.findUniqueOrThrow({
+			where: { id: userId },
+			include: {
+				follow_request_follow_request_followeeIdTouser: true,
+				user_profile: true,
+				user_note_pining: { include: { note: true }, orderBy: { id: 'desc' } },
+				user_security_key: true,
+				user_memo_user_memo_targetUserIdTouser: { where: { targetUserId: userId, userId } },
+				note_unread: true,
+			},
 		});
+		if (result.user_profile === null) throw new Error('data.user_profile is null');
 
-		const packed = {
-			id: user.id,
-			name: user.name,
-			username: user.username,
-			host: user.host,
-			avatarBlurhash: user.avatarBlurhash,
-			isBot: user.isBot,
-			isCat: user.isCat,
+		const data = {
+			follow_request: result.follow_request_follow_request_followeeIdTouser,
+			nore_unread: result.note_unread,
+			note: result.user_note_pining.map((pin) => pin.note),
+			user_memo: result.user_memo_user_memo_targetUserIdTouser,
+			user_note_pining: result.user_note_pining,
+			user_profile: [result.user_profile],
+			user_security_key: result.user_security_key,
+			user: [result],
+		};
 
-			instance: result.instance,
-			emojis: result.emojis,
+		const [packedUserLite, detail, detailMe, secrets] = await Promise.all([
+			this.packLite(result),
+			this.packDetailsOnly(result.id, result.id, data),
+			this.packDetailsMeOnly(result.id, data),
+			this.packSecretsOnly(result.id, data),
+		]);
 
-			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
-			onlineStatus: this.getOnlineStatus(user),
-			badgeRoles: result.badgeRoles,
-
-			...result.detail,
-			...result.detailMe,
-			...result.secrets,
-			...result.relation,
-		} as z.infer<typeof UserSchema> as IsMeAndIsUserDetailed<ExpectsMe, D>;
-
-		return packed;
+		return {
+			...packedUserLite,
+			...detail,
+			...detailMe,
+			...(includeSecrets ? secrets : {}),
+		};
 	}
 }

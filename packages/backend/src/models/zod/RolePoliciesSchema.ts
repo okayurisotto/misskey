@@ -30,3 +30,29 @@ export const RolePoliciesSchema = z
 		rateLimitFactor: PolicySchemaBase.extend({ value: z.number() }),
 	})
 	.partial();
+
+export const UserPoliciesSchema = z
+	.object({
+		gtlAvailable: z.boolean(),
+		ltlAvailable: z.boolean(),
+		canPublicNote: z.boolean(),
+		canInvite: z.boolean(),
+		inviteLimit: z.number(),
+		inviteLimitCycle: z.number(),
+		inviteExpirationTime: z.number(),
+		canManageCustomEmojis: z.boolean(),
+		canSearchNotes: z.boolean(),
+		canHideAds: z.boolean(),
+		driveCapacityMb: z.number(),
+		alwaysMarkNsfw: z.boolean(),
+		pinLimit: z.number(),
+		antennaLimit: z.number(),
+		wordMuteLimit: z.number(),
+		webhookLimit: z.number(),
+		clipLimit: z.number(),
+		noteEachClipsLimit: z.number(),
+		userListLimit: z.number(),
+		userEachUserListsLimit: z.number(),
+		rateLimitFactor: z.number(),
+	})
+	.partial();

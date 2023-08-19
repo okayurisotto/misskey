@@ -19,17 +19,13 @@ const fromEntries = <T extends readonly (readonly [string, unknown])[]>(
 	>;
 };
 
-export const awaitAll = async <
-	T extends Record<string, () => Promise<unknown>>,
->(
-	data: T,
-): Promise<
+export const awaitAll = async <T extends Record<string, unknown>>(data: {
+	[K in keyof T]: () => Promise<T[K]>;
+}): Promise<
 	UnionToIntersection<
 		EntryUnion2ObjectUnion<
 			{
-				[K in keyof T]: K extends string
-					? [K, Awaited<ReturnType<T[K]>>]
-					: never;
+				[K in keyof T]: K extends string ? [K, T[K]] : never;
 			}[keyof T]
 		>
 	>
@@ -39,13 +35,11 @@ export const awaitAll = async <
 	const promises = entries.map(async ([k, v]) => {
 		return [k, await v()];
 	}) as {
-		[K in keyof T]: Promise<[K, Awaited<ReturnType<T[K]>>]>;
+		[K in keyof T]: Promise<[K, T[K]]>;
 	}[keyof T][];
 
 	const awaited = (await Promise.all(promises)) as {
-		[K in keyof T]: K extends string
-			? Awaited<Promise<[K, Awaited<ReturnType<T[K]>>]>>
-			: never;
+		[K in keyof T]: K extends string ? Awaited<Promise<[K, T[K]]>> : never;
 	}[keyof T][];
 
 	return fromEntries(awaited);

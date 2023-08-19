@@ -21,7 +21,7 @@ export const meta = {
 	description:
 		'Get a list of other users that the specified user frequently replies to.',
 	res,
-	errors: {noSuchUser:noSuchUser___________________},
+	errors: { noSuchUser: noSuchUser___________________ },
 } as const;
 
 export const paramDef = z.object({
@@ -97,7 +97,7 @@ export default class extends Endpoint<
 			// Make replies object (includes weights)
 			const repliesObj = await Promise.all(
 				topRepliedUsers.map(async (user) => ({
-					user: await this.userEntityService.pack(user, me, { detail: true }),
+					user: await this.userEntityService.packDetailed(user, me),
 					weight: repliedUsers[user] / peak,
 				})),
 			);

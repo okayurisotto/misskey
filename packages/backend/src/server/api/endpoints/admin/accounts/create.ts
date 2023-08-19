@@ -61,10 +61,7 @@ export default class extends Endpoint<
 				ignorePreservedUsernames: true,
 			});
 
-			const packed = await this.userEntityService.pack(account, account, {
-				detail: true,
-				includeSecrets: true,
-			});
+			const packed = await this.userEntityService.packDetailed(account, account, { includeSecrets: true });
 
 			return {
 				...packed,

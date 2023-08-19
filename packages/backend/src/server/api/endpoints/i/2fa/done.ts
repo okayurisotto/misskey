@@ -62,10 +62,7 @@ export default class extends Endpoint<
 			this.globalEventService.publishMainStream(
 				me.id,
 				'meUpdated',
-				await this.userEntityService.pack(me.id, me, {
-					detail: true,
-					includeSecrets: true,
-				}),
+				await this.userEntityService.packDetailed(me.id, me, { includeSecrets: true }),
 			);
 		});
 	}

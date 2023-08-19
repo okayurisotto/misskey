@@ -45,11 +45,7 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
-				users.map((user) =>
-					this.userEntityService.pack(user, me, { detail: true }),
-				),
-			)) satisfies z.infer<typeof res>;
+			return await Promise.all(users.map((user) => this.userEntityService.packDetailed(user, me)));
 		});
 	}
 }

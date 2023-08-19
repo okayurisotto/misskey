@@ -12,7 +12,7 @@ export const meta = {
 	tags: ['account'],
 	requireCredential: true,
 	res,
-	errors: {userIsDeleted:userIsDeleted},
+	errors: { userIsDeleted: userIsDeleted },
 } as const;
 
 export const paramDef = z.object({});
@@ -55,15 +55,10 @@ export default class extends Endpoint<
 				userProfile.loggedInDates = [...userProfile.loggedInDates, today];
 			}
 
-			return (await this.userEntityService.pack<true, true>(
+			return await this.userEntityService.packDetailedMe(
 				userProfile.user,
-				userProfile.user,
-				{
-					detail: true,
-					includeSecrets: isSecure,
-					userProfile,
-				},
-			)) satisfies z.infer<typeof res>;
+				{ includeSecrets: isSecure },
+			);
 		});
 	}
 }

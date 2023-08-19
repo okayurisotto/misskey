@@ -45,11 +45,7 @@ export default class extends Endpoint<
 				event: ps.event,
 				var: ps.var,
 				userId: me.id,
-				user: await this.userEntityService.pack(
-					me.id,
-					{ id: page.userId },
-					{ detail: true },
-				),
+				user: await this.userEntityService.packDetailed(me.id, { id: page.userId }),
 			});
 		});
 	}

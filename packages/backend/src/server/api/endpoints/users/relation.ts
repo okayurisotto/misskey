@@ -3,18 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { UserRelationSchema } from '@/models/zod/UserRelationSchema.js';
 
-const resBase = z.object({
-	id: MisskeyIdSchema,
-	isFollowing: z.boolean(),
-	hasPendingFollowRequestFromYou: z.boolean(),
-	hasPendingFollowRequestToYou: z.boolean(),
-	isFollowed: z.boolean(),
-	isBlocking: z.boolean(),
-	isBlocked: z.boolean(),
-	isMuted: z.boolean(),
-	isRenoteMuted: z.boolean(),
-});
+const resBase = UserRelationSchema.merge(z.object({ id: MisskeyIdSchema }));
 const res = z.union([resBase, z.array(resBase)]);
 export const meta = {
 	tags: ['users'],

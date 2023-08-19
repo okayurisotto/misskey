@@ -33,9 +33,7 @@ export class ModerationLogEntityService {
 			type: log.type,
 			info: log.info,
 			userId: log.userId,
-			user: await this.userEntityService.pack(ext.user, null, {
-				detail: true,
-			}),
+			user: await this.userEntityService.packDetailed(ext.user),
 		};
 	}
 }

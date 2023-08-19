@@ -2,11 +2,13 @@ import { z } from 'zod';
 import { MisskeyIdSchema } from './misc.js';
 import { PageSchema } from './PageSchema.js';
 import { NoteSchema } from './NoteSchema.js';
+import { RoleSchema } from './RoleSchema.js';
+import { UserFieldsSchema } from './UserFieldsSchema.js';
 
 export const UserDetailedNotMeOnlySchema = z.object({
 	url: z.string().url().nullable(),
 	uri: z.string().url().nullable(),
-	movedToUri: z.string().url().nullable(),
+	movedTo: z.string().url().nullable(),
 	alsoKnownAs: z.array(MisskeyIdSchema).nullable(),
 	createdAt: z.string().datetime(),
 	updatedAt: z.string().datetime().nullable(),
@@ -20,7 +22,7 @@ export const UserDetailedNotMeOnlySchema = z.object({
 	location: z.string().nullable(),
 	birthday: z.string().nullable(),
 	lang: z.string().nullable(),
-	fields: z.array(z.object({ name: z.string(), value: z.string() })).max(16),
+	fields: UserFieldsSchema,
 	followersCount: z.number(),
 	followingCount: z.number(),
 	notesCount: z.number(),
@@ -32,13 +34,19 @@ export const UserDetailedNotMeOnlySchema = z.object({
 	twoFactorEnabled: z.boolean(),
 	usePasswordLessLogin: z.boolean(),
 	securityKeys: z.boolean(),
-	isFollowing: z.boolean().optional(),
-	isFollowed: z.boolean().optional(),
-	hasPendingFollowRequestFromYou: z.boolean().optional(),
-	hasPendingFollowRequestToYou: z.boolean().optional(),
-	isBlocking: z.boolean().optional(),
-	isBlocked: z.boolean().optional(),
-	isMuted: z.boolean().optional(),
-	isRenoteMuted: z.boolean().optional(),
-	memo: z.string().optional(),
+	memo: z.string().nullable(),
+	roles: z.array(
+		RoleSchema.pick({
+			id: true,
+			name: true,
+			color: true,
+			iconUrl: true,
+			description: true,
+			isModerator: true,
+			isAdministrator: true,
+			displayOrder: true,
+		}),
+	),
+	moderationNote: z.string().optional(),
+	ffVisibility: z.enum(['public', 'followers', 'private']),
 });

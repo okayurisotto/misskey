@@ -371,13 +371,9 @@ export default class extends Endpoint<
 				});
 			}
 
-			const iObj = await this.userEntityService.pack<true, true>(
+			const iObj = await this.userEntityService.packDetailedMe(
 				user.id,
-				user,
-				{
-					detail: true,
-					includeSecrets: isSecure,
-				},
+				{ includeSecrets: isSecure },
 			);
 
 			const updatedProfile =

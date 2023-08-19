@@ -118,7 +118,7 @@ export default class extends Endpoint<
 			return (await Promise.all(
 				users.map((user) => {
 					if (ps.detail) {
-						return this.userEntityService.pack(user, me, { detail: ps.detail });
+						return this.userEntityService.packDetailed(user, me);
 					} else {
 						return this.userEntityService.packLite(user);
 					}

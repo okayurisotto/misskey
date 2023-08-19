@@ -184,10 +184,11 @@ export class ServerService implements OnApplicationShutdown {
 					},
 				});
 
-				this.globalEventService.publishMainStream(profile.userId, 'meUpdated', await this.userEntityService.pack(profile.userId, { id: profile.userId }, {
-					detail: true,
-					includeSecrets: true,
-				}));
+				this.globalEventService.publishMainStream(
+					profile.userId,
+					'meUpdated',
+					await this.userEntityService.packDetailed(profile.userId, { id: profile.userId }, { includeSecrets: true }),
+				);
 
 				reply.code(200);
 				return 'Verify succeeded!';

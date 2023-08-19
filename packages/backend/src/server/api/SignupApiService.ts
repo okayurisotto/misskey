@@ -180,10 +180,7 @@ export class SignupApiService {
 					username, password, host,
 				});
 
-				const res = await this.userEntityService.pack(account, account, {
-					detail: true,
-					includeSecrets: true,
-				});
+				const res = await this.userEntityService.packDetailed(account, account, { includeSecrets: true });
 
 				if (ticket) {
 					await this.prismaService.client.registration_ticket.update({

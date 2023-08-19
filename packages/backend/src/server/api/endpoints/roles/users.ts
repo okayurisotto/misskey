@@ -75,9 +75,7 @@ export default class extends Endpoint<
 			return (await Promise.all(
 				assigns.map(async (assign) => ({
 					id: assign.id,
-					user: await this.userEntityService.pack(assign.user, me, {
-						detail: true,
-					}),
+					user: await this.userEntityService.packDetailed(assign.user, me),
 				})),
 			)) satisfies z.infer<typeof res>;
 		});

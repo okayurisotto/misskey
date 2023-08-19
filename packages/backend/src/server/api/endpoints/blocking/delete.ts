@@ -73,9 +73,7 @@ export default class extends Endpoint<
 			// Delete blocking
 			await this.userBlockingService.unblock(blocker, blockee);
 
-			return await this.userEntityService.pack(blockee.id, blocker, {
-				detail: true,
-			});
+			return await this.userEntityService.packDetailed(blockee.id, blocker);
 		});
 	}
 }

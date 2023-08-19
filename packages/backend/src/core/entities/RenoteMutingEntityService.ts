@@ -36,9 +36,7 @@ export class RenoteMutingEntityService {
 			id: muting.id,
 			createdAt: muting.createdAt.toISOString(),
 			muteeId: muting.muteeId,
-			mutee: await this.userEntityService.pack(muting.muteeId, me, {
-				detail: true,
-			}),
+			mutee: await this.userEntityService.packDetailed(muting.muteeId, me),
 		};
 	}
 }

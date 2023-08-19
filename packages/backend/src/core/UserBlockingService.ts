@@ -100,15 +100,12 @@ export class UserBlockingService implements OnModuleInit {
 		});
 
 		if (this.userEntityService.isLocalUser(followee)) {
-			this.userEntityService.pack(followee, followee, {
-				detail: true,
-			}).then(packed => this.globalEventService.publishMainStream(followee.id, 'meUpdated', packed));
+			this.userEntityService.packDetailed(followee, followee)
+				.then(packed => this.globalEventService.publishMainStream(followee.id, 'meUpdated', packed));
 		}
 
 		if (this.userEntityService.isLocalUser(follower) && !silent) {
-			this.userEntityService.pack(followee, follower, {
-				detail: true,
-			}).then(async packed => {
+			this.userEntityService.packDetailed(followee, follower).then(async packed => {
 				this.globalEventService.publishMainStream(follower.id, 'unfollow', packed);
 
 				const webhooks = (await this.webhookService.getActiveWebhooks()).filter(x => x.userId === follower.id && x.on.includes('unfollow'));

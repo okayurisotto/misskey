@@ -1,4 +1,7 @@
-import { failedToResolveRemoteUser, noSuchUser__________________________ } from '@/server/api/errors.js';
+import {
+	failedToResolveRemoteUser,
+	noSuchUser__________________________,
+} from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -19,7 +22,10 @@ export const meta = {
 	requireCredential: false,
 	description: 'Show the properties of a user.',
 	res,
-	errors: {failedToResolveRemoteUser:failedToResolveRemoteUser,noSuchUser:noSuchUser__________________________},
+	errors: {
+		failedToResolveRemoteUser: failedToResolveRemoteUser,
+		noSuchUser: noSuchUser__________________________,
+	},
 } as const;
 
 const paramDef_base = {
@@ -83,11 +89,7 @@ export default class extends Endpoint<
 				}
 
 				return await Promise.all(
-					users_.map((u) =>
-						this.userEntityService.pack(u, me, {
-							detail: true,
-						}),
-					),
+					users_.map((u) => this.userEntityService.packDetailed(u, me)),
 				);
 			}
 
@@ -124,9 +126,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			return (await this.userEntityService.pack(user, me, {
-				detail: true,
-			})) satisfies z.infer<typeof res>;
+			return await this.userEntityService.packDetailed(user, me);
 		});
 	}
 }
