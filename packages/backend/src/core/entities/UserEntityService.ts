@@ -85,70 +85,58 @@ export class UserEntityService implements OnModuleInit {
 	/**
 	 * `me`と`target`の関係を取得する。
 	 *
-	 * @param me
-	 * @param target
+	 * @param meId
+	 * @param targetId
 	 * @returns
 	 */
 	@bindThis
 	public async getRelation(
-		me: user['id'],
-		target: user['id'],
+		meId: user['id'],
+		targetId: user['id'],
 	): Promise<{
 		id: string;
-		isFollowing: boolean;
-		isFollowed: boolean;
 		hasPendingFollowRequestFromYou: boolean;
 		hasPendingFollowRequestToYou: boolean;
-		isBlocking: boolean;
 		isBlocked: boolean;
+		isBlocking: boolean;
+		isFollowed: boolean;
+		isFollowing: boolean;
 		isMuted: boolean;
 		isRenoteMuted: boolean;
 	}> {
-		const result = await awaitAll({
-			isFollowing: (): Promise<boolean> =>
-				this.prismaService.client.following.count({
-					where: { followerId: me, followeeId: target },
-					take: 1,
-				}).then(n => n > 0),
-			isFollowed: (): Promise<boolean> =>
-				this.prismaService.client.following.count({
-					where: { followerId: target, followeeId: me },
-					take: 1,
-				}).then(n => n > 0),
-			hasPendingFollowRequestFromYou: (): Promise<boolean> =>
-				this.prismaService.client.follow_request.count({
-					where: { followerId: me, followeeId: target },
-					take: 1,
-				}).then(n => n > 0),
-			hasPendingFollowRequestToYou: (): Promise<boolean> =>
-				this.prismaService.client.follow_request.count({
-					where: { followerId: target, followeeId: me },
-					take: 1,
-				}).then(n => n > 0),
-			isBlocking: (): Promise<boolean> =>
-				this.prismaService.client.blocking.count({
-					where: { blockerId: me, blockeeId: target },
-					take: 1,
-				}).then(n => n > 0),
-			isBlocked: (): Promise<boolean> =>
-				this.prismaService.client.blocking.count({
-					where: { blockerId: target, blockeeId: me },
-					take: 1,
-				}).then(n => n > 0),
-			isMuted: (): Promise<boolean> =>
-				this.prismaService.client.muting.count({
-					where: { muterId: me, muteeId: target },
-					take: 1,
-				}).then(n => n > 0),
-			isRenoteMuted: (): Promise<boolean> =>
-				this.prismaService.client.renote_muting.count({
-					where: { muterId: me, muteeId: target },
-					take: 1,
-				}).then(n => n > 0),
-		});
+		const [me, isRenoteMuted] = await Promise.all([
+			this.prismaService.client.user.findUniqueOrThrow({
+				where: { id: meId },
+				include: {
+					following_following_followerIdTouser: { where: { followeeId: targetId } },
+					following_following_followeeIdTouser: { where: { followerId: targetId } },
+					follow_request_follow_request_followerIdTouser: { where: { followeeId: targetId } },
+					follow_request_follow_request_followeeIdTouser: { where: { followerId: targetId } },
+					blocking_blocking_blockerIdTouser: { where: { blockeeId: targetId } },
+					blocking_blocking_blockeeIdTouser: { where: { blockerId: targetId } },
+					muting_muting_muterIdTouser: { where: { muteeId: targetId } },
+					// muting_muting_muteeIdTouser: { where: { muterId: target } },
+				},
+			}),
+			this.prismaService.client.renote_muting.count({
+				where: { muterId: meId, muteeId: targetId },
+				take: 1,
+			}).then(n => n !== 0),
+		]);
+
+		const result = {
+			isFollowing: me.following_following_followerIdTouser.length !== 0,
+			isFollowed: me.following_following_followeeIdTouser.length !== 0,
+			hasPendingFollowRequestFromYou: me.follow_request_follow_request_followerIdTouser.length !== 0,
+			hasPendingFollowRequestToYou: me.follow_request_follow_request_followeeIdTouser.length !== 0,
+			isBlocking: me.blocking_blocking_blockerIdTouser.length !== 0,
+			isBlocked: me.blocking_blocking_blockeeIdTouser.length !== 0,
+			isMuted: me.muting_muting_muterIdTouser.length !== 0,
+			isRenoteMuted: isRenoteMuted,
+		};
 
 		return {
-			id: target,
+			id: targetId,
 			...result,
 		};
 	}
