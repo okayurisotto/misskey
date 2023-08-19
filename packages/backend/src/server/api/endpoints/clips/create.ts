@@ -1,3 +1,4 @@
+import { tooManyClips } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -15,13 +16,7 @@ export const meta = {
 	prohibitMoved: true,
 	kind: 'write:account',
 	res,
-	errors: {
-		tooManyClips: {
-			message: 'You cannot create clip any more.',
-			code: 'TOO_MANY_CLIPS',
-			id: '920f7c2d-6208-4b76-8082-e632020f5883',
-		},
-	},
+	errors: {tooManyClips:tooManyClips},
 } as const;
 
 export const paramDef = z.object({

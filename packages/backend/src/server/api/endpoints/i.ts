@@ -1,3 +1,4 @@
+import { userIsDeleted } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -11,14 +12,7 @@ export const meta = {
 	tags: ['account'],
 	requireCredential: true,
 	res,
-	errors: {
-		userIsDeleted: {
-			message: 'User is deleted.',
-			code: 'USER_IS_DELETED',
-			id: 'e5b3b9f0-2b8f-4b9f-9c1f-8c5c1b2e1b1a',
-			kind: 'permission',
-		},
-	},
+	errors: {userIsDeleted:userIsDeleted},
 } as const;
 
 export const paramDef = z.object({});

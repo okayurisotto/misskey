@@ -1,3 +1,4 @@
+import { noSuchAd } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -10,13 +11,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {
-		noSuchAd: {
-			message: 'No such ad.',
-			code: 'NO_SUCH_AD',
-			id: 'ccac9863-3a03-416e-b899-8a64041118b1',
-		},
-	},
+	errors: {noSuchAd:noSuchAd},
 } as const;
 
 export const paramDef = z.object({ id: MisskeyIdSchema });

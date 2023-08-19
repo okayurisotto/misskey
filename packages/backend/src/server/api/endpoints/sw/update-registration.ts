@@ -1,3 +1,4 @@
+import { noSuchRegistration } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,13 +15,7 @@ export const meta = {
 	requireCredential: true,
 	description: 'Update push notification registration.',
 	res,
-	errors: {
-		noSuchRegistration: {
-			message: 'No such registration.',
-			code: 'NO_SUCH_REGISTRATION',
-			id: ' b09d8066-8064-5613-efb6-0e963b21d012',
-		},
-	},
+	errors: {noSuchRegistration:noSuchRegistration},
 } as const;
 
 export const paramDef = z.object({

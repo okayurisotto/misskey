@@ -1,3 +1,4 @@
+import { noSuchPost } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -9,13 +10,7 @@ export const meta = {
 	tags: ['gallery'],
 	requireCredential: true,
 	kind: 'write:gallery',
-	errors: {
-		noSuchPost: {
-			message: 'No such post.',
-			code: 'NO_SUCH_POST',
-			id: 'ae52f367-4bd7-4ecd-afc6-5672fff427f5',
-		},
-	},
+	errors: {noSuchPost:noSuchPost},
 } as const;
 
 export const paramDef = z.object({

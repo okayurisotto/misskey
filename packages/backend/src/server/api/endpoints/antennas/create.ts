@@ -1,3 +1,4 @@
+import { noSuchUserList, tooManyAntennas } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -16,18 +17,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:account',
-	errors: {
-		noSuchUserList: {
-			message: 'No such user list.',
-			code: 'NO_SUCH_USER_LIST',
-			id: '95063e93-a283-4b8b-9aa5-bcdb8df69a7f',
-		},
-		tooManyAntennas: {
-			message: 'You cannot create antenna any more.',
-			code: 'TOO_MANY_ANTENNAS',
-			id: 'faf47050-e8b5-438c-913c-db2b1576fde4',
-		},
-	},
+	errors: {noSuchUserList:noSuchUserList,tooManyAntennas:tooManyAntennas},
 	res,
 } as const;
 

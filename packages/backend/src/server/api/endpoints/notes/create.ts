@@ -1,3 +1,4 @@
+import { noSuchRenoteTarget, cannotReRenote, noSuchReplyTarget, cannotReplyToPureRenote, cannotCreateAlreadyExpiredPoll, noSuchChannel_______, youHaveBeenBlocked, noSuchFile______________ } from '@/server/api/errors.js';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import z from 'zod';
@@ -22,48 +23,7 @@ export const meta = {
 	},
 	kind: 'write:notes',
 	res,
-	errors: {
-		noSuchRenoteTarget: {
-			message: 'No such renote target.',
-			code: 'NO_SUCH_RENOTE_TARGET',
-			id: 'b5c90186-4ab0-49c8-9bba-a1f76c282ba4',
-		},
-		cannotReRenote: {
-			message: 'You can not Renote a pure Renote.',
-			code: 'CANNOT_RENOTE_TO_A_PURE_RENOTE',
-			id: 'fd4cc33e-2a37-48dd-99cc-9b806eb2031a',
-		},
-		noSuchReplyTarget: {
-			message: 'No such reply target.',
-			code: 'NO_SUCH_REPLY_TARGET',
-			id: '749ee0f6-d3da-459a-bf02-282e2da4292c',
-		},
-		cannotReplyToPureRenote: {
-			message: 'You can not reply to a pure Renote.',
-			code: 'CANNOT_REPLY_TO_A_PURE_RENOTE',
-			id: '3ac74a84-8fd5-4bb0-870f-01804f82ce15',
-		},
-		cannotCreateAlreadyExpiredPoll: {
-			message: 'Poll is already expired.',
-			code: 'CANNOT_CREATE_ALREADY_EXPIRED_POLL',
-			id: '04da457d-b083-4055-9082-955525eda5a5',
-		},
-		noSuchChannel: {
-			message: 'No such channel.',
-			code: 'NO_SUCH_CHANNEL',
-			id: 'b1653923-5453-4edc-b786-7c4f39bb0bbb',
-		},
-		youHaveBeenBlocked: {
-			message: 'You have been blocked by this user.',
-			code: 'YOU_HAVE_BEEN_BLOCKED',
-			id: 'b390d7e1-8a5e-46ed-b625-06271cafd3d3',
-		},
-		noSuchFile: {
-			message: 'Some files are not found.',
-			code: 'NO_SUCH_FILE',
-			id: 'b6992544-63e7-67f0-fa7f-32444b1b5306',
-		},
-	},
+	errors: {noSuchRenoteTarget:noSuchRenoteTarget,cannotReRenote:cannotReRenote,noSuchReplyTarget:noSuchReplyTarget,cannotReplyToPureRenote:cannotReplyToPureRenote,cannotCreateAlreadyExpiredPoll:cannotCreateAlreadyExpiredPoll,noSuchChannel:noSuchChannel_______,youHaveBeenBlocked:youHaveBeenBlocked,noSuchFile:noSuchFile______________},
 } as const;
 
 const paramDef_fileIds = uniqueItems(z.array(MisskeyIdSchema).min(1).max(16));

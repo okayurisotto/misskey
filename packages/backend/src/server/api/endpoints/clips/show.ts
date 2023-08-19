@@ -1,3 +1,4 @@
+import { noSuchClip_____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -12,13 +13,7 @@ export const meta = {
 	tags: ['clips', 'account'],
 	requireCredential: false,
 	kind: 'read:account',
-	errors: {
-		noSuchClip: {
-			message: 'No such clip.',
-			code: 'NO_SUCH_CLIP',
-			id: 'c3c5fe33-d62c-44d2-9ea5-d997703f5c20',
-		},
-	},
+	errors: {noSuchClip:noSuchClip_____},
 	res,
 } as const;
 

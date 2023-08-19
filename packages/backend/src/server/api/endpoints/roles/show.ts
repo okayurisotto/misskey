@@ -1,3 +1,4 @@
+import { noSuchRole_______ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -11,13 +12,7 @@ export const meta = {
 	tags: ['role', 'users'],
 	requireCredential: false,
 	res,
-	errors: {
-		noSuchRole: {
-			message: 'No such role.',
-			code: 'NO_SUCH_ROLE',
-			id: 'de5502bf-009a-4639-86c1-fec349e46dcb',
-		},
-	},
+	errors: {noSuchRole:noSuchRole_______},
 } as const;
 
 export const paramDef = z.object({

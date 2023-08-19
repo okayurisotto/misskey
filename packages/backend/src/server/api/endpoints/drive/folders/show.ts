@@ -1,3 +1,4 @@
+import { noSuchFolder___ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -13,13 +14,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'read:drive',
 	res,
-	errors: {
-		noSuchFolder: {
-			message: 'No such folder.',
-			code: 'NO_SUCH_FOLDER',
-			id: 'd74ab9eb-bb09-4bba-bf24-fb58f761e1e9',
-		},
-	},
+	errors: {noSuchFolder:noSuchFolder___},
 } as const;
 
 export const paramDef = z.object({

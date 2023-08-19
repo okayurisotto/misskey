@@ -1,3 +1,4 @@
+import {  } from '@/server/api/errors.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { Injectable } from '@nestjs/common';

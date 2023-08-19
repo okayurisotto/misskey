@@ -1,3 +1,4 @@
+import { noSuchWebhook_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -11,13 +12,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'read:account',
 	res,
-	errors: {
-		noSuchWebhook: {
-			message: 'No such webhook.',
-			code: 'NO_SUCH_WEBHOOK',
-			id: '50f614d9-3047-4f7e-90d8-ad6b2d5fb098',
-		},
-	},
+	errors: {noSuchWebhook:noSuchWebhook_},
 } as const;
 
 export const paramDef = z.object({

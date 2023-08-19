@@ -1,3 +1,4 @@
+import { noSuchKey___ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -7,13 +8,7 @@ import { ApiError } from '../../../error.js';
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	errors: {
-		noSuchKey: {
-			message: 'No such key.',
-			code: 'NO_SUCH_KEY',
-			id: '1fac4e8a-a6cd-4e39-a4a5-3a7e11f1b019',
-		},
-	},
+	errors: {noSuchKey:noSuchKey___},
 } as const;
 
 export const paramDef = z.object({

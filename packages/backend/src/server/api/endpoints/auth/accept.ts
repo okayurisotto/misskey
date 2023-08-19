@@ -1,3 +1,4 @@
+import { noSuchSession } from '@/server/api/errors.js';
 import * as crypto from 'node:crypto';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
@@ -11,13 +12,7 @@ export const meta = {
 	tags: ['auth'],
 	requireCredential: true,
 	secure: true,
-	errors: {
-		noSuchSession: {
-			message: 'No such session.',
-			code: 'NO_SUCH_SESSION',
-			id: '9c72d8de-391a-43c1-9d06-08d29efde8df',
-		},
-	},
+	errors: {noSuchSession:noSuchSession},
 } as const;
 
 export const paramDef = z.object({

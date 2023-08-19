@@ -1,3 +1,4 @@
+import { noSuchChannel___ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
@@ -18,13 +19,7 @@ export const meta = {
 	tags: ['notes', 'channels'],
 	requireCredential: false,
 	res,
-	errors: {
-		noSuchChannel: {
-			message: 'No such channel.',
-			code: 'NO_SUCH_CHANNEL',
-			id: '4d0eeeba-a02c-4c3c-9966-ef60d38d2e7f',
-		},
-	},
+	errors: {noSuchChannel:noSuchChannel___},
 } as const;
 
 export const paramDef = z.object({

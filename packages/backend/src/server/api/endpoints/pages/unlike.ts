@@ -1,3 +1,4 @@
+import { noSuchPage_____, notLiked__ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,18 +11,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:page-likes',
-	errors: {
-		noSuchPage: {
-			message: 'No such page.',
-			code: 'NO_SUCH_PAGE',
-			id: 'a0d41e20-1993-40bd-890e-f6e560ae648e',
-		},
-		notLiked: {
-			message: 'You have not liked that page.',
-			code: 'NOT_LIKED',
-			id: 'f5e586b0-ce93-4050-b0e3-7f31af5259ee',
-		},
-	},
+	errors: {noSuchPage:noSuchPage_____,notLiked:notLiked__},
 } as const;
 
 export const paramDef = z.object({

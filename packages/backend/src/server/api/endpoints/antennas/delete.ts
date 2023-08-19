@@ -1,3 +1,4 @@
+import { noSuchAntenna } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -11,13 +12,7 @@ export const meta = {
 	tags: ['antennas'],
 	requireCredential: true,
 	kind: 'write:account',
-	errors: {
-		noSuchAntenna: {
-			message: 'No such antenna.',
-			code: 'NO_SUCH_ANTENNA',
-			id: 'b34dcf9d-348f-44bb-99d0-6c9314cfe2df',
-		},
-	},
+	errors: {noSuchAntenna:noSuchAntenna},
 } as const;
 
 export const paramDef = z.object({ antennaId: MisskeyIdSchema });

@@ -1,3 +1,4 @@
+import { noSuchUser_________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,13 +11,7 @@ export const meta = {
 	tags: ['following', 'account'],
 	requireCredential: true,
 	kind: 'write:following',
-	errors: {
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: 'abc2ffa6-25b2-4380-ba99-321ff3a94555',
-		},
-	},
+	errors: {noSuchUser:noSuchUser_________},
 } as const;
 
 export const paramDef = z.object({

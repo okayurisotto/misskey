@@ -1,3 +1,4 @@
+import { invalidFileName, inappropriate, noFreeSpace } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -24,25 +25,7 @@ export const meta = {
 	kind: 'write:drive',
 	description: 'Upload a new drive file.',
 	res,
-	errors: {
-		invalidFileName: {
-			message: 'Invalid file name.',
-			code: 'INVALID_FILE_NAME',
-			id: 'f449b209-0c60-4e51-84d5-29486263bfd4',
-		},
-		inappropriate: {
-			message:
-				'Cannot upload the file because it has been determined that it possibly contains inappropriate content.',
-			code: 'INAPPROPRIATE',
-			id: 'bec5bd69-fba3-43c9-b4fb-2894b66ad5d2',
-		},
-		noFreeSpace: {
-			message:
-				'Cannot upload the file because you have no free space of drive.',
-			code: 'NO_FREE_SPACE',
-			id: 'd08dbc37-a6a9-463a-8c47-96c32ab5f064',
-		},
-	},
+	errors: {invalidFileName:invalidFileName,inappropriate:inappropriate,noFreeSpace:noFreeSpace},
 } as const;
 
 export const paramDef = z.object({

@@ -1,3 +1,4 @@
+import { noSuchUser_________________, forbidden } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -15,18 +16,7 @@ export const meta = {
 	requireCredential: false,
 	description: 'Show everyone that follows this user.',
 	res,
-	errors: {
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: '27fa5435-88ab-43de-9360-387de88727cd',
-		},
-		forbidden: {
-			message: 'Forbidden.',
-			code: 'FORBIDDEN',
-			id: '3c6a84db-d619-26af-ca14-06232a21df8a',
-		},
-	},
+	errors: {noSuchUser:noSuchUser_________________,forbidden:forbidden},
 } as const;
 
 const paramDef_base = z.object({

@@ -1,3 +1,4 @@
+import { noSuchPage____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -13,13 +14,7 @@ export const meta = {
 	tags: ['pages'],
 	requireCredential: false,
 	res,
-	errors: {
-		noSuchPage: {
-			message: 'No such page.',
-			code: 'NO_SUCH_PAGE',
-			id: '222120c0-3ead-4528-811b-b96f233388d7',
-		},
-	},
+	errors: {noSuchPage:noSuchPage____},
 } as const;
 
 export const paramDef = z.union([

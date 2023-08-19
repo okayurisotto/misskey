@@ -1,3 +1,4 @@
+import { incorrectPassword, unavailable } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import ms from 'ms';
@@ -21,18 +22,7 @@ export const meta = {
 		max: 3,
 	},
 	res,
-	errors: {
-		incorrectPassword: {
-			message: 'Incorrect password.',
-			code: 'INCORRECT_PASSWORD',
-			id: 'e54c1d7e-e7d6-4103-86b6-0a95069b4ad3',
-		},
-		unavailable: {
-			message: 'Unavailable email address.',
-			code: 'UNAVAILABLE',
-			id: 'a2defefb-f220-8849-0af6-17f816099323',
-		},
-	},
+	errors: {incorrectPassword:incorrectPassword,unavailable:unavailable},
 } as const;
 
 export const paramDef = z.object({

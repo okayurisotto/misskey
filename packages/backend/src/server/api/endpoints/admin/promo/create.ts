@@ -1,3 +1,4 @@
+import { noSuchNote, alreadyPromoted } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -10,18 +11,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {
-		noSuchNote: {
-			message: 'No such note.',
-			code: 'NO_SUCH_NOTE',
-			id: 'ee449fbe-af2a-453b-9cae-cf2fe7c895fc',
-		},
-		alreadyPromoted: {
-			message: 'The note has already promoted.',
-			code: 'ALREADY_PROMOTED',
-			id: 'ae427aa2-7a41-484f-a18c-2c1104051604',
-		},
-	},
+	errors: {noSuchNote:noSuchNote,alreadyPromoted:alreadyPromoted},
 } as const;
 
 export const paramDef = z.object({

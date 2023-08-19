@@ -1,3 +1,4 @@
+import { noSuchFile_______________, nameAlreadyExists } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -22,18 +23,7 @@ export const meta = {
 		max: 10,
 	},
 	res,
-	errors: {
-		noSuchFile: {
-			message: 'No such file.',
-			code: 'NO_SUCH_FILE',
-			id: 'b7b97489-0f66-4b12-a5ff-b21bd63f6e1c',
-		},
-		nameAlreadyExists: {
-			message: 'Specified name already exists.',
-			code: 'NAME_ALREADY_EXISTS',
-			id: '4650348e-301c-499a-83c9-6aa988c66bc1',
-		},
-	},
+	errors: {noSuchFile:noSuchFile_______________,nameAlreadyExists:nameAlreadyExists},
 } as const;
 
 export const paramDef = z.object({

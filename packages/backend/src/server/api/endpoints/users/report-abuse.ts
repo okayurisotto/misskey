@@ -1,3 +1,4 @@
+import { noSuchUser_________________________, cannotReportYourself, cannotReportAdmin } from '@/server/api/errors.js';
 import { z } from 'zod';
 import sanitizeHtml from 'sanitize-html';
 import { Injectable } from '@nestjs/common';
@@ -16,23 +17,7 @@ export const meta = {
 	tags: ['users'],
 	requireCredential: true,
 	description: 'File a report.',
-	errors: {
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: '1acefcb5-0959-43fd-9685-b48305736cb5',
-		},
-		cannotReportYourself: {
-			message: 'Cannot report yourself.',
-			code: 'CANNOT_REPORT_YOURSELF',
-			id: '1e13149e-b1e8-43cf-902e-c01dbfcb202f',
-		},
-		cannotReportAdmin: {
-			message: 'Cannot report the admin.',
-			code: 'CANNOT_REPORT_THE_ADMIN',
-			id: '35e166f5-05fb-4f87-a2d5-adb42676d48f',
-		},
-	},
+	errors: {noSuchUser:noSuchUser_________________________,cannotReportYourself:cannotReportYourself,cannotReportAdmin:cannotReportAdmin},
 } as const;
 
 export const paramDef = z.object({

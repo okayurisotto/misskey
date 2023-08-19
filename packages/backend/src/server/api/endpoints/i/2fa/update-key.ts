@@ -1,3 +1,4 @@
+import { noSuchKey, accessDenied________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,18 +11,7 @@ const res = z.object({});
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	errors: {
-		noSuchKey: {
-			message: 'No such key.',
-			code: 'NO_SUCH_KEY',
-			id: 'f9c5467f-d492-4d3c-9a8g-a70dacc86512',
-		},
-		accessDenied: {
-			message: 'You do not have edit privilege of the channel.',
-			code: 'ACCESS_DENIED',
-			id: '1fb7cb09-d46a-4fff-b8df-057708cce513',
-		},
-	},
+	errors: {noSuchKey:noSuchKey,accessDenied:accessDenied________},
 	res,
 } as const;
 

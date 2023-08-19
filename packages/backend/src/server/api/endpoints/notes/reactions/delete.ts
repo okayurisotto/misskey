@@ -1,3 +1,4 @@
+import { noSuchNote_____________, notReacted } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -16,18 +17,7 @@ export const meta = {
 		max: 60,
 		minInterval: ms('3sec'),
 	},
-	errors: {
-		noSuchNote: {
-			message: 'No such note.',
-			code: 'NO_SUCH_NOTE',
-			id: '764d9fce-f9f2-4a0e-92b1-6ceac9a7ad37',
-		},
-		notReacted: {
-			message: 'You are not reacting to that note.',
-			code: 'NOT_REACTED',
-			id: '92f4426d-4196-4125-aa5b-02943e2ec8fc',
-		},
-	},
+	errors: {noSuchNote:noSuchNote_____________,notReacted:notReacted},
 } as const;
 
 export const paramDef = z.object({

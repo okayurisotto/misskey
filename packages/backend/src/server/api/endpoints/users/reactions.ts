@@ -1,3 +1,4 @@
+import { reactionsNotPublic } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,13 +15,7 @@ export const meta = {
 	requireCredential: false,
 	description: 'Show all reactions this user made.',
 	res,
-	errors: {
-		reactionsNotPublic: {
-			message: 'Reactions of the user is not public.',
-			code: 'REACTIONS_NOT_PUBLIC',
-			id: '673a7dd2-6924-1093-e0c0-e68456ceae5c',
-		},
-	},
+	errors: {reactionsNotPublic:reactionsNotPublic},
 } as const;
 
 export const paramDef = z.object({

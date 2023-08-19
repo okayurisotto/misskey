@@ -1,3 +1,4 @@
+import { noSuchRole______ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
@@ -15,13 +16,7 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['role', 'notes'],
 	requireCredential: true,
-	errors: {
-		noSuchRole: {
-			message: 'No such role.',
-			code: 'NO_SUCH_ROLE',
-			id: 'eb70323a-df61-4dd4-ad90-89c83c7cf26e',
-		},
-	},
+	errors: {noSuchRole:noSuchRole______},
 	res,
 } as const;
 

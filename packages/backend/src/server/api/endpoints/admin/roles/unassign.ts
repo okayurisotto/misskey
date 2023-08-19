@@ -1,3 +1,4 @@
+import { noSuchRole___, noSuchUser_, notAssigned, accessDenied_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,28 +11,7 @@ export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {
-		noSuchRole: {
-			message: 'No such role.',
-			code: 'NO_SUCH_ROLE',
-			id: '6e519036-a70d-4c76-b679-bc8fb18194e2',
-		},
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: '2b730f78-1179-461b-88ad-d24c9af1a5ce',
-		},
-		notAssigned: {
-			message: 'Not assigned.',
-			code: 'NOT_ASSIGNED',
-			id: 'b9060ac7-5c94-4da4-9f55-2047c953df44',
-		},
-		accessDenied: {
-			message: 'Only administrators can edit members of the role.',
-			code: 'ACCESS_DENIED',
-			id: '24636eee-e8c1-493e-94b2-e16ad401e262',
-		},
-	},
+	errors: {noSuchRole:noSuchRole___,noSuchUser:noSuchUser_,notAssigned:notAssigned,accessDenied:accessDenied_},
 } as const;
 
 export const paramDef = z.object({

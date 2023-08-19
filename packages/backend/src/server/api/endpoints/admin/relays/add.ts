@@ -1,3 +1,4 @@
+import { invalidUrl } from '@/server/api/errors.js';
 import { URL } from 'node:url';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
@@ -15,13 +16,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {
-		invalidUrl: {
-			message: 'Invalid URL',
-			code: 'INVALID_URL',
-			id: 'fb8c92d3-d4e5-44e7-b3d4-800d5cef8b2c',
-		},
-	},
+	errors: {invalidUrl:invalidUrl},
 	res,
 } as const;
 

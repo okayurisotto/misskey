@@ -1,3 +1,4 @@
+import { noSuchList____, noSuchUser______________________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,18 +15,7 @@ export const meta = {
 	prohibitMoved: true,
 	kind: 'write:account',
 	description: 'Remove a user from a list.',
-	errors: {
-		noSuchList: {
-			message: 'No such list.',
-			code: 'NO_SUCH_LIST',
-			id: '7f44670e-ab16-43b8-b4c1-ccd2ee89cc02',
-		},
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: '588e7f72-c744-4a61-b180-d354e912bda2',
-		},
-	},
+	errors: {noSuchList:noSuchList____,noSuchUser:noSuchUser______________________},
 } as const;
 
 export const paramDef = z.object({

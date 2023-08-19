@@ -1,3 +1,4 @@
+import { noSuchApp_ } from '@/server/api/errors.js';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
@@ -16,13 +17,7 @@ export const meta = {
 	tags: ['auth'],
 	requireCredential: false,
 	res,
-	errors: {
-		noSuchApp: {
-			message: 'No such app.',
-			code: 'NO_SUCH_APP',
-			id: '92f93e63-428e-4f2f-a5a4-39e1407fe998',
-		},
-	},
+	errors: {noSuchApp:noSuchApp_},
 } as const;
 
 export const paramDef = z.object({

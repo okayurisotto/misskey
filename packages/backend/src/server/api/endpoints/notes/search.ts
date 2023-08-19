@@ -1,3 +1,4 @@
+import { unavailable_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -15,13 +16,7 @@ export const meta = {
 	tags: ['notes'],
 	requireCredential: false,
 	res,
-	errors: {
-		unavailable: {
-			message: 'Search of notes unavailable.',
-			code: 'UNAVAILABLE',
-			id: '0b44998d-77aa-4427-80d0-d2c9b8523011',
-		},
-	},
+	errors: {unavailable:unavailable_},
 } as const;
 
 export const paramDef = z.object({

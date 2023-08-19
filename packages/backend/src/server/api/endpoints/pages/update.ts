@@ -1,3 +1,4 @@
+import { noSuchPage______, accessDenied____________, noSuchFile________________, nameAlreadyExists_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -17,28 +18,7 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 300,
 	},
-	errors: {
-		noSuchPage: {
-			message: 'No such page.',
-			code: 'NO_SUCH_PAGE',
-			id: '21149b9e-3616-4778-9592-c4ce89f5a864',
-		},
-		accessDenied: {
-			message: 'Access denied.',
-			code: 'ACCESS_DENIED',
-			id: '3c15cd52-3b4b-4274-967d-6456fc4f792b',
-		},
-		noSuchFile: {
-			message: 'No such file.',
-			code: 'NO_SUCH_FILE',
-			id: 'cfc23c7c-3887-490e-af30-0ed576703c82',
-		},
-		nameAlreadyExists: {
-			message: 'Specified name already exists.',
-			code: 'NAME_ALREADY_EXISTS',
-			id: '2298a392-d4a1-44c5-9ebb-ac1aeaa5a9ab',
-		},
-	},
+	errors: {noSuchPage:noSuchPage______,accessDenied:accessDenied____________,noSuchFile:noSuchFile________________,nameAlreadyExists:nameAlreadyExists_},
 } as const;
 
 export const paramDef = z.object({

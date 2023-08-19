@@ -1,3 +1,4 @@
+import { noSuchFile_______, accessDenied____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -16,18 +17,7 @@ export const meta = {
 	kind: 'read:drive',
 	description: 'Show the properties of a drive file.',
 	res,
-	errors: {
-		noSuchFile: {
-			message: 'No such file.',
-			code: 'NO_SUCH_FILE',
-			id: '067bc436-2718-4795-b0fb-ecbe43949e31',
-		},
-		accessDenied: {
-			message: 'Access denied.',
-			code: 'ACCESS_DENIED',
-			id: '25b73c73-68b1-41d0-bad1-381cfdf6579f',
-		},
-	},
+	errors: {noSuchFile:noSuchFile_______,accessDenied:accessDenied____},
 } as const;
 
 export const paramDef = z.union([

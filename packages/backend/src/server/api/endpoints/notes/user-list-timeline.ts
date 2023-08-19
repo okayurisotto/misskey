@@ -1,3 +1,4 @@
+import { noSuchList } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,13 +15,7 @@ export const meta = {
 	tags: ['notes', 'lists'],
 	requireCredential: true,
 	res,
-	errors: {
-		noSuchList: {
-			message: 'No such list.',
-			code: 'NO_SUCH_LIST',
-			id: '8fb1fbd5-e476-4c37-9fb0-43d55b63a2ff',
-		},
-	},
+	errors: {noSuchList:noSuchList},
 } as const;
 
 export const paramDef = z.object({

@@ -1,3 +1,4 @@
+import { noSuchUser___________________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -20,13 +21,7 @@ export const meta = {
 	description:
 		'Get a list of other users that the specified user frequently replies to.',
 	res,
-	errors: {
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: 'e6965129-7b2a-40a4-bae2-cd84cd434822',
-		},
-	},
+	errors: {noSuchUser:noSuchUser___________________},
 } as const;
 
 export const paramDef = z.object({

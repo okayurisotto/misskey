@@ -1,3 +1,4 @@
+import { noSuchFile___ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
@@ -20,13 +21,7 @@ export const meta = {
 		max: 10,
 	},
 	res,
-	errors: {
-		noSuchFile: {
-			message: 'No such file.',
-			code: 'NO_SUCH_FILE',
-			id: 'cd1e9f3e-5a12-4ab4-96f6-5d0a2cc32050',
-		},
-	},
+	errors: {noSuchFile:noSuchFile___},
 } as const;
 
 export const paramDef = z.object({

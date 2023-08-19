@@ -1,3 +1,4 @@
+import { noSuchUser___, blockeeIsYourself_, notBlocking } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -18,23 +19,7 @@ export const meta = {
 	},
 	requireCredential: true,
 	kind: 'write:blocks',
-	errors: {
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: '8621d8bf-c358-4303-a066-5ea78610eb3f',
-		},
-		blockeeIsYourself: {
-			message: 'Blockee is yourself.',
-			code: 'BLOCKEE_IS_YOURSELF',
-			id: '06f6fac6-524b-473c-a354-e97a40ae6eac',
-		},
-		notBlocking: {
-			message: 'You are not blocking that user.',
-			code: 'NOT_BLOCKING',
-			id: '291b2efa-60c6-45c0-9f6a-045c8f9b02cd',
-		},
-	},
+	errors: {noSuchUser:noSuchUser___,blockeeIsYourself:blockeeIsYourself_,notBlocking:notBlocking},
 	res,
 } as const;
 

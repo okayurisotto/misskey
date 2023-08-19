@@ -1,3 +1,4 @@
+import { noSuchFlash____, accessDenied_______ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -15,18 +16,7 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 300,
 	},
-	errors: {
-		noSuchFlash: {
-			message: 'No such flash.',
-			code: 'NO_SUCH_FLASH',
-			id: '611e13d2-309e-419a-a5e4-e0422da39b02',
-		},
-		accessDenied: {
-			message: 'Access denied.',
-			code: 'ACCESS_DENIED',
-			id: '08e60c88-5948-478e-a132-02ec701d67b2',
-		},
-	},
+	errors: {noSuchFlash:noSuchFlash____,accessDenied:accessDenied_______},
 } as const;
 
 export const paramDef = z.object({

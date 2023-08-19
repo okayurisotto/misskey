@@ -1,3 +1,4 @@
+import { noSuchPost__ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -11,13 +12,7 @@ const res = GalleryPostSchema;
 export const meta = {
 	tags: ['gallery'],
 	requireCredential: false,
-	errors: {
-		noSuchPost: {
-			message: 'No such post.',
-			code: 'NO_SUCH_POST',
-			id: '1137bf14-c5b0-4604-85bb-5b5371b1cd45',
-		},
-	},
+	errors: {noSuchPost:noSuchPost__},
 	res,
 } as const;
 

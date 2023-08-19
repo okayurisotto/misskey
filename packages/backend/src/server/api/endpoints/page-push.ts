@@ -1,3 +1,4 @@
+import { noSuchPage_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,13 +11,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	errors: {
-		noSuchPage: {
-			message: 'No such page.',
-			code: 'NO_SUCH_PAGE',
-			id: '4a13ad31-6729-46b4-b9af-e86b265c2e74',
-		},
-	},
+	errors: {noSuchPage:noSuchPage_},
 } as const;
 
 export const paramDef = z.object({

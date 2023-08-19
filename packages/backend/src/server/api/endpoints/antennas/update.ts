@@ -1,3 +1,4 @@
+import { noSuchAntenna___, noSuchUserList_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,18 +15,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:account',
-	errors: {
-		noSuchAntenna: {
-			message: 'No such antenna.',
-			code: 'NO_SUCH_ANTENNA',
-			id: '10c673ac-8852-48eb-aa1f-f5b67f069290',
-		},
-		noSuchUserList: {
-			message: 'No such user list.',
-			code: 'NO_SUCH_USER_LIST',
-			id: '1c6b35c9-943e-48c2-81e4-2844989407f7',
-		},
-	},
+	errors: {noSuchAntenna:noSuchAntenna___,noSuchUserList:noSuchUserList_},
 	res,
 } as const;
 

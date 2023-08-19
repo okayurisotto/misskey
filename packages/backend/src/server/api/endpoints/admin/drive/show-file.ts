@@ -1,3 +1,4 @@
+import { noSuchFile } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { pick } from 'omick';
@@ -47,13 +48,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {
-		noSuchFile: {
-			message: 'No such file.',
-			code: 'NO_SUCH_FILE',
-			id: 'caf3ca38-c6e5-472e-a30c-b05377dcc240',
-		},
-	},
+	errors: {noSuchFile:noSuchFile},
 	res,
 } as const;
 

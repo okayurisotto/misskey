@@ -1,3 +1,4 @@
+import { noSuchList_______, notFavorited__ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -7,18 +8,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	requireCredential: true,
-	errors: {
-		noSuchList: {
-			message: 'No such user list.',
-			code: 'NO_SUCH_USER_LIST',
-			id: 'baedb33e-76b8-4b0c-86a8-9375c0a7b94b',
-		},
-		notFavorited: {
-			message: 'You have not favorited the list.',
-			code: 'ALREADY_FAVORITED',
-			id: '835c4b27-463d-4cfa-969b-a9058678d465',
-		},
-	},
+	errors: {noSuchList:noSuchList_______,notFavorited:notFavorited__},
 } as const;
 
 export const paramDef = z.object({

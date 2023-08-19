@@ -1,3 +1,4 @@
+import { noSuchFile_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -15,13 +16,7 @@ export const meta = {
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
 	res,
-	errors: {
-		noSuchFile: {
-			message: 'No such file.',
-			code: 'NO_SUCH_FILE',
-			id: 'fc46b5a4-6b92-4c33-ac66-b806659bb5cf',
-		},
-	},
+	errors: {noSuchFile:noSuchFile_},
 } as const;
 
 export const paramDef = z.object({

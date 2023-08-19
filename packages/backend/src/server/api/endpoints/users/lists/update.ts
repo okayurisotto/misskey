@@ -1,3 +1,4 @@
+import { noSuchList________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,13 +15,7 @@ export const meta = {
 	kind: 'write:account',
 	description: 'Update the properties of a list.',
 	res,
-	errors: {
-		noSuchList: {
-			message: 'No such list.',
-			code: 'NO_SUCH_LIST',
-			id: '796666fe-3dff-4d39-becb-8a5932c1d5b7',
-		},
-	},
+	errors: {noSuchList:noSuchList________},
 } as const;
 
 export const paramDef = z.object({

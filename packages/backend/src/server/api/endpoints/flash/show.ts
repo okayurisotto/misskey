@@ -1,3 +1,4 @@
+import { noSuchFlash__ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -12,13 +13,7 @@ export const meta = {
 	tags: ['flashs'],
 	requireCredential: false,
 	res,
-	errors: {
-		noSuchFlash: {
-			message: 'No such flash.',
-			code: 'NO_SUCH_FLASH',
-			id: 'f0d34a1a-d29a-401d-90ba-1982122b5630',
-		},
-	},
+	errors: {noSuchFlash:noSuchFlash__},
 } as const;
 
 export const paramDef = z.object({

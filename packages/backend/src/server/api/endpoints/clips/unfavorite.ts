@@ -1,3 +1,4 @@
+import { noSuchClip______, notFavorited } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,18 +11,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:clip-favorite',
-	errors: {
-		noSuchClip: {
-			message: 'No such clip.',
-			code: 'NO_SUCH_CLIP',
-			id: '2603966e-b865-426c-94a7-af4a01241dc1',
-		},
-		notFavorited: {
-			message: 'You have not favorited the clip.',
-			code: 'NOT_FAVORITED',
-			id: '90c3a9e8-b321-4dae-bf57-2bf79bbcc187',
-		},
-	},
+	errors: {noSuchClip:noSuchClip______,notFavorited:notFavorited},
 } as const;
 
 export const paramDef = z.object({

@@ -1,3 +1,4 @@
+import { noSuchAntenna__ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -12,13 +13,7 @@ export const meta = {
 	tags: ['antennas', 'account'],
 	requireCredential: true,
 	kind: 'read:account',
-	errors: {
-		noSuchAntenna: {
-			message: 'No such antenna.',
-			code: 'NO_SUCH_ANTENNA',
-			id: 'c06569fb-b025-4f23-b22d-1fcd20d2816b',
-		},
-	},
+	errors: {noSuchAntenna:noSuchAntenna__},
 	res,
 } as const;
 

@@ -1,3 +1,4 @@
+import { noSuchSession_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -15,13 +16,7 @@ const res = z.object({
 export const meta = {
 	tags: ['auth'],
 	requireCredential: false,
-	errors: {
-		noSuchSession: {
-			message: 'No such session.',
-			code: 'NO_SUCH_SESSION',
-			id: 'bd72c97d-eba7-4adb-a467-f171b8847250',
-		},
-	},
+	errors: {noSuchSession:noSuchSession_},
 	res,
 } as const;
 

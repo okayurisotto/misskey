@@ -1,3 +1,4 @@
+import { noSuchFolder_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
@@ -19,13 +20,7 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 10,
 	},
-	errors: {
-		noSuchFolder: {
-			message: 'No such folder.',
-			code: 'NO_SUCH_FOLDER',
-			id: '53326628-a00d-40a6-a3cd-8975105c0f95',
-		},
-	},
+	errors: {noSuchFolder:noSuchFolder_},
 	res,
 } as const;
 

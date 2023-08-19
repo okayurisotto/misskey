@@ -1,3 +1,4 @@
+import { invalidDateTime } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -13,13 +14,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {
-		invalidDateTime: {
-			message: 'Invalid date-time format',
-			code: 'INVALID_DATE_TIME',
-			id: 'f1380b15-3760-4c6c-a1db-5c3aaf1cbd49',
-		},
-	},
+	errors: {invalidDateTime:invalidDateTime},
 	res,
 } as const;
 

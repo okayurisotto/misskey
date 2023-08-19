@@ -1,3 +1,4 @@
+import { noSuchRole_____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -20,13 +21,7 @@ export const meta = {
 	tags: ['admin', 'role', 'users'],
 	requireCredential: false,
 	requireAdmin: true,
-	errors: {
-		noSuchRole: {
-			message: 'No such role.',
-			code: 'NO_SUCH_ROLE',
-			id: '224eff5e-2488-4b18-b3e7-f50d94421648',
-		},
-	},
+	errors: {noSuchRole:noSuchRole_____},
 	res,
 } as const;
 

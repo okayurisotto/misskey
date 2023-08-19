@@ -1,3 +1,4 @@
+import { noSuchChannel__ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -12,13 +13,7 @@ export const meta = {
 	tags: ['channels'],
 	requireCredential: false,
 	res,
-	errors: {
-		noSuchChannel: {
-			message: 'No such channel.',
-			code: 'NO_SUCH_CHANNEL',
-			id: '6f6c314b-7486-4897-8966-c04a66a02923',
-		},
-	},
+	errors: {noSuchChannel:noSuchChannel__},
 } as const;
 
 export const paramDef = z.object({

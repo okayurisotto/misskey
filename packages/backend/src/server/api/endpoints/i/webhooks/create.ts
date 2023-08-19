@@ -1,3 +1,4 @@
+import { tooManyWebhooks } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,13 +15,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'write:account',
 	res,
-	errors: {
-		tooManyWebhooks: {
-			message: 'You cannot create webhook any more.',
-			code: 'TOO_MANY_WEBHOOKS',
-			id: '87a9bb19-111e-4e37-81d3-a3e7426453b0',
-		},
-	},
+	errors: {tooManyWebhooks:tooManyWebhooks},
 } as const;
 
 export const paramDef = z.object({

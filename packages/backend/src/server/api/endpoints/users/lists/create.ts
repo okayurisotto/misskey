@@ -1,3 +1,4 @@
+import { tooManyUserLists_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
@@ -16,13 +17,7 @@ export const meta = {
 	kind: 'write:account',
 	description: 'Create a new list of users.',
 	res,
-	errors: {
-		tooManyUserLists: {
-			message: 'You cannot create user list any more.',
-			code: 'TOO_MANY_USERLISTS',
-			id: '0cf21a28-7715-4f39-a20d-777bfdb8d138',
-		},
-	},
+	errors: {tooManyUserLists:tooManyUserLists_},
 } as const;
 
 export const paramDef = z.object({

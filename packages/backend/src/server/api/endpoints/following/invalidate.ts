@@ -1,3 +1,4 @@
+import { noSuchUser______, followerIsYourself, notFollowing_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -19,23 +20,7 @@ export const meta = {
 	},
 	requireCredential: true,
 	kind: 'write:following',
-	errors: {
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: '5b12c78d-2b28-4dca-99d2-f56139b42ff8',
-		},
-		followerIsYourself: {
-			message: 'Follower is yourself.',
-			code: 'FOLLOWER_IS_YOURSELF',
-			id: '07dc03b9-03da-422d-885b-438313707662',
-		},
-		notFollowing: {
-			message: 'The other use is not following you.',
-			code: 'NOT_FOLLOWING',
-			id: '5dbf82f5-c92b-40b1-87d1-6c8c0741fd09',
-		},
-	},
+	errors: {noSuchUser:noSuchUser______,followerIsYourself:followerIsYourself,notFollowing:notFollowing_},
 	res,
 } as const;
 

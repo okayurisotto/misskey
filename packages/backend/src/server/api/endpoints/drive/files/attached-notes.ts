@@ -1,3 +1,4 @@
+import { noSuchFile_____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,13 +15,7 @@ export const meta = {
 	kind: 'read:drive',
 	description: 'Find the notes to which the given file is attached.',
 	res,
-	errors: {
-		noSuchFile: {
-			message: 'No such file.',
-			code: 'NO_SUCH_FILE',
-			id: 'c118ece3-2e4b-4296-99d1-51756e32d232',
-		},
-	},
+	errors: {noSuchFile:noSuchFile_____},
 } as const;
 
 export const paramDef = z.object({

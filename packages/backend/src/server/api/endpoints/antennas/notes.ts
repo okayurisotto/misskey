@@ -1,3 +1,4 @@
+import { noSuchAntenna_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
@@ -18,13 +19,7 @@ export const meta = {
 	tags: ['antennas', 'account', 'notes'],
 	requireCredential: true,
 	kind: 'read:account',
-	errors: {
-		noSuchAntenna: {
-			message: 'No such antenna.',
-			code: 'NO_SUCH_ANTENNA',
-			id: '850926e0-fd3b-49b6-b69a-b28a5dbd82fe',
-		},
-	},
+	errors: {noSuchAntenna:noSuchAntenna_},
 	res,
 } as const;
 

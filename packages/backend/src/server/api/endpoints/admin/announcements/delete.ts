@@ -1,3 +1,4 @@
+import { noSuchAnnouncement } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -10,13 +11,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {
-		noSuchAnnouncement: {
-			message: 'No such announcement.',
-			code: 'NO_SUCH_ANNOUNCEMENT',
-			id: 'ecad8040-a276-4e85-bda9-015a708d291e',
-		},
-	},
+	errors: {noSuchAnnouncement:noSuchAnnouncement},
 } as const;
 
 export const paramDef = z.object({ id: MisskeyIdSchema });

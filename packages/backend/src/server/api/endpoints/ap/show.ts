@@ -1,3 +1,4 @@
+import { noSuchObject } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
@@ -31,13 +32,7 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 30,
 	},
-	errors: {
-		noSuchObject: {
-			message: 'No such object.',
-			code: 'NO_SUCH_OBJECT',
-			id: 'dc94d745-1262-4e63-a17d-fecaa57efc82',
-		},
-	},
+	errors: {noSuchObject:noSuchObject},
 	res,
 } as const;
 

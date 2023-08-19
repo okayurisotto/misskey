@@ -1,3 +1,4 @@
+import { noSuchApp } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,13 +11,7 @@ import { ApiError } from '../../error.js';
 const res = AppSchema;
 export const meta = {
 	tags: ['app'],
-	errors: {
-		noSuchApp: {
-			message: 'No such app.',
-			code: 'NO_SUCH_APP',
-			id: 'dce83913-2dc6-4093-8a7b-71dbb11718a3',
-		},
-	},
+	errors: {noSuchApp:noSuchApp},
 	res,
 } as const;
 

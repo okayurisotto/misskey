@@ -1,3 +1,4 @@
+import { noSuchRole____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
@@ -13,13 +14,7 @@ export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,
 	requireAdmin: true,
-	errors: {
-		noSuchRole: {
-			message: 'No such role.',
-			code: 'NO_SUCH_ROLE',
-			id: 'cd23ef55-09ad-428a-ac61-95a45e124b32',
-		},
-	},
+	errors: {noSuchRole:noSuchRole____},
 } as const;
 
 export const paramDef = z.object({

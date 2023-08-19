@@ -1,3 +1,4 @@
+import { noSuchNote_______, accessDenied__________ } from '@/server/api/errors.js';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import z from 'zod';
@@ -19,18 +20,7 @@ export const meta = {
 		max: 300,
 		minInterval: ms('1sec'),
 	},
-	errors: {
-		noSuchNote: {
-			message: 'No such note.',
-			code: 'NO_SUCH_NOTE',
-			id: '490be23f-8c1f-4796-819f-94cb4f9d1630',
-		},
-		accessDenied: {
-			message: 'Access denied.',
-			code: 'ACCESS_DENIED',
-			id: 'fe8d7103-0ea8-4ec3-814d-f8b401dc69e9',
-		},
-	},
+	errors: {noSuchNote:noSuchNote_______,accessDenied:accessDenied__________},
 } as const;
 
 export const paramDef = z.object({ noteId: MisskeyIdSchema });

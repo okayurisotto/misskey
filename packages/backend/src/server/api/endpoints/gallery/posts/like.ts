@@ -1,3 +1,4 @@
+import { noSuchPost_, yourPost, alreadyLiked_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -11,23 +12,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:gallery-likes',
-	errors: {
-		noSuchPost: {
-			message: 'No such post.',
-			code: 'NO_SUCH_POST',
-			id: '56c06af3-1287-442f-9701-c93f7c4a62ff',
-		},
-		yourPost: {
-			message: 'You cannot like your post.',
-			code: 'YOUR_POST',
-			id: 'f78f1511-5ebc-4478-a888-1198d752da68',
-		},
-		alreadyLiked: {
-			message: 'The post has already been liked.',
-			code: 'ALREADY_LIKED',
-			id: '40e9ed56-a59c-473a-bf3f-f289c54fb5a7',
-		},
-	},
+	errors: {noSuchPost:noSuchPost_,yourPost:yourPost,alreadyLiked:alreadyLiked_},
 } as const;
 
 export const paramDef = z.object({

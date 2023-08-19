@@ -1,3 +1,4 @@
+import { noSuchFlash_, yourFlash, alreadyLiked } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
@@ -11,23 +12,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:flash-likes',
-	errors: {
-		noSuchFlash: {
-			message: 'No such flash.',
-			code: 'NO_SUCH_FLASH',
-			id: 'c07c1491-9161-4c5c-9d75-01906f911f73',
-		},
-		yourFlash: {
-			message: 'You cannot like your flash.',
-			code: 'YOUR_FLASH',
-			id: '3fd8a0e7-5955-4ba9-85bb-bf3e0c30e13b',
-		},
-		alreadyLiked: {
-			message: 'The flash has already been liked.',
-			code: 'ALREADY_LIKED',
-			id: '010065cf-ad43-40df-8067-abff9f4686e3',
-		},
-	},
+	errors: {noSuchFlash:noSuchFlash_,yourFlash:yourFlash,alreadyLiked:alreadyLiked},
 } as const;
 
 export const paramDef = z.object({

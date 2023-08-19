@@ -1,3 +1,4 @@
+import { ltlDisabled } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -15,13 +16,7 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
 	res,
-	errors: {
-		ltlDisabled: {
-			message: 'Local timeline has been disabled.',
-			code: 'LTL_DISABLED',
-			id: '45a6eb02-7695-4393-b023-dd3be9aaaefd',
-		},
-	},
+	errors: {ltlDisabled:ltlDisabled},
 } as const;
 
 export const paramDef = z.object({

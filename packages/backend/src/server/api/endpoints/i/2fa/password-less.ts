@@ -1,3 +1,4 @@
+import { noKey } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -9,13 +10,7 @@ import { ApiError } from '../../../error.js';
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	errors: {
-		noKey: {
-			message: 'No security key.',
-			code: 'NO_SECURITY_KEY',
-			id: 'f9c54d7f-d4c2-4d3c-9a8g-a70daac86512',
-		},
-	},
+	errors: {noKey:noKey},
 } as const;
 
 export const paramDef = z.object({

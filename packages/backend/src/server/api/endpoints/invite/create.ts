@@ -1,3 +1,4 @@
+import { exceededCreateLimit } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -15,13 +16,7 @@ export const meta = {
 	tags: ['meta'],
 	requireCredential: true,
 	requireRolePolicy: 'canInvite',
-	errors: {
-		exceededCreateLimit: {
-			message: 'You have exceeded the limit for creating an invitation code.',
-			code: 'EXCEEDED_LIMIT_OF_CREATE_INVITE_CODE',
-			id: '8b165dd3-6f37-4557-8db1-73175d63c641',
-		},
-	},
+	errors: {exceededCreateLimit:exceededCreateLimit},
 	res,
 } as const;
 

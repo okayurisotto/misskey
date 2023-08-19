@@ -1,3 +1,4 @@
+import { noSuchPage__, accessDenied___________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -9,18 +10,7 @@ export const meta = {
 	tags: ['pages'],
 	requireCredential: true,
 	kind: 'write:pages',
-	errors: {
-		noSuchPage: {
-			message: 'No such page.',
-			code: 'NO_SUCH_PAGE',
-			id: 'eb0c6e1d-d519-4764-9486-52a7e1c6392a',
-		},
-		accessDenied: {
-			message: 'Access denied.',
-			code: 'ACCESS_DENIED',
-			id: '8b741b3e-2c22-44b3-a15f-29949aa1601e',
-		},
-	},
+	errors: {noSuchPage:noSuchPage__,accessDenied:accessDenied___________},
 } as const;
 
 export const paramDef = z.object({

@@ -1,3 +1,4 @@
+import { noSuchEmoji } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -15,13 +16,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-	errors: {
-		noSuchEmoji: {
-			message: 'No such emoji.',
-			code: 'NO_SUCH_EMOJI',
-			id: 'e2785b66-dca3-4087-9cac-b93c541cc425',
-		},
-	},
+	errors: {noSuchEmoji:noSuchEmoji},
 	res,
 } as const;
 

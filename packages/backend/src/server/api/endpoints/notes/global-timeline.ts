@@ -1,3 +1,4 @@
+import { gtlDisabled } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,13 +15,7 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
 	res,
-	errors: {
-		gtlDisabled: {
-			message: 'Global timeline has been disabled.',
-			code: 'GTL_DISABLED',
-			id: '0332fc13-6ab2-4427-ae80-a9fadffd1a6b',
-		},
-	},
+	errors: {gtlDisabled:gtlDisabled},
 } as const;
 
 export const paramDef = z.object({

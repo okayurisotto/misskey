@@ -1,3 +1,4 @@
+import { stlDisabled } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -16,13 +17,7 @@ export const meta = {
 	tags: ['notes'],
 	requireCredential: true,
 	res,
-	errors: {
-		stlDisabled: {
-			message: 'Hybrid timeline has been disabled.',
-			code: 'STL_DISABLED',
-			id: '620763f4-f621-4533-ab33-0577a1a3c342',
-		},
-	},
+	errors: {stlDisabled:stlDisabled},
 } as const;
 
 export const paramDef = z.object({

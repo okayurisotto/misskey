@@ -1,3 +1,4 @@
+import { noSuchHashtag } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -12,13 +13,7 @@ export const meta = {
 	tags: ['hashtags'],
 	requireCredential: false,
 	res,
-	errors: {
-		noSuchHashtag: {
-			message: 'No such hashtag.',
-			code: 'NO_SUCH_HASHTAG',
-			id: '110ee688-193e-4a3a-9ecf-c167b2e6981e',
-		},
-	},
+	errors: {noSuchHashtag:noSuchHashtag},
 } as const;
 
 export const paramDef = z.object({

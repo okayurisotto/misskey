@@ -1,3 +1,4 @@
+import { noSuchList__ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,13 +11,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'write:account',
 	description: 'Delete an existing list of users.',
-	errors: {
-		noSuchList: {
-			message: 'No such list.',
-			code: 'NO_SUCH_LIST',
-			id: '78436795-db79-42f5-b1e2-55ea2cf19166',
-		},
-	},
+	errors: {noSuchList:noSuchList__},
 } as const;
 
 export const paramDef = z.object({

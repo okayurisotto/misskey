@@ -1,3 +1,4 @@
+import { noSuchFolder__, hasChildFilesOrFolders } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -10,18 +11,7 @@ export const meta = {
 	tags: ['drive'],
 	requireCredential: true,
 	kind: 'write:drive',
-	errors: {
-		noSuchFolder: {
-			message: 'No such folder.',
-			code: 'NO_SUCH_FOLDER',
-			id: '1069098f-c281-440f-b085-f9932edbe091',
-		},
-		hasChildFilesOrFolders: {
-			message: 'This folder has child files or folders.',
-			code: 'HAS_CHILD_FILES_OR_FOLDERS',
-			id: 'b0fc8a17-963c-405d-bfbc-859a487295e1',
-		},
-	},
+	errors: {noSuchFolder:noSuchFolder__,hasChildFilesOrFolders:hasChildFilesOrFolders},
 } as const;
 
 export const paramDef = z.object({

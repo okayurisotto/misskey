@@ -1,3 +1,4 @@
+import { noSuchChannel______, accessDenied__, noSuchFile____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,23 +15,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'write:channels',
 	res,
-	errors: {
-		noSuchChannel: {
-			message: 'No such channel.',
-			code: 'NO_SUCH_CHANNEL',
-			id: 'f9c5467f-d492-4c3c-9a8d-a70dacc86512',
-		},
-		accessDenied: {
-			message: 'You do not have edit privilege of the channel.',
-			code: 'ACCESS_DENIED',
-			id: '1fb7cb09-d46a-4fdf-b8df-057788cce513',
-		},
-		noSuchFile: {
-			message: 'No such file.',
-			code: 'NO_SUCH_FILE',
-			id: 'e86c14a4-0da2-4032-8df3-e737a04c7f3b',
-		},
-	},
+	errors: {noSuchChannel:noSuchChannel______,accessDenied:accessDenied__,noSuchFile:noSuchFile____},
 } as const;
 
 export const paramDef = z.object({

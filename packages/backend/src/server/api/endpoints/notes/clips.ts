@@ -1,3 +1,4 @@
+import { noSuchNote_____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -13,13 +14,7 @@ export const meta = {
 	tags: ['clips', 'notes'],
 	requireCredential: false,
 	res,
-	errors: {
-		noSuchNote: {
-			message: 'No such note.',
-			code: 'NO_SUCH_NOTE',
-			id: '47db1a1c-b0af-458d-8fb4-986e4efafe1e',
-		},
-	},
+	errors: {noSuchNote:noSuchNote_____},
 } as const;
 
 export const paramDef = z.object({

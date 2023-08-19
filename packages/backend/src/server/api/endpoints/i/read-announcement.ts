@@ -1,3 +1,4 @@
+import { noSuchAnnouncement__ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -12,13 +13,7 @@ export const meta = {
 	tags: ['account'],
 	requireCredential: true,
 	kind: 'write:account',
-	errors: {
-		noSuchAnnouncement: {
-			message: 'No such announcement.',
-			code: 'NO_SUCH_ANNOUNCEMENT',
-			id: '184663db-df88-4bc2-8b52-fb85f0681939',
-		},
-	},
+	errors: {noSuchAnnouncement:noSuchAnnouncement__},
 } as const;
 
 export const paramDef = z.object({

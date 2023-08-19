@@ -1,3 +1,4 @@
+import { noSuchUser________, followRequestNotFound } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,18 +15,7 @@ export const meta = {
 	tags: ['following', 'account'],
 	requireCredential: true,
 	kind: 'write:following',
-	errors: {
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: '4e68c551-fc4c-4e46-bb41-7d4a37bf9dab',
-		},
-		followRequestNotFound: {
-			message: 'Follow request not found.',
-			code: 'FOLLOW_REQUEST_NOT_FOUND',
-			id: '089b125b-d338-482a-9a09-e2622ac9f8d4',
-		},
-	},
+	errors: {noSuchUser:noSuchUser________,followRequestNotFound:followRequestNotFound},
 	res,
 } as const;
 

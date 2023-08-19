@@ -1,3 +1,4 @@
+import { noSuchUser_____________________, remoteUser, invalidParam } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -14,23 +15,7 @@ export const meta = {
 	kind: 'read:account',
 	description: 'Show all lists that the authenticated user has created.',
 	res,
-	errors: {
-		noSuchUser: {
-			message: 'No such user.',
-			code: 'NO_SUCH_USER',
-			id: 'a8af4a82-0980-4cc4-a6af-8b0ffd54465e',
-		},
-		remoteUser: {
-			message: "Not allowed to load the remote user's list",
-			code: 'REMOTE_USER_NOT_ALLOWED',
-			id: '53858f1b-3315-4a01-81b7-db9b48d4b79a',
-		},
-		invalidParam: {
-			message: 'Invalid param.',
-			code: 'INVALID_PARAM',
-			id: 'ab36de0e-29e9-48cb-9732-d82f1281620d',
-		},
-	},
+	errors: {noSuchUser:noSuchUser_____________________,remoteUser:remoteUser,invalidParam:invalidParam},
 } as const;
 
 export const paramDef = z.object({
