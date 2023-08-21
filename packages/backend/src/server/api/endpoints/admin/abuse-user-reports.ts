@@ -6,6 +6,7 @@ import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
 import { AbuseUserReportSchema } from '@/models/zod/AbuseUserReportSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 
 const res = z.array(AbuseUserReportSchema);
 export const meta = {
@@ -42,6 +43,7 @@ export default class extends Endpoint<
 				sinceId: ps.sinceId,
 				untilId: ps.untilId,
 			});
+
 			const reports =
 				await this.prismaService.client.abuse_user_report.findMany({
 					where: {
@@ -68,13 +70,23 @@ export default class extends Endpoint<
 					},
 				});
 
+			const data = {
+				report: new EntityMap('id', reports),
+				user: new EntityMap(
+					'id',
+					reports
+						.map((report) => [
+							report.user_abuse_user_report_assigneeIdTouser,
+							report.user_abuse_user_report_reporterIdTouser,
+							report.user_abuse_user_report_targetUserIdTouser,
+						])
+						.flat(),
+				),
+			};
+
 			return await Promise.all(
-				reports.map((report) =>
-					this.abuseUserReportEntityService.pack(report, {
-						assignee: report.user_abuse_user_report_assigneeIdTouser,
-						reporter: report.user_abuse_user_report_reporterIdTouser,
-						targetUser: report.user_abuse_user_report_targetUserIdTouser,
-					}),
+				reports.map(({ id }) =>
+					this.abuseUserReportEntityService.pack(id, data),
 				),
 			);
 		});
