@@ -1,10 +1,9 @@
-import {  } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
+import { DataSource } from 'typeorm';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
-import { PrismaService } from '@/core/PrismaService.js';
 import { resetDb } from '@/misc/reset-db.js';
 
 export const meta = {
@@ -12,7 +11,6 @@ export const meta = {
 	requireCredential: false,
 	description:
 		'Only available when running with <code>NODE_ENV=testing</code>. Reset the database and flush Redis.',
-	errors: {},
 } as const;
 
 export const paramDef = z.object({});
@@ -25,18 +23,19 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
+		@Inject(DI.db)
+		private db: DataSource,
+
 		@Inject(DI.redis)
 		private readonly redisClient: Redis.Redis,
-
-		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async () => {
 			if (process.env['NODE_ENV'] !== 'test') {
 				throw new Error('NODE_ENV is not a test');
 			}
 
 			await this.redisClient.flushdb();
-			await resetDb(this.prismaService.client);
+			await resetDb(this.db);
 
 			await new Promise((resolve) => setTimeout(resolve, 1000));
 		});
