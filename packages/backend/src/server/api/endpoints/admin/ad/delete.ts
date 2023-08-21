@@ -1,17 +1,16 @@
-import { noSuchAd } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { pick } from 'omick';
+import { noSuchAd } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { PrismaService } from '@/core/PrismaService.js';
-import { ApiError } from '../../../error.js';
+import { AdEntityService } from '@/core/entities/AdEntityService.js';
 
 export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {noSuchAd:noSuchAd},
+	errors: { noSuchAd: noSuchAd },
 } as const;
 
 export const paramDef = z.object({ id: MisskeyIdSchema });
@@ -23,19 +22,9 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(private readonly prismaService: PrismaService) {
+	constructor(private readonly adEntityService: AdEntityService) {
 		super(meta, paramDef, async (ps) => {
-			try {
-				await this.prismaService.client.ad.delete({ where: { id: ps.id } });
-			} catch (e) {
-				if (e instanceof Prisma.PrismaClientKnownRequestError) {
-					if (e.code === 'P2025') {
-						throw new ApiError(meta.errors.noSuchAd);
-					}
-				}
-
-				throw e;
-			}
+			return this.adEntityService.delete(pick(ps, ['id']));
 		});
 	}
 }
