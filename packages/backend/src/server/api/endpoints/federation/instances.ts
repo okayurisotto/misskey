@@ -5,8 +5,8 @@ import { InstanceEntityService } from '@/core/entities/InstanceEntityService.js'
 import { MetaService } from '@/core/MetaService.js';
 import { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { Prisma } from '@prisma/client';
 import { limit } from '@/models/zod/misc.js';
+import type { Prisma } from '@prisma/client';
 
 const res = z.array(FederationInstanceSchema);
 export const meta = {

@@ -1,13 +1,13 @@
-import { noSuchUser___________________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchUser___________________ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
-import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ApiError } from '../../error.js';
 
 const res = z.array(
 	z.object({

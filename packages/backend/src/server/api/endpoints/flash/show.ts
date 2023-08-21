@@ -1,6 +1,6 @@
-import { noSuchFlash__ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchFlash__ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
 import { FlashSchema } from '@/models/zod/FlashSchema.js';

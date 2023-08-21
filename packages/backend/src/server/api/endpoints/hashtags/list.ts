@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { HashtagEntityService } from '@/core/entities/HashtagEntityService.js';
 import { HashtagSchema } from '@/models/zod/HashtagSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { limit } from '@/models/zod/misc.js';
+import type { Prisma } from '@prisma/client';
 
 const res = z.array(HashtagSchema);
 export const meta = {

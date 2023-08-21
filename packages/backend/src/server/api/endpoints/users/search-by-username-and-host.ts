@@ -6,8 +6,8 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DI } from '@/di-symbols.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { Prisma, user } from '@prisma/client';
 import { limit } from '@/models/zod/misc.js';
+import type { Prisma, user } from '@prisma/client';
 
 const res = z.array(UserSchema);
 export const meta = {

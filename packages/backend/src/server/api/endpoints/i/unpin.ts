@@ -1,6 +1,6 @@
-import { noSuchNote____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchNote____ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { NotePiningService } from '@/core/NotePiningService.js';

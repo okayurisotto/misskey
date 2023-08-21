@@ -1,6 +1,6 @@
-import { noSuchHashtag } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchHashtag } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { HashtagEntityService } from '@/core/entities/HashtagEntityService.js';

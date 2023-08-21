@@ -1,6 +1,6 @@
-import { noSuchApp } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchApp } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
 import { AppSchema } from '@/models/zod/AppSchema.js';

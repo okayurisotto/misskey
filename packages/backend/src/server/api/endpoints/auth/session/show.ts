@@ -1,6 +1,6 @@
-import { noSuchSession_ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchSession_ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { AuthSessionEntityService } from '@/core/entities/AuthSessionEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';

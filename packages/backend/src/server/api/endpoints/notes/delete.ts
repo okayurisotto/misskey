@@ -1,14 +1,14 @@
-import { noSuchNote_______, accessDenied__________ } from '@/server/api/errors.js';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import z from 'zod';
+import { noSuchNote_______, accessDenied__________ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteDeleteService } from '@/core/NoteDeleteService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ApiError } from '../../error.js';
 
 const res = z.void();
 export const meta = {

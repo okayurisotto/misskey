@@ -1,7 +1,7 @@
-import { noSuchUser_____________, muteeIsYourself, alreadyMuting } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
+import { noSuchUser_____________, muteeIsYourself, alreadyMuting } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserMutingService } from '@/core/UserMutingService.js';

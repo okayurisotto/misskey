@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { generateOpenApiSpec } from 'zod2spec';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import endpoints from '../endpoints.js';
-import { generateOpenApiSpec } from 'zod2spec';
 
 const res = z.object({ spec: z.unknown() }).nullable();
 export const meta = {

@@ -1,6 +1,6 @@
-import { tooManyWebhooks } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { tooManyWebhooks } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import { webhookEventTypes } from '@/models/entities/Webhook.js';

@@ -1,12 +1,12 @@
-import { noSuchList________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchList________ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserListEntityService } from '@/core/entities/UserListEntityService.js';
 import { UserListSchema } from '@/models/zod/UserListSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { ApiError } from '../../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ApiError } from '../../../error.js';
 
 const res = UserListSchema;
 export const meta = {

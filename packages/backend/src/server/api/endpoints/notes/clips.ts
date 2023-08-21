@@ -1,13 +1,13 @@
-import { noSuchNote_____ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchNote_____ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ApiError } from '../../error.js';
 
 const res = z.array(ClipSchema);
 export const meta = {

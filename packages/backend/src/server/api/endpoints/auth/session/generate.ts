@@ -1,7 +1,7 @@
-import { noSuchApp_ } from '@/server/api/errors.js';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
+import { noSuchApp_ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import type { Config } from '@/config.js';

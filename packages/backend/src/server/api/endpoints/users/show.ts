@@ -1,9 +1,9 @@
+import { z } from 'zod';
+import { Injectable } from '@nestjs/common';
 import {
 	failedToResolveRemoteUser,
 	noSuchUser__________________________,
 } from '@/server/api/errors.js';
-import { z } from 'zod';
-import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';

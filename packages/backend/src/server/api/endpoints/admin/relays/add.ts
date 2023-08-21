@@ -1,7 +1,7 @@
-import { invalidUrl } from '@/server/api/errors.js';
 import { URL } from 'node:url';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { invalidUrl } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { RelayService } from '@/core/RelayService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';

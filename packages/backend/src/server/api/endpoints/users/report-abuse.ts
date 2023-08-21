@@ -1,7 +1,7 @@
-import { noSuchUser_________________________, cannotReportYourself, cannotReportAdmin } from '@/server/api/errors.js';
 import { z } from 'zod';
 import sanitizeHtml from 'sanitize-html';
 import { Injectable } from '@nestjs/common';
+import { noSuchUser_________________________, cannotReportYourself, cannotReportAdmin } from '@/server/api/errors.js';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -10,8 +10,8 @@ import { EmailService } from '@/core/EmailService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['users'],

@@ -1,13 +1,13 @@
-import { noSuchRole________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchRole________ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
-import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import { ApiError } from '../../error.js';
 
 const res = z.array(
 	z.object({

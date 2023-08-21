@@ -1,11 +1,11 @@
-import { noSuchNote_________________ } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { noSuchNote_________________ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { ApiError } from '../../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ApiError } from '../../../error.js';
 
 export const meta = {
 	tags: ['notes'],
