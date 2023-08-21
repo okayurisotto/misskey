@@ -120,6 +120,7 @@ import { LoggerService } from './LoggerService.js';
 import { PrismaService } from './PrismaService.js';
 import { PrismaQueryService } from './PrismaQueryService.js';
 import { AdEntityService } from './entities/AdEntityService.js';
+import { AnnouncementEntityService } from './entities/AnnouncementEntityService.js';
 import type { Provider } from '@nestjs/common';
 
 //#region 文字列ベースでのinjection用(循環参照対応のため)
@@ -369,6 +370,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		PrismaService,
 		PrismaQueryService,
 		AdEntityService,
+		AnnouncementEntityService,
 
 		//#region 文字列ベースでのinjection用(循環参照対応のため)
 		$LoggerService,
@@ -610,6 +612,7 @@ const $ApQuestionService: Provider = { provide: 'ApQuestionService', useExisting
 		PrismaService,
 		PrismaQueryService,
 		AdEntityService,
+		AnnouncementEntityService,
 
 		//#region 文字列ベースでのinjection用(循環参照対応のため)
 		$LoggerService,

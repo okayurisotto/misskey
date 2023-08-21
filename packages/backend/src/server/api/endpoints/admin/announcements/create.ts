@@ -1,18 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { IdService } from '@/core/IdService.js';
-import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { PrismaService } from '@/core/PrismaService.js';
+import { AnnouncementSchema } from '@/models/zod/AnnouncementSchema.js';
+import { AnnouncementEntityService } from '@/core/entities/AnnouncementEntityService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 
-const res = z.object({
-	id: MisskeyIdSchema,
-	createdAt: z.string().datetime(),
-	updatedAt: z.string().datetime().nullable(),
-	title: z.string(),
-	text: z.string(),
-	imageUrl: z.string().nullable(),
-});
+const res = AnnouncementSchema;
 export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
@@ -34,26 +27,19 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly idService: IdService,
-		private readonly prismaService: PrismaService,
+		private readonly announcementEntityService: AnnouncementEntityService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const announcement = await this.prismaService.client.announcement.create({
-				data: {
-					id: this.idService.genId(),
-					createdAt: new Date(),
-					updatedAt: null,
-					title: ps.title,
-					text: ps.text,
-					imageUrl: ps.imageUrl,
-				},
+			const announcement = await this.announcementEntityService.create({
+				title: ps.title,
+				text: ps.text,
+				imageUrl: ps.imageUrl,
 			});
 
-			return {
-				...announcement,
-				createdAt: announcement.createdAt.toISOString(),
-				updatedAt: null,
-			};
+			return this.announcementEntityService.pack(announcement, {
+				announcement: new EntityMap('id', [announcement]),
+				announcement_read: new EntityMap('id', []),
+			});
 		});
 	}
 }

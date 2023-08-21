@@ -3,6 +3,19 @@ import { z } from 'zod';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma, user } from '@prisma/client';
 
+export type PaginationQuery = {
+	where: {
+		AND: (
+			| Record<never, never>
+			| { id: Partial<Record<'gt' | 'lt', string | undefined>> }
+			| { createdAt: Partial<Record<'gt' | 'lt', Date | undefined>> }
+		)[];
+	};
+	orderBy: { id: 'asc' | 'desc' } | { createdAt: 'asc' | 'desc' };
+	skip: number | undefined;
+	take: number | undefined;
+};
+
 @Injectable()
 export class PrismaQueryService {
 	constructor(private readonly prismaService: PrismaService) {}
@@ -12,16 +25,9 @@ export class PrismaQueryService {
 		untilId?: string;
 		sinceDate?: number;
 		untilDate?: number;
-	}): {
-		where: {
-			AND: (
-				| Record<never, never>
-				| { id: Partial<Record<'gt' | 'lt', string | undefined>> }
-				| { createdAt: Partial<Record<'gt' | 'lt', Date | undefined>> }
-			)[];
-		};
-		orderBy: { id: 'asc' | 'desc' } | { createdAt: 'asc' | 'desc' };
-	} {
+		offset?: number;
+		take?: number;
+	}): PaginationQuery {
 		const orderBy = (():
 			| { id: 'asc' | 'desc' }
 			| { createdAt: 'asc' | 'desc' } => {
@@ -46,6 +52,8 @@ export class PrismaQueryService {
 				],
 			},
 			orderBy,
+			take: opts.take,
+			skip: opts.offset,
 		};
 	}
 
