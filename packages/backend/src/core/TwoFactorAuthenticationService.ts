@@ -37,7 +37,7 @@ TBj0/VLZjmmx6BEP3ojY+x1J96relc8geMJgEtslQIxq/H5COEBkEveegeGTLg==
 -----END CERTIFICATE-----\n`;
 
 function base64URLDecode(source: string) {
-	return Buffer.from(source.replace(/\-/g, '+').replace(/_/g, '/'), 'base64');
+	return Buffer.from(source.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
 }
 
 function getCertSubject(certificate: string) {

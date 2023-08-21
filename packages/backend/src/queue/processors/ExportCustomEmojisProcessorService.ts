@@ -106,12 +106,17 @@ export class ExportCustomEmojisProcessorService {
 		metaStream.end();
 
 		// Create archive
-		await new Promise<void>(async (resolve) => {
-			const [archivePath, archiveCleanup] = await createTemp();
-			const archiveStream = fs.createWriteStream(archivePath);
-			const archive = archiver('zip', {
-				zlib: { level: 0 },
-			});
+		const [archivePath, archiveCleanup] = await createTemp();
+		const archiveStream = fs.createWriteStream(archivePath);
+		const archive = archiver('zip', {
+			zlib: { level: 0 },
+		});
+
+		archive.pipe(archiveStream);
+		archive.directory(path, false);
+		archive.finalize();
+
+		await new Promise<void>((resolve) => {
 			archiveStream.on('close', async () => {
 				this.logger.succ(`Exported to: ${archivePath}`);
 
@@ -123,9 +128,6 @@ export class ExportCustomEmojisProcessorService {
 				archiveCleanup();
 				resolve();
 			});
-			archive.pipe(archiveStream);
-			archive.directory(path, false);
-			archive.finalize();
 		});
 	}
 }

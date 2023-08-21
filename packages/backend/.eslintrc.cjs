@@ -15,17 +15,11 @@ module.exports = {
 	],
 	rules: {
 		/* Possible Problems */
-		'no-async-promise-executor': ['off'],
-		'no-constant-condition': ['warn'],
-		'no-control-regex': ['warn'],
-		'no-empty-pattern': ['warn'],
-		'no-inner-declarations': ['off'],
-		'no-sparse-arrays': ['off'],
+		'no-constant-condition': ['error', { checkLoops: false }],
 
 		/* Suggestions */
 		eqeqeq: ['error', 'always', { null: 'ignore' }],
-		'no-empty': ['warn'],
-		'no-param-reassign': ['warn'],
+		'no-param-reassign': ['warn'], // TODO
 		'no-restricted-globals': [
 			'error',
 			{
@@ -38,39 +32,8 @@ module.exports = {
 			},
 		],
 		'no-throw-literal': ['error'],
-		'no-useless-escape': ['off'],
 		'no-var': ['error'],
 		'prefer-arrow-callback': ['error'],
-
-		/*  Layout & Formatting */
-		// 'array-bracket-spacing': ['error', 'never'],
-		// 'arrow-spacing': ['error', { before: true, after: true }],
-		// 'comma-dangle': ['warn', 'always-multiline'],
-		// 'comma-spacing': ['error', { before: false, after: true }],
-		// 'eol-last': ['error', 'always'],
-		// indent: [
-		// 	'warn',
-		// 	'tab',
-		// 	{
-		// 		SwitchCase: 1,
-		// 		MemberExpression: 1,
-		// 		flatTernaryExpressions: true,
-		// 		ArrayExpression: 'first',
-		// 		ObjectExpression: 'first',
-		// 	},
-		// ],
-		// 'key-spacing': ['error', { beforeColon: false, afterColon: true }],
-		// 'keyword-spacing': ['error', { before: true, after: true }],
-		// 'no-multi-spaces': ['error'],
-		// 'no-multiple-empty-lines': ['error', { max: 1 }],
-		// 'nonblock-statement-body-position': ['error', 'beside'],
-		// 'object-curly-spacing': ['error', 'always'],
-		// 'padded-blocks': ['error', 'never'],
-		// quotes: ['warn', 'single'],
-		// semi: ['error', 'always'],
-		// 'semi-spacing': ['error', { before: false, after: true }],
-		// 'space-before-blocks': ['error', 'always'],
-		// 'space-infix-ops': ['error'],
 
 		/* typescript */
 		'@typescript-eslint/consistent-type-imports': 'off',

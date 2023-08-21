@@ -20,7 +20,7 @@ export const paramDef = z
 		limit: limit({ max: 100, default: 10 }),
 		type: z
 			.string()
-			.regex(/^[a-zA-Z\/\-*]+$/)
+			.regex(/^[a-zA-Z/\-*]+$/)
 			.optional(),
 	})
 	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));

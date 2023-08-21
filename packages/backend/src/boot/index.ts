@@ -53,7 +53,9 @@ process.on('uncaughtException', err => {
 	try {
 		logger.error(err);
 		console.trace(err);
-	} catch { }
+	} catch {
+		// continue
+	}
 });
 
 // Dying away...

@@ -89,7 +89,7 @@ export class ServerService implements OnApplicationShutdown {
 
 			reply.header('Cache-Control', 'public, max-age=86400');
 
-			if (!path.match(/^[a-zA-Z0-9\-_@\.]+?\.webp$/)) {
+			if (!path.match(/^[a-zA-Z0-9\-_@.]+?\.webp$/)) {
 				reply.code(404);
 				return;
 			}

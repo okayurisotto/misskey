@@ -22,7 +22,7 @@ export const paramDef = z
 		folderId: MisskeyIdSchema.nullable().default(null),
 		type: z
 			.string()
-			.regex(/^[a-zA-Z\/\-*]+$/)
+			.regex(/^[a-zA-Z/\-*]+$/)
 			.nullable()
 			.optional(),
 		sort: z

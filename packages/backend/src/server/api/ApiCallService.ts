@@ -210,6 +210,7 @@ export class ApiCallService implements OnApplicationShutdown {
 					},
 				});
 			} catch {
+				// continue
 			}
 		}
 	}

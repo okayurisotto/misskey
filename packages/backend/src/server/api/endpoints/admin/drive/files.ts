@@ -21,7 +21,7 @@ export const paramDef = z
 		userId: MisskeyIdSchema.nullable().optional(),
 		type: z
 			.string()
-			.regex(/^[a-zA-Z0-9\/\-*]+$/)
+			.regex(/^[a-zA-Z0-9/\-*]+$/)
 			.nullable()
 			.optional(),
 		origin: z.enum(['combined', 'local', 'remote']).default('local'),
