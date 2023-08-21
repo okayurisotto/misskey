@@ -8,7 +8,7 @@ import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { ApiError } from '../../error.js';
@@ -19,17 +19,15 @@ export const meta = {
 	tags: ['notes', 'channels'],
 	requireCredential: false,
 	res,
-	errors: {noSuchChannel:noSuchChannel___},
+	errors: { noSuchChannel: noSuchChannel___ },
 } as const;
 
-export const paramDef = z.object({
-	channelId: MisskeyIdSchema,
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	sinceDate: z.number().int().optional(),
-	untilDate: z.number().int().optional(),
-});
+export const paramDef = z
+	.object({
+		channelId: MisskeyIdSchema,
+		limit: limit({ max: 100, default: 10 }),
+	})
+	.merge(PaginationSchema);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -88,7 +86,9 @@ export default class extends Endpoint<
 						AND: [
 							paginationQuery.where,
 							{ channelId: channel.id },
-							await this.prismaQueryService.getMutingWhereForNote(me?.id ?? null),
+							await this.prismaQueryService.getMutingWhereForNote(
+								me?.id ?? null,
+							),
 							await this.prismaQueryService.getNoteThreadMutingWhereForNote(
 								me?.id ?? null,
 							),
@@ -111,7 +111,9 @@ export default class extends Endpoint<
 					where: {
 						AND: [
 							{ id: { in: noteIds } },
-							await this.prismaQueryService.getMutingWhereForNote(me?.id ?? null),
+							await this.prismaQueryService.getMutingWhereForNote(
+								me?.id ?? null,
+							),
 							await this.prismaQueryService.getNoteThreadMutingWhereForNote(
 								me?.id ?? null,
 							),

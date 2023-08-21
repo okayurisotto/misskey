@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
 const res = z.array(
@@ -26,17 +26,17 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	query: z.string().nullable().default(null),
-	host: z
-		.string()
-		.nullable()
-		.default(null)
-		.describe('The local host is represented with `null`.'),
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-});
+export const paramDef = z
+	.object({
+		query: z.string().nullable().default(null),
+		host: z
+			.string()
+			.nullable()
+			.default(null)
+			.describe('The local host is represented with `null`.'),
+		limit: limit({ max: 100, default: 10 }),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

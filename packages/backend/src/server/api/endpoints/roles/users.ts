@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -18,16 +18,16 @@ const res = z.array(
 export const meta = {
 	tags: ['role', 'users'],
 	requireCredential: false,
-	errors: {noSuchRole:noSuchRole________},
+	errors: { noSuchRole: noSuchRole________ },
 	res,
 } as const;
 
-export const paramDef = z.object({
-	roleId: MisskeyIdSchema,
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	limit: limit({ max: 100, default: 10 }),
-});
+export const paramDef = z
+	.object({
+		roleId: MisskeyIdSchema,
+		limit: limit({ max: 100, default: 10 }),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { AnnouncementSchema } from '@/models/zod/AnnouncementSchema.js';
 import { AnnouncementEntityService } from '@/core/entities/AnnouncementEntityService.js';
@@ -14,11 +14,9 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-});
+export const paramDef = z
+	.object({ limit: limit({ max: 100, default: 10 }) })
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

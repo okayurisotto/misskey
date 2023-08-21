@@ -8,7 +8,7 @@ import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -16,24 +16,22 @@ export const meta = {
 	tags: ['notes'],
 	requireCredential: false,
 	res,
-	errors: {unavailable:unavailable_},
+	errors: { unavailable: unavailable_ },
 } as const;
 
-export const paramDef = z.object({
-	query: z.string(),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	limit: limit({ max: 100, default: 10 }),
-	offset: z.number().int().default(0),
-	host: z
-		.string()
-		.optional()
-		.describe('The local host is represented with `.`.'),
-	userId: MisskeyIdSchema.nullable().default(null),
-	channelId: MisskeyIdSchema.nullable().default(null),
-});
-
-// TODO: ロジックをサービスに切り出す
+export const paramDef = z
+	.object({
+		query: z.string(),
+		limit: limit({ max: 100, default: 10 }),
+		offset: z.number().int().default(0),
+		host: z
+			.string()
+			.optional()
+			.describe('The local host is represented with `.`.'),
+		userId: MisskeyIdSchema.nullable().default(null),
+		channelId: MisskeyIdSchema.nullable().default(null),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

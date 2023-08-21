@@ -9,7 +9,7 @@ import { NotificationService } from '@/core/NotificationService.js';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { NotificationSchema } from '@/models/zod/NotificationSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
 const RedisNotificationSchema = z.object({
@@ -40,18 +40,18 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	markAsRead: z.boolean().default(true),
-	includeTypes: z
-		.array(z.enum([...notificationTypes, ...obsoleteNotificationTypes]))
-		.optional(),
-	excludeTypes: z
-		.array(z.enum([...notificationTypes, ...obsoleteNotificationTypes]))
-		.optional(),
-});
+export const paramDef = z
+	.object({
+		limit: limit({ max: 100, default: 10 }),
+		markAsRead: z.boolean().default(true),
+		includeTypes: z
+			.array(z.enum([...notificationTypes, ...obsoleteNotificationTypes]))
+			.optional(),
+		excludeTypes: z
+			.array(z.enum([...notificationTypes, ...obsoleteNotificationTypes]))
+			.optional(),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

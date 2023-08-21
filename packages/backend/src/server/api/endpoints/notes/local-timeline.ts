@@ -8,7 +8,7 @@ import { RoleService } from '@/core/RoleService.js';
 import { IdService } from '@/core/IdService.js';
 import { ApiError } from '../../error.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -16,20 +16,18 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
 	res,
-	errors: {ltlDisabled:ltlDisabled},
+	errors: { ltlDisabled: ltlDisabled },
 } as const;
 
-export const paramDef = z.object({
-	withFiles: z.boolean().default(false),
-	withReplies: z.boolean().default(false),
-	fileType: z.array(z.string()).optional(),
-	excludeNsfw: z.boolean().default(false),
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	sinceDate: z.number().int().optional(),
-	untilDate: z.number().int().optional(),
-});
+export const paramDef = z
+	.object({
+		withFiles: z.boolean().default(false),
+		withReplies: z.boolean().default(false),
+		fileType: z.array(z.string()).optional(),
+		excludeNsfw: z.boolean().default(false),
+		limit: limit({ max: 100, default: 10 }),
+	})
+	.merge(PaginationSchema);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

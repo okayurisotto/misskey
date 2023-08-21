@@ -5,7 +5,7 @@ import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -16,18 +16,16 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	sinceDate: z.number().int().optional(),
-	untilDate: z.number().int().optional(),
-	includeMyRenotes: z.boolean().default(true),
-	includeRenotedMyNotes: z.boolean().default(true),
-	includeLocalRenotes: z.boolean().default(true),
-	withFiles: z.boolean().default(false),
-	withReplies: z.boolean().default(false),
-});
+export const paramDef = z
+	.object({
+		limit: limit({ max: 100, default: 10 }),
+		includeMyRenotes: z.boolean().default(true),
+		includeRenotedMyNotes: z.boolean().default(true),
+		includeLocalRenotes: z.boolean().default(true),
+		withFiles: z.boolean().default(false),
+		withReplies: z.boolean().default(false),
+	})
+	.merge(PaginationSchema);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -78,7 +76,9 @@ export default class extends Endpoint<
 						this.prismaQueryService.getRepliesWhereForNote(me.id),
 						this.prismaQueryService.getVisibilityWhereForNote(me.id),
 						await this.prismaQueryService.getMutingWhereForNote(me.id),
-						await this.prismaQueryService.getNoteThreadMutingWhereForNote(me.id),
+						await this.prismaQueryService.getNoteThreadMutingWhereForNote(
+							me.id,
+						),
 						this.prismaQueryService.getBlockedWhereForNote(me.id),
 						await this.prismaQueryService.getRenoteMutingWhereForNote(me.id),
 						ps.includeMyRenotes

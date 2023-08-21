@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -14,12 +14,12 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	host: z.string(),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	limit: limit({ max: 100, default: 10 }),
-});
+export const paramDef = z
+	.object({
+		host: z.string(),
+		limit: limit({ max: 100, default: 10 }),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -45,7 +45,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return await Promise.all(users.map((user) => this.userEntityService.packDetailed(user, me)));
+			return await Promise.all(
+				users.map((user) => this.userEntityService.packDetailed(user, me)),
+			);
 		});
 	}
 }

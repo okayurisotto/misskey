@@ -4,7 +4,7 @@ import z from 'zod';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteReactionEntityService } from '@/core/entities/NoteReactionEntityService.js';
 import { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma } from '@prisma/client';
 
@@ -15,17 +15,17 @@ export const meta = {
 	allowGet: true,
 	cacheSec: 60,
 	res,
-	errors: {noSuchNote:noSuchNote___________},
+	errors: { noSuchNote: noSuchNote___________ },
 } as const;
 
-export const paramDef = z.object({
-	noteId: MisskeyIdSchema,
-	type: z.string().nullable().optional(),
-	limit: limit({ max: 100, default: 10 }),
-	offset: z.number().int().default(0),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-});
+export const paramDef = z
+	.object({
+		noteId: MisskeyIdSchema,
+		type: z.string().nullable().optional(),
+		limit: limit({ max: 100, default: 10 }),
+		offset: z.number().int().default(0),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

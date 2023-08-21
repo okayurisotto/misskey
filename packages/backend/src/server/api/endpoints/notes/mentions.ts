@@ -4,7 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -15,13 +15,13 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	following: z.boolean().default(false),
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	visibility: z.enum(['public', 'home', 'followers', 'specified']).optional(),
-});
+export const paramDef = z
+	.object({
+		following: z.boolean().default(false),
+		limit: limit({ max: 100, default: 10 }),
+		visibility: z.enum(['public', 'home', 'followers', 'specified']).optional(),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

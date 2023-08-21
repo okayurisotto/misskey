@@ -4,7 +4,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteReactionEntityService } from '@/core/entities/NoteReactionEntityService.js';
 import { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -15,17 +15,15 @@ export const meta = {
 	requireCredential: false,
 	description: 'Show all reactions this user made.',
 	res,
-	errors: {reactionsNotPublic:reactionsNotPublic},
+	errors: { reactionsNotPublic: reactionsNotPublic },
 } as const;
 
-export const paramDef = z.object({
-	userId: MisskeyIdSchema,
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	sinceDate: z.number().int().optional(),
-	untilDate: z.number().int().optional(),
-});
+export const paramDef = z
+	.object({
+		userId: MisskeyIdSchema,
+		limit: limit({ max: 100, default: 10 }),
+	})
+	.merge(PaginationSchema);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

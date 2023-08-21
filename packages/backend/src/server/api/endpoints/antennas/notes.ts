@@ -8,7 +8,7 @@ import { DI } from '@/di-symbols.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
@@ -19,18 +19,16 @@ export const meta = {
 	tags: ['antennas', 'account', 'notes'],
 	requireCredential: true,
 	kind: 'read:account',
-	errors: {noSuchAntenna:noSuchAntenna_},
+	errors: { noSuchAntenna: noSuchAntenna_ },
 	res,
 } as const;
 
-export const paramDef = z.object({
-	antennaId: MisskeyIdSchema,
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	sinceDate: z.number().int().optional(),
-	untilDate: z.number().int().optional(),
-});
+export const paramDef = z
+	.object({
+		antennaId: MisskeyIdSchema,
+		limit: limit({ max: 100, default: 10 }),
+	})
+	.merge(PaginationSchema);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

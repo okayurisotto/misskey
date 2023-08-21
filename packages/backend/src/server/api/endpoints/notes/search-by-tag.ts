@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -13,18 +13,18 @@ export const meta = {
 	res,
 } as const;
 
-const paramDef_base = z.object({
-	reply: z.boolean().nullable().default(null),
-	renote: z.boolean().nullable().default(null),
-	withFiles: z
-		.boolean()
-		.default(false)
-		.describe('Only show notes that have attached files.'),
-	poll: z.boolean().nullable().default(null),
-	sinceId: MisskeyIdSchema,
-	untilId: MisskeyIdSchema,
-	limit: limit({ max: 100, default: 10 }),
-});
+const paramDef_base = z
+	.object({
+		reply: z.boolean().nullable().default(null),
+		renote: z.boolean().nullable().default(null),
+		withFiles: z
+			.boolean()
+			.default(false)
+			.describe('Only show notes that have attached files.'),
+		poll: z.boolean().nullable().default(null),
+		limit: limit({ max: 100, default: 10 }),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 export const paramDef = z.union([
 	paramDef_base.merge(
 		z.object({

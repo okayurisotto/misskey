@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { AbuseUserReportEntityService } from '@/core/entities/AbuseUserReportEntityService.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { AbuseUserReportSchema } from '@/models/zod/AbuseUserReportSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -16,15 +16,17 @@ export const meta = {
 	res,
 } as const;
 
-export const paramDef = z.object({
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	state: z.string().nullable().default(null),
-	reporterOrigin: z.enum(['combined', 'local', 'remote']).default('combined'),
-	targetUserOrigin: z.enum(['combined', 'local', 'remote']).default('combined'),
-	forwarded: z.boolean().default(false),
-});
+export const paramDef = z
+	.object({
+		limit: limit({ max: 100, default: 10 }),
+		state: z.string().nullable().default(null),
+		reporterOrigin: z.enum(['combined', 'local', 'remote']).default('combined'),
+		targetUserOrigin: z
+			.enum(['combined', 'local', 'remote'])
+			.default('combined'),
+		forwarded: z.boolean().default(false),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

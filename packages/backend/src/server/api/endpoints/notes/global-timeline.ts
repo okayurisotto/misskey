@@ -6,7 +6,7 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { RoleService } from '@/core/RoleService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -15,18 +15,16 @@ const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['notes'],
 	res,
-	errors: {gtlDisabled:gtlDisabled},
+	errors: { gtlDisabled: gtlDisabled },
 } as const;
 
-export const paramDef = z.object({
-	withFiles: z.boolean().default(false),
-	withReplies: z.boolean().default(false),
-	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	sinceDate: z.number().int().optional(),
-	untilDate: z.number().int().optional(),
-});
+export const paramDef = z
+	.object({
+		withFiles: z.boolean().default(false),
+		withReplies: z.boolean().default(false),
+		limit: limit({ max: 100, default: 10 }),
+	})
+	.merge(PaginationSchema);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -66,9 +64,13 @@ export default class extends Endpoint<
 						...(me
 							? [
 									await this.prismaQueryService.getMutingWhereForNote(me.id),
-									await this.prismaQueryService.getNoteThreadMutingWhereForNote(me.id),
+									await this.prismaQueryService.getNoteThreadMutingWhereForNote(
+										me.id,
+									),
 									this.prismaQueryService.getBlockedWhereForNote(me.id),
-									await this.prismaQueryService.getRenoteMutingWhereForNote(me.id),
+									await this.prismaQueryService.getRenoteMutingWhereForNote(
+										me.id,
+									),
 							  ]
 							: []),
 						ps.withFiles ? { fileIds: { isEmpty: false } } : {},

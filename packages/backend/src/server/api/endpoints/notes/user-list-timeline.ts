@@ -5,7 +5,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -21,10 +21,6 @@ export const meta = {
 export const paramDef = z.object({
 	listId: MisskeyIdSchema,
 	limit: limit({ max: 100, default: 10 }),
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	sinceDate: z.number().int().optional(),
-	untilDate: z.number().int().optional(),
 	includeMyRenotes: z.boolean().default(true),
 	includeRenotedMyNotes: z.boolean().default(true),
 	includeLocalRenotes: z.boolean().default(true),
@@ -32,7 +28,7 @@ export const paramDef = z.object({
 		.boolean()
 		.default(false)
 		.describe('Only show notes that have attached files.'),
-});
+}).merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export

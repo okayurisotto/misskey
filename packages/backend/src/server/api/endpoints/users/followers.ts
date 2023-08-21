@@ -5,7 +5,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FollowingEntityService } from '@/core/entities/FollowingEntityService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { FollowingSchema } from '@/models/zod/FollowingSchema.js';
-import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
+import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { ApiError } from '../../error.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -16,16 +16,18 @@ export const meta = {
 	requireCredential: false,
 	description: 'Show everyone that follows this user.',
 	res,
-	errors: {noSuchUser:noSuchUser_________________,forbidden:forbidden},
+	errors: { noSuchUser: noSuchUser_________________, forbidden: forbidden },
 } as const;
 
-const paramDef_base = z.object({
-	sinceId: MisskeyIdSchema.optional(),
-	untilId: MisskeyIdSchema.optional(),
-	limit: limit({ max: 100, default: 10 }),
-});
+const paramDef_base = z
+	.object({ limit: limit({ max: 100, default: 10 }) })
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 export const paramDef = z.union([
-	paramDef_base.merge(z.object({ userId: MisskeyIdSchema })),
+	paramDef_base.merge(
+		z.object({
+			userId: MisskeyIdSchema,
+		}),
+	),
 	paramDef_base.merge(
 		z.object({
 			username: z.string(),
