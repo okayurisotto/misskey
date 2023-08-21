@@ -1,4 +1,3 @@
-import type { OpenApiZod } from 'zod2spec/built/type.js';
 
 import { RolePolicies } from '@/core/RoleService.js';
 
@@ -343,6 +342,7 @@ import * as ep___users_achievements from './endpoints/users/achievements.js';
 import * as ep___users_updateMemo from './endpoints/users/update-memo.js';
 import * as ep___fetchRss from './endpoints/fetch-rss.js';
 import * as ep___retention from './endpoints/retention.js';
+import type { OpenApiZod } from 'zod2spec/built/type.js';
 
 const eps = [
 	['admin/meta', ep___admin_meta],

@@ -22,6 +22,7 @@ import { UserFieldsSchema } from '@/models/zod/UserFieldsSchema.js';
 import type { UserSecretsSchema } from '@/models/zod/UserSecretsSchema.js';
 import { AchievementSchema } from '@/models/zod/AchievementSchema.js';
 import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
+import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { InstanceEntityService } from './InstanceEntityService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
@@ -29,7 +30,6 @@ import type { NoteEntityService } from './NoteEntityService.js';
 import type { DriveFileEntityService } from './DriveFileEntityService.js';
 import type { PageEntityService } from './PageEntityService.js';
 import type { follow_request, instance, note, note_unread, user, user_memo, user_note_pining, user_profile, user_security_key } from '@prisma/client';
-import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 
 function isLocalUser(user: user): user is LocalUser;
 function isLocalUser<T extends { host: user['host'] }>(user: T): user is (T & { host: null; });

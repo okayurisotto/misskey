@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import { isInstanceMuted, isUserFromMutedInstance } from '@/misc/is-instance-muted.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
-import { z } from 'zod';
 
 class MainChannel extends Channel {
 	public readonly chName = 'main';

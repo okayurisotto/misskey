@@ -4,8 +4,8 @@ import type { LocalUser } from '@/models/entities/User.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { SigninEntityService } from '@/core/entities/SigninEntityService.js';
 import { bindThis } from '@/decorators.js';
-import type { FastifyRequest, FastifyReply } from 'fastify';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { FastifyRequest, FastifyReply } from 'fastify';
 
 @Injectable()
 export class SigninService {

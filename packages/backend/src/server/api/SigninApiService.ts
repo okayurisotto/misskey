@@ -9,10 +9,10 @@ import type { LocalUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { TwoFactorAuthenticationService } from '@/core/TwoFactorAuthenticationService.js';
 import { bindThis } from '@/decorators.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { RateLimiterService } from './RateLimiterService.js';
 import { SigninService } from './SigninService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import { PrismaService } from '@/core/PrismaService.js';
 
 @Injectable()
 export class SigninApiService {

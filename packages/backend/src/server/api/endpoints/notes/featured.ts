@@ -48,9 +48,7 @@ export default class extends Endpoint<
 							channelId: ps.channelId,
 						},
 						me
-							? await this.prismaQueryService.getMutingWhereForNote(
-									me?.id ?? null,
-							  )
+							? await this.prismaQueryService.getMutingWhereForNote(me.id)
 							: {},
 						me ? this.prismaQueryService.getBlockedWhereForNote(me.id) : {},
 					],
