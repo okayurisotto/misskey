@@ -89,6 +89,7 @@ export class AdEntityService {
 
 		return {
 			...ad,
+			createdAt: +ad.createdAt,
 			expiresAt: +ad.expiresAt,
 			startsAt: +ad.startsAt,
 		};

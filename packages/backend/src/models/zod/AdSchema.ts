@@ -3,6 +3,7 @@ import { MisskeyIdSchema } from './misc.js';
 
 export const AdSchema = z.object({
 	id: MisskeyIdSchema,
+	createdAt: z.number().int(),
 	dayOfWeek: z.number().int(),
 	expiresAt: z.number().int(),
 	imageUrl: z.string().min(1),
