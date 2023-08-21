@@ -17,12 +17,11 @@
 			"@/*": ["./src/*"]
 		},
 		"resolveJsonModule": true,
-		"rootDir": "./src",
+		"rootDir": "./",
 		"strictPropertyInitialization": false, // TODO
 		"typeRoots": ["./node_modules/@types", "./src/@types"],
 		"types": ["node"]
 	},
-	"exclude": ["./src/**/*.test.ts"],
 	"extends": [
 		"@tsconfig/node-lts/tsconfig.json",
 		"@tsconfig/strictest/tsconfig.json"
