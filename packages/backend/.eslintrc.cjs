@@ -36,22 +36,22 @@ module.exports = {
 		'prefer-arrow-callback': ['error'],
 
 		/* typescript */
-		'@typescript-eslint/consistent-type-imports': 'off',
-		'@typescript-eslint/explicit-function-return-type': ['warn'],
+		'@typescript-eslint/consistent-type-imports': ['off'], // TODO: デコレータのメタデータとして参照される型を通常の`import`に置き換えなければならなくなり、結果として動かなくなることがあるため
+		'@typescript-eslint/explicit-function-return-type': ['warn'], // TODO
 		'@typescript-eslint/naming-convention': [
 			'error',
 			{ selector: 'typeLike', format: ['PascalCase'] },
 			{ selector: 'typeParameter', format: [] },
 		],
-		'@typescript-eslint/no-empty-function': ['off'],
-		'@typescript-eslint/no-inferrable-types': ['warn'],
+		'@typescript-eslint/no-empty-function': ['off'], // OK
+		'@typescript-eslint/no-inferrable-types': ['error'],
 		'@typescript-eslint/no-misused-promises': [
 			'error',
 			{ checksVoidReturn: false },
 		],
-		'@typescript-eslint/no-non-null-assertion': ['warn'],
-		'@typescript-eslint/no-unnecessary-condition': ['warn'],
-		'@typescript-eslint/no-var-requires': ['warn'],
+		'@typescript-eslint/no-non-null-assertion': ['warn'], // TODO
+		'@typescript-eslint/no-unnecessary-condition': ['warn'], // TODO: 既存の型が`as`などされていて信用できないため
+		'@typescript-eslint/no-var-requires': ['error'],
 		'@typescript-eslint/prefer-nullish-coalescing': ['error'],
 
 		/* import */
