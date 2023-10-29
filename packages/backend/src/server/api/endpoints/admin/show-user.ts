@@ -66,7 +66,7 @@ export default class extends Endpoint<
 			]);
 
 			const packedRoles = await Promise.all(
-				roles.map((role) => this.roleEntityService.pack(role, me)),
+				roles.map((role) => this.roleEntityService.pack(role)),
 			);
 
 			const packedRoleAssigns = roleAssigns.map((a) => ({

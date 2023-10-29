@@ -32,7 +32,7 @@ export default class extends Endpoint<
 		private readonly roleEntityService: RoleEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const role = await this.prismaService.client.role.findUnique({
 				where: { id: ps.roleId },
 			});
@@ -41,7 +41,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchRole);
 			}
 
-			return await this.roleEntityService.pack(role, me);
+			return await this.roleEntityService.pack(role);
 		});
 	}
 }

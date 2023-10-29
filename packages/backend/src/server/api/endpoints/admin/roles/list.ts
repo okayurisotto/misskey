@@ -26,13 +26,13 @@ export default class extends Endpoint<
 		private readonly roleEntityService: RoleEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (_, me) => {
+		super(meta, paramDef, async () => {
 			const roles = await this.prismaService.client.role.findMany({
 				orderBy: { lastUsedAt: 'desc' },
 			});
 
 			return await Promise.all(
-				roles.map((role) => this.roleEntityService.pack(role, me)),
+				roles.map((role) => this.roleEntityService.pack(role)),
 			);
 		});
 	}

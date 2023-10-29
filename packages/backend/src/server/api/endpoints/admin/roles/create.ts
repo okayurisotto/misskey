@@ -47,7 +47,7 @@ export default class extends Endpoint<
 		private readonly roleEntityService: RoleEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const date = new Date();
 			const created = await this.prismaService.client.role.create({
 				data: {
@@ -74,7 +74,7 @@ export default class extends Endpoint<
 
 			this.globalEventService.publishInternalEvent('roleCreated', created);
 
-			return await this.roleEntityService.pack(created, me);
+			return await this.roleEntityService.pack(created);
 		});
 	}
 }

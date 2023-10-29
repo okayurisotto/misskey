@@ -17,13 +17,11 @@ export class RoleEntityService {
 	 * `role`をpackする。
 	 *
 	 * @param src
-	 * @param _me 使われていない。
 	 * @returns
 	 */
 	@bindThis
 	public async pack(
 		src: role['id'] | role,
-		_me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof RoleSchema>> {
 		const role =
 			typeof src === 'object'

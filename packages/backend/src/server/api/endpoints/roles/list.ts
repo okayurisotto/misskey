@@ -24,7 +24,7 @@ export default class extends Endpoint<
 		private readonly roleEntityService: RoleEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async () => {
 			const roles = await this.prismaService.client.role.findMany({
 				where: {
 					isPublic: true,
@@ -32,7 +32,7 @@ export default class extends Endpoint<
 				},
 			});
 			return (await Promise.all(
-				roles.map((role) => this.roleEntityService.pack(role, me)),
+				roles.map((role) => this.roleEntityService.pack(role)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}
