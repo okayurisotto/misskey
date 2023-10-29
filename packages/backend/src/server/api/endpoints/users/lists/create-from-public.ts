@@ -1,9 +1,12 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { tooManyUserLists, noSuchList_, noSuchUser____________________, alreadyAdded, youHaveBeenBlocked___, tooManyUsers } from '@/server/api/errors.js';
+import {
+	tooManyUserLists,
+	noSuchList_,
+	tooManyUsers,
+} from '@/server/api/errors.js';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { GetterService } from '@/server/api/GetterService.js';
 import { UserListEntityService } from '@/core/entities/UserListEntityService.js';
 import { ApiError } from '@/server/api/error.js';
 import { RoleService } from '@/core/RoleService.js';
@@ -11,13 +14,20 @@ import { UserListService } from '@/core/UserListService.js';
 import { UserListSchema } from '@/models/zod/UserListSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
+import { awaitAll } from '@/misc/prelude/await-all.js';
+import { unique } from '@/misc/prelude/array.js';
 
 const res = UserListSchema;
 export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	res,
-	errors: {tooManyUserLists:tooManyUserLists,noSuchList:noSuchList_,noSuchUser:noSuchUser____________________,alreadyAdded:alreadyAdded,youHaveBeenBlocked:youHaveBeenBlocked___,tooManyUsers:tooManyUsers},
+	errors: {
+		tooManyUserLists: tooManyUserLists,
+		noSuchList: noSuchList_,
+		tooManyUsers: tooManyUsers,
+	},
 } as const;
 
 export const paramDef = z.object({
@@ -33,31 +43,44 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private userListService: UserListService,
-		private userListEntityService: UserListEntityService,
-		private idService: IdService,
-		private getterService: GetterService,
-		private roleService: RoleService,
-		private prismaService: PrismaService,
+		private readonly userListService: UserListService,
+		private readonly userListEntityService: UserListEntityService,
+		private readonly idService: IdService,
+		private readonly roleService: RoleService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const listExist =
-				(await this.prismaService.client.user_list.count({
-					where: {
-						id: ps.listId,
-						isPublic: true,
+			const baseUserList = await this.prismaService.client.user_list.findUnique(
+				{
+					where: { id: ps.listId, isPublic: true },
+					include: {
+						user_list_joining: {
+							where: {
+								user: {
+									blocking_blocking_blockerIdTouser: {
+										none: { blockeeId: me.id },
+									},
+								},
+							},
+							include: { user: true },
+						},
 					},
-					take: 1,
-				})) > 0;
-			if (!listExist) throw new ApiError(meta.errors.noSuchList);
+				},
+			);
 
-			const currentCount = await this.prismaService.client.user_list.count({
-				where: { userId: me.id },
+			if (baseUserList === null) {
+				throw new ApiError(meta.errors.noSuchList);
+			}
+
+			const { currentCount, policies } = await awaitAll({
+				currentCount: () =>
+					this.prismaService.client.user_list.count({
+						where: { userId: me.id },
+					}),
+				policies: () => this.roleService.getUserPolicies(me.id),
 			});
-			if (
-				currentCount >
-				(await this.roleService.getUserPolicies(me.id)).userListLimit
-			) {
+
+			if (currentCount > policies.userListLimit) {
 				throw new ApiError(meta.errors.tooManyUserLists);
 			}
 
@@ -70,62 +93,41 @@ export default class extends Endpoint<
 				},
 			});
 
-			const users = (
-				await this.prismaService.client.user_list_joining.findMany({
-					where: { userListId: ps.listId },
-				})
-			).map((x) => x.userId);
+			const users = unique(
+				baseUserList.user_list_joining.map((joining) => joining.user),
+			);
+
+			if (users.length > policies.userEachUserListsLimit) {
+				throw new UserListService.TooManyUsersError();
+			}
 
 			for (const user of users) {
-				const currentUser = await this.getterService
-					.getUser(user)
-					.catch((err) => {
-						if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
-							throw new ApiError(meta.errors.noSuchUser);
-						}
-						throw err;
-					});
-
-				if (currentUser.id !== me.id) {
-					const blockExist =
-						(await this.prismaService.client.blocking.count({
-							where: {
-								blockerId: currentUser.id,
-								blockeeId: me.id,
-							},
-							take: 1,
-						})) > 0;
-					if (blockExist) {
-						throw new ApiError(meta.errors.youHaveBeenBlocked);
-					}
-				}
-
-				const exist =
-					(await this.prismaService.client.user_list_joining.count({
-						where: {
-							userListId: userList.id,
-							userId: currentUser.id,
-						},
-						take: 1,
-					})) > 0;
-
-				if (exist) {
-					throw new ApiError(meta.errors.alreadyAdded);
-				}
-
 				try {
-					await this.userListService.push(currentUser, userList, me);
+					await this.userListService.push(user, userList, me);
 				} catch (err) {
+					// TODO: あとで消す
+					// すでにチェックしているのでここでは起きないはず
 					if (err instanceof UserListService.TooManyUsersError) {
 						throw new ApiError(meta.errors.tooManyUsers);
 					}
+
 					throw err;
 				}
 			}
 
-			return (await this.userListEntityService.pack(
-				userList,
-			)) satisfies z.infer<typeof res>;
+			const result = await this.prismaService.client.user_list.findUnique({
+				where: { id: userList.id },
+				include: { user_list_joining: true },
+			});
+
+			if (result === null) {
+				throw new Error();
+			}
+
+			return this.userListEntityService.pack(result.id, {
+				user_list: new EntityMap('id', [result]),
+				user_list_joining: new EntityMap('id', result.user_list_joining),
+			}) satisfies z.infer<typeof res>;
 		});
 	}
 }

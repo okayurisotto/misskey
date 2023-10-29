@@ -6,6 +6,7 @@ import { UserListEntityService } from '@/core/entities/UserListEntityService.js'
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { UserListSchema } from '@/models/zod/UserListSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 import { ApiError } from '../../../error.js';
 
 const res = UserListSchema;
@@ -14,8 +15,11 @@ export const meta = {
 	requireCredential: false,
 	kind: 'read:account',
 	description: 'Show the properties of a list.',
-	res,
-	errors: {noSuchList:noSuchList______},
+	res: res.extend({
+		likedCount: z.number().int().nonnegative().optional(),
+		isLiked: z.boolean().optional(),
+	}),
+	errors: { noSuchList: noSuchList______ },
 } as const;
 
 export const paramDef = z.object({
@@ -39,12 +43,14 @@ export default class extends Endpoint<
 				likedCount: number;
 				isLiked: boolean;
 			}> = {};
+
 			// Fetch the list
 			const userList = await this.prismaService.client.user_list.findUnique({
 				where:
-					!ps.forPublic && me !== null
-						? { id: ps.listId, userId: me.id }
-						: { id: ps.listId, isPublic: true },
+					ps.forPublic || me === null
+						? { id: ps.listId, isPublic: true }
+						: { id: ps.listId, userId: me.id },
+				include: { user_list_joining: true },
 			});
 
 			if (userList == null) {
@@ -71,8 +77,12 @@ export default class extends Endpoint<
 					additionalProperties.isLiked = false;
 				}
 			}
+
 			return {
-				...(await this.userListEntityService.pack(userList)),
+				...this.userListEntityService.pack(userList.id, {
+					user_list: new EntityMap('id', [userList]),
+					user_list_joining: new EntityMap('id', userList.user_list_joining),
+				}),
 				...additionalProperties,
 			} satisfies z.infer<typeof res>;
 		});

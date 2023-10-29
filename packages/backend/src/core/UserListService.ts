@@ -24,11 +24,14 @@ export class UserListService {
 	) {}
 
 	@bindThis
-	public async push(target: user, list: user_list, me: user) {
-		const currentCount = await this.prismaService.client.user_list_joining.count({
-			where: { userListId: list.id },
-		});
-		if (currentCount > (await this.roleService.getUserPolicies(me.id)).userEachUserListsLimit) {
+	public async push(target: user, list: user_list, me: user): Promise<void> {
+		const currentCount =
+			await this.prismaService.client.user_list_joining.count({
+				where: { userListId: list.id },
+			});
+		const policies = await this.roleService.getUserPolicies(me.id);
+
+		if (currentCount > policies.userEachUserListsLimit) {
 			throw new UserListService.TooManyUsersError();
 		}
 
@@ -41,13 +44,19 @@ export class UserListService {
 			},
 		});
 
-		this.globalEventService.publishUserListStream(list.id, 'userAdded', await this.userEntityService.packLite(target));
+		this.globalEventService.publishUserListStream(
+			list.id,
+			'userAdded',
+			await this.userEntityService.packLite(target),
+		);
 
-		// このインスタンス内にこのリモートユーザーをフォローしているユーザーがいなくても投稿を受け取るためにダミーのユーザーがフォローしたということにする
+		// このインスタンス内にそのリモートユーザーをフォローしているユーザーがいなかった場合、投稿を受け取るためにダミーのユーザーがフォローしたということにする
 		if (this.userEntityService.isRemoteUser(target)) {
 			const proxy = await this.proxyAccountService.fetch();
 			if (proxy) {
-				this.queueService.createFollowJob([{ from: { id: proxy.id }, to: { id: target.id } }]);
+				await this.queueService.createFollowJob([
+					{ from: { id: proxy.id }, to: { id: target.id } },
+				]);
 			}
 		}
 	}
