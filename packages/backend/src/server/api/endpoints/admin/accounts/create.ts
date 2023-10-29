@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { SignupService } from '@/core/SignupService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -43,14 +42,16 @@ export default class extends Endpoint<
 				if (me === null) {
 					throw new Error('You must be logged in to perform this action.');
 				} else {
-					const me_ = await this.prismaService.client.user.findUnique({
+					const meAsRoot = await this.prismaService.client.user.findUnique({
 						where: { id: me.id, isRoot: true },
 					});
 
-					if (me_ === null) {
+					if (meAsRoot === null) {
 						throw new Error(
 							'You are not authorized to perform this operation.',
 						);
+					} else {
+						// ok
 					}
 				}
 			}
@@ -61,7 +62,11 @@ export default class extends Endpoint<
 				ignorePreservedUsernames: true,
 			});
 
-			const packed = await this.userEntityService.packDetailed(account, account, { includeSecrets: true });
+			const packed = await this.userEntityService.packDetailed(
+				account,
+				account,
+				{ includeSecrets: true },
+			);
 
 			return {
 				...packed,
