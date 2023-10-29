@@ -30,7 +30,7 @@ export class AdEntityService {
 				createdAt: new Date(),
 			},
 		});
-		return this.pack(result, { ad: new EntityMap('id', [result]) });
+		return this.pack(result.id, { ad: new EntityMap('id', [result]) });
 	}
 
 	public async delete(where: Prisma.adWhereUniqueInput): Promise<void> {
@@ -51,14 +51,15 @@ export class AdEntityService {
 		where: Prisma.adWhereInput,
 		paginationQuery?: PaginationQuery,
 	): Promise<z.infer<typeof AdSchema>[]> {
-		const result = await this.prismaService.client.ad.findMany({
+		const results = await this.prismaService.client.ad.findMany({
 			...paginationQuery,
 			where: paginationQuery ? { AND: [where, paginationQuery.where] } : where,
 		});
 
-		return this.packMany(result, {
-			ad: new EntityMap('id', result),
-		});
+		return this.packMany(
+			results.map((result) => result.id),
+			{ ad: new EntityMap('id', results) },
+		);
 	}
 
 	public async update(
@@ -81,11 +82,8 @@ export class AdEntityService {
 		}
 	}
 
-	public pack(
-		target: Pick<ad, 'id'>,
-		data: AdPackData,
-	): z.infer<typeof AdSchema> {
-		const ad = data.ad.get(target.id);
+	public pack(id: ad['id'], data: AdPackData): z.infer<typeof AdSchema> {
+		const ad = data.ad.get(id);
 
 		return {
 			...ad,
@@ -96,9 +94,9 @@ export class AdEntityService {
 	}
 
 	public packMany(
-		targets: Pick<ad, 'id'>[],
+		ids: ad['id'][],
 		data: AdPackData,
 	): z.infer<typeof AdSchema>[] {
-		return targets.map((target) => this.pack(target, data));
+		return ids.map((target) => this.pack(target, data));
 	}
 }
