@@ -1,45 +1,42 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
+import { pick } from 'omick';
 import type { AntennaSchema } from '@/models/zod/AntennaSchema.js';
 import { bindThis } from '@/decorators.js';
-import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 import type { antenna } from '@prisma/client';
 
 const AntennaKeywordsSchema = z.array(z.array(z.string()));
 
 @Injectable()
 export class AntennaEntityService {
-	constructor(private readonly prismaService: PrismaService) {}
-
 	/**
 	 * `antenna`をpackする。
 	 * 現状、`hasUnreadNote`は常に`false`になる。
-	 *
-	 * @param src
-	 * @returns
 	 */
 	@bindThis
-	public async pack(
-		src: antenna['id'] | antenna,
-	): Promise<z.infer<typeof AntennaSchema>> {
-		const antenna = typeof src === 'object'
-			? src
-			: await this.prismaService.client.antenna.findUniqueOrThrow({ where: { id: src } });
+	public pack(
+		id: antenna['id'],
+		data: { antenna: EntityMap<'id', antenna> },
+	): z.infer<typeof AntennaSchema> {
+		const antenna = data.antenna.get(id);
 
 		return {
-			id: antenna.id,
+			...pick(antenna, [
+				'id',
+				'name',
+				'src',
+				'userListId',
+				'users',
+				'caseSensitive',
+				'notify',
+				'withReplies',
+				'withFile',
+				'isActive',
+			]),
 			createdAt: antenna.createdAt.toISOString(),
-			name: antenna.name,
 			keywords: AntennaKeywordsSchema.parse(antenna.keywords),
 			excludeKeywords: AntennaKeywordsSchema.parse(antenna.excludeKeywords),
-			src: antenna.src,
-			userListId: antenna.userListId,
-			users: antenna.users,
-			caseSensitive: antenna.caseSensitive,
-			notify: antenna.notify,
-			withReplies: antenna.withReplies,
-			withFile: antenna.withFile,
-			isActive: antenna.isActive,
 			hasUnreadNote: false, // TODO
 		};
 	}

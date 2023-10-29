@@ -6,6 +6,7 @@ import { AntennaEntityService } from '@/core/entities/AntennaEntityService.js';
 import { AntennaSchema } from '@/models/zod/AntennaSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 import { ApiError } from '../../error.js';
 
 const res = AntennaSchema;
@@ -13,7 +14,7 @@ export const meta = {
 	tags: ['antennas', 'account'],
 	requireCredential: true,
 	kind: 'read:account',
-	errors: {noSuchAntenna:noSuchAntenna__},
+	errors: { noSuchAntenna: noSuchAntenna__ },
 	res,
 } as const;
 
@@ -33,7 +34,6 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			// Fetch the antenna
 			const antenna = await this.prismaService.client.antenna.findUnique({
 				where: {
 					id: ps.antennaId,
@@ -41,11 +41,13 @@ export default class extends Endpoint<
 				},
 			});
 
-			if (antenna == null) {
+			if (antenna === null) {
 				throw new ApiError(meta.errors.noSuchAntenna);
 			}
 
-			return await this.antennaEntityService.pack(antenna);
+			return this.antennaEntityService.pack(antenna.id, {
+				antenna: new EntityMap('id', [antenna]),
+			});
 		});
 	}
 }

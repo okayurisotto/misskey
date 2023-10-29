@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchUserList, tooManyAntennas } from '@/server/api/errors.js';
+import { pick } from 'omick';
+import {
+	invalidParam,
+	noSuchUserList,
+	tooManyAntennas,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -9,7 +14,10 @@ import { RoleService } from '@/core/RoleService.js';
 import { AntennaSchema } from '@/models/zod/AntennaSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
+import { awaitAll } from '@/misc/prelude/await-all.js';
 import { ApiError } from '../../error.js';
+import type { user_list } from '@prisma/client';
 
 const res = AntennaSchema;
 export const meta = {
@@ -17,7 +25,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:account',
-	errors: {noSuchUserList:noSuchUserList,tooManyAntennas:tooManyAntennas},
+	errors: { noSuchUserList: noSuchUserList, tooManyAntennas: tooManyAntennas },
 	res,
 } as const;
 
@@ -49,20 +57,27 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			if (ps.keywords.length === 0 || ps.keywords[0].every((x) => x === '')) {
-				throw new Error('invalid param');
+			if (ps.keywords.length === 0) {
+				throw new ApiError(invalidParam);
 			}
 
-			const [currentAntennasCount, policies] = await Promise.all([
-				this.prismaService.client.antenna.count({ where: { userId: me.id } }),
-				this.roleService.getUserPolicies(me.id),
-			]);
+			if (ps.keywords[0].every((x) => x === '')) {
+				throw new ApiError(invalidParam);
+			}
+
+			const { currentAntennasCount, policies } = await awaitAll({
+				currentAntennasCount: () =>
+					this.prismaService.client.antenna.count({
+						where: { userId: me.id },
+					}),
+				policies: () => this.roleService.getUserPolicies(me.id),
+			});
 
 			if (currentAntennasCount > policies.antennaLimit) {
 				throw new ApiError(meta.errors.tooManyAntennas);
 			}
 
-			let userList;
+			let userList: user_list | null = null;
 
 			if (ps.src === 'list' && ps.userListId) {
 				userList = await this.prismaService.client.user_list.findUnique({
@@ -72,7 +87,7 @@ export default class extends Endpoint<
 					},
 				});
 
-				if (userList == null) {
+				if (userList === null) {
 					throw new ApiError(meta.errors.noSuchUserList);
 				}
 			}
@@ -81,26 +96,30 @@ export default class extends Endpoint<
 
 			const antenna = await this.prismaService.client.antenna.create({
 				data: {
+					...pick(ps, [
+						'caseSensitive',
+						'excludeKeywords',
+						'keywords',
+						'name',
+						'notify',
+						'src',
+						'users',
+						'withFile',
+						'withReplies',
+					]),
 					id: this.idService.genId(),
 					createdAt: now,
 					lastUsedAt: now,
 					userId: me.id,
-					name: ps.name,
-					src: ps.src,
-					userListId: userList ? userList.id : null,
-					keywords: ps.keywords,
-					excludeKeywords: ps.excludeKeywords,
-					users: ps.users,
-					caseSensitive: ps.caseSensitive,
-					withReplies: ps.withReplies,
-					withFile: ps.withFile,
-					notify: ps.notify,
+					userListId: userList?.id ?? null,
 				},
 			});
 
 			this.globalEventService.publishInternalEvent('antennaCreated', antenna);
 
-			return await this.antennaEntityService.pack(antenna);
+			return this.antennaEntityService.pack(antenna.id, {
+				antenna: new EntityMap('id', [antenna]),
+			});
 		});
 	}
 }

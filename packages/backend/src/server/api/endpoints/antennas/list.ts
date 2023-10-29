@@ -4,6 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { AntennaEntityService } from '@/core/entities/AntennaEntityService.js';
 import { AntennaSchema } from '@/models/zod/AntennaSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 
 const res = z.array(AntennaSchema);
 export const meta = {
@@ -31,8 +32,14 @@ export default class extends Endpoint<
 				where: { userId: me.id },
 			});
 
+			const data = {
+				antenna: new EntityMap('id', antennas),
+			};
+
 			return await Promise.all(
-				antennas.map((x) => this.antennaEntityService.pack(x)),
+				antennas.map((antenna) =>
+					this.antennaEntityService.pack(antenna.id, data),
+				),
 			);
 		});
 	}
