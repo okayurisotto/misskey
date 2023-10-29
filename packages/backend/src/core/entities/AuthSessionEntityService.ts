@@ -13,21 +13,14 @@ export class AuthSessionEntityService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	/**
-	 * `auth_session`をpackする。
-	 *
-	 * @param src
-	 * @param me
-	 * @returns   `app`に`secret`は含まれない。
-	 */
 	@bindThis
 	public async pack(
-		src: auth_session['id'] | auth_session,
-		me?: { id: user['id'] } | null | undefined,
+		src: auth_session,
+		me?: Pick<user, 'id'> | null | undefined,
 	): Promise<{ id: string; app: z.infer<typeof AppSchema>; token: string }> {
 		const session =
 			await this.prismaService.client.auth_session.findUniqueOrThrow({
-				where: { id: typeof src === 'object' ? src.id : src },
+				where: { id: src.id },
 				include: { app: true },
 			});
 

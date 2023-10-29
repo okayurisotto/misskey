@@ -16,7 +16,7 @@ const res = z.object({
 export const meta = {
 	tags: ['auth'],
 	requireCredential: false,
-	errors: {noSuchSession:noSuchSession_},
+	errors: { noSuchSession: noSuchSession_ },
 	res,
 } as const;
 
@@ -34,12 +34,11 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			// Lookup session
 			const session = await this.prismaService.client.auth_session.findFirst({
 				where: { token: ps.token },
 			});
 
-			if (session == null) {
+			if (session === null) {
 				throw new ApiError(meta.errors.noSuchSession);
 			}
 
