@@ -44,13 +44,16 @@ export class AnnouncementEntityService {
 			include: { announcement_read: true },
 		});
 
-		return this.packMany(results, {
-			announcement: new EntityMap('id', results),
-			announcement_read: new EntityMap(
-				'id',
-				results.map((v) => v.announcement_read).flat(),
-			),
-		});
+		return this.packMany(
+			results.map((result) => result.id),
+			{
+				announcement: new EntityMap('id', results),
+				announcement_read: new EntityMap(
+					'id',
+					results.map((v) => v.announcement_read).flat(),
+				),
+			},
+		);
 	}
 
 	public async update(
@@ -84,12 +87,12 @@ export class AnnouncementEntityService {
 	}
 
 	public pack(
-		target: Pick<announcement, 'id'>,
+		id: announcement['id'],
 		data: AnnouncementPackData,
 	): z.infer<typeof AnnouncementSchema> {
-		const announcement = data.announcement.get(target.id);
+		const announcement = data.announcement.get(id);
 		const reads = [...data.announcement_read.values()].filter(
-			(read) => read.announcementId === target.id,
+			(read) => read.announcementId === id,
 		);
 
 		return {
@@ -108,9 +111,9 @@ export class AnnouncementEntityService {
 	}
 
 	public packMany(
-		targets: Pick<announcement, 'id'>[],
+		ids: announcement['id'][],
 		data: AnnouncementPackData,
 	): z.infer<typeof AnnouncementSchema>[] {
-		return targets.map((target) => this.pack(target, data));
+		return ids.map((target) => this.pack(target, data));
 	}
 }

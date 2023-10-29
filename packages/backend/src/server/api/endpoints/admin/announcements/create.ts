@@ -36,7 +36,7 @@ export default class extends Endpoint<
 				imageUrl: ps.imageUrl,
 			});
 
-			return this.announcementEntityService.pack(announcement, {
+			return this.announcementEntityService.pack(announcement.id, {
 				announcement: new EntityMap('id', [announcement]),
 				announcement_read: new EntityMap('id', []),
 			});
