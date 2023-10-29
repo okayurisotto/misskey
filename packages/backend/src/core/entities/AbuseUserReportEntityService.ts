@@ -11,13 +11,13 @@ export class AbuseUserReportEntityService {
 	constructor(private readonly userEntityService: UserEntityService) {}
 
 	public async pack(
-		reportId: abuse_user_report['id'],
+		id: abuse_user_report['id'],
 		data: {
 			report: EntityMap<'id', abuse_user_report>;
 			user: EntityMap<'id', user>;
 		},
 	): Promise<z.infer<typeof AbuseUserReportSchema>> {
-		const report = data.report.get(reportId);
+		const report = data.report.get(id);
 		const reporter = data.user.get(report.reporterId);
 		const targetUser = data.user.get(report.targetUserId);
 		const assignee = report.assigneeId
