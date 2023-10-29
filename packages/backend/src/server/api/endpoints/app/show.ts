@@ -11,7 +11,7 @@ import { ApiError } from '../../error.js';
 const res = AppSchema;
 export const meta = {
 	tags: ['app'],
-	errors: {noSuchApp:noSuchApp},
+	errors: { noSuchApp: noSuchApp },
 	res,
 } as const;
 
@@ -33,18 +33,16 @@ export default class extends Endpoint<
 		super(meta, paramDef, async (ps, user, token) => {
 			const isSecure = user !== null && token === null;
 
-			// Lookup app
-			const ap = await this.prismaService.client.app.findUnique({
+			const app = await this.prismaService.client.app.findUnique({
 				where: { id: ps.appId },
 			});
 
-			if (ap == null) {
+			if (app === null) {
 				throw new ApiError(meta.errors.noSuchApp);
 			}
 
-			return await this.appEntityService.pack(ap, user, {
-				detail: true,
-				includeSecret: isSecure && ap.userId === user.id,
+			return await this.appEntityService.pack(app, user, {
+				includeSecret: isSecure && app.userId === user.id,
 			});
 		});
 	}

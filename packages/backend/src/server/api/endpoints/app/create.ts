@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { pick } from 'omick';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import { unique } from '@/misc/prelude/array.js';
@@ -46,24 +47,21 @@ export default class extends Endpoint<
 				),
 			);
 
-			// Create account
 			const app = await this.prismaService.client.app.create({
 				data: {
+					...pick(ps, ['name', 'description', 'callbackUrl']),
 					id: this.idService.genId(),
 					createdAt: new Date(),
-					userId: me ? me.id : null,
-					name: ps.name,
-					description: ps.description,
+					userId: me?.id ?? null,
 					permission,
-					callbackUrl: ps.callbackUrl,
-					secret: secret,
+					secret,
 				},
 			});
 
 			return await this.appEntityService.pack(app, null, {
-				detail: true,
 				includeSecret: true,
 			});
 		});
 	}
+
 }

@@ -10,7 +10,7 @@ import type { z } from 'zod';
 export class AuthSessionEntityService {
 	constructor(
 		private readonly appEntityService: AppEntityService,
-		private readonly prismaService: PrismaService
+		private readonly prismaService: PrismaService,
 	) {}
 
 	/**
@@ -18,20 +18,22 @@ export class AuthSessionEntityService {
 	 *
 	 * @param src
 	 * @param me
-	 * @returns `app`に`secret`は含まれない。
+	 * @returns   `app`に`secret`は含まれない。
 	 */
 	@bindThis
 	public async pack(
 		src: auth_session['id'] | auth_session,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<{ id: string; app: z.infer<typeof AppSchema>; token: string }> {
-		const session = typeof src === 'object'
-			? src
-			: await this.prismaService.client.auth_session.findUniqueOrThrow({ where: { id: src } });
+		const session =
+			await this.prismaService.client.auth_session.findUniqueOrThrow({
+				where: { id: typeof src === 'object' ? src.id : src },
+				include: { app: true },
+			});
 
 		return {
 			id: session.id,
-			app: await this.appEntityService.pack(session.appId, me),
+			app: await this.appEntityService.pack(session.app, me),
 			token: session.token,
 		};
 	}

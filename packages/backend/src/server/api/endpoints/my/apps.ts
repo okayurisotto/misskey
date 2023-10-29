@@ -37,11 +37,7 @@ export default class extends Endpoint<
 			});
 
 			return (await Promise.all(
-				apps.map((app) =>
-					this.appEntityService.pack(app, me, {
-						detail: true,
-					}),
-				),
+				apps.map((app) => this.appEntityService.pack(app, me)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}

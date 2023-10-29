@@ -30,23 +30,15 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			// Get tokens
-			const tokens = await this.prismaService.client.access_token.findMany({
-				where: {
-					userId: me.id,
-					appId: { not: null },
-				},
+			const apps = await this.prismaService.client.app.findMany({
+				where: { access_token: { some: { userId: me.id } } },
 				take: ps.limit,
 				skip: ps.offset,
 				orderBy: { id: ps.sort === 'asc' ? 'asc' : 'desc' },
 			});
 
 			return (await Promise.all(
-				tokens.map((token) =>
-					this.appEntityService.pack(token.appId!, me, {
-						detail: true,
-					}),
-				),
+				apps.map((app) => this.appEntityService.pack(app, me)),
 			)) satisfies z.infer<typeof res>;
 		});
 	}
