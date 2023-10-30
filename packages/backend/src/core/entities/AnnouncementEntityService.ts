@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { Prisma, announcement, announcement_read } from '@prisma/client';
 import { z } from 'zod';
 import { pick } from 'omick';
-import type { AnnouncementSchema } from '@/models/zod/AnnouncementSchema.js';
+import type { AnnouncementForAdminSchema } from '@/models/zod/AnnouncementForAdminSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { ApiError } from '@/server/api/error.js';
 import { noSuchAnnouncement } from '@/server/api/errors.js';
@@ -37,7 +37,7 @@ export class AnnouncementEntityService {
 	public async showMany(
 		where: Prisma.announcementWhereInput,
 		paginationQuery: PaginationQuery,
-	): Promise<z.infer<typeof AnnouncementSchema>[]> {
+	): Promise<z.infer<typeof AnnouncementForAdminSchema>[]> {
 		const results = await this.prismaService.client.announcement.findMany({
 			...paginationQuery,
 			where: { AND: [where, paginationQuery.where] },
@@ -89,7 +89,7 @@ export class AnnouncementEntityService {
 	public pack(
 		id: announcement['id'],
 		data: AnnouncementPackData,
-	): z.infer<typeof AnnouncementSchema> {
+	): z.infer<typeof AnnouncementForAdminSchema> {
 		const announcement = data.announcement.get(id);
 		const reads = [...data.announcement_read.values()].filter(
 			(read) => read.announcementId === id,
@@ -113,7 +113,7 @@ export class AnnouncementEntityService {
 	public packMany(
 		ids: announcement['id'][],
 		data: AnnouncementPackData,
-	): z.infer<typeof AnnouncementSchema>[] {
+	): z.infer<typeof AnnouncementForAdminSchema>[] {
 		return ids.map((target) => this.pack(target, data));
 	}
 }

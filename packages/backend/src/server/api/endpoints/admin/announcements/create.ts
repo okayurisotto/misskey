@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { AnnouncementSchema } from '@/models/zod/AnnouncementSchema.js';
+import { AnnouncementForAdminSchema } from '@/models/zod/AnnouncementForAdminSchema.js';
 import { AnnouncementEntityService } from '@/core/entities/AnnouncementEntityService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 
-const res = AnnouncementSchema;
+const res = AnnouncementForAdminSchema;
 export const meta = {
 	tags: ['admin'],
 	requireCredential: true,

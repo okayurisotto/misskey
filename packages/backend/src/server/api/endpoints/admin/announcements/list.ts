@@ -3,10 +3,10 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
-import { AnnouncementSchema } from '@/models/zod/AnnouncementSchema.js';
+import { AnnouncementForAdminSchema } from '@/models/zod/AnnouncementForAdminSchema.js';
 import { AnnouncementEntityService } from '@/core/entities/AnnouncementEntityService.js';
 
-const res = z.array(AnnouncementSchema);
+const res = z.array(AnnouncementForAdminSchema);
 export const meta = {
 	tags: ['admin'],
 	requireCredential: true,

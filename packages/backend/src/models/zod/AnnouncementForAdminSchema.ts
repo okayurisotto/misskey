@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AnnouncementSchemaBase } from './AnnouncementSchemaBase.js';
 
-export const AnnouncementSchema = AnnouncementSchemaBase.extend({
-	isRead: z.boolean().optional(),
+export const AnnouncementForAdminSchema = AnnouncementSchemaBase.extend({
+	reads: z.number(),
 });
