@@ -4,6 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 
 const res = z.array(
 	z.object({
@@ -68,8 +69,10 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return await Promise.all(
-				emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji)),
+			const data = { emoji: new EntityMap('id', emojis) };
+
+			return emojis.map((emoji) =>
+				this.emojiEntityService.packDetailed(emoji.id, data),
 			);
 		});
 	}

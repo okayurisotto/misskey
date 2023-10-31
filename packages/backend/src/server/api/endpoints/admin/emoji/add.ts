@@ -8,6 +8,7 @@ import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 import { ApiError } from '../../../error.js';
 
 const res = EmojiDetailedSchema; // TODO
@@ -16,7 +17,7 @@ export const meta = {
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
 	res,
-	errors: {noSuchFile:noSuchFile_},
+	errors: { noSuchFile: noSuchFile_ },
 } as const;
 
 export const paramDef = z.object({
@@ -66,14 +67,13 @@ export default class extends Endpoint<
 					ps.roleIdsThatCanBeUsedThisEmojiAsReaction ?? [],
 			});
 
-			const [packedEmoji] = await Promise.all([
-				this.emojiEntityService.packDetailed(emoji),
-				this.moderationLogService.insertModerationLog(me, 'addEmoji', {
-					emojiId: emoji.id,
-				}),
-			]);
+			await this.moderationLogService.insertModerationLog(me, 'addEmoji', {
+				emojiId: emoji.id,
+			});
 
-			return packedEmoji;
+			return this.emojiEntityService.packDetailed(emoji.id, {
+				emoji: new EntityMap('id', [emoji]),
+			});
 		});
 	}
 }

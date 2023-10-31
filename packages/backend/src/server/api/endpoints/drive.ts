@@ -4,6 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MetaService } from '@/core/MetaService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { RoleService } from '@/core/RoleService.js';
+import { awaitAll } from '@/misc/prelude/await-all.js';
 
 const res = z.object({
 	capacity: z.number(),
@@ -31,12 +32,10 @@ export default class extends Endpoint<
 		private roleService: RoleService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const instance = await this.metaService.fetch(true);
-
-			// Calculate drive usage
-			const usage = await this.driveFileEntityService.calcDriveUsageOf(me.id);
-
-			const policies = await this.roleService.getUserPolicies(me.id);
+			const { policies, usage } = await awaitAll({
+				policies: () => this.roleService.getUserPolicies(me.id),
+				usage: () => this.driveFileEntityService.calcDriveUsageOf(me.id),
+			});
 
 			return {
 				capacity: 1024 * 1024 * policies.driveCapacityMb,

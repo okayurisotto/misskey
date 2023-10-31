@@ -9,6 +9,7 @@ import { MemoryKVCache, RedisSingleCache } from '@/misc/cache.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import type { Serialized } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 import type { Prisma, role, drive_file, emoji } from '@prisma/client';
 
 const parseEmojiStrRegexp = /^(\w+)(?:@([\w.-]+))?$/;
@@ -76,10 +77,10 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		});
 
 		if (data.host == null) {
-			this.localEmojisCache.refresh();
+			await this.localEmojisCache.refresh();
 
 			this.globalEventService.publishBroadcastStream('emojiAdded', {
-				emoji: await this.emojiEntityService.packDetailed(emoji.id),
+				emoji: this.emojiEntityService.packDetailed(emoji.id, { emoji: new EntityMap('id', [emoji]) }),
 			});
 		}
 
@@ -118,9 +119,9 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			},
 		});
 
-		this.localEmojisCache.refresh();
+		await this.localEmojisCache.refresh();
 
-		const updated = await this.emojiEntityService.packDetailed(emoji.id);
+		const updated = this.emojiEntityService.packDetailed(emoji.id, { emoji: new EntityMap('id', [emoji]) });
 
 		if (emoji.name === data.name) {
 			this.globalEventService.publishBroadcastStream('emojiUpdated', {
@@ -128,7 +129,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			});
 		} else {
 			this.globalEventService.publishBroadcastStream('emojiDeleted', {
-				emojis: [await this.emojiEntityService.packDetailed(emoji)],
+				emojis: [this.emojiEntityService.packDetailed(emoji.id, { emoji: new EntityMap('id', [emoji]) })],
 			});
 
 			this.globalEventService.publishBroadcastStream('emojiAdded', {
@@ -151,10 +152,14 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			});
 		}
 
-		this.localEmojisCache.refresh();
+		await this.localEmojisCache.refresh();
+
+		const data = {
+			emoji: new EntityMap('id', emojis),
+		};
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
+			emojis: emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji.id, data)),
 		});
 	}
 
@@ -168,10 +173,15 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			},
 		});
 
-		this.localEmojisCache.refresh();
+		await this.localEmojisCache.refresh();
+
+		const emojis = await this.prismaService.client.emoji.findMany({
+			where: { id: { in: ids } },
+		});
+		const data = { emoji: new EntityMap('id', emojis) };
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
+			emojis: emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji.id, data)),
 		});
 	}
 
@@ -189,10 +199,12 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			});
 		}
 
-		this.localEmojisCache.refresh();
+		await this.localEmojisCache.refresh();
+
+		const data = { emoji: new EntityMap('id', emojis) };
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
+			emojis: emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji.id, data)),
 		});
 	}
 
@@ -206,10 +218,15 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			},
 		});
 
-		this.localEmojisCache.refresh();
+		await this.localEmojisCache.refresh();
+
+		const emojis = await this.prismaService.client.emoji.findMany({
+			where: { id: { in: ids } },
+		});
+		const data = { emoji: new EntityMap('id', emojis) };
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
+			emojis: emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji.id, data)),
 		});
 	}
 
@@ -223,23 +240,26 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			},
 		});
 
-		this.localEmojisCache.refresh();
+		await this.localEmojisCache.refresh();
+
+		const emojis = await this.prismaService.client.emoji.findMany({
+			where: { id: { in: ids } },
+		});
+		const data = { emoji: new EntityMap('id', emojis) };
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: await Promise.all(ids.map((id) => this.emojiEntityService.packDetailed(id))),
+			emojis: emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji.id, data)),
 		});
 	}
 
 	@bindThis
 	public async delete(id: emoji['id']): Promise<void> {
-		const emoji = await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: id } });
-
-		await this.prismaService.client.emoji.delete({ where: { id: emoji.id } });
+		const emoji = await this.prismaService.client.emoji.delete({ where: { id } });
 
 		this.localEmojisCache.refresh();
 
 		this.globalEventService.publishBroadcastStream('emojiDeleted', {
-			emojis: [await this.emojiEntityService.packDetailed(emoji)],
+			emojis: [this.emojiEntityService.packDetailed(emoji.id, { emoji: new EntityMap('id', [emoji]) })],
 		});
 	}
 
@@ -251,10 +271,12 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			await this.prismaService.client.emoji.delete({ where: { id: emoji.id } });
 		}
 
-		this.localEmojisCache.refresh();
+		await this.localEmojisCache.refresh();
+
+		const data = { emoji: new EntityMap('id', emojis) };
 
 		this.globalEventService.publishBroadcastStream('emojiDeleted', {
-			emojis: await Promise.all(emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji))),
+			emojis: emojis.map((emoji) => this.emojiEntityService.packDetailed(emoji.id, data)),
 		});
 	}
 

@@ -4,6 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 
 const res = EmojiDetailedSchema;
 export const meta = {
@@ -29,7 +30,7 @@ export default class extends Endpoint<
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const emoji = await this.prismaService.client.emoji.findFirstOrThrow({
 				where: {
 					name: ps.name,
@@ -37,9 +38,9 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await this.emojiEntityService.packDetailed(
-				emoji,
-			)) satisfies z.infer<typeof res>;
+			return this.emojiEntityService.packDetailed(emoji.id, {
+				emoji: new EntityMap('id', [emoji]),
+			}) satisfies z.infer<typeof res>;
 		});
 	}
 }

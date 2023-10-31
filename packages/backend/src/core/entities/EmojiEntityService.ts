@@ -2,27 +2,18 @@ import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
 import type { EmojiSimpleSchema } from '@/models/zod/EmojiSimpleSchema.js';
 import type { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
-import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 import type { z } from 'zod';
 import type { emoji } from '@prisma/client';
 
 @Injectable()
 export class EmojiEntityService {
-	constructor(private readonly prismaService: PrismaService) {}
-
-	/**
-	 * `emoji`を`packする
-	 *
-	 * @param src
-	 * @returns
-	 */
 	@bindThis
-	public async packSimple(
-		src: emoji['id'] | emoji,
-	): Promise<z.infer<typeof EmojiSimpleSchema>> {
-		const emoji = typeof src === 'object'
-			? src
-			: await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: src } });
+	public packSimple(
+		id: emoji['id'],
+		data: { emoji: EntityMap<'id', emoji> },
+	): z.infer<typeof EmojiSimpleSchema> {
+		const emoji = data.emoji.get(id);
 
 		return {
 			aliases: emoji.aliases,
@@ -30,25 +21,19 @@ export class EmojiEntityService {
 			category: emoji.category,
 			url: emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl, // 後方互換性
 			isSensitive: emoji.isSensitive ? true : undefined,
-			roleIdsThatCanBeUsedThisEmojiAsReaction: emoji.roleIdsThatCanBeUsedThisEmojiAsReaction.length > 0
-				? emoji.roleIdsThatCanBeUsedThisEmojiAsReaction
-				: undefined,
+			roleIdsThatCanBeUsedThisEmojiAsReaction:
+				emoji.roleIdsThatCanBeUsedThisEmojiAsReaction.length > 0
+					? emoji.roleIdsThatCanBeUsedThisEmojiAsReaction
+					: undefined,
 		};
 	}
 
-	/**
-	 * `emoji`を`packする
-	 *
-	 * @param src
-	 * @returns
-	 */
 	@bindThis
-	public async packDetailed(
-		src: emoji['id'] | emoji,
-	): Promise<z.infer<typeof EmojiDetailedSchema>> {
-		const emoji = typeof src === 'object'
-			? src
-			: await this.prismaService.client.emoji.findUniqueOrThrow({ where: { id: src } });
+	public packDetailed(
+		id: emoji['id'],
+		data: { emoji: EntityMap<'id', emoji> },
+	): z.infer<typeof EmojiDetailedSchema> {
+		const emoji = data.emoji.get(id);
 
 		return {
 			id: emoji.id,
@@ -60,7 +45,8 @@ export class EmojiEntityService {
 			license: emoji.license,
 			isSensitive: emoji.isSensitive,
 			localOnly: emoji.localOnly,
-			roleIdsThatCanBeUsedThisEmojiAsReaction: emoji.roleIdsThatCanBeUsedThisEmojiAsReaction,
+			roleIdsThatCanBeUsedThisEmojiAsReaction:
+				emoji.roleIdsThatCanBeUsedThisEmojiAsReaction,
 		};
 	}
 }

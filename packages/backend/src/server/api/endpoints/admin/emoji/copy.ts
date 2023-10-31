@@ -8,6 +8,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 import { ApiError } from '../../../error.js';
 import type { drive_file } from '@prisma/client';
 
@@ -16,7 +17,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-	errors: {noSuchEmoji:noSuchEmoji},
+	errors: { noSuchEmoji: noSuchEmoji },
 	res,
 } as const;
 
@@ -73,7 +74,9 @@ export default class extends Endpoint<
 			});
 
 			this.globalEventService.publishBroadcastStream('emojiAdded', {
-				emoji: await this.emojiEntityService.packDetailed(copied),
+				emoji: this.emojiEntityService.packDetailed(copied.id, {
+					emoji: new EntityMap('id', [emoji]),
+				}),
 			});
 
 			return { id: copied.id };

@@ -4,6 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { EmojiSimpleSchema } from '@/models/zod/EmojiSimpleSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { EntityMap } from '@/misc/EntityMap.js';
 
 const res = z.object({
 	emojis: z.array(EmojiSimpleSchema),
@@ -29,17 +30,19 @@ export default class extends Endpoint<
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async () => {
 			const emojis = await this.prismaService.client.emoji.findMany({
-				where: {
-					host: null,
-				},
+				where: { host: null },
 				orderBy: [{ category: 'asc' }, { name: 'asc' }],
 			});
 
+			const data = {
+				emoji: new EntityMap('id', emojis),
+			};
+
 			return {
-				emojis: await Promise.all(
-					emojis.map((emoji) => this.emojiEntityService.packSimple(emoji)),
+				emojis: emojis.map((emoji) =>
+					this.emojiEntityService.packSimple(emoji.id, data),
 				),
 			} satisfies z.infer<typeof res>;
 		});
