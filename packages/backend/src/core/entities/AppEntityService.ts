@@ -26,9 +26,7 @@ export class AppEntityService {
 		},
 	): Promise<z.infer<typeof AppSchema>> {
 		const opts = {
-			detail: false,
 			includeSecret: false,
-			includeProfileImageIds: false,
 			...options,
 		};
 
