@@ -98,25 +98,32 @@ export class AchievementService {
 	@bindThis
 	public async create(
 		userId: user['id'],
-		type: typeof ACHIEVEMENT_TYPES[number],
+		type: (typeof ACHIEVEMENT_TYPES)[number],
 	): Promise<void> {
 		if (!ACHIEVEMENT_TYPES.includes(type)) return;
 
-		const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: userId } });
+		const profile =
+			await this.prismaService.client.user_profile.findUniqueOrThrow({
+				where: { userId: userId },
+			});
 
 		const achievements = AchievementsSchema.parse(profile.achievements);
 
-		if (achievements.some(a => a.name === type)) return;
+		if (achievements.some((a) => a.name === type)) return;
 
-		await this.prismaService.client.user_profile.update({
-			where: { userId: userId },
-			data: { achievements: [...achievements, { name: type, unlockedAt: Date.now() }] },
-		});
-
-		await this.notificationService.createNotification(
-			userId,
-			'achievementEarned',
-			{ achievement: type },
-		);
+		await Promise.all([
+			this.prismaService.client.user_profile.update({
+				where: { userId: userId },
+				data: {
+					achievements: [
+						...achievements,
+						{ name: type, unlockedAt: Date.now() },
+					] satisfies z.infer<typeof AchievementsSchema>,
+				},
+			}),
+			this.notificationService.createNotification(userId, 'achievementEarned', {
+				achievement: type,
+			}),
+		]);
 	}
 }
