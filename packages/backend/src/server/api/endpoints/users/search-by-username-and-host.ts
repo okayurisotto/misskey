@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
+import ms from 'ms';
 import type { Config } from '@/config.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -41,7 +42,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const activeThreshold = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30); // 30日
+			const activeThreshold = new Date(Date.now() - ms('30days'));
 
 			const where: Prisma.userWhereInput = {
 				AND: [
@@ -115,7 +116,7 @@ export default class extends Endpoint<
 				});
 			}
 
-			return (await Promise.all(
+			return await Promise.all(
 				users.map((user) => {
 					if (ps.detail) {
 						return this.userEntityService.packDetailed(user, me);
@@ -123,7 +124,7 @@ export default class extends Endpoint<
 						return this.userEntityService.packLite(user);
 					}
 				}),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
