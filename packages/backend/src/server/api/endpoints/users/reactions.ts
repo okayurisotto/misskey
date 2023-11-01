@@ -1,13 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { reactionsNotPublic } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteReactionEntityService } from '@/core/entities/NoteReactionEntityService.js';
 import { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
-import { ApiError } from '../../error.js';
 
 const res = z.array(NoteReactionSchema);
 export const meta = {
@@ -15,7 +13,6 @@ export const meta = {
 	requireCredential: false,
 	description: 'Show all reactions this user made.',
 	res,
-	errors: { reactionsNotPublic: reactionsNotPublic },
 } as const;
 
 export const paramDef = z
@@ -38,43 +35,45 @@ export default class extends Endpoint<
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const profile =
-				await this.prismaService.client.user_profile.findUniqueOrThrow({
-					where: {
-						userId: ps.userId,
-					},
-				});
-
-			if ((me == null || me.id !== ps.userId) && !profile.publicReactions) {
-				throw new ApiError(meta.errors.reactionsNotPublic);
-			}
-
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({
 				sinceId: ps.sinceId,
 				untilId: ps.untilId,
 				sinceDate: ps.sinceDate,
 				untilDate: ps.untilDate,
+				take: ps.limit,
 			});
 
 			const reactions = await this.prismaService.client.note_reaction.findMany({
 				where: {
 					AND: [
 						paginationQuery.where,
-						{ userId: ps.userId },
+						{
+							user: {
+								id: ps.userId,
+								OR: [
+									{ user_profile: { publicReactions: true } },
+									{
+										user_profile: { publicReactions: false },
+										id: { in: me ? [me.id] : [] },
+									},
+								],
+							},
+						},
 						this.prismaQueryService.getVisibilityWhereForNoteReaction(
 							me?.id ?? null,
 						),
 					],
 				},
 				orderBy: paginationQuery.orderBy,
-				take: ps.limit,
+				skip: paginationQuery.skip,
+				take: paginationQuery.take,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				reactions.map((reaction) =>
 					this.noteReactionEntityService.pack(reaction, me, { withNote: true }),
 				),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
