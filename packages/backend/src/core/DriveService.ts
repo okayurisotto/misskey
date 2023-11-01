@@ -78,6 +78,13 @@ type UploadFromUrlArgs = {
 	requestHeaders?: Record<string, string> | null;
 };
 
+const FilePropertiesSchema = z.object({
+	width: z.number().optional(),
+	height: z.number().optional(),
+	orientation: z.number().optional(),
+	avgColor: z.string().optional(),
+});
+
 @Injectable()
 export class DriveService {
 	private registerLogger: Logger;
@@ -213,12 +220,7 @@ export class DriveService {
 			});
 			return {
 				...result,
-				properties: z.object({
-					width: z.number().optional(),
-					height: z.number().optional(),
-					orientation: z.number().optional(),
-					avgColor: z.string().optional(),
-				}).parse(result.properties),
+				properties: FilePropertiesSchema.parse(result.properties),
 				requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
 			};
 		} else { // use internal storage
@@ -262,12 +264,7 @@ export class DriveService {
 			});
 			return {
 				...result,
-				properties: z.object({
-					width: z.number().optional(),
-					height: z.number().optional(),
-					orientation: z.number().optional(),
-					avgColor: z.string().optional(),
-				}).parse(result.properties),
+				properties: FilePropertiesSchema.parse(result.properties),
 				requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
 			};
 		}
@@ -392,22 +389,25 @@ export class DriveService {
 	private async upload(
 		key: string,
 		stream: fs.ReadStream | Buffer,
-		type: string,
+		type_: string,
 		ext?: string | null,
 		filename?: string,
 	): Promise<void> {
-		if (type === 'image/apng') type = 'image/png';
-		if (!FILE_TYPE_BROWSERSAFE.includes(type)) type = 'application/octet-stream';
+		const type = ((): string => {
+			if (type_ === 'image/apng') return 'image/png';
+			if (FILE_TYPE_BROWSERSAFE.includes(type_)) return type_;
+			return 'application/octet-stream';
+		})();
 
 		const meta = await this.metaService.fetch();
 
-		const params = {
-			Bucket: meta.objectStorageBucket,
+		const params: PutObjectCommandInput = {
+			Bucket: meta.objectStorageBucket ?? undefined,
 			Key: key,
 			Body: stream,
 			ContentType: type,
 			CacheControl: 'max-age=31536000, immutable',
-		} as PutObjectCommandInput;
+		};
 
 		if (filename) params.ContentDisposition = contentDisposition(
 			'inline',
@@ -565,10 +565,8 @@ export class DriveService {
 		}
 		//#endregion
 
-		const fetchFolder = async () => {
-			if (!folderId) {
-				return null;
-			}
+		const fetchFolder = async (): Promise<drive_folder | null> => {
+			if (!folderId) return null;
 
 			const driveFolder = await this.prismaService.client.drive_folder.findUnique({
 				where: {
@@ -576,8 +574,7 @@ export class DriveService {
 					userId: user ? user.id : null,
 				},
 			});
-
-			if (driveFolder == null) throw new Error('folder-not-found');
+			if (driveFolder === null) throw new Error('folder-not-found');
 
 			return driveFolder;
 		};
@@ -600,30 +597,45 @@ export class DriveService {
 
 		const folder = await fetchFolder();
 
-		let file: Prisma.drive_fileUncheckedCreateInput = {};
-		file.id = this.idService.genId();
-		file.createdAt = new Date();
-		file.userId = user ? user.id : null;
-		file.userHost = user ? user.host : null;
-		file.folderId = folder !== null ? folder.id : null;
-		file.comment = comment;
-		file.properties = properties;
-		file.blurhash = info.blurhash ?? null;
-		file.isLink = isLink;
-		file.requestIp = requestIp;
-		file.requestHeaders = requestHeaders;
-		file.maybeSensitive = info.sensitive;
-		file.maybePorn = info.porn;
-		file.isSensitive = user
-			? this.userEntityService.isLocalUser(user) && profile!.alwaysMarkNsfw ? true :
-			(sensitive !== null && sensitive !== undefined)
-				? sensitive
-				: false
-			: false;
+		const isSensitive = ((): boolean => {
+			if (userRoleNSFW) return true;
+			if (info.sensitive) {
+				if (instance.setSensitiveFlagAutomatically) return true;
+				if (profile?.autoSensitive) return true;
+			}
 
-		if (info.sensitive && profile!.autoSensitive) file.isSensitive = true;
-		if (info.sensitive && instance.setSensitiveFlagAutomatically) file.isSensitive = true;
-		if (userRoleNSFW) file.isSensitive = true;
+			if (user) {
+				if (this.userEntityService.isLocalUser(user)) {
+					if (profile === null) throw new Error();
+					if (profile.alwaysMarkNsfw) {
+						return true;
+					} else {
+						return sensitive ?? false;
+					}
+				} else {
+					return sensitive ?? false;
+				}
+			} else {
+				return false;
+			}
+		})();
+
+		let file: Prisma.drive_fileUncheckedCreateInput = {
+			id: this.idService.genId(),
+			createdAt: new Date(),
+			userId: user ? user.id : null,
+			userHost: user ? user.host : null,
+			folderId: folder !== null ? folder.id : null,
+			comment: comment,
+			properties: properties,
+			blurhash: info.blurhash ?? null,
+			isLink: isLink,
+			requestIp: requestIp,
+			requestHeaders: requestHeaders,
+			maybeSensitive: info.sensitive,
+			maybePorn: info.porn,
+			isSensitive: isSensitive,
+		};
 
 		if (url !== null) {
 			file.src = url;
@@ -657,12 +669,7 @@ export class DriveService {
 				});
 				file = {
 					...result,
-					properties: z.object({
-						width: z.number().optional(),
-						height: z.number().optional(),
-						orientation: z.number().optional(),
-						avgColor: z.string().optional(),
-					}).parse(result.properties),
+					properties: FilePropertiesSchema.parse(result.properties),
 					requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
 				};
 			} catch (err) {
@@ -678,12 +685,7 @@ export class DriveService {
 					});
 					file = {
 						...result,
-						properties: z.object({
-							width: z.number().optional(),
-							height: z.number().optional(),
-							orientation: z.number().optional(),
-							avgColor: z.string().optional(),
-						}).parse(result.properties),
+						properties: FilePropertiesSchema.parse(result.properties),
 						requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
 					};
 				} else {
@@ -692,26 +694,26 @@ export class DriveService {
 				}
 			}
 		} else {
-			file = await (this.save(file, path, detectedName, info.type.mime, info.md5, info.size));
+			file = await this.save(file, path, detectedName, info.type.mime, info.md5, info.size);
 		}
 
 		this.registerLogger.succ(`drive file has been created ${file.id}`);
 
 		if (user) {
-			this.driveFileEntityService.pack(file, { self: true }).then(packedFile => {
+			await this.driveFileEntityService.pack(file, { self: true }).then(packedFile => {
 				// Publish driveFileCreated event
 				this.globalEventService.publishMainStream(user.id, 'driveFileCreated', packedFile);
 				this.globalEventService.publishDriveStream(user.id, 'fileCreated', packedFile);
 			});
 		}
 
-		this.driveChart.update(file, true);
+		await this.driveChart.update(file, true);
 		if (file.userHost == null) {
 			// ローカルユーザーのみ
-			this.perUserDriveChart.update(file, true);
+			await this.perUserDriveChart.update(file, true);
 		} else {
 			if ((await this.metaService.fetch()).enableChartsForFederatedInstances) {
-				this.instanceChart.updateDrive(file, true);
+				await this.instanceChart.updateDrive(file, true);
 			}
 		}
 
@@ -721,59 +723,71 @@ export class DriveService {
 	@bindThis
 	public async deleteFile(file: drive_file, isExpired = false): Promise<void> {
 		if (file.storedInternal) {
-			this.internalStorageService.del(file.accessKey!);
+			if (file.accessKey === null) throw new Error();
+			this.internalStorageService.del(file.accessKey);
 
 			if (file.thumbnailUrl) {
-				this.internalStorageService.del(file.thumbnailAccessKey!);
+				if (file.thumbnailAccessKey === null) throw new Error();
+				this.internalStorageService.del(file.thumbnailAccessKey);
 			}
 
 			if (file.webpublicUrl) {
-				this.internalStorageService.del(file.webpublicAccessKey!);
+				if (file.webpublicAccessKey === null) throw new Error();
+				this.internalStorageService.del(file.webpublicAccessKey);
 			}
 		} else if (!file.isLink) {
-			this.queueService.createDeleteObjectStorageFileJob(file.accessKey!);
+			if (file.accessKey === null) throw new Error();
+			this.queueService.createDeleteObjectStorageFileJob(file.accessKey);
 
 			if (file.thumbnailUrl) {
-				this.queueService.createDeleteObjectStorageFileJob(file.thumbnailAccessKey!);
+				if (file.thumbnailAccessKey === null) throw new Error();
+				this.queueService.createDeleteObjectStorageFileJob(file.thumbnailAccessKey);
 			}
 
 			if (file.webpublicUrl) {
-				this.queueService.createDeleteObjectStorageFileJob(file.webpublicAccessKey!);
+				if (file.webpublicAccessKey === null) throw new Error();
+				this.queueService.createDeleteObjectStorageFileJob(file.webpublicAccessKey);
 			}
 		}
 
-		this.deletePostProcess(file, isExpired);
+		await this.deletePostProcess(file, isExpired);
 	}
 
 	@bindThis
 	public async deleteFileSync(file: drive_file, isExpired = false): Promise<void> {
 		if (file.storedInternal) {
-			this.internalStorageService.del(file.accessKey!);
+			if (file.accessKey === null) throw new Error();
+			this.internalStorageService.del(file.accessKey);
 
 			if (file.thumbnailUrl) {
-				this.internalStorageService.del(file.thumbnailAccessKey!);
+				if (file.thumbnailAccessKey === null) throw new Error();
+				this.internalStorageService.del(file.thumbnailAccessKey);
 			}
 
 			if (file.webpublicUrl) {
-				this.internalStorageService.del(file.webpublicAccessKey!);
+				if (file.webpublicAccessKey === null) throw new Error();
+				this.internalStorageService.del(file.webpublicAccessKey);
 			}
 		} else if (!file.isLink) {
 			const promises = [];
 
-			promises.push(this.deleteObjectStorageFile(file.accessKey!));
+			if (file.accessKey === null) throw new Error();
+			promises.push(this.deleteObjectStorageFile(file.accessKey));
 
 			if (file.thumbnailUrl) {
-				promises.push(this.deleteObjectStorageFile(file.thumbnailAccessKey!));
+				if (file.thumbnailAccessKey === null) throw new Error();
+				promises.push(this.deleteObjectStorageFile(file.thumbnailAccessKey));
 			}
 
 			if (file.webpublicUrl) {
-				promises.push(this.deleteObjectStorageFile(file.webpublicAccessKey!));
+				if (file.webpublicAccessKey === null) throw new Error();
+				promises.push(this.deleteObjectStorageFile(file.webpublicAccessKey));
 			}
 
 			await Promise.all(promises);
 		}
 
-		this.deletePostProcess(file, isExpired);
+		await this.deletePostProcess(file, isExpired);
 	}
 
 	@bindThis
@@ -810,17 +824,17 @@ export class DriveService {
 	}
 
 	@bindThis
-	public async deleteObjectStorageFile(key: string) {
+	public async deleteObjectStorageFile(key: string): Promise<void> {
 		const meta = await this.metaService.fetch();
 		try {
-			const param = {
-				Bucket: meta.objectStorageBucket,
+			const param: DeleteObjectCommandInput = {
+				Bucket: meta.objectStorageBucket ?? undefined,
 				Key: key,
-			} as DeleteObjectCommandInput;
+			};
 
 			await this.s3Service.delete(meta, param);
 		} catch (err: unknown) {
-			if (err.name === 'NoSuchKey') {
+			if (err !== null && typeof err === 'object' && 'name' in err && err.name === 'NoSuchKey') {
 				this.deleteLogger.warn(`The object storage had no such key to delete: ${key}. Skipping this.`, err as Error);
 				return;
 			} else {
