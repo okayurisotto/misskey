@@ -58,9 +58,9 @@ export default class extends Endpoint<
 				orderBy: { followersCount: 'desc' },
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				users.map((user) => this.userEntityService.packDetailed(user, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
