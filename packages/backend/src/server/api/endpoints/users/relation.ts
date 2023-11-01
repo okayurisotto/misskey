@@ -28,15 +28,13 @@ export default class extends Endpoint<
 > {
 	constructor(private userEntityService: UserEntityService) {
 		super(meta, paramDef, async (ps, me) => {
-			const ids = Array.isArray(ps.userId) ? ps.userId : [ps.userId];
-
-			const relations = await Promise.all(
-				ids.map((id) => this.userEntityService.getRelation(me.id, id)),
-			);
-
-			return (
-				Array.isArray(ps.userId) ? relations : relations[0]
-			) satisfies z.infer<typeof res>;
+			if (Array.isArray(ps.userId)) {
+				return await Promise.all(
+					ps.userId.map((id) => this.userEntityService.getRelation(me.id, id)),
+				);
+			} else {
+				return this.userEntityService.getRelation(me.id, ps.userId);
+			}
 		});
 	}
 }
