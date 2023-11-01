@@ -6,7 +6,6 @@ import { MetaService } from '@/core/MetaService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user } from '@prisma/client';
 
 const res = z.array(UserDetailedSchema);
 export const meta = {
@@ -32,22 +31,33 @@ export default class extends Endpoint<
 		super(meta, paramDef, async (ps, me) => {
 			const meta = await this.metaService.fetch();
 
-			const users = await Promise.all(
-				meta.pinnedUsers
-					.map((acct) => Acct.parse(acct))
-					.map((acct) =>
-						this.prismaService.client.user.findFirst({
-							where: {
-								usernameLower: acct.username.toLowerCase(),
-								host: acct.host ?? null,
-							},
-						}),
-					),
-			);
+			const accts = meta.pinnedUsers
+				.map((acct) => Acct.parse(acct))
+				.map(({ username, host }) => ({
+					usernameLower: username.toLowerCase(),
+					host,
+				}));
+
+			const users = await this.prismaService.client.user.findMany({
+				where: {
+					OR: accts.map((acct) => ({
+						usernameLower: acct.usernameLower,
+						host: acct.host,
+					})),
+				},
+			});
 
 			return (await Promise.all(
-				users
-					.filter((user): user is user => user !== null)
+				accts
+					.map((acct) => {
+						const user = users.find((user) => {
+							if (user.usernameLower !== acct.usernameLower) return false;
+							if (user.host !== acct.host) return false;
+							return true;
+						});
+						if (user === undefined) throw new Error();
+						return user;
+					})
 					.map((user) => this.userEntityService.packDetailed(user, me)),
 			)) satisfies z.infer<typeof res>;
 		});
