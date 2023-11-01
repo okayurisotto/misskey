@@ -69,8 +69,8 @@ describe('FF visibility', () => {
 			userId: alice.id,
 		}, bob);
 
-		assert.strictEqual(followingRes.status, 400);
-		assert.strictEqual(followersRes.status, 400);
+		assert.deepStrictEqual(followingRes.body, []);
+		assert.deepStrictEqual(followersRes.body, []);
 	});
 
 	test('ffVisibility が followers なユーザーのフォロー/フォロワーをフォロワーが見れる', async () => {
@@ -125,8 +125,8 @@ describe('FF visibility', () => {
 			userId: alice.id,
 		}, bob);
 
-		assert.strictEqual(followingRes.status, 400);
-		assert.strictEqual(followersRes.status, 400);
+		assert.deepStrictEqual(followingRes.body, []);
+		assert.deepStrictEqual(followersRes.body, []);
 	});
 
 	describe('AP', () => {

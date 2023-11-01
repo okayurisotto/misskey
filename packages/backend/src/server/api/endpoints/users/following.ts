@@ -1,9 +1,5 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import {
-	noSuchUser__________________,
-	forbidden_,
-} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FollowingEntityService } from '@/core/entities/FollowingEntityService.js';
 import { UtilityService } from '@/core/UtilityService.js';
@@ -11,7 +7,6 @@ import { FollowingSchema } from '@/models/zod/FollowingSchema.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
-import { ApiError } from '../../error.js';
 
 const res = z.array(FollowingSchema);
 export const meta = {
@@ -19,18 +14,13 @@ export const meta = {
 	requireCredential: false,
 	description: 'Show everyone that this user is following.',
 	res,
-	errors: { noSuchUser: noSuchUser__________________, forbidden: forbidden_ },
 } as const;
 
 const paramDef_base = z
 	.object({ limit: limit({ max: 100, default: 10 }) })
 	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 export const paramDef = z.union([
-	paramDef_base.merge(
-		z.object({
-			userId: MisskeyIdSchema,
-		}),
-	),
+	paramDef_base.merge(z.object({ userId: MisskeyIdSchema })),
 	paramDef_base.merge(
 		z.object({
 			username: z.string(),
@@ -56,65 +46,71 @@ export default class extends Endpoint<
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const user = await this.prismaService.client.user.findFirst({
-				where:
-					'userId' in ps
-						? { id: ps.userId }
-						: {
-								usernameLower: ps.username.toLowerCase(),
-								host: this.utilityService.toPunyNullable(ps.host) ?? null,
-						  },
-			});
-
-			if (user == null) {
-				throw new ApiError(meta.errors.noSuchUser);
-			}
-
-			const profile =
-				await this.prismaService.client.user_profile.findUniqueOrThrow({
-					where: { userId: user.id },
-				});
-
-			if (profile.ffVisibility === 'private') {
-				if (me == null || me.id !== user.id) {
-					throw new ApiError(meta.errors.forbidden);
-				}
-			} else if (profile.ffVisibility === 'followers') {
-				if (me == null) {
-					throw new ApiError(meta.errors.forbidden);
-				} else if (me.id !== user.id) {
-					const isFollowing =
-						(await this.prismaService.client.following.count({
-							where: {
-								followeeId: user.id,
-								followerId: me.id,
-							},
-							take: 1,
-						})) > 0;
-					if (!isFollowing) {
-						throw new ApiError(meta.errors.forbidden);
-					}
-				}
-			}
-
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({
 				sinceId: ps.sinceId,
 				untilId: ps.untilId,
-			});
-
-			const followings = await this.prismaService.client.following.findMany({
-				where: { AND: [paginationQuery.where, { followerId: user.id }] },
-				orderBy: paginationQuery.orderBy,
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			const followings = await this.prismaService.client.following.findMany({
+				where: {
+					AND: [
+						paginationQuery.where,
+						{
+							user_following_followerIdTouser:
+								'userId' in ps
+									? { id: ps.userId }
+									: {
+											usernameLower: ps.username.toLowerCase(),
+											host: this.utilityService.toPunyNullable(ps.host) ?? null,
+									  },
+						},
+						{
+							user_following_followerIdTouser: {
+								OR: [
+									{
+										AND: [
+											// 無条件で取得できる
+											{ user_profile: { ffVisibility: 'public' } },
+										],
+									},
+									{
+										AND: [
+											// そのユーザーのフォロワーに自身が含まれる場合のみ取得できる
+											{ user_profile: { ffVisibility: 'followers' } },
+											{
+												following_following_followeeIdTouser: {
+													some: {
+														followerId: { in: me === null ? [] : [me.id] },
+													},
+												},
+											},
+										],
+									},
+									{
+										AND: [
+											// そのユーザーが自分自身だった場合のみ取得できる
+											{ user_profile: { ffVisibility: 'private' } },
+											{ id: { in: me === null ? [] : [me.id] } },
+										],
+									},
+								],
+							},
+						},
+					],
+				},
+				orderBy: paginationQuery.orderBy,
+				skip: paginationQuery.skip,
+				take: paginationQuery.take,
+			});
+
+			return await Promise.all(
 				followings.map((following) =>
 					this.followingEntityService.pack(following, me, {
 						populateFollowee: true,
 					}),
 				),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
