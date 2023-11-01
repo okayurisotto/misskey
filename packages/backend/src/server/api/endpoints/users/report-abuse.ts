@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import sanitizeHtml from 'sanitize-html';
 import { Injectable } from '@nestjs/common';
-import { noSuchUser_________________________, cannotReportYourself, cannotReportAdmin } from '@/server/api/errors.js';
+import { pick } from 'omick';
+import {
+	noSuchUser_________________________,
+	cannotReportYourself,
+	cannotReportAdmin,
+} from '@/server/api/errors.js';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -17,7 +22,11 @@ export const meta = {
 	tags: ['users'],
 	requireCredential: true,
 	description: 'File a report.',
-	errors: {noSuchUser:noSuchUser_________________________,cannotReportYourself:cannotReportYourself,cannotReportAdmin:cannotReportAdmin},
+	errors: {
+		noSuchUser: noSuchUser_________________________,
+		cannotReportYourself: cannotReportYourself,
+		cannotReportAdmin: cannotReportAdmin,
+	},
 } as const;
 
 export const paramDef = z.object({
@@ -42,7 +51,6 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			// Lookup user
 			const user = await this.getterService.getUser(ps.userId).catch((err) => {
 				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
 					throw new ApiError(meta.errors.noSuchUser);
@@ -78,12 +86,7 @@ export default class extends Endpoint<
 					this.globalEventService.publishAdminStream(
 						moderator.id,
 						'newAbuseUserReport',
-						{
-							id: report.id,
-							targetUserId: report.targetUserId,
-							reporterId: report.reporterId,
-							comment: report.comment,
-						},
+						pick(report, ['id', 'targetUserId', 'reporterId', 'comment']),
 					);
 				}
 
