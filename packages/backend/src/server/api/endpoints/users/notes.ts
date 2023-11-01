@@ -1,21 +1,17 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchUser________________________ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { GetterService } from '@/server/api/GetterService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
-import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['users', 'notes'],
 	description: 'Show all notes that this user created.',
 	res,
-	errors: { noSuchUser: noSuchUser________________________ },
 } as const;
 
 export const paramDef = z
@@ -39,19 +35,10 @@ export default class extends Endpoint<
 > {
 	constructor(
 		private readonly noteEntityService: NoteEntityService,
-		private readonly getterService: GetterService,
 		private readonly prismaService: PrismaService,
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			// Lookup user
-			const user = await this.getterService.getUser(ps.userId).catch((err) => {
-				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
-					throw new ApiError(meta.errors.noSuchUser);
-				}
-				throw err;
-			});
-
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({
 				sinceId: ps.sinceId,
 				untilId: ps.untilId,
@@ -59,18 +46,20 @@ export default class extends Endpoint<
 				untilDate: ps.untilDate,
 			});
 
-			const sensitiveDriveFileIds = (
-				await this.prismaService.client.drive_file.findMany({
-					where: { isSensitive: true },
-					select: { id: true },
-				})
-			).map(({ id }) => id);
+			const getSensitiveDriveFileIds = async (): Promise<string[]> => {
+				return (
+					await this.prismaService.client.drive_file.findMany({
+						where: { isSensitive: true },
+						select: { id: true },
+					})
+				).map(({ id }) => id);
+			};
 
 			const timeline = await this.prismaService.client.note.findMany({
 				where: {
 					AND: [
 						paginationQuery.where,
-						{ userId: user.id },
+						{ userId: ps.userId },
 						this.prismaQueryService.getVisibilityWhereForNote(me?.id ?? null),
 						...(me
 							? [
@@ -86,33 +75,34 @@ export default class extends Endpoint<
 									...(ps.excludeNsfw
 										? {
 												cw: null,
-												NOT: { fileIds: { hasSome: sensitiveDriveFileIds } },
+												NOT: {
+													fileIds: {
+														hasSome: await getSensitiveDriveFileIds(),
+													},
+												},
 										  }
 										: {}),
 							  }
 							: {},
-						ps.includeMyRenotes ? { replyId: null } : {},
+						ps.includeReplies ? {} : { replyId: null },
 						ps.includeMyRenotes
-							? {
+							? {}
+							: {
 									OR: [
-										{ userId: user.id },
+										{ userId: ps.userId },
 										{ renoteId: null },
 										{ text: { not: null } },
 										{ fileIds: { isEmpty: false } },
 										{ hasPoll: true },
 									],
-							  }
-							: {},
+							  },
 					],
 				},
 				orderBy: paginationQuery.orderBy,
 				take: ps.limit,
 			});
 
-			return (await this.noteEntityService.packMany(
-				timeline,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.noteEntityService.packMany(timeline, me);
 		});
 	}
 }
