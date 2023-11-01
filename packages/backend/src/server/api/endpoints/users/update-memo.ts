@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchUser___________________________ } from '@/server/api/errors.js';
+import { Prisma } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -11,7 +11,6 @@ export const meta = {
 	tags: ['account'],
 	requireCredential: true,
 	kind: 'write:account',
-	errors: {noSuchUser:noSuchUser___________________________},
 } as const;
 
 export const paramDef = z.object({
@@ -36,45 +35,37 @@ export default class extends Endpoint<
 		private readonly idService: IdService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const target = await this.prismaService.client.user.findUnique({
-				where: { id: ps.userId },
-			});
-			if (target === null) {
-				throw new ApiError(meta.errors.noSuchUser);
-			}
-
-			// 引数が空文字列かnullであればメモを削除する
-			if (ps.memo === '' || ps.memo == null) {
+			if (ps.memo === null || ps.memo.trim() === '') {
+				// 引数がnullか空文字列であればメモを削除する
 				await this.prismaService.client.user_memo
 					.delete({
 						where: {
 							userId_targetUserId: {
 								userId: me.id,
-								targetUserId: target.id,
+								targetUserId: ps.userId,
 							},
 						},
 					})
-					.catch(() => {}); // 削除対象のメモが存在しなかった場合
-				return;
-			}
-
-			await this.prismaService.client.user_memo.upsert({
-				where: {
-					userId_targetUserId: {
-						userId: me.id,
-						targetUserId: target.id,
+					.catch(() => {}); // TODO: 握りつぶしたくない
+			} else {
+				await this.prismaService.client.user_memo.upsert({
+					where: {
+						userId_targetUserId: {
+							userId: me.id,
+							targetUserId: ps.userId,
+						},
 					},
-				},
-				create: {
-					id: this.idService.genId(),
-					userId: me.id,
-					targetUserId: target.id,
-					memo: ps.memo,
-				},
-				update: {
-					memo: ps.memo,
-				},
-			});
+					create: {
+						id: this.idService.genId(),
+						userId: me.id,
+						targetUserId: ps.userId,
+						memo: ps.memo,
+					},
+					update: {
+						memo: ps.memo,
+					},
+				});
+			}
 		});
 	}
 }
