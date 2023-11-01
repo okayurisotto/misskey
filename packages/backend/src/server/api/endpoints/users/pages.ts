@@ -33,10 +33,11 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({
 				sinceId: ps.sinceId,
 				untilId: ps.untilId,
+				take: ps.limit,
 			});
 
 			const pages = await this.prismaService.client.page.findMany({
@@ -48,12 +49,13 @@ export default class extends Endpoint<
 					],
 				},
 				orderBy: paginationQuery.orderBy,
-				take: ps.limit,
+				skip: paginationQuery.skip,
+				take: paginationQuery.take,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				pages.map((page) => this.pageEntityService.pack(page)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
