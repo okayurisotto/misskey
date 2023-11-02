@@ -216,24 +216,24 @@ export class RoleService implements OnApplicationShutdown {
 	 * 指定ユーザーのバッジロール一覧取得
 	 */
 	@bindThis
-	public async getUserBadgeRoles(userId: user['id']) {
+	public async getUserBadgeRoles(userId: user['id']): Promise<role[]> {
 		const now = Date.now();
-		let assigns = await this.roleAssignmentByUserIdCache.fetch(
-			userId,
-			() => this.prismaService.client.role_assignment.findMany({ where: { userId } }),
-		);
-		// 期限切れのロールを除外
-		assigns = assigns.filter(a => a.expiresAt == null || (a.expiresAt.getTime() > now));
+		const assigns = (
+			await this.roleAssignmentByUserIdCache.fetch(
+				userId,
+				() => this.prismaService.client.role_assignment.findMany({ where: { userId } }),
+			)
+		).filter(a => a.expiresAt == null || (a.expiresAt.getTime() > now)); // 期限切れのロールを除外
 		const assignedRoleIds = assigns.map(x => x.roleId);
 		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const assignedBadgeRoles = roles.filter(r => r.asBadge && assignedRoleIds.includes(r.id));
 		const badgeCondRoles = roles.filter(r => r.asBadge && (r.target === 'conditional'));
-		if (badgeCondRoles.length > 0) {
+		if (badgeCondRoles.length === 0) {
+			return assignedBadgeRoles;
+		} else {
 			const user = roles.some(r => r.target === 'conditional') ? await this.cacheService.findUserById(userId) : null;
 			const matchedBadgeCondRoles = badgeCondRoles.filter(r => this.evalCond(user!, RoleCondFormulaValueSchema.parse(r.condFormula)));
 			return [...assignedBadgeRoles, ...matchedBadgeCondRoles];
-		} else {
-			return assignedBadgeRoles;
 		}
 	}
 
