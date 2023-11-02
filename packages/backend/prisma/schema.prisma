@@ -29,6 +29,7 @@ model chart__active_users {
   write                                Int      @default(0) @map("___write")
 
   @@map("__chart__active_users")
+  @@ignore
 }
 
 model chart__ap_request {
@@ -39,6 +40,7 @@ model chart__ap_request {
   inboxReceived    Int @default(0) @map("___inboxReceived")
 
   @@map("__chart__ap_request")
+  @@ignore
 }
 
 model chart__drive {
@@ -54,6 +56,7 @@ model chart__drive {
   remote_decSize  Int @default(0) @map("___remote_decSize")
 
   @@map("__chart__drive")
+  @@ignore
 }
 
 model chart__federation {
@@ -72,6 +75,7 @@ model chart__federation {
   pubActive                        Int      @default(0) @map("___pubActive") @db.SmallInt
 
   @@map("__chart__federation")
+  @@ignore
 }
 
 model chart__hashtag {
@@ -86,6 +90,7 @@ model chart__hashtag {
   @@unique([date, group], map: "IDX_25a97c02003338124b2b75fdbc")
   @@unique([date, group], map: "UQ_25a97c02003338124b2b75fdbc8")
   @@map("__chart__hashtag")
+  @@ignore
 }
 
 model chart__instance {
@@ -120,6 +125,7 @@ model chart__instance {
   @@unique([date, group], map: "IDX_39ee857ab2f23493037c6b6631")
   @@unique([date, group], map: "UQ_39ee857ab2f23493037c6b66311")
   @@map("__chart__instance")
+  @@ignore
 }
 
 model chart__network {
@@ -132,6 +138,7 @@ model chart__network {
   outgoingBytes    Int @default(0) @map("___outgoingBytes")
 
   @@map("__chart__network")
+  @@ignore
 }
 
 model chart__notes {
@@ -153,6 +160,7 @@ model chart__notes {
   remote_diffs_withFile Int @default(0) @map("___remote_diffs_withFile")
 
   @@map("__chart__notes")
+  @@ignore
 }
 
 model chart__per_user_drive {
@@ -169,6 +177,7 @@ model chart__per_user_drive {
   @@unique([date, group], map: "IDX_30bf67687f483ace115c5ca642")
   @@unique([date, group], map: "UQ_30bf67687f483ace115c5ca6429")
   @@map("__chart__per_user_drive")
+  @@ignore
 }
 
 model chart__per_user_following {
@@ -191,6 +200,7 @@ model chart__per_user_following {
   @@unique([date, group], map: "IDX_b77d4dd9562c3a899d9a286fcd")
   @@unique([date, group], map: "UQ_b77d4dd9562c3a899d9a286fcd7")
   @@map("__chart__per_user_following")
+  @@ignore
 }
 
 model chart__per_user_notes {
@@ -208,6 +218,7 @@ model chart__per_user_notes {
   @@unique([date, group], map: "IDX_5048e9daccbbbc6d567bb142d3")
   @@unique([date, group], map: "UQ_5048e9daccbbbc6d567bb142d34")
   @@map("__chart__per_user_notes")
+  @@ignore
 }
 
 model chart__per_user_pv {
@@ -224,6 +235,7 @@ model chart__per_user_pv {
   @@unique([date, group], map: "IDX_f2a56da57921ca8439f45c1d95")
   @@unique([date, group], map: "UQ_f2a56da57921ca8439f45c1d95f")
   @@map("__chart__per_user_pv")
+  @@ignore
 }
 
 model chart__per_user_reaction {
@@ -236,6 +248,7 @@ model chart__per_user_reaction {
   @@unique([date, group], map: "IDX_229a41ad465f9205f1f5703291")
   @@unique([date, group], map: "UQ_229a41ad465f9205f1f57032910")
   @@map("__chart__per_user_reaction")
+  @@ignore
 }
 
 model chart__test {
@@ -248,6 +261,7 @@ model chart__test {
 
   @@unique([date, group], map: "IDX_a319e5dbf47e8a17497623beae")
   @@map("__chart__test")
+  @@ignore
 }
 
 model chart__test_grouped {
@@ -260,6 +274,7 @@ model chart__test_grouped {
 
   @@unique([date, group], map: "IDX_b14489029e4b3aaf4bba5fb524")
   @@map("__chart__test_grouped")
+  @@ignore
 }
 
 model chart__test_unique {
@@ -270,6 +285,7 @@ model chart__test_unique {
 
   @@unique([date, group], map: "IDX_a0cd75442dd10d0643a17c4a49")
   @@map("__chart__test_unique")
+  @@ignore
 }
 
 model chart__users {
@@ -283,6 +299,7 @@ model chart__users {
   remote_dec   Int @default(0) @map("___remote_dec") @db.SmallInt
 
   @@map("__chart__users")
+  @@ignore
 }
 
 model chart_day__active_users {
@@ -307,6 +324,7 @@ model chart_day__active_users {
   write                                Int      @default(0) @map("___write")
 
   @@map("__chart_day__active_users")
+  @@ignore
 }
 
 model chart_day__ap_request {
@@ -317,6 +335,7 @@ model chart_day__ap_request {
   inboxReceived    Int @default(0) @map("___inboxReceived")
 
   @@map("__chart_day__ap_request")
+  @@ignore
 }
 
 model chart_day__drive {
@@ -332,6 +351,7 @@ model chart_day__drive {
   remote_decSize  Int @default(0) @map("___remote_decSize")
 
   @@map("__chart_day__drive")
+  @@ignore
 }
 
 model chart_day__federation {
@@ -350,6 +370,7 @@ model chart_day__federation {
   pubActive                        Int      @default(0) @map("___pubActive") @db.SmallInt
 
   @@map("__chart_day__federation")
+  @@ignore
 }
 
 model chart_day__hashtag {
@@ -364,6 +385,7 @@ model chart_day__hashtag {
   @@unique([date, group], map: "IDX_8f589cf056ff51f09d6096f645")
   @@unique([date, group], map: "UQ_8f589cf056ff51f09d6096f6450")
   @@map("__chart_day__hashtag")
+  @@ignore
 }
 
 model chart_day__instance {
@@ -398,6 +420,7 @@ model chart_day__instance {
   @@unique([date, group], map: "IDX_fea7c0278325a1a2492f2d6acb")
   @@unique([date, group], map: "UQ_fea7c0278325a1a2492f2d6acbf")
   @@map("__chart_day__instance")
+  @@ignore
 }
 
 model chart_day__network {
@@ -410,6 +433,7 @@ model chart_day__network {
   outgoingBytes    Int @default(0) @map("___outgoingBytes")
 
   @@map("__chart_day__network")
+  @@ignore
 }
 
 model chart_day__notes {
@@ -431,6 +455,7 @@ model chart_day__notes {
   remote_diffs_withFile Int @default(0) @map("___remote_diffs_withFile")
 
   @@map("__chart_day__notes")
+  @@ignore
 }
 
 model chart_day__per_user_drive {
@@ -447,6 +472,7 @@ model chart_day__per_user_drive {
   @@unique([date, group], map: "IDX_62aa5047b5aec92524f24c701d")
   @@unique([date, group], map: "UQ_62aa5047b5aec92524f24c701d7")
   @@map("__chart_day__per_user_drive")
+  @@ignore
 }
 
 model chart_day__per_user_following {
@@ -469,6 +495,7 @@ model chart_day__per_user_following {
   @@unique([date, group], map: "IDX_e4849a3231f38281280ea4c0ee")
   @@unique([date, group], map: "UQ_e4849a3231f38281280ea4c0eee")
   @@map("__chart_day__per_user_following")
+  @@ignore
 }
 
 model chart_day__per_user_notes {
@@ -486,6 +513,7 @@ model chart_day__per_user_notes {
   @@unique([date, group], map: "IDX_c5545d4b31cdc684034e33b81c")
   @@unique([date, group], map: "UQ_c5545d4b31cdc684034e33b81c3")
   @@map("__chart_day__per_user_notes")
+  @@ignore
 }
 
 model chart_day__per_user_pv {
@@ -502,6 +530,7 @@ model chart_day__per_user_pv {
   @@unique([date, group], map: "IDX_f221e45cfac5bea0ce0f3149fb")
   @@unique([date, group], map: "UQ_f221e45cfac5bea0ce0f3149fbb")
   @@map("__chart_day__per_user_pv")
+  @@ignore
 }
 
 model chart_day__per_user_reaction {
@@ -514,6 +543,7 @@ model chart_day__per_user_reaction {
   @@unique([date, group], map: "IDX_d54b653660d808b118e36c184c")
   @@unique([date, group], map: "UQ_d54b653660d808b118e36c184c0")
   @@map("__chart_day__per_user_reaction")
+  @@ignore
 }
 
 model chart_day__users {
@@ -527,6 +557,7 @@ model chart_day__users {
   remote_dec   Int @default(0) @map("___remote_dec") @db.SmallInt
 
   @@map("__chart_day__users")
+  @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -727,7 +758,7 @@ model channel {
   drive_file          drive_file?           @relation(fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_999da2bcc7efadbfe0e92d3bc19")
   channel_favorite    channel_favorite[]
   channel_following   channel_following[]
-  channel_note_pining channel_note_pining[]
+  channel_note_pining channel_note_pining[] @ignore
   note                note[]
 
   @@index([usersCount], map: "IDX_094b86cd36bb805d1aa1e8cc9a")
@@ -778,6 +809,7 @@ model channel_note_pining {
 
   @@unique([channelId, noteId], map: "IDX_f36fed37d6d4cdcc68c803cd9c")
   @@index([channelId], map: "IDX_8125f950afd3093acb10d2db8a")
+  @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -855,7 +887,7 @@ model drive_file {
   channel                        channel[]
   user_drive_file_userIdTouser   user?               @relation("drive_file_userIdTouser", fields: [userId], references: [id], onUpdate: NoAction, map: "FK_860fa6f6c7df5bb887249fba22e")
   drive_folder                   drive_folder?       @relation(fields: [folderId], references: [id], onUpdate: NoAction, map: "FK_bb90d1956dafc4068c28aa7560a")
-  messaging_message              messaging_message[]
+  messaging_message              messaging_message[] @ignore
   page                           page[]
   user_user_avatarIdTodrive_file user?               @relation("user_avatarIdTodrive_file")
   user_user_bannerIdTodrive_file user?               @relation("user_bannerIdTodrive_file")
@@ -1087,7 +1119,7 @@ model messaging_message {
   groupId                                  String?     @db.VarChar(32)
   reads                                    String[]    @default([]) @db.VarChar(32)
   uri                                      String?     @db.VarChar(512)
-  user_group                               user_group? @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c4be03b446884f9e9c502135be")
+  user_group                               user_group? @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c4be03b446884f9e9c502135be") @ignore
   drive_file                               drive_file? @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_535def119223ac05ad3fa9ef64b")
   user_messaging_message_userIdTouser      user        @relation("messaging_message_userIdTouser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5377c307783fce2b6d352e1203b")
   user_messaging_message_recipientIdTouser user?       @relation("messaging_message_recipientIdTouser", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cac14a4e3944454a5ce7daa5142")
@@ -1096,6 +1128,7 @@ model messaging_message {
   @@index([userId], map: "IDX_5377c307783fce2b6d352e1203")
   @@index([recipientId], map: "IDX_cac14a4e3944454a5ce7daa514")
   @@index([createdAt], map: "IDX_e21cd3646e52ef9c94aaf17c2e")
+  @@ignore
 }
 
 model meta {
@@ -1183,6 +1216,8 @@ model migrations {
   id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement())
   timestamp BigInt
   name      String @db.VarChar
+
+  @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1266,7 +1301,7 @@ model note {
   channelId                      String?               @db.VarChar(32)
   threadId                       String?               @db.VarChar(256)
   reactionAcceptance             String?               @db.VarChar(64)
-  channel_note_pining            channel_note_pining[]
+  channel_note_pining            channel_note_pining[] @ignore
   clip_note                      clip_note[]
   muted_note                     muted_note[]
   note_note_replyIdTonote        note?                 @relation("note_replyIdTonote", fields: [replyId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_17cb3553c700a4985dff5a30ff5")
@@ -1278,7 +1313,7 @@ model note {
   note_favorite                  note_favorite[]
   note_reaction                  note_reaction[]
   note_unread                    note_unread[]
-  note_watching                  note_watching[]
+  note_watching                  note_watching[]       @ignore
   poll                           poll?
   poll_vote                      poll_vote[]
   promo_note                     promo_note?
@@ -1379,6 +1414,7 @@ model note_watching {
   @@index([createdAt], map: "IDX_318cdf42a9cfc11f479bd802bb")
   @@index([noteUserId], map: "IDX_44499765eec6b5489d72c4253b")
   @@index([userId], map: "IDX_b0134ec406e8d09a540f818288")
+  @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1576,6 +1612,7 @@ model reversi_game {
   user_reversi_game_user1IdTouser user      @relation("reversi_game_user1IdTouser", fields: [user1Id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f7467510c60a45ce5aca6292743")
 
   @@index([createdAt], map: "IDX_b46ec40746efceac604142be1c")
+  @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1590,6 +1627,7 @@ model reversi_matching {
   @@index([parentId], map: "IDX_3b25402709dd9882048c2bbade")
   @@index([createdAt], map: "IDX_b604d92d6c7aec38627f6eaf16")
   @@index([childId], map: "IDX_e247b23a3c9b45f89ec1299d06")
+  @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1727,8 +1765,8 @@ model user {
   following_following_followerIdTouser                      following[]              @relation("following_followerIdTouser")
   gallery_like                                              gallery_like[]
   gallery_post                                              gallery_post[]
-  messaging_message_messaging_message_userIdTouser          messaging_message[]      @relation("messaging_message_userIdTouser")
-  messaging_message_messaging_message_recipientIdTouser     messaging_message[]      @relation("messaging_message_recipientIdTouser")
+  messaging_message_messaging_message_userIdTouser          messaging_message[]      @relation("messaging_message_userIdTouser") @ignore
+  messaging_message_messaging_message_recipientIdTouser     messaging_message[]      @relation("messaging_message_recipientIdTouser") @ignore
   meta                                                      meta[]
   moderation_log                                            moderation_log[]
   muted_note                                                muted_note[]
@@ -1739,7 +1777,7 @@ model user {
   note_reaction                                             note_reaction[]
   note_thread_muting                                        note_thread_muting[]
   note_unread                                               note_unread[]
-  note_watching                                             note_watching[]
+  note_watching                                             note_watching[]          @ignore
   page                                                      page[]
   page_like                                                 page_like[]
   password_reset_request                                    password_reset_request[]
@@ -1748,19 +1786,19 @@ model user {
   registration_ticket_registration_ticket_usedByIdTouser    registration_ticket?     @relation("registration_ticket_usedByIdTouser")
   registration_ticket_registration_ticket_createdByIdTouser registration_ticket[]    @relation("registration_ticket_createdByIdTouser")
   registry_item                                             registry_item[]
-  reversi_game_reversi_game_user2IdTouser                   reversi_game[]           @relation("reversi_game_user2IdTouser")
-  reversi_game_reversi_game_user1IdTouser                   reversi_game[]           @relation("reversi_game_user1IdTouser")
-  reversi_matching_reversi_matching_parentIdTouser          reversi_matching[]       @relation("reversi_matching_parentIdTouser")
-  reversi_matching_reversi_matching_childIdTouser           reversi_matching[]       @relation("reversi_matching_childIdTouser")
+  reversi_game_reversi_game_user2IdTouser                   reversi_game[]           @relation("reversi_game_user2IdTouser") @ignore
+  reversi_game_reversi_game_user1IdTouser                   reversi_game[]           @relation("reversi_game_user1IdTouser") @ignore
+  reversi_matching_reversi_matching_parentIdTouser          reversi_matching[]       @relation("reversi_matching_parentIdTouser") @ignore
+  reversi_matching_reversi_matching_childIdTouser           reversi_matching[]       @relation("reversi_matching_childIdTouser") @ignore
   role_assignment                                           role_assignment[]
   signin                                                    signin[]
   sw_subscription                                           sw_subscription[]
   drive_file_user_avatarIdTodrive_file                      drive_file?              @relation("user_avatarIdTodrive_file", fields: [avatarId], references: [id], onUpdate: NoAction, map: "FK_58f5c71eaab331645112cf8cfa5")
   drive_file_user_bannerIdTodrive_file                      drive_file?              @relation("user_bannerIdTodrive_file", fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_afc64b53f8db3707ceb34eb28e2")
-  user_group                                                user_group[]
-  user_group_invitation                                     user_group_invitation[]
-  user_group_invite                                         user_group_invite[]
-  user_group_joining                                        user_group_joining[]
+  user_group                                                user_group[]             @ignore
+  user_group_invitation                                     user_group_invitation[]  @ignore
+  user_group_invite                                         user_group_invite[]      @ignore
+  user_group_joining                                        user_group_joining[]     @ignore
   user_keypair                                              user_keypair?
   user_list                                                 user_list[]
   user_list_favorite                                        user_list_favorite[]
@@ -1799,6 +1837,7 @@ model user_group {
 
   @@index([createdAt], map: "IDX_20e30aa35180e317e133d75316")
   @@index([userId], map: "IDX_3d6b372788ab01be58853003c9")
+  @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1813,6 +1852,7 @@ model user_group_invitation {
   @@unique([userId, userGroupId], map: "IDX_e9793f65f504e5a31fbaedbf2f")
   @@index([userGroupId], map: "IDX_5cc8c468090e129857e9fecce5")
   @@index([userId], map: "IDX_bfbc6305547539369fe73eb144")
+  @@ignore
 }
 
 model user_group_invite {
@@ -1826,6 +1866,7 @@ model user_group_invite {
   @@unique([userId, userGroupId], map: "IDX_78787741f9010886796f2320a4")
   @@index([userId], map: "IDX_1039988afa3bf991185b277fe0")
   @@index([userGroupId], map: "IDX_e10924607d058004304611a436")
+  @@ignore
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1840,6 +1881,7 @@ model user_group_joining {
   @@unique([userId, userGroupId], map: "IDX_d9ecaed8c6dc43f3592c229282")
   @@index([userGroupId], map: "IDX_67dc758bc0566985d1b3d39986")
   @@index([userId], map: "IDX_f3a1b4bd0c7cabba958a0c0b23")
+  @@ignore
 }
 
 model user_ip {
