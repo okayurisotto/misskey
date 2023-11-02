@@ -34,7 +34,7 @@ export class NotePiningService {
 	 * @param noteId
 	 */
 	@bindThis
-	public async addPinned(user: { id: user['id']; host: user['host']; }, noteId: note['id']) {
+	public async addPinned(user: { id: user['id']; host: user['host']; }, noteId: note['id']): Promise<void> {
 	// Fetch pinee
 		const note = await this.prismaService.client.note.findUnique({
 			where: {
@@ -78,7 +78,7 @@ export class NotePiningService {
 	 * @param noteId
 	 */
 	@bindThis
-	public async removePinned(user: { id: user['id']; host: user['host']; }, noteId: note['id']) {
+	public async removePinned(user: { id: user['id']; host: user['host']; }, noteId: note['id']): Promise<void> {
 		// Fetch unpinee
 		const note = await this.prismaService.client.note.findUnique({
 			where: {
@@ -107,7 +107,7 @@ export class NotePiningService {
 	}
 
 	@bindThis
-	public async deliverPinnedChange(userId: user['id'], noteId: note['id'], isAddition: boolean) {
+	public async deliverPinnedChange(userId: user['id'], noteId: note['id'], isAddition: boolean): Promise<void> {
 		const user = await this.prismaService.client.user.findUnique({ where: { id: userId } });
 		if (user == null) throw new Error('user not found');
 

@@ -15,8 +15,7 @@ export class UserSuspendService {
 		private readonly globalEventService: GlobalEventService,
 		private readonly apRendererService: ApRendererService,
 		private readonly prismaService: PrismaService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async doPostSuspend(user: { id: user['id']; host: user['host'] }): Promise<void> {

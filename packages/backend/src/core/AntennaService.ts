@@ -101,8 +101,10 @@ export class AntennaService implements OnApplicationShutdown {
 		if (antenna.src === 'home') {
 			// TODO
 		} else if (antenna.src === 'list') {
+			if (antenna.userListId === null) throw new Error();
+
 			const listUsers = (await this.prismaService.client.user_list_joining.findMany({
-				where: { userListId: antenna.userListId! },
+				where: { userListId: antenna.userListId },
 			})).map(x => x.userId);
 
 			if (!listUsers.includes(note.userId)) return false;
@@ -179,7 +181,7 @@ export class AntennaService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(_signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

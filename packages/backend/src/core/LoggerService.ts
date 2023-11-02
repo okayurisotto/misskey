@@ -6,7 +6,7 @@ import type { KEYWORD } from 'color-convert/conversions.js';
 @Injectable()
 export class LoggerService {
 	@bindThis
-	public getLogger(domain: string, color?: KEYWORD | undefined, store?: boolean) {
+	public getLogger(domain: string, color?: KEYWORD | undefined, store?: boolean): Logger {
 		return new Logger(domain, color, store);
 	}
 }

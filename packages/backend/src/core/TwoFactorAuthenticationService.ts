@@ -36,11 +36,11 @@ AfvDbbnvRG15RjF+Cv6pgsH/76tuIMRQyV+dTZsXjAzlAcmgQWpzU/qlULRuJQ/7
 TBj0/VLZjmmx6BEP3ojY+x1J96relc8geMJgEtslQIxq/H5COEBkEveegeGTLg==
 -----END CERTIFICATE-----\n`;
 
-function base64URLDecode(source: string) {
+function base64URLDecode(source: string): Buffer {
 	return Buffer.from(source.replace(/-/g, '+').replace(/_/g, '/'), 'base64');
 }
 
-function getCertSubject(certificate: string) {
+function getCertSubject(certificate: string): Record<string, string> {
 	const subjectCert = new jsrsasign.X509();
 	subjectCert.readCertPEM(certificate);
 
@@ -56,7 +56,7 @@ function getCertSubject(certificate: string) {
 	return fields;
 }
 
-function verifyCertificateChain(certificates: string[]) {
+function verifyCertificateChain(certificates: string[]): boolean {
 	let valid = true;
 
 	for (let i = 0; i < certificates.length; i++) {
@@ -66,7 +66,7 @@ function verifyCertificateChain(certificates: string[]) {
 
 		const CACert = i + 1 >= certificates.length ? Cert : certificates[i + 1];
 
-		const certStruct = jsrsasign.ASN1HEX.getTLVbyList(certificate.hex!, 0, [0]);
+		const certStruct = jsrsasign.ASN1HEX.getTLVbyList(certificate.hex, 0, [0]);
 		if (certStruct == null) throw new Error('certStruct is null');
 
 		const algorithm = certificate.getSignatureAlgorithmField();
@@ -82,7 +82,7 @@ function verifyCertificateChain(certificates: string[]) {
 	return valid;
 }
 
-function PEMString(pemBuffer: Buffer, type = 'CERTIFICATE') {
+function PEMString(pemBuffer: Buffer, type = 'CERTIFICATE'): string {
 	if (pemBuffer.length === 65 && pemBuffer[0] === 0x04) {
 		pemBuffer = Buffer.concat([PEM_PRELUDE, pemBuffer], 91);
 		type = 'PUBLIC KEY';
@@ -112,7 +112,7 @@ export class TwoFactorAuthenticationService {
 	) {}
 
 	@bindThis
-	public hash(data: Buffer) {
+	public hash(data: Buffer): Buffer {
 		return crypto
 			.createHash('sha256')
 			.update(data)
@@ -134,7 +134,7 @@ export class TwoFactorAuthenticationService {
 		clientData: any,
 		signature: Buffer,
 		challenge: string
-	}) {
+	}): boolean {
 		if (clientData.type !== 'webauthn.get') {
 			throw new Error('type is not webauthn.get');
 		}
@@ -161,7 +161,7 @@ export class TwoFactorAuthenticationService {
 	public getProcedures() {
 		return {
 			none: {
-				verify({ publicKey }: { publicKey: Map<number, Buffer> }) {
+				verify({ publicKey }: { publicKey: Map<number, Buffer> }): { publicKey: Buffer; valid: boolean } {
 					const negTwo = publicKey.get(-2);
 
 					if (!negTwo || negTwo.length !== 32) {
@@ -198,7 +198,7 @@ export class TwoFactorAuthenticationService {
 					publicKey: Map<number, any>;
 					rpIdHash: Buffer,
 					credentialId: Buffer,
-				}) {
+				}): { valid: boolean; publicKey: Buffer } {
 					if (attStmt.alg !== -7) {
 						throw new Error('alg mismatch');
 					}
@@ -258,7 +258,7 @@ export class TwoFactorAuthenticationService {
 					publicKey: Map<number, any>;
 					rpIdHash: Buffer,
 					credentialId: Buffer,
-				}) => {
+				}): { valid: boolean; publicKey: Buffer } => {
 					const verificationData = this.hash(
 						Buffer.concat([authenticatorData, clientDataHash]),
 					);
@@ -332,7 +332,7 @@ export class TwoFactorAuthenticationService {
 					publicKey: Map<number, any>;
 					rpIdHash: Buffer,
 					credentialId: Buffer,
-				}) {
+				}): { valid: boolean; publicKey: Buffer } {
 					const verificationData = Buffer.concat([
 						authenticatorData,
 						clientDataHash,
@@ -391,7 +391,7 @@ export class TwoFactorAuthenticationService {
 					publicKey: Map<number, any>,
 					rpIdHash: Buffer,
 					credentialId: Buffer
-				}) {
+				}): { valid: boolean; publicKey: Buffer } {
 					const x5c: Buffer[] = attStmt.x5c;
 					if (x5c.length !== 1) {
 						throw new Error('x5c length does not match expectation');

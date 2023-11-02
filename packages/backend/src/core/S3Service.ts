@@ -44,7 +44,7 @@ export class S3Service {
 	@bindThis
 	public async upload(meta: meta, input: PutObjectCommandInput) {
 		const client = this.getS3Client(meta);
-		return new Upload({
+		return await new Upload({
 			client,
 			params: input,
 			partSize: (client.config.endpoint && (await client.config.endpoint()).hostname === 'storage.googleapis.com')
@@ -54,8 +54,8 @@ export class S3Service {
 	}
 
 	@bindThis
-	public delete(meta: meta, input: DeleteObjectCommandInput) {
+	public async delete(meta: meta, input: DeleteObjectCommandInput) {
 		const client = this.getS3Client(meta);
-		return client.send(new DeleteObjectCommand(input));
+		return await client.send(new DeleteObjectCommand(input));
 	}
 }

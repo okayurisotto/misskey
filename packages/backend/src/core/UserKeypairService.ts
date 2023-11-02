@@ -19,9 +19,13 @@ export class UserKeypairService implements OnApplicationShutdown {
 		this.cache = new RedisKVCache<user_keypair>(this.redisClient, 'userKeypair', {
 			lifetime: 1000 * 60 * 60 * 24, // 24h
 			memoryCacheLifetime: Infinity,
-			fetcher: (key) => this.prismaService.client.user_keypair.findUniqueOrThrow({ where: { userId: key } }),
-			toRedisConverter: (value) => JSON.stringify(value),
-			fromRedisConverter: (value) => JSON.parse(value),
+			fetcher: async (key): Promise<user_keypair> => {
+				return await this.prismaService.client.user_keypair.findUniqueOrThrow({
+					where: { userId: key },
+				});
+			},
+			toRedisConverter: (value): string => JSON.stringify(value),
+			fromRedisConverter: (value): user_keypair => JSON.parse(value),
 		});
 	}
 
@@ -36,7 +40,7 @@ export class UserKeypairService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

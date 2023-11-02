@@ -425,7 +425,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public async renderPerson(user: LocalUser) {
+	public async renderPerson(user: LocalUser): Promise<any> {
 		const id = this.userEntityService.genLocalUserUri(user.id);
 		const isSystem = user.username.includes('.');
 
@@ -647,7 +647,7 @@ export class ApRendererService {
 	 * @param next URL of next page (optional)
 	 */
 	@bindThis
-	public renderOrderedCollectionPage(id: string, totalItems: any, orderedItems: any, partOf: string, prev?: string, next?: string) {
+	public renderOrderedCollectionPage(id: string, totalItems: any, orderedItems: any, partOf: string, prev?: string, next?: string): any {
 		const page: any = {
 			id,
 			partOf,
@@ -671,7 +671,7 @@ export class ApRendererService {
 	 * @param orderedItems attached objects (optional)
 	 */
 	@bindThis
-	public renderOrderedCollection(id: string, totalItems: number, first?: string, last?: string, orderedItems?: IObject[]) {
+	public renderOrderedCollection(id: string, totalItems: number, first?: string, last?: string, orderedItems?: IObject[]): any {
 		const page: any = {
 			id,
 			type: 'OrderedCollection',

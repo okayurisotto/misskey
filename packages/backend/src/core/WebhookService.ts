@@ -23,7 +23,7 @@ export class WebhookService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getActiveWebhooks() {
+	public async getActiveWebhooks(): Promise<webhook[]> {
 		if (!this.webhooksFetched) {
 			this.webhooks = await this.prismaService.client.webhook.findMany({
 				where: { active: true },
@@ -85,7 +85,7 @@ export class WebhookService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

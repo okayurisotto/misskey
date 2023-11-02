@@ -41,91 +41,130 @@ export class CacheService implements OnApplicationShutdown {
 
 		// ローカルユーザーならlocalUserByIdCacheにデータを追加し、こちらにはid(文字列)だけを追加する
 		const userByIdCache = new MemoryKVCache<user, user | string>(1000 * 60 * 60 * 6 /* 6h */, {
-			toMapConverter: user => {
-				if (user.host === null) {
-					localUserByIdCache.set(user.id, user as LocalUser);
-					return user.id;
-				}
-
-				return user;
+			toMapConverter: (user): user | string => {
+				if (user.host !== null) return user;
+				localUserByIdCache.set(user.id, user as LocalUser);
+				return user.id;
 			},
-			fromMapConverter: userOrId => typeof userOrId === 'string' ? localUserByIdCache.get(userOrId) : userOrId,
+			fromMapConverter: (userOrId): user | undefined => {
+				if (typeof userOrId !== 'string') return userOrId;
+				return localUserByIdCache.get(userOrId);
+			},
 		});
 		this.userByIdCache = userByIdCache;
 
 		this.localUserByNativeTokenCache = new MemoryKVCache<LocalUser | null, string | null>(Infinity, {
-			toMapConverter: user => {
+			toMapConverter: (user): string | null => {
 				if (user === null) return null;
-
 				localUserByIdCache.set(user.id, user);
 				return user.id;
 			},
-			fromMapConverter: id => id === null ? null : localUserByIdCache.get(id),
+			fromMapConverter: (id): LocalUser | undefined | null => {
+				if (id === null) return null;
+				return localUserByIdCache.get(id);
+			},
 		});
-		this.uriPersonCache = new MemoryKVCache<user | null, string | null>(Infinity, {
-			toMapConverter: user => {
-				if (user === null) return null;
 
+		this.uriPersonCache = new MemoryKVCache<user | null, string | null>(Infinity, {
+			toMapConverter: (user): string | null => {
+				if (user === null) return null;
 				userByIdCache.set(user.id, user);
 				return user.id;
 			},
-			fromMapConverter: id => id === null ? null : userByIdCache.get(id),
+			fromMapConverter: (id): user | undefined | null => {
+				if (id === null) return null;
+				return userByIdCache.get(id);
+			},
 		});
 
 		this.userProfileCache = new RedisKVCache<user_profile>(this.redisClient, 'userProfile', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60, // 1m
-			fetcher: (key) => this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: key } }),
-			toRedisConverter: (value) => JSON.stringify(value),
-			fromRedisConverter: (value) => JSON.parse(value), // TODO: date型の考慮
+			fetcher: async (key): Promise<user_profile> => {
+				return await this.prismaService.client.user_profile.findUniqueOrThrow({
+					where: { userId: key },
+				});
+			},
+			toRedisConverter: (value): string => JSON.stringify(value),
+			fromRedisConverter: (value): user_profile => JSON.parse(value), // TODO: date型の考慮
 		});
 
 		this.userMutingsCache = new RedisKVCache<Set<string>>(this.redisClient, 'userMutings', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60, // 1m
-			fetcher: (key) => this.prismaService.client.muting.findMany({ where: { muterId: key } }).then(xs => new Set(xs.map(x => x.muteeId))),
-			toRedisConverter: (value) => JSON.stringify(Array.from(value)),
-			fromRedisConverter: (value) => new Set(JSON.parse(value)),
+			fetcher: async (key): Promise<Set<string>> => {
+				const xs = await this.prismaService.client.muting.findMany({
+					where: { muterId: key },
+				});
+				return new Set(xs.map(x => x.muteeId));
+			},
+			toRedisConverter: (value): string => JSON.stringify(Array.from(value)),
+			fromRedisConverter: (value): Set<string> => new Set(JSON.parse(value)),
 		});
 
 		this.userBlockingCache = new RedisKVCache<Set<string>>(this.redisClient, 'userBlocking', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60, // 1m
-			fetcher: (key) => this.prismaService.client.blocking.findMany({ where: { blockerId: key } }).then(xs => new Set(xs.map(x => x.blockeeId))),
-			toRedisConverter: (value) => JSON.stringify(Array.from(value)),
-			fromRedisConverter: (value) => new Set(JSON.parse(value)),
+			fetcher: async (key): Promise<Set<string>> => {
+				const xs = await this.prismaService.client.blocking.findMany({
+					where: { blockerId: key },
+				});
+				return new Set(xs.map(x => x.blockeeId));
+			},
+			toRedisConverter: (value): string => JSON.stringify(Array.from(value)),
+			fromRedisConverter: (value): Set<string> => new Set(JSON.parse(value)),
 		});
 
 		this.userBlockedCache = new RedisKVCache<Set<string>>(this.redisClient, 'userBlocked', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60, // 1m
-			fetcher: (key) => this.prismaService.client.blocking.findMany({ where: { blockeeId: key } }).then(xs => new Set(xs.map(x => x.blockerId))),
-			toRedisConverter: (value) => JSON.stringify(Array.from(value)),
-			fromRedisConverter: (value) => new Set(JSON.parse(value)),
+			fetcher: async (key): Promise<Set<string>> => {
+				const xs = await this.prismaService.client.blocking.findMany({
+					where: { blockeeId: key },
+				});
+				return new Set(xs.map(x => x.blockerId));
+			},
+			toRedisConverter: (value): string => JSON.stringify(Array.from(value)),
+			fromRedisConverter: (value): Set<string> => new Set(JSON.parse(value)),
 		});
 
 		this.renoteMutingsCache = new RedisKVCache<Set<string>>(this.redisClient, 'renoteMutings', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60, // 1m
-			fetcher: (key) => this.prismaService.client.renote_muting.findMany({ where: { muterId: key } }).then(xs => new Set(xs.map(x => x.muteeId))),
-			toRedisConverter: (value) => JSON.stringify(Array.from(value)),
-			fromRedisConverter: (value) => new Set(JSON.parse(value)),
+			fetcher: async (key): Promise<Set<string>> => {
+				const xs = await this.prismaService.client.renote_muting.findMany({
+					where: { muterId: key },
+				});
+				return new Set(xs.map(x => x.muteeId));
+			},
+			toRedisConverter: (value): string => JSON.stringify(Array.from(value)),
+			fromRedisConverter: (value): Set<string> => new Set(JSON.parse(value)),
 		});
 
 		this.userFollowingsCache = new RedisKVCache<Set<string>>(this.redisClient, 'userFollowings', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60, // 1m
-			fetcher: (key) => this.prismaService.client.following.findMany({ where: { followerId: key } }).then(xs => new Set(xs.map(x => x.followeeId))),
-			toRedisConverter: (value) => JSON.stringify(Array.from(value)),
-			fromRedisConverter: (value) => new Set(JSON.parse(value)),
+			fetcher: async (key): Promise<Set<string>> => {
+				const xs = await this.prismaService.client.following.findMany({
+					where: { followerId: key },
+				});
+				return new Set(xs.map(x => x.followeeId));
+			},
+			toRedisConverter: (value): string => JSON.stringify(Array.from(value)),
+			fromRedisConverter: (value): Set<string> => new Set(JSON.parse(value)),
 		});
 
 		this.userFollowingChannelsCache = new RedisKVCache<Set<string>>(this.redisClient, 'userFollowingChannels', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60, // 1m
-			fetcher: (key) => this.prismaService.client.channel_following.findMany({ where: { followerId: key } }).then(xs => new Set(xs.map(x => x.followeeId))),
-			toRedisConverter: (value) => JSON.stringify(Array.from(value)),
-			fromRedisConverter: (value) => new Set(JSON.parse(value)),
+			fetcher: async (key): Promise<Set<string>> => {
+				const xs = await this.prismaService.client.channel_following.findMany({
+					where: { followerId: key },
+				});
+				return new Set(xs.map(x => x.followeeId));
+			},
+			toRedisConverter: (value): string => JSON.stringify(Array.from(value)),
+			fromRedisConverter: (value): Set<string> => new Set(JSON.parse(value)),
 		});
 
 		this.redisForSub.on('message', this.onMessage);
@@ -148,7 +187,8 @@ export class CacheService implements OnApplicationShutdown {
 						}
 					}
 					if (this.userEntityService.isLocalUser(user)) {
-						this.localUserByNativeTokenCache.set(user.token!, user);
+						if (user.token === null) throw new Error();
+						this.localUserByNativeTokenCache.set(user.token, user);
 						this.localUserByIdCache.set(user.id, user);
 					}
 					break;
@@ -173,8 +213,11 @@ export class CacheService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public findUserById(userId: user['id']) {
-		return this.userByIdCache.fetch(userId, () => this.prismaService.client.user.findUniqueOrThrow({ where: { id: userId } }));
+	public findUserById(userId: user['id']): Promise<user> {
+		return this.userByIdCache.fetch(
+			userId,
+			() => this.prismaService.client.user.findUniqueOrThrow({ where: { id: userId } }),
+		);
 	}
 
 	@bindThis
@@ -194,7 +237,7 @@ export class CacheService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

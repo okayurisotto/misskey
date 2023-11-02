@@ -5,7 +5,7 @@ import { jobQueue, server } from './common.js';
 /**
  * Init worker process
  */
-export async function workerMain() {
+export async function workerMain(): Promise<void> {
 	if (envOption.onlyServer) {
 		await server();
 	} else if (envOption.onlyQueue) {
@@ -16,6 +16,6 @@ export async function workerMain() {
 
 	if (cluster.isWorker) {
 		// Send a 'ready' message to parent process
-		process.send!('ready');
+		process.send?.('ready');
 	}
 }

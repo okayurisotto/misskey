@@ -20,31 +20,31 @@ export class InternalStorageService {
 	) {}
 
 	@bindThis
-	public resolvePath(key: string) {
+	public resolvePath(key: string): string {
 		return Path.resolve(path, key);
 	}
 
 	@bindThis
-	public read(key: string) {
+	public read(key: string): fs.ReadStream {
 		return fs.createReadStream(this.resolvePath(key));
 	}
 
 	@bindThis
-	public saveFromPath(key: string, srcPath: string) {
+	public saveFromPath(key: string, srcPath: string): string {
 		fs.mkdirSync(path, { recursive: true });
 		fs.copyFileSync(srcPath, this.resolvePath(key));
 		return `${this.config.url}/files/${key}`;
 	}
 
 	@bindThis
-	public saveFromBuffer(key: string, data: Buffer) {
+	public saveFromBuffer(key: string, data: Buffer): string {
 		fs.mkdirSync(path, { recursive: true });
 		fs.writeFileSync(this.resolvePath(key), data);
 		return `${this.config.url}/files/${key}`;
 	}
 
 	@bindThis
-	public del(key: string) {
+	public del(key: string): void {
 		fs.unlink(this.resolvePath(key), () => {});
 	}
 }

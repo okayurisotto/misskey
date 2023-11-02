@@ -132,7 +132,7 @@ const path = process.env['MISSKEY_CONFIG_YML']
 		? resolve(dir, 'test.yml')
 		: resolve(dir, 'default.yml');
 
-export function loadConfig() {
+export function loadConfig(): Source & Mixin {
 	const meta = JSON.parse(fs.readFileSync(`${_dirname}/../../../built/meta.json`, 'utf-8'));
 	const clientManifestExists = fs.existsSync(_dirname + '/../../../built/_vite_/manifest.json');
 	const clientManifest = clientManifestExists ?
@@ -179,7 +179,7 @@ export function loadConfig() {
 	return Object.assign(config, mixin);
 }
 
-function tryCreateUrl(url: string) {
+function tryCreateUrl(url: string): URL {
 	try {
 		return new URL(url);
 	} catch (e) {

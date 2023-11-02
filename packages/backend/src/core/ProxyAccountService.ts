@@ -9,8 +9,7 @@ export class ProxyAccountService {
 	constructor(
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async fetch(): Promise<LocalUser | null> {

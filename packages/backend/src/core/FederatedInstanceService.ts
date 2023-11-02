@@ -23,9 +23,13 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 		this.federatedInstanceCache = new RedisKVCache<instance | null>(this.redisClient, 'federatedInstance', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60 * 3, // 3m
-			fetcher: (key) => this.prismaService.client.instance.findUnique({ where: { host: key } }),
-			toRedisConverter: (value) => JSON.stringify(value),
-			fromRedisConverter: (value) => {
+			fetcher: async (key): Promise<instance | null> => {
+				return await this.prismaService.client.instance.findUnique({
+					where: { host: key },
+				});
+			},
+			toRedisConverter: (value): string => JSON.stringify(value),
+			fromRedisConverter: (value): instance | null => {
 				const parsed = JSON.parse(value);
 				if (parsed == null) return null;
 				return {
@@ -39,8 +43,8 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async fetch(host: string): Promise<instance> {
-		host = this.utilityService.toPuny(host);
+	public async fetch(host_: string): Promise<instance> {
+		const host = this.utilityService.toPuny(host_);
 
 		const cached = await this.federatedInstanceCache.get(host);
 		if (cached) return cached;
@@ -80,7 +84,7 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

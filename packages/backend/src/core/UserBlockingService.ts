@@ -40,7 +40,7 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async block(blocker: user, blockee: user, silent = false) {
+	public async block(blocker: user, blockee: user, silent = false): Promise<void> {
 		await Promise.all([
 			this.cancelRequest(blocker, blockee, silent),
 			this.cancelRequest(blockee, blocker, silent),
@@ -76,7 +76,7 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async cancelRequest(follower: user, followee: user, silent = false) {
+	private async cancelRequest(follower: user, followee: user, silent = false): Promise<void> {
 		const request = await this.prismaService.client.follow_request.findUnique({
 			where: {
 				followerId_followeeId: {
@@ -131,7 +131,7 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	private async removeFromList(listOwner: user, user: user) {
+	private async removeFromList(listOwner: user, user: user): Promise<void> {
 		await this.prismaService.client.user_list_joining.deleteMany({
 			where: {
 				user_list: { userId: listOwner.id },
@@ -141,7 +141,7 @@ export class UserBlockingService implements OnModuleInit {
 	}
 
 	@bindThis
-	public async unblock(blocker: user, blockee: user) {
+	public async unblock(blocker: user, blockee: user): Promise<void> {
 		const blocking_ = await this.prismaService.client.blocking.findUnique({
 			where: {
 				blockerId_blockeeId: {

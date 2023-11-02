@@ -28,7 +28,7 @@ export class SignupService {
 		passwordHash?: user_profile['password'] | null;
 		host?: string | null;
 		ignorePreservedUsernames?: boolean;
-	}) {
+	}): Promise<{ account: user; secret: string; }> {
 		const { username, password, passwordHash, host } = opts;
 		let hash = passwordHash;
 

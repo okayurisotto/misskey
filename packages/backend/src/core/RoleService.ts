@@ -191,7 +191,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getUserAssigns(userId: user['id']) {
+	public async getUserAssigns(userId: user['id']): Promise<role_assignment[]> {
 		const now = Date.now();
 		let assigns = await this.roleAssignmentByUserIdCache.fetch(
 			userId,
@@ -203,7 +203,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async getUserRoles(userId: user['id']) {
+	public async getUserRoles(userId: user['id']): Promise<role[]> {
 		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const assigns = await this.getUserAssigns(userId);
 		const assignedRoles = roles.filter(r => assigns.map(x => x.roleId).includes(r.id));
@@ -449,7 +449,7 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

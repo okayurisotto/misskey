@@ -23,9 +23,9 @@ export class MfmService {
 	) {}
 
 	@bindThis
-	public fromHtml(html: string, hashtagNames?: string[]): string {
+	public fromHtml(html_: string, hashtagNames?: string[]): string {
 		// some AP servers like Pixelfed use br tags as well as newlines
-		html = html.replace(/<br\s?\/?>\r?\n/gi, '\n');
+		const html = html_.replace(/<br\s?\/?>\r?\n/gi, '\n');
 
 		const dom = parse5.parseFragment(html);
 
@@ -57,7 +57,7 @@ export class MfmService {
 			}
 		}
 
-		function analyze(node: TreeAdapter.Node) {
+		function analyze(node: TreeAdapter.Node): void {
 			if (treeAdapter.isTextNode(node)) {
 				text += node.value;
 				return;
@@ -95,7 +95,7 @@ export class MfmService {
 						}
 					// その他
 					} else {
-						const generateLink = () => {
+						const generateLink = (): string => {
 							if (!href && !txt) {
 								return '';
 							}
@@ -229,7 +229,7 @@ export class MfmService {
 	}
 
 	@bindThis
-	public toHtml(nodes: mfm.MfmNode[] | null, mentionedRemoteUsers: IMentionedRemoteUsers = []) {
+	public toHtml(nodes: mfm.MfmNode[] | null, mentionedRemoteUsers: IMentionedRemoteUsers = []): string | null {
 		if (nodes == null) {
 			return null;
 		}
@@ -240,7 +240,9 @@ export class MfmService {
 
 		function appendChildren(children: mfm.MfmNode[], targetElement: any): void {
 			if (children) {
-				for (const child of children.map(x => (handlers as any)[x.type](x))) targetElement.appendChild(child);
+				for (const child of children.map(x => (handlers as any)[x.type](x))) {
+					targetElement.appendChild(child);
+				}
 			}
 		}
 

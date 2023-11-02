@@ -45,7 +45,7 @@ export class NoteDeleteService {
 	 * @param user 投稿者
 	 * @param note 投稿
 	 */
-	async delete(user: { id: user['id']; uri: user['uri']; host: user['host']; isBot: user['isBot']; }, note: note, quiet = false) {
+	async delete(user: { id: user['id']; uri: user['uri']; host: user['host']; isBot: user['isBot']; }, note: note, quiet = false): Promise<void> {
 		const deletedAt = new Date();
 		const cascadingNotes = await this.findCascadingNotes(note);
 
@@ -157,7 +157,7 @@ export class NoteDeleteService {
 	}
 
 	@bindThis
-	private async getMentionedRemoteUsers(note: note) {
+	private async getMentionedRemoteUsers(note: note): Promise<RemoteUser[]> {
 		const where = [];
 
 		// mention / reply / dm
@@ -177,7 +177,7 @@ export class NoteDeleteService {
 	}
 
 	@bindThis
-	private async deliverToConcerned(user: { id: LocalUser['id']; host: null; }, note: note, content: any) {
+	private async deliverToConcerned(user: { id: LocalUser['id']; host: null; }, note: note, content: any): Promise<void> {
 		this.apDeliverManagerService.deliverToFollowers(user, content);
 		this.relayService.deliverToRelays(user, content);
 		const remoteUsers = await this.getMentionedRemoteUsers(note);

@@ -20,7 +20,7 @@ export class PrismaService implements OnApplicationShutdown {
 		});
 	}
 
-	async onApplicationShutdown(signal?: string | undefined): Promise<void> {
+	async onApplicationShutdown(): Promise<void> {
 		await this.client.$disconnect();
 	}
 }

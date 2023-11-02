@@ -22,7 +22,7 @@ const bootLogger = logger.createSubLogger('boot', 'magenta', false);
 
 const themeColor = chalk.hex('#86b300');
 
-function greet() {
+function greet(): void {
 	if (!envOption.quiet) {
 		//#region Misskey logo
 		const v = `v${meta.version}`;
@@ -47,7 +47,7 @@ function greet() {
 /**
  * Init master process
  */
-export async function masterMain() {
+export async function masterMain(): Promise<void> {
 	let config!: Config;
 
 	// initialize app
@@ -107,7 +107,7 @@ function loadConfigBoot(): Config {
 		if (typeof exception === 'string') {
 			configLogger.error(exception);
 			process.exit(1);
-		} else if ((exception as any).code === 'ENOENT') {
+		} else if (exception instanceof Error && 'code' in exception && exception.code === 'ENOENT') {
 			configLogger.error('Configuration file not found', null, true);
 			process.exit(1);
 		}
@@ -137,7 +137,7 @@ async function connectDb(): Promise<void> {
 }
 */
 
-async function spawnWorkers(limit = 1) {
+async function spawnWorkers(limit = 1): Promise<void> {
 	const workers = Math.min(limit, os.cpus().length);
 	bootLogger.info(`Starting ${workers} worker${workers === 1 ? '' : 's'}...`);
 	await Promise.all([...Array(workers)].map(spawnWorker));

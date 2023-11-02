@@ -34,9 +34,14 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		this.localEmojisCache = new RedisSingleCache<Map<string, emoji>>(this.redisClient, 'localEmojis', {
 			lifetime: 1000 * 60 * 30, // 30m
 			memoryCacheLifetime: 1000 * 60 * 3, // 3m
-			fetcher: () => this.prismaService.client.emoji.findMany({ where: { host: null } }).then(emojis => new Map(emojis.map(emoji => [emoji.name, emoji]))),
-			toRedisConverter: (value) => JSON.stringify(Array.from(value.values())),
-			fromRedisConverter: (value) => {
+			fetcher: async (): Promise<Map<string, emoji>> => {
+				const emojis = await this.prismaService.client.emoji.findMany({
+					where: { host: null },
+				});
+				return new Map(emojis.map(emoji => [emoji.name, emoji]));
+			},
+			toRedisConverter: (value): string => JSON.stringify(Array.from(value.values())),
+			fromRedisConverter: (value): Map<string, emoji> | undefined => {
 				if (!Array.isArray(JSON.parse(value))) return undefined; // 古いバージョンの壊れたキャッシュが残っていることがある(そのうち消す)
 				return new Map(JSON.parse(value).map((x: Serialized<emoji>) => [x.name, {
 					...x,
@@ -386,7 +391,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(_signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

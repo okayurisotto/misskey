@@ -311,18 +311,22 @@ export class AccountMoveService {
 	 */
 	@bindThis
 	public async validateAlsoKnownAs(
-		dst: LocalUser | RemoteUser,
+		dst_: LocalUser | RemoteUser,
 		check: (oldUser: LocalUser | RemoteUser | null, newUser: LocalUser | RemoteUser) => boolean | Promise<boolean> = (): boolean => true,
 		instant = false,
 	): Promise<LocalUser | RemoteUser | null> {
 		let resultUser: LocalUser | RemoteUser | null = null;
 
-		if (this.userEntityService.isRemoteUser(dst)) {
-			if ((new Date()).getTime() - (dst.lastFetchedAt?.getTime() ?? 0) > 10 * 1000) {
-				await this.apPersonService.updatePerson(dst.uri);
+		const dst = await (async (): Promise<LocalUser | RemoteUser> => {
+			if (this.userEntityService.isLocalUser(dst_)) {
+				return dst_;
+			} else {
+				if (new Date().getTime() - (dst_.lastFetchedAt?.getTime() ?? 0) > 10 * 1000) {
+					await this.apPersonService.updatePerson(dst_.uri);
+				}
+				return await this.apPersonService.fetchPerson(dst_.uri) ?? dst_;
 			}
-			dst = await this.apPersonService.fetchPerson(dst.uri) ?? dst;
-		}
+		})();
 
 		if (!dst.alsoKnownAs) return null;
 		if (dst.alsoKnownAs.split(',').length === 0) return null;

@@ -8,8 +8,9 @@ import { QueueStatsService } from '@/daemons/QueueStatsService.js';
 import { ServerStatsService } from '@/daemons/ServerStatsService.js';
 import { ServerService } from '@/server/ServerService.js';
 import { MainModule } from '@/MainModule.js';
+import type { INestApplicationContext } from '@nestjs/common';
 
-export async function server() {
+export async function server(): Promise<INestApplicationContext> {
 	const app = await NestFactory.createApplicationContext(MainModule, {
 		logger: new NestLogger(),
 	});
@@ -28,7 +29,7 @@ export async function server() {
 	return app;
 }
 
-export async function jobQueue() {
+export async function jobQueue(): Promise<INestApplicationContext> {
 	const jobQueue = await NestFactory.createApplicationContext(QueueProcessorModule, {
 		logger: new NestLogger(),
 	});

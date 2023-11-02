@@ -76,7 +76,7 @@ export class ReactionService {
 	) {}
 
 	@bindThis
-	public async create(user: { id: user['id']; host: user['host']; isBot: user['isBot'] }, note: note, _reaction?: string | null) {
+	public async create(user: { id: user['id']; host: user['host']; isBot: user['isBot'] }, note: note, _reaction?: string | null): Promise<void> {
 		// Check blocking
 		if (note.userId !== user.id) {
 			const blocked = await this.userBlockingService.checkBlocked(note.userId, user.id);
@@ -142,7 +142,7 @@ export class ReactionService {
 		// Create reaction
 		try {
 			await this.prismaService.client.note_reaction.create({ data: record });
-		} catch (e: any) {
+		} catch (e) {
 			if (e instanceof Prisma.PrismaClientKnownRequestError) {
 				if (e.code === 'P2002') {
 					const exists = await this.prismaService.client.note_reaction.findUniqueOrThrow({
@@ -176,7 +176,7 @@ export class ReactionService {
 
 			const reactions = z.record(z.string(), z.number().int()).parse(data.reactions);
 
-			const count = (() => {
+			const count = ((): number => {
 				if (reaction in reactions) return reactions[reaction] + 1;
 				return 1;
 			})();
@@ -258,7 +258,7 @@ export class ReactionService {
 	}
 
 	@bindThis
-	public async delete(user: { id: user['id']; host: user['host']; isBot: user['isBot']; }, note: note) {
+	public async delete(user: { id: user['id']; host: user['host']; isBot: user['isBot']; }, note: note): Promise<void> {
 		// if already unreacted
 		const exist = await this.prismaService.client.note_reaction.findUnique({
 			where: {
@@ -322,7 +322,7 @@ export class ReactionService {
 	}
 
 	@bindThis
-	public convertLegacyReactions(reactions: Record<string, number>) {
+	public convertLegacyReactions(reactions: Record<string, number>): Record<string, number> {
 		const _reactions = {} as Record<string, number>;
 
 		for (const reaction of Object.keys(reactions)) {
@@ -377,8 +377,8 @@ export class ReactionService {
 		const custom = str.match(decodeCustomEmojiRegexp);
 
 		if (custom) {
-			const name = custom[1];
-			const host = custom[2] ?? null;
+			const name = custom.at(1);
+			const host = custom.at(2) ?? null;
 
 			return {
 				reaction: `:${name}@${host ?? '.'}:`,	// ローカル分は@以降を省略するのではなく.にする
@@ -395,8 +395,8 @@ export class ReactionService {
 	}
 
 	@bindThis
-	public convertLegacyReaction(reaction: string): string {
-		reaction = this.decodeReaction(reaction).reaction;
+	public convertLegacyReaction(reaction_: string): string {
+		const reaction = this.decodeReaction(reaction_).reaction;
 		if (Object.keys(legacies).includes(reaction)) return legacies[reaction];
 		return reaction;
 	}

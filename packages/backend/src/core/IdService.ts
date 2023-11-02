@@ -21,8 +21,12 @@ export class IdService {
 	}
 
 	@bindThis
-	public genId(date?: Date): string {
-		if (!date || (date > new Date())) date = new Date();
+	public genId(date_?: Date): string {
+		const date = ((): Date => {
+			if (date_ === undefined) return new Date();
+			if (date_ > new Date()) return new Date();
+			return date_;
+		})();
 
 		switch (this.method) {
 			case 'aid': return genAid(date);

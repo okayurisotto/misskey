@@ -67,7 +67,7 @@ export class UserFollowingService implements OnModuleInit {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	onModuleInit() {
+	onModuleInit(): void {
 		this.userBlockingService = this.moduleRef.get('UserBlockingService');
 	}
 

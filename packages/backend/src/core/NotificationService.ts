@@ -33,7 +33,7 @@ export class NotificationService implements OnApplicationShutdown {
 	public async readAllNotification(
 		userId: user['id'],
 		force = false,
-	) {
+	): Promise<void> {
 		const latestReadNotificationId = await this.redisClient.get(`latestReadNotification:${userId}`);
 
 		const latestNotificationIdsRes = await this.redisClient.xrevrange(
@@ -53,7 +53,7 @@ export class NotificationService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private postReadAllNotifications(userId: user['id']) {
+	private postReadAllNotifications(userId: user['id']): void {
 		this.globalEventService.publishMainStream(userId, 'readAllNotifications');
 		this.pushNotificationService.pushNotification(userId, 'readAllNotifications', undefined);
 	}
@@ -118,7 +118,7 @@ export class NotificationService implements OnApplicationShutdown {
 	// TODO: locale ファイルをクライアント用とサーバー用で分けたい
 
 	@bindThis
-	private async emailNotificationFollow(userId: user['id'], follower: user) {
+	private async emailNotificationFollow(userId: user['id'], follower: user): Promise<void> {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
 		if (!userProfile.email || !userProfile.emailNotificationTypes.includes('follow')) return;
@@ -130,7 +130,7 @@ export class NotificationService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async emailNotificationReceiveFollowRequest(userId: user['id'], follower: user) {
+	private async emailNotificationReceiveFollowRequest(userId: user['id'], follower: user): Promise<void> {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
 		if (!userProfile.email || !userProfile.emailNotificationTypes.includes('receiveFollowRequest')) return;
@@ -147,7 +147,7 @@ export class NotificationService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

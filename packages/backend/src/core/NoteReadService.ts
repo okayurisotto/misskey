@@ -16,8 +16,7 @@ export class NoteReadService implements OnApplicationShutdown {
 		private readonly idService: IdService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
-	) {
-	}
+	) {}
 
 	@bindThis
 	public async insertNoteUnread(userId: user['id'], note: note, params: {
@@ -126,7 +125,7 @@ export class NoteReadService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

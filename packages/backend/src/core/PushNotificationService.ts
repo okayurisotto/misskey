@@ -61,14 +61,18 @@ export class PushNotificationService implements OnApplicationShutdown {
 		this.subscriptionsCache = new RedisKVCache<sw_subscription[]>(this.redisClient, 'userSwSubscriptions', {
 			lifetime: 1000 * 60 * 60 * 1, // 1h
 			memoryCacheLifetime: 1000 * 60 * 3, // 3m
-			fetcher: (key) => this.prismaService.client.sw_subscription.findMany({ where: { userId: key } }),
-			toRedisConverter: (value) => JSON.stringify(value),
-			fromRedisConverter: (value) => JSON.parse(value),
+			fetcher: async (key): Promise<sw_subscription[]> => {
+				return await this.prismaService.client.sw_subscription.findMany({
+					where: { userId: key },
+				});
+			},
+			toRedisConverter: (value): string => JSON.stringify(value),
+			fromRedisConverter: (value): sw_subscription[] => JSON.parse(value),
 		});
 	}
 
 	@bindThis
-	public async pushNotification<T extends keyof PushNotificationsTypes>(userId: string, type: T, body: PushNotificationsTypes[T]) {
+	public async pushNotification<T extends keyof PushNotificationsTypes>(userId: string, type: T, body: PushNotificationsTypes[T]): Promise<void> {
 		const meta = await this.metaService.fetch();
 
 		if (!meta.enableServiceWorker || meta.swPublicKey == null || meta.swPrivateKey == null) return;
@@ -128,7 +132,7 @@ export class PushNotificationService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }

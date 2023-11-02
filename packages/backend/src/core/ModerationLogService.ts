@@ -12,7 +12,11 @@ export class ModerationLogService {
 	) {}
 
 	@bindThis
-	public async insertModerationLog(moderator: { id: user['id'] }, type: string, info?: Record<string, any>) {
+	public async insertModerationLog(
+		moderator: Pick<user, 'id'>,
+		type: string,
+		info?: Record<string, any>,
+	): Promise<void> {
 		await this.prismaService.client.moderation_log.create({
 			data: {
 				id: this.idService.genId(),

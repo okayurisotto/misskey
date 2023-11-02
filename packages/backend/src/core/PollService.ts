@@ -24,7 +24,7 @@ export class PollService {
 	) {}
 
 	@bindThis
-	public async vote(user: user, note: note, choice: number) {
+	public async vote(user: user, note: note, choice: number): Promise<void> {
 		const poll = await this.prismaService.client.poll.findUnique({ where: { noteId: note.id } });
 
 		if (poll == null) throw new Error('poll not found');
@@ -90,7 +90,7 @@ export class PollService {
 	}
 
 	@bindThis
-	public async deliverQuestionUpdate(noteId: note['id']) {
+	public async deliverQuestionUpdate(noteId: note['id']): Promise<void> {
 		const note = await this.prismaService.client.note.findUnique({ where: { id: noteId } });
 		if (note == null) throw new Error('note not found');
 

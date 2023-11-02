@@ -32,23 +32,19 @@ export class RemoteUserResolveService {
 	}
 
 	@bindThis
-	public async resolveUser(username: string, host: string | null): Promise<LocalUser | RemoteUser> {
+	public async resolveUser(username: string, host_: string | null): Promise<LocalUser | RemoteUser> {
 		const usernameLower = username.toLowerCase();
 
-		if (host == null) {
+		if (host_ === null) {
 			this.logger.info(`return local user: ${usernameLower}`);
-			return await this.prismaService.client.user.findFirst({
+			const user = await this.prismaService.client.user.findFirst({
 				where: { usernameLower, host: null },
-			}).then(u => {
-				if (u == null) {
-					throw new Error('user not found');
-				} else {
-					return u;
-				}
-			}) as LocalUser;
+			});
+			if (user === null) throw new Error('user not found');
+			return user as LocalUser;
 		}
 
-		host = this.utilityService.toPuny(host);
+		const host = this.utilityService.toPuny(host_);
 
 		if (this.config.host === host) {
 			this.logger.info(`return local user: ${usernameLower}`);

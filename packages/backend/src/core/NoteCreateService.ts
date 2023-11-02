@@ -68,7 +68,7 @@ class NotificationManager {
 	}
 
 	@bindThis
-	public push(notifiee: LocalUser['id'], reason: NotificationType) {
+	public push(notifiee: LocalUser['id'], reason: NotificationType): void {
 		// 自分自身へは通知しない
 		if (this.notifier.id === notifiee) return;
 
@@ -88,7 +88,7 @@ class NotificationManager {
 	}
 
 	@bindThis
-	public async deliver() {
+	public async deliver(): Promise<void> {
 		for (const x of this.queue) {
 			// ミュート情報を取得
 			const mentioneeMutes = await this.prismaService.client.muting.findMany({
@@ -258,10 +258,10 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 		// Parse MFM if needed
 		if (!tags || !emojis || !mentionedUsers) {
-			const tokens = data.text ? mfm.parse(data.text)! : [];
-			const cwTokens = data.cw ? mfm.parse(data.cw)! : [];
+			const tokens = data.text ? mfm.parse(data.text) : [];
+			const cwTokens = data.cw ? mfm.parse(data.cw) : [];
 			const choiceTokens = data.poll && data.poll.choices
-				? concat(data.poll.choices.map(choice => mfm.parse(choice)!))
+				? concat(data.poll.choices.map(choice => mfm.parse(choice)))
 				: [];
 
 			const combinedTokens = tokens.concat(cwTokens).concat(choiceTokens);
@@ -312,7 +312,13 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async insertNote(user: { id: user['id']; host: user['host']; }, data: Option, tags: string[], emojis: string[], mentionedUsers: MinimumUser[]) {
+	private async insertNote(
+		user: Pick<user, 'id' | 'host'>,
+		data: Option,
+		tags: string[],
+		emojis: string[],
+		mentionedUsers: MinimumUser[],
+	) {
 		const insert: Prisma.noteUncheckedCreateInput = {
 			id: this.idService.genId(data.createdAt!),
 			createdAt: data.createdAt!,
@@ -416,13 +422,20 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async postNoteCreated(note: note, user: {
-		id: user['id'];
-		username: user['username'];
-		host: user['host'];
-		createdAt: user['createdAt'];
-		isBot: user['isBot'];
-	}, data: Option, silent: boolean, tags: string[], mentionedUsers: MinimumUser[]) {
+	private async postNoteCreated(
+		note: note,
+		user: {
+			id: user['id'];
+			username: user['username'];
+			host: user['host'];
+			createdAt: user['createdAt'];
+			isBot: user['isBot'];
+		},
+		data: Option,
+		silent: boolean,
+		tags: string[],
+		mentionedUsers: MinimumUser[],
+	): Promise<void> {
 		const meta = await this.metaService.fetch();
 
 		this.notesChart.update(note, true);
@@ -560,7 +573,8 @@ export class NoteCreateService implements OnApplicationShutdown {
 						nm.push(data.reply.userId, 'reply');
 						this.globalEventService.publishMainStream(data.reply.userId, 'reply', noteObj);
 
-						const webhooks = (await this.webhookService.getActiveWebhooks()).filter(x => x.userId === data.reply!.userId && x.on.includes('reply'));
+						const webhooks = (await this.webhookService.getActiveWebhooks())
+							.filter(x => x.userId === data.reply!.userId && x.on.includes('reply'));
 						for (const webhook of webhooks) {
 							this.queueService.webhookDeliver(webhook, 'reply', {
 								note: noteObj,
@@ -583,7 +597,8 @@ export class NoteCreateService implements OnApplicationShutdown {
 				if ((user.id !== data.renote.userId) && data.renote.userHost === null) {
 					this.globalEventService.publishMainStream(data.renote.userId, 'renote', noteObj);
 
-					const webhooks = (await this.webhookService.getActiveWebhooks()).filter(x => x.userId === data.renote!.userId && x.on.includes('renote'));
+					const webhooks = (await this.webhookService.getActiveWebhooks())
+						.filter(x => x.userId === data.renote!.userId && x.on.includes('renote'));
 					for (const webhook of webhooks) {
 						this.queueService.webhookDeliver(webhook, 'renote', {
 							note: noteObj,
@@ -596,38 +611,36 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 			//#region AP deliver
 			if (this.userEntityService.isLocalUser(user)) {
-				(async () => {
-					const noteActivity = await this.renderNoteOrRenoteActivity(data, note);
-					const dm = this.apDeliverManagerService.createDeliverManager(user, noteActivity);
+				const noteActivity = await this.renderNoteOrRenoteActivity(data, note);
+				const dm = this.apDeliverManagerService.createDeliverManager(user, noteActivity);
 
-					// メンションされたリモートユーザーに配送
-					for (const u of mentionedUsers.filter(u => this.userEntityService.isRemoteUser(u))) {
-						dm.addDirectRecipe(u as RemoteUser);
-					}
+				// メンションされたリモートユーザーに配送
+				for (const u of mentionedUsers.filter(u => this.userEntityService.isRemoteUser(u))) {
+					dm.addDirectRecipe(u as RemoteUser);
+				}
 
-					// 投稿がリプライかつ投稿者がローカルユーザーかつリプライ先の投稿の投稿者がリモートユーザーなら配送
-					if (data.reply && data.reply.userHost !== null) {
-						const u = await this.prismaService.client.user.findUnique({ where: { id: data.reply.userId } });
-						if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
-					}
+				// 投稿がリプライかつ投稿者がローカルユーザーかつリプライ先の投稿の投稿者がリモートユーザーなら配送
+				if (data.reply && data.reply.userHost !== null) {
+					const u = await this.prismaService.client.user.findUnique({ where: { id: data.reply.userId } });
+					if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
+				}
 
-					// 投稿がRenoteかつ投稿者がローカルユーザーかつRenote元の投稿の投稿者がリモートユーザーなら配送
-					if (data.renote && data.renote.userHost !== null) {
-						const u = await this.prismaService.client.user.findUnique({ where: { id: data.renote.userId } });
-						if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
-					}
+				// 投稿がRenoteかつ投稿者がローカルユーザーかつRenote元の投稿の投稿者がリモートユーザーなら配送
+				if (data.renote && data.renote.userHost !== null) {
+					const u = await this.prismaService.client.user.findUnique({ where: { id: data.renote.userId } });
+					if (u && this.userEntityService.isRemoteUser(u)) dm.addDirectRecipe(u);
+				}
 
-					// フォロワーに配送
-					if (['public', 'home', 'followers'].includes(note.visibility)) {
-						dm.addFollowersRecipe();
-					}
+				// フォロワーに配送
+				if (['public', 'home', 'followers'].includes(note.visibility)) {
+					dm.addFollowersRecipe();
+				}
 
-					if (['public'].includes(note.visibility)) {
-						this.relayService.deliverToRelays(user, noteActivity);
-					}
+				if (['public'].includes(note.visibility)) {
+					this.relayService.deliverToRelays(user, noteActivity);
+				}
 
-					dm.execute();
-				})();
+				dm.execute();
 			}
 			//#endregion
 		}
@@ -689,7 +702,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private incRenoteCount(renote: note) {
+	private incRenoteCount(renote: note): void {
 		this.prismaService.client.note.update({
 			where: { id: renote.id },
 			data: {
@@ -700,7 +713,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async createMentionedEvents(mentionedUsers: MinimumUser[], note: note, nm: NotificationManager) {
+	private async createMentionedEvents(mentionedUsers: MinimumUser[], note: note, nm: NotificationManager): Promise<void> {
 		for (const u of mentionedUsers.filter(u => this.userEntityService.isLocalUser(u))) {
 			const isThreadMuted = (await this.prismaService.client.note_thread_muting.count({
 				where: {
@@ -733,7 +746,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async saveReply(reply: note, note: note) {
+	private async saveReply(reply: note, note: note): Promise<void> {
 		await this.prismaService.client.note.update({
 			where: { id: reply.id },
 			data: { repliesCount: { increment: 1 } },
@@ -752,14 +765,14 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private index(note: note) {
+	private index(note: note): void {
 		if (note.text == null && note.cw == null) return;
 
 		this.searchService.indexNote(note);
 	}
 
 	@bindThis
-	private async incNotesCountOfUser(user: { id: user['id']; }) {
+	private async incNotesCountOfUser(user: { id: user['id']; }): Promise<void> {
 		await this.prismaService.client.user.update({
 			where: { id: user.id },
 			data: {
@@ -792,7 +805,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
+	public onApplicationShutdown(): void {
 		this.dispose();
 	}
 }
