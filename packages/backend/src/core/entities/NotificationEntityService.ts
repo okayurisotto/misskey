@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { Notification } from '@/models/entities/Notification.js';
 import { bindThis } from '@/decorators.js';
 import { isNotNull } from '@/misc/is-not-null.js';
@@ -9,11 +8,12 @@ import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { UserSchema } from '@/models/zod/UserSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { UserEntityService } from './UserEntityService.js';
 import type { NoteEntityService } from './NoteEntityService.js';
 import type { z } from 'zod';
-import type { note, user } from '@prisma/client';
+import type { access_token, note, user } from '@prisma/client';
 
 const NOTE_REQUIRED_NOTIFICATION_TYPES = new Set<typeof notificationTypes[number]>([
 	'mention',
@@ -42,7 +42,7 @@ export class NotificationEntityService implements OnModuleInit {
 	/**
 	 * `Notification`をpackする。
 	 *
-	 * @param src
+	 * @param notification
 	 * @param meId
 	 * @param _options 使われていない。
 	 * @param hint
@@ -50,7 +50,7 @@ export class NotificationEntityService implements OnModuleInit {
 	 */
 	@bindThis
 	public async pack(
-		src: Notification,
+		notification: Notification,
 		meId: user['id'],
 		_options: Record<PropertyKey, never>,
 		hint?: {
@@ -58,39 +58,50 @@ export class NotificationEntityService implements OnModuleInit {
 			packedUsers: Map<user['id'], z.infer<typeof UserSchema>>;
 		},
 	): Promise<z.infer<typeof NotificationSchema>> {
-		const notification = src;
-		const result = await awaitAll({
-			token: () =>
-				notification.appAccessTokenId
-					? this.prismaService.client.access_token.findUniqueOrThrow({ where: { id: notification.appAccessTokenId } })
-					: Promise.resolve(null),
-			noteIfNeed: () =>
-				NOTE_REQUIRED_NOTIFICATION_TYPES.has(notification.type) && notification.noteId != null
-					? hint?.packedNotes != null
-						? Promise.resolve(hint.packedNotes.get(notification.noteId))
-						: this.noteEntityService.pack(notification.noteId, { id: meId }, { detail: true })
-					: Promise.resolve(undefined),
-			userIfNeed: () =>
-				notification.notifierId != null
-					? hint?.packedUsers != null
-						? Promise.resolve(hint.packedUsers.get(notification.notifierId))
-						: this.userEntityService.packLite(notification.notifierId)
-					: Promise.resolve(undefined),
-		});
+		const getToken = async (): Promise<access_token | null> => {
+			if (notification.appAccessTokenId == null) return null;
+
+			return await this.prismaService.client.access_token.findUniqueOrThrow({
+				where: { id: notification.appAccessTokenId },
+			});
+		};
+
+		const getNoteIfNeed = async (): Promise<z.infer<typeof NoteSchema> | undefined> => {
+			if (!NOTE_REQUIRED_NOTIFICATION_TYPES.has(notification.type)) return undefined;
+			if (notification.noteId == null) return undefined;
+
+			if (hint?.packedNotes == null) {
+				return await this.noteEntityService.pack(notification.noteId, { id: meId }, { detail: true });
+			} else {
+				return hint.packedNotes.get(notification.noteId);
+			}
+		};
+
+		const getUserIfNeed = async (): Promise<z.infer<typeof UserLiteSchema> | undefined> => {
+			if (notification.notifierId == null) return undefined;
+			if (hint?.packedUsers == null) {
+				const notifier = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: notification.notifierId } });
+				return await this.userEntityService.packLite(notifier);
+			} else {
+				return hint.packedUsers.get(notification.notifierId);
+			}
+		};
+
+		const [token, noteIfNeed, userIfNeed] = await Promise.all([getToken(), getNoteIfNeed(), getUserIfNeed()]);
 
 		return {
 			id: notification.id,
 			createdAt: new Date(notification.createdAt).toISOString(),
 			type: notification.type,
 			userId: notification.notifierId,
-			...(result.userIfNeed !== undefined ? { user: result.userIfNeed } : {}),
-			...(result.noteIfNeed !== undefined ? { note: result.noteIfNeed } : {}),
+			...(userIfNeed !== undefined ? { user: userIfNeed } : {}),
+			...(noteIfNeed !== undefined ? { note: noteIfNeed } : {}),
 			...(notification.type === 'reaction' ? { reaction: notification.reaction } : {}),
 			...(notification.type === 'achievementEarned' ? { achievement: notification.achievement } : {}),
 			...(notification.type === 'app' ? {
 				body: notification.customBody,
-				header: notification.customHeader ?? result.token?.name,
-				icon: notification.customIcon ?? result.token?.iconUrl,
+				header: notification.customHeader ?? token?.name,
+				icon: notification.customIcon ?? token?.iconUrl,
 			} : {}),
 		};
 	}
