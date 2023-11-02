@@ -100,7 +100,7 @@ export class UserBlockingService implements OnModuleInit {
 		});
 
 		if (this.userEntityService.isLocalUser(followee)) {
-			this.userEntityService.packDetailed(followee, followee)
+			this.userEntityService.packDetailedMe(followee)
 				.then(packed => this.globalEventService.publishMainStream(followee.id, 'meUpdated', packed));
 		}
 

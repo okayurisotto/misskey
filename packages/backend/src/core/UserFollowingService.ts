@@ -292,7 +292,8 @@ export class UserFollowingService implements OnModuleInit {
 
 		// Publish followed event
 		if (this.userEntityService.isLocalUser(followee)) {
-			this.userEntityService.packLite(follower.id).then(async packed => {
+			const followerAsUser = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: follower.id } });
+			this.userEntityService.packLite(followerAsUser).then(async packed => {
 				this.globalEventService.publishMainStream(followee.id, 'followed', packed);
 
 				const webhooks = (await this.webhookService.getActiveWebhooks()).filter(x => x.userId === followee.id && x.on.includes('followed'));
@@ -489,7 +490,8 @@ export class UserFollowingService implements OnModuleInit {
 
 		// Publish receiveRequest event
 		if (this.userEntityService.isLocalUser(followee)) {
-			this.userEntityService.packLite(follower.id).then(packed => this.globalEventService.publishMainStream(followee.id, 'receiveFollowRequest', packed));
+			const followerAsUser = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: follower.id } });
+			this.userEntityService.packLite(followerAsUser).then(packed => this.globalEventService.publishMainStream(followee.id, 'receiveFollowRequest', packed));
 
 			this.userEntityService.packDetailed(followee.id, followee).then(packed => this.globalEventService.publishMainStream(followee.id, 'meUpdated', packed));
 

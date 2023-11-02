@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchUser________, followRequestNotFound } from '@/server/api/errors.js';
+import {
+	noSuchUser________,
+	followRequestNotFound,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -15,7 +18,10 @@ export const meta = {
 	tags: ['following', 'account'],
 	requireCredential: true,
 	kind: 'write:following',
-	errors: {noSuchUser:noSuchUser________,followRequestNotFound:followRequestNotFound},
+	errors: {
+		noSuchUser: noSuchUser________,
+		followRequestNotFound: followRequestNotFound,
+	},
 	res,
 } as const;
 
@@ -57,7 +63,7 @@ export default class extends Endpoint<
 				throw err;
 			}
 
-			return (await this.userEntityService.packLite(followee.id)) satisfies z.infer<typeof res>;
+			return await this.userEntityService.packLite(followee);
 		});
 	}
 }

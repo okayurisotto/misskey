@@ -262,20 +262,20 @@ export class DriveFileEntityService {
 			...options,
 		};
 
-		const file = typeof src === 'object'
-			? src
-			: await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: src } });
-
-		const result = await awaitAll({
-			folder: () =>
-				opts.detail && file.folderId
-					? this.driveFolderEntityService.pack(file.folderId, { detail: true })
-					: Promise.resolve(null),
-			user: () =>
-				opts.withUser && file.userId
-					? this.userEntityService.packLite(file.userId)
-					: Promise.resolve(null),
+		const file = await this.prismaService.client.drive_file.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user_drive_file_userIdTouser: true },
 		});
+		if (file.user_drive_file_userIdTouser === null) throw new Error('file.user_drive_file_userIdTouser is null');
+
+		const [folder, user] = await Promise.all([
+			opts.detail && file.folderId
+				? this.driveFolderEntityService.pack(file.folderId, { detail: true })
+				: null,
+			opts.withUser && file.userId
+				? this.userEntityService.packLite(file.user_drive_file_userIdTouser)
+				: null,
+		]);
 
 		return {
 			id: file.id,
@@ -293,9 +293,9 @@ export class DriveFileEntityService {
 			thumbnailUrl: this.getThumbnailUrl(file),
 			comment: file.comment,
 			folderId: file.folderId,
-			folder: result.folder,
+			folder,
 			userId: opts.withUser ? file.userId : null,
-			user: result.user,
+			user,
 		};
 	}
 

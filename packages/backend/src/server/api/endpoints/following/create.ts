@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
-import { noSuchUser____, followeeIsYourself, alreadyFollowing, blocking, blocked } from '@/server/api/errors.js';
+import {
+	noSuchUser____,
+	followeeIsYourself,
+	alreadyFollowing,
+	blocking,
+	blocked,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -22,7 +28,13 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:following',
-	errors: {noSuchUser:noSuchUser____,followeeIsYourself:followeeIsYourself,alreadyFollowing:alreadyFollowing,blocking:blocking,blocked:blocked},
+	errors: {
+		noSuchUser: noSuchUser____,
+		followeeIsYourself: followeeIsYourself,
+		alreadyFollowing: alreadyFollowing,
+		blocking: blocking,
+		blocked: blocked,
+	},
 	res,
 } as const;
 
@@ -89,7 +101,7 @@ export default class extends Endpoint<
 				throw e;
 			}
 
-			return (await this.userEntityService.packLite(followee.id)) satisfies z.infer<typeof res>;
+			return await this.userEntityService.packLite(followee);
 		});
 	}
 }

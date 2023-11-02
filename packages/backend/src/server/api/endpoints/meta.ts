@@ -9,6 +9,7 @@ import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 
 const res = z.object({
 	maintainerName: z.string().nullable(),
@@ -187,11 +188,20 @@ export default class extends Endpoint<
 			};
 
 			if (ps.detail) {
-				const proxyAccount = instance.proxyAccountId
-					? await this.userEntityService
-							.packLite(instance.proxyAccountId)
-							.catch(() => null)
-					: null;
+				const getProxyAccount = async (): Promise<z.infer<typeof UserLiteSchema> | null> => {
+					if (instance.proxyAccountId === null) return null;
+
+					try {
+						const proxyAccount = await this.prismaService.client.user.findUniqueOrThrow({
+							where: { id: instance.proxyAccountId },
+						});
+						return await this.userEntityService.packLite(proxyAccount);
+					} catch {
+						return null;
+					}
+				};
+
+				const proxyAccount = await getProxyAccount();
 
 				response.proxyAccountName = proxyAccount ? proxyAccount.username : null;
 				response.features = {

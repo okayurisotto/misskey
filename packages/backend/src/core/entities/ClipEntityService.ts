@@ -27,12 +27,13 @@ export class ClipEntityService {
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof ClipSchema>> {
 		const meId = me ? me.id : null;
-		const clip = typeof src === 'object'
-			? src
-			: await this.prismaService.client.clip.findUniqueOrThrow({ where: { id: src } });
+		const clip = await this.prismaService.client.clip.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user: true },
+		});
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.packLite(clip.userId),
+			user: () => this.userEntityService.packLite(clip.user),
 			favoritedCount: () =>
 				this.prismaService.client.clip_favorite.count({ where: { clipId: clip.id } }),
 			isFavorited: async () =>

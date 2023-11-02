@@ -27,12 +27,13 @@ export class FlashEntityService {
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof FlashSchema>> {
 		const meId = me ? me.id : null;
-		const flash = typeof src === 'object'
-			? src
-			: await this.prismaService.client.flash.findUniqueOrThrow({ where: { id: src } });
+		const flash = await this.prismaService.client.flash.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user: true },
+		});
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.packLite(flash.userId), // { detail: true } すると無限ループするので注意
+			user: () => this.userEntityService.packLite(flash.user),
 			isLiked: async () =>
 				meId
 					? await this.prismaService.client.flash_like.count({

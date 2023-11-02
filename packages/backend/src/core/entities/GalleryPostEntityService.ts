@@ -29,12 +29,13 @@ export class GalleryPostEntityService {
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof GalleryPostSchema>> {
 		const meId = me ? me.id : null;
-		const post = typeof src === 'object'
-			? src
-			: await this.prismaService.client.gallery_post.findUniqueOrThrow({ where: { id: src } });
+		const post = await this.prismaService.client.gallery_post.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user: true },
+		});
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.packLite(post.userId),
+			user: () => this.userEntityService.packLite(post.user),
 			files: () => this.driveFileEntityService.packManyByIds(post.fileIds),
 			isLiked: async () =>
 				meId

@@ -10,6 +10,8 @@ import { bindThis } from '@/decorators.js';
 import NotesChart from '@/core/chart/charts/notes.js';
 import UsersChart from '@/core/chart/charts/users.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 
 const nodeinfo2_1path = '/nodeinfo/2.1';
@@ -19,12 +21,13 @@ const nodeinfo2_0path = '/nodeinfo/2.0';
 export class NodeinfoServerService {
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		private userEntityService: UserEntityService,
-		private metaService: MetaService,
-		private notesChart: NotesChart,
-		private usersChart: UsersChart,
+		private readonly userEntityService: UserEntityService,
+		private readonly metaService: MetaService,
+		private readonly notesChart: NotesChart,
+		private readonly usersChart: UsersChart,
+		private readonly prismaService: PrismaService,
 	) {
 		//this.createServer = this.createServer.bind(this);
 	}
@@ -65,7 +68,20 @@ export class NodeinfoServerService {
 			const activeHalfyear = null;
 			const activeMonth = null;
 
-			const proxyAccount = meta.proxyAccountId ? await this.userEntityService.packLite(meta.proxyAccountId).catch(() => null) : null;
+			const getProxyAccount = async (): Promise<z.infer<typeof UserLiteSchema> | null> => {
+				if (meta.proxyAccountId === null) return null;
+
+				try {
+					const proxyAccount = await this.prismaService.client.user.findUniqueOrThrow({
+						where: { id: meta.proxyAccountId },
+					});
+					return await this.userEntityService.packLite(proxyAccount);
+				} catch {
+					return null;
+				}
+			};
+
+			const proxyAccount = await getProxyAccount();
 
 			const basePolicies = { ...DEFAULT_POLICIES, ...z.record(z.string(), z.any()).parse(meta.policies) };
 

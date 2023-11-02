@@ -26,18 +26,19 @@ export class InviteCodeEntityService {
 		src: registration_ticket['id'] | registration_ticket,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof InviteCodeSchema>> {
-		const target = typeof src === 'object'
-			? src
-			: await this.prismaService.client.registration_ticket.findUniqueOrThrow({ where: { id: src } });
+		const target = await this.prismaService.client.registration_ticket.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user_registration_ticket_createdByIdTouser: true, user_registration_ticket_usedByIdTouser: true },
+		});
 
 		const result = await awaitAll({
 			createdBy: () =>
-				target.createdById
-					? this.userEntityService.packLite(target.createdById)
+				target.user_registration_ticket_createdByIdTouser
+					? this.userEntityService.packLite(target.user_registration_ticket_createdByIdTouser)
 					: Promise.resolve(null),
 			usedBy: () =>
-				target.usedById
-					? this.userEntityService.packLite(target.usedById)
+				target.user_registration_ticket_usedByIdTouser
+					? this.userEntityService.packLite(target.user_registration_ticket_usedByIdTouser)
 					: Promise.resolve(null),
 		});
 

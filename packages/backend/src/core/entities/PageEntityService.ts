@@ -31,12 +31,10 @@ export class PageEntityService {
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof PageSchema>> {
 		const meId = me ? me.id : null;
-		const page =
-			typeof src === 'object'
-				? src
-				: await this.prismaService.client.page.findUniqueOrThrow({
-						where: { id: src },
-				  });
+		const page = await this.prismaService.client.page.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user: true },
+		});
 
 		const collectFiles = (
 			xs: z.infer<typeof PageContentSchema>,
@@ -64,7 +62,7 @@ export class PageEntityService {
 		const attachedFiles = collectFiles(content, page.userId);
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.packLite(page.userId), // { detail: true } すると無限ループするので注意
+			user: () => this.userEntityService.packLite(page.user),
 			eyeCatchingImage: () =>
 				page.eyeCatchingImageId
 					? this.driveFileEntityService.pack(page.eyeCatchingImageId)

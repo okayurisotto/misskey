@@ -25,14 +25,15 @@ export class FollowRequestEntityService {
 		src: follow_request['id'] | follow_request,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<{ id: string; follower: z.infer<typeof UserLiteSchema>; followee: z.infer<typeof UserLiteSchema> }> {
-		const request = typeof src === 'object'
-			? src
-			: await this.prismaService.client.follow_request.findUniqueOrThrow({ where: { id: src } });
+		const request = await this.prismaService.client.follow_request.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user_follow_request_followeeIdTouser: true, user_follow_request_followerIdTouser: true },
+		});
 
 		return {
 			id: request.id,
-			follower: await this.userEntityService.packLite(request.followerId),
-			followee: await this.userEntityService.packLite(request.followeeId),
+			follower: await this.userEntityService.packLite(request.user_follow_request_followerIdTouser),
+			followee: await this.userEntityService.packLite(request.user_follow_request_followeeIdTouser),
 		};
 	}
 }

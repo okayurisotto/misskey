@@ -343,9 +343,10 @@ export class NoteEntityService implements OnModuleInit {
 		};
 
 		const meId = me ? me.id : null;
-		const note = typeof src === 'object'
-			? src
-			: await this.prismaService.client.note.findUniqueOrThrow({ where: { id: src } });
+		const note = await this.prismaService.client.note.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user: true },
+		});
 		const host = note.userHost;
 
 		let text = note.text;
@@ -395,7 +396,7 @@ export class NoteEntityService implements OnModuleInit {
 
 		const result = await awaitAll({
 			user: () =>
-				this.userEntityService.packLite(note.userId),
+				this.userEntityService.packLite(note.user),
 			reactionEmojis: () =>
 				this.customEmojiService.populateEmojis(reactionEmojiNames, host),
 			emojis: () =>

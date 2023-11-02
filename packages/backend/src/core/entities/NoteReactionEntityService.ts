@@ -48,14 +48,15 @@ export class NoteReactionEntityService implements OnModuleInit {
 			...options,
 		};
 
-		const reaction = typeof src === 'object'
-			? src
-			: await this.prismaService.client.note_reaction.findUniqueOrThrow({ where: { id: src } });
+		const reaction = await this.prismaService.client.note_reaction.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user: true },
+		});
 
 		return {
 			id: reaction.id,
 			createdAt: reaction.createdAt.toISOString(),
-			user: await this.userEntityService.packLite(reaction.userId),
+			user: await this.userEntityService.packLite(reaction.user),
 			type: this.reactionService.convertLegacyReaction(reaction.reaction),
 			...(opts.withNote ? {
 				note: await this.noteEntityService.pack(reaction.noteId, me),

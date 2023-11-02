@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
-import { noSuchUser_____, followeeIsYourself_, notFollowing } from '@/server/api/errors.js';
+import {
+	noSuchUser_____,
+	followeeIsYourself_,
+	notFollowing,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
@@ -20,7 +24,11 @@ export const meta = {
 	},
 	requireCredential: true,
 	kind: 'write:following',
-	errors: {noSuchUser:noSuchUser_____,followeeIsYourself:followeeIsYourself_,notFollowing:notFollowing},
+	errors: {
+		noSuchUser: noSuchUser_____,
+		followeeIsYourself: followeeIsYourself_,
+		notFollowing: notFollowing,
+	},
 	res,
 } as const;
 
@@ -75,7 +83,7 @@ export default class extends Endpoint<
 
 			await this.userFollowingService.unfollow(follower, followee);
 
-			return (await this.userEntityService.packLite(followee.id)) satisfies z.infer<typeof res>;
+			return await this.userEntityService.packLite(followee);
 		});
 	}
 }

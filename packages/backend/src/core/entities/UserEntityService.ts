@@ -22,7 +22,6 @@ import { UserFieldsSchema } from '@/models/zod/UserFieldsSchema.js';
 import type { UserSecretsSchema } from '@/models/zod/UserSecretsSchema.js';
 import { AchievementSchema } from '@/models/zod/AchievementSchema.js';
 import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
-import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { InstanceEntityService } from './InstanceEntityService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
@@ -471,21 +470,15 @@ export class UserEntityService implements OnModuleInit {
 		};
 	};
 
-	public async packLite(src: user['id'] | user): Promise<z.infer<typeof UserLiteSchema>> {
-		const user = typeof src === 'object' ? src : await this.prismaService.client.user.findUniqueOrThrow({ where: { id: src } });
-
+	public async packLite(user: user): Promise<z.infer<typeof UserLiteSchema>> {
 		await this.migrate(user);
 
 		const [instance, badgeRoles, emojis] = await Promise.all([
 			this.getInstance(user),
 			user.host === null // パフォーマンス上の理由でローカルユーザーのみ
-				? this.roleService.getUserBadgeRoles(user.id).then(rs => rs
+				? this.roleService.getUserBadgeRoles(user.id).then(roles => roles
 						.sort((a, b) => b.displayOrder - a.displayOrder)
-						.map(r => ({
-							name: r.name,
-							iconUrl: r.iconUrl,
-							displayOrder: r.displayOrder,
-						}))
+						.map(role => pick(role, ['name', 'iconUrl', 'displayOrder']))
 					)
 				: Promise.resolve(undefined),
 			this.customEmojiService.populateEmojis(user.emojis, user.host),
@@ -494,8 +487,8 @@ export class UserEntityService implements OnModuleInit {
 		return {
 			...pick(user, ['id', 'name', 'username', 'host', 'avatarBlurhash', 'isBot', 'isCat']),
 
-			emojis: emojis,
-			badgeRoles: badgeRoles,
+			badgeRoles,
+			emojis,
 
 			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
 			instance: instance !== undefined ? this.instanceEntityService.packLite(instance) : undefined,
