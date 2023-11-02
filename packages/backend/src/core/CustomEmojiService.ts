@@ -76,7 +76,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			},
 		});
 
-		if (data.host == null) {
+		if (data.host === null) {
 			await this.localEmojisCache.refresh();
 
 			this.globalEventService.publishBroadcastStream('emojiAdded', {
@@ -282,14 +282,19 @@ export class CustomEmojiService implements OnApplicationShutdown {
 
 	@bindThis
 	private normalizeHost(src: string | undefined, noteUserHost: string | null): string | null {
-		// クエリに使うホスト
-		const host = src === '.'
-			? null // .はローカルホスト (ここがマッチするのはリアクションのみ)
-			: src === undefined
-				? noteUserHost // ノートなどでホスト省略表記の場合はローカルホスト (ここがリアクションにマッチすることはない)
-				: this.utilityService.isSelfHost(src)
-					? null // 自ホスト指定
-					: (src || noteUserHost); // 指定されたホスト || ノートなどの所有者のホスト (こっちがリアクションにマッチすることはない)
+		const host = ((): string | null => {
+			// .はローカルホスト (ここがマッチするのはリアクションのみ)
+			if (src === '.') return null;
+
+			// ノートなどでホスト省略表記の場合はローカルホスト (ここがリアクションにマッチすることはない)
+			if (src === undefined) return noteUserHost;
+
+			// 自ホスト指定
+			if (this.utilityService.isSelfHost(src)) return null;
+
+			// 指定されたホスト || ノートなどの所有者のホスト (こっちがリアクションにマッチすることはない)
+			return src || noteUserHost;
+		})();
 
 		return this.utilityService.toPunyNullable(host);
 	}
@@ -322,11 +327,14 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		if (name == null) return null;
 		if (host == null) return null;
 
-		const queryOrNull = async (): Promise<emoji | null> => (await this.prismaService.client.emoji.findFirst({ where: { name, host } })) ?? null;
+		const emoji = await this.cache.fetch(
+			`${name} ${host}`,
+			async (): Promise<emoji | null> => {
+				return await this.prismaService.client.emoji.findFirst({ where: { name, host } });
+			},
+		);
 
-		const emoji = await this.cache.fetch(`${name} ${host}`, queryOrNull);
-
-		if (emoji == null) return null;
+		if (emoji === null) return null;
 		return emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl; // 後方互換性のため
 	}
 
@@ -335,15 +343,18 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	 */
 	@bindThis
 	public async populateEmojis(emojiNames: string[], noteUserHost: string | null): Promise<Record<string, string>> {
-		const emojis = await Promise.all(emojiNames.map(x => this.populateEmoji(x, noteUserHost)));
-		const res: Record<string, string> = {};
-		for (let i = 0; i < emojiNames.length; i++) {
-			const emoji = emojis[i];
-			if (emoji != null) {
-				res[emojiNames[i]] = emoji;
+		const emojis = await Promise.all(emojiNames.map(emojiName => this.populateEmoji(emojiName, noteUserHost)));
+
+		const result = emojiNames.reduce<Map<string, string>>((acc, emojiName, i) => {
+			const emoji = emojis.at(i);
+			if (emoji == null) {
+				return acc;
+			} else {
+				return acc.set(emojiName, emoji);
 			}
-		}
-		return res;
+		}, new Map());
+
+		return Object.fromEntries(result);
 	}
 
 	/**
