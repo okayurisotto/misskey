@@ -4,8 +4,13 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { AppEntityService } from '@/core/entities/AppEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { limit } from '@/models/zod/misc.js';
+import { EntityMap } from '@/misc/EntityMap.js';
+import {
+	AppIsAuthorizedOnlySchema,
+	AppLiteSchema,
+} from '@/models/zod/AppSchema.js';
 
-const res = z.array(z.unknown());
+const res = z.array(AppLiteSchema.merge(AppIsAuthorizedOnlySchema));
 export const meta = {
 	requireCredential: true,
 	secure: true,
@@ -30,16 +35,34 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const apps = await this.prismaService.client.app.findMany({
-				where: { access_token: { some: { userId: me.id } } },
-				take: ps.limit,
+			const results = await this.prismaService.client.access_token.findMany({
+				where: { userId: me.id },
+				include: { app: true },
+				distinct: ['appId'],
+				orderBy: { app: { id: ps.sort === 'asc' ? 'asc' : 'desc' } },
 				skip: ps.offset,
-				orderBy: { id: ps.sort === 'asc' ? 'asc' : 'desc' },
+				take: ps.limit,
 			});
 
-			return (await Promise.all(
-				apps.map((app) => this.appEntityService.pack(app, me)),
-			)) satisfies z.infer<typeof res>;
+			const data = {
+				app: new EntityMap(
+					'id',
+					results.map(({ app }) => app),
+				),
+				access_token: new EntityMap('id', results),
+			};
+
+			return results.map((result) => {
+				if (result.app === null) throw new Error();
+				return {
+					...this.appEntityService.packLite(result.app.id, data),
+					...this.appEntityService.packAuthorizedOnly(
+						result.app.id,
+						me.id,
+						data,
+					),
+				};
+			});
 		});
 	}
 }
