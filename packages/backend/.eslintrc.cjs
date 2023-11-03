@@ -8,7 +8,7 @@ module.exports = {
 	plugins: ['@typescript-eslint', 'import'],
 	extends: [
 		'eslint:recommended',
-		'plugin:@typescript-eslint/recommended',
+		'plugin:@typescript-eslint/recommended-type-checked',
 		'plugin:import/recommended',
 		'plugin:import/typescript',
 		'prettier',
@@ -36,23 +36,32 @@ module.exports = {
 		'prefer-arrow-callback': ['error'],
 
 		/* typescript */
+		'@typescript-eslint/await-thenable': ['warn'], // TODO
 		'@typescript-eslint/consistent-type-imports': ['off'], // TODO: デコレータのメタデータとして参照される型を通常の`import`に置き換えなければならなくなり、結果として動かなくなることがあるため
 		'@typescript-eslint/explicit-function-return-type': ['error'],
-		'@typescript-eslint/naming-convention': [
-			'error',
-			{ selector: 'typeLike', format: ['PascalCase'] },
-			{ selector: 'typeParameter', format: [] },
-		],
+		'@typescript-eslint/naming-convention': ['error', { selector: 'typeLike', format: ['PascalCase'] }, { selector: 'typeParameter', format: [] }],
+		'@typescript-eslint/no-base-to-string': ['warn'], // TODO
 		'@typescript-eslint/no-empty-function': ['off'], // OK
+		'@typescript-eslint/no-explicit-any': ['warn'], // TODO
+		'@typescript-eslint/no-floating-promises': ['warn'], // TODO
 		'@typescript-eslint/no-inferrable-types': ['error'],
-		'@typescript-eslint/no-misused-promises': [
-			'error',
-			{ checksVoidReturn: false },
-		],
+		'@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
 		'@typescript-eslint/no-non-null-assertion': ['warn'], // TODO
+		'@typescript-eslint/no-redundant-type-constituents': ['warn'], // TODO
 		'@typescript-eslint/no-unnecessary-condition': ['warn'], // TODO: 既存の型が`as`などされていて信用できないため
+		'@typescript-eslint/no-unnecessary-type-assertion': ['warn'], // TODO
+		'@typescript-eslint/no-unsafe-argument': ['warn'], // TODO
+		'@typescript-eslint/no-unsafe-assignment': ['warn'], // TODO
+		'@typescript-eslint/no-unsafe-call': ['warn'], // TODO
+		'@typescript-eslint/no-unsafe-member-access': ['warn'], // TODO
+		'@typescript-eslint/no-unsafe-return': ['warn'], // TODO
+		'@typescript-eslint/no-unused-vars': ['warn'], // TODO
 		'@typescript-eslint/no-var-requires': ['error'],
-		'@typescript-eslint/prefer-nullish-coalescing': ['error'],
+		'@typescript-eslint/prefer-nullish-coalescing': ['warn'],
+		'@typescript-eslint/require-await': ['warn'], // TODO
+		'@typescript-eslint/restrict-plus-operands': ['warn'], // TODO
+		'@typescript-eslint/restrict-template-expressions': ['warn'], // TODO
+		'@typescript-eslint/unbound-method': ['warn'], // TODO
 
 		/* import */
 		'import/no-default-export': ['warn'],
