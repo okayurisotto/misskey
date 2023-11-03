@@ -1,12 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchClip_______ } from '@/server/api/errors.js';
+import { pick } from 'omick';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { ApiError } from '../../error.js';
 
 const res = ClipSchema;
 export const meta = {
@@ -14,7 +13,6 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:account',
-	errors: {noSuchClip:noSuchClip_______},
 	res,
 } as const;
 
@@ -37,30 +35,12 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			// Fetch the clip
-			const clip = await this.prismaService.client.clip.findUnique({
-				where: {
-					id: ps.clipId,
-					userId: me.id,
-				},
+			const result = await this.prismaService.client.clip.update({
+				where: { id: ps.clipId, userId: me.id },
+				data: pick(ps, ['name', 'description', 'isPublic']),
 			});
 
-			if (clip == null) {
-				throw new ApiError(meta.errors.noSuchClip);
-			}
-
-			await this.prismaService.client.clip.update({
-				where: { id: clip.id },
-				data: {
-					name: ps.name,
-					description: ps.description,
-					isPublic: ps.isPublic,
-				},
-			});
-
-			return (await this.clipEntityService.pack(clip.id, me)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.clipEntityService.pack(result, me);
 		});
 	}
 }
