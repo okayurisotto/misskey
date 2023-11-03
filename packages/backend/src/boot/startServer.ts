@@ -1,8 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ChartManagementService } from '@/core/chart/ChartManagementService.js';
-import { QueueProcessorService } from '@/queue/QueueProcessorService.js';
 import { NestLogger } from '@/NestLogger.js';
-import { QueueProcessorModule } from '@/queue/QueueProcessorModule.js';
 import { JanitorService } from '@/daemons/JanitorService.js';
 import { QueueStatsService } from '@/daemons/QueueStatsService.js';
 import { ServerStatsService } from '@/daemons/ServerStatsService.js';
@@ -10,7 +8,7 @@ import { ServerService } from '@/server/ServerService.js';
 import { MainModule } from '@/MainModule.js';
 import type { INestApplicationContext } from '@nestjs/common';
 
-export async function server(): Promise<INestApplicationContext> {
+export const startServer = async (): Promise<INestApplicationContext> => {
 	const app = await NestFactory.createApplicationContext(MainModule, {
 		logger: new NestLogger(),
 	});
@@ -20,23 +18,13 @@ export async function server(): Promise<INestApplicationContext> {
 	await serverService.launch();
 
 	if (process.env['NODE_ENV'] !== 'test') {
-		app.get(ChartManagementService).start();
-		app.get(JanitorService).start();
-		app.get(QueueStatsService).start();
-		app.get(ServerStatsService).start();
+		await Promise.all([
+			app.get(ChartManagementService).start(),
+			app.get(JanitorService).start(),
+			app.get(QueueStatsService).start(),
+			app.get(ServerStatsService).start(),
+		]);
 	}
 
 	return app;
-}
-
-export async function jobQueue(): Promise<INestApplicationContext> {
-	const jobQueue = await NestFactory.createApplicationContext(QueueProcessorModule, {
-		logger: new NestLogger(),
-	});
-	jobQueue.enableShutdownHooks();
-
-	jobQueue.get(QueueProcessorService).start();
-	jobQueue.get(ChartManagementService).start();
-
-	return jobQueue;
-}
+};

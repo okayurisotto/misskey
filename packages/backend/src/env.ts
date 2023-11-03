@@ -1,19 +1,38 @@
+import type { ScreamingSnakeCase } from 'type-fest';
+
 const envOption = {
+	disableClustering: false,
+	noDaemons: false,
 	onlyQueue: false,
 	onlyServer: false,
-	noDaemons: false,
-	disableClustering: false,
+	quiet: false,
 	verbose: false,
 	withLogTime: false,
-	quiet: false,
 };
 
-for (const key of Object.keys(envOption) as (keyof typeof envOption)[]) {
-	if (process.env['MK_' + key.replace(/[A-Z]/g, letter => `_${letter}`).toUpperCase()]) envOption[key] = true;
+const keyMapping = new Map<
+	`MK_${ScreamingSnakeCase<keyof typeof envOption>}`,
+	keyof typeof envOption
+>([
+	['MK_DISABLE_CLUSTERING', 'disableClustering'],
+	['MK_ONLY_QUEUE', 'onlyQueue'],
+	['MK_ONLY_SERVER', 'onlyServer'],
+	['MK_QUIET', 'quiet'],
+	['MK_VERBOSE', 'verbose'],
+	['MK_WITH_LOG_TIME', 'withLogTime'],
+	['MK_NO_DAEMONS', 'noDaemons'],
+]);
+
+for (const [envKey, optionKey] of keyMapping) {
+	if (process.env[envKey]) {
+		envOption[optionKey] = true;
+	}
 }
 
-if (process.env["NODE_ENV"] === 'test') envOption.disableClustering = true;
-if (process.env["NODE_ENV"] === 'test') envOption.quiet = true;
-if (process.env["NODE_ENV"] === 'test') envOption.noDaemons = true;
+if (process.env['NODE_ENV'] === 'test') {
+	envOption.disableClustering = true;
+	envOption.noDaemons = true;
+	envOption.quiet = true;
+}
 
 export { envOption };

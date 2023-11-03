@@ -63,7 +63,7 @@ const SourceSchema = z.object({
 
 	accesslog: z.string().optional(),
 
-	clusterLimit: z.number().optional(),
+	clusterLimit: z.number().default(1),
 
 	id: z.string(),
 

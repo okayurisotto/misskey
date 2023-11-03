@@ -2,7 +2,7 @@ process.env.NODE_ENV = 'test';
 
 import * as assert from 'assert';
 import { loadConfig } from '@/config.js';
-import { jobQueue } from '@/boot/common.js';
+import { startJobQueue } from '@/boot/startJobQueue.js';
 import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { uploadFile, signup, startServer, initTestDb, api, sleep, successfulApiCall } from '../utils.js';
@@ -26,7 +26,7 @@ describe('Account Move', () => {
 
 	beforeAll(async () => {
 		app = await startServer();
-		jq = await jobQueue();
+		jq = await startJobQueue();
 		const config = loadConfig();
 		url = new URL(config.url);
 		await initTestDb(false);

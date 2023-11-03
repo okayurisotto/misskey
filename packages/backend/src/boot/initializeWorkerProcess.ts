@@ -1,21 +1,19 @@
 import cluster from 'node:cluster';
 import { envOption } from '@/env.js';
-import { jobQueue, server } from './common.js';
+import { startJobQueue } from './startJobQueue.js';
+import { startServer } from './startServer.js';
 
-/**
- * Init worker process
- */
-export async function workerMain(): Promise<void> {
+export const initializeWorkerProcess = async (): Promise<void> => {
 	if (envOption.onlyServer) {
-		await server();
+		await startServer();
 	} else if (envOption.onlyQueue) {
-		await jobQueue();
+		await startJobQueue();
 	} else {
-		await jobQueue();
+		await startJobQueue();
 	}
 
 	if (cluster.isWorker) {
 		// Send a 'ready' message to parent process
 		process.send?.('ready');
 	}
-}
+};

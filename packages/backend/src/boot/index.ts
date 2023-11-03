@@ -1,4 +1,3 @@
-
 /**
  * Misskey Entry Point!
  */
@@ -9,8 +8,8 @@ import chalk from 'chalk';
 import Xev from 'xev';
 import Logger from '@/logger.js';
 import { envOption } from '../env.js';
-import { masterMain } from './master.js';
-import { workerMain } from './worker.js';
+import { initializeMasterProcess } from './initializeMasterProcess.js';
+import { initializeWorkerProcess } from './initializeWorkerProcess.js';
 
 import 'reflect-metadata';
 
@@ -26,30 +25,31 @@ const ev = new Xev();
 //#region Events
 
 // Listen new workers
-cluster.on('fork', worker => {
+cluster.on('fork', (worker) => {
 	clusterLogger.debug(`Process forked: [${worker.id}]`);
 });
 
 // Listen online workers
-cluster.on('online', worker => {
+cluster.on('online', (worker) => {
 	clusterLogger.debug(`Process is now online: [${worker.id}]`);
 });
 
 // Listen for dying workers
-cluster.on('exit', worker => {
-	// Replace the dead worker,
-	// we're not sentimental
+cluster.on('exit', (worker) => {
+	// Replace the dead worker.
 	clusterLogger.error(chalk.red(`[${worker.id}] died :(`));
 	cluster.fork();
 });
 
 // Display detail of unhandled promise rejection
-if (!envOption.quiet) {
-	process.on('unhandledRejection', console.dir);
-}
+process.on('unhandledRejection', (reason, promise) => {
+	if (!envOption.quiet) {
+		console.dir(reason, promise);
+	}
+});
 
 // Display detail of uncaught exception
-process.on('uncaughtException', err => {
+process.on('uncaughtException', (err) => {
 	try {
 		logger.error(err);
 		console.trace(err);
@@ -59,14 +59,14 @@ process.on('uncaughtException', err => {
 });
 
 // Dying away...
-process.on('exit', code => {
+process.on('exit', (code) => {
 	logger.info(`The process is going to exit with code ${code}`);
 });
 
 //#endregion
 
 if (cluster.isPrimary || envOption.disableClustering) {
-	await masterMain();
+	await initializeMasterProcess();
 
 	if (cluster.isPrimary) {
 		ev.mount();
@@ -74,11 +74,11 @@ if (cluster.isPrimary || envOption.disableClustering) {
 }
 
 if (cluster.isWorker || envOption.disableClustering) {
-	await workerMain();
+	await initializeWorkerProcess();
 }
 
 // ユニットテスト時にMisskeyが子プロセスで起動された時のため
-// それ以外のときは process.send は使えないので弾く
+// それ以外のときは`process.send`は使えないので弾く
 if (process.send) {
 	process.send('ok');
 }
