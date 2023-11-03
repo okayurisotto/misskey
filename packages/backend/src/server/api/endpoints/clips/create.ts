@@ -16,7 +16,7 @@ export const meta = {
 	prohibitMoved: true,
 	kind: 'write:account',
 	res,
-	errors: {tooManyClips:tooManyClips},
+	errors: { tooManyClips: tooManyClips },
 } as const;
 
 export const paramDef = z.object({
@@ -39,12 +39,14 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const currentCount = await this.prismaService.client.clip.count({
-				where: { userId: me.id },
-			});
-			if (
-				currentCount > (await this.roleService.getUserPolicies(me.id)).clipLimit
-			) {
+			const [currentCount, policies] = await Promise.all([
+				this.prismaService.client.clip.count({
+					where: { userId: me.id },
+				}),
+				this.roleService.getUserPolicies(me.id),
+			]);
+
+			if (currentCount > policies.clipLimit) {
 				throw new ApiError(meta.errors.tooManyClips);
 			}
 
@@ -59,9 +61,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await this.clipEntityService.pack(clip, me)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.clipEntityService.pack(clip, me);
 		});
 	}
 }
