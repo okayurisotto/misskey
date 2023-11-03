@@ -31,9 +31,9 @@ export default class extends Endpoint<
 				where: { userId: me.id },
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				clips.map((clip) => this.clipEntityService.pack(clip, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
