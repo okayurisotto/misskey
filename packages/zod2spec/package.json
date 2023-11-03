@@ -12,17 +12,17 @@
   },
   "devDependencies": {
     "@swc/cli": "^0.1.62",
-    "@swc/core": "^1.3.72",
-    "@tsconfig/node18": "^18.2.0",
-    "@tsconfig/strictest": "^2.0.1",
-    "@types/node": "^20.4.5",
-    "prettier": "^3.0.0",
-    "type-fest": "^4.1.0",
-    "typescript": "^5.1.6",
+    "@swc/core": "^1.3.95",
+    "@tsconfig/node18": "^18.2.2",
+    "@tsconfig/strictest": "^2.0.2",
+    "@types/node": "^20.8.10",
+    "prettier": "^3.0.3",
+    "type-fest": "^4.6.0",
+    "typescript": "^5.2.2",
     "vitest": "0.34.1"
   },
   "dependencies": {
     "openapi3-ts": "^4.1.2",
-    "zod": "^3.21.4"
+    "zod": "^3.22.4"
   }
 }
