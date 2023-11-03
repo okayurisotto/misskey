@@ -75,7 +75,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(users.map((user) => this.userEntityService.packDetailed(user, me))));
+			return await Promise.all(
+				users.map((user) => this.userEntityService.packDetailed(user, me)),
+			);
 		});
 	}
 }
