@@ -13,7 +13,7 @@ export const meta = {
 	tags: ['clips', 'account'],
 	requireCredential: false,
 	kind: 'read:account',
-	errors: {noSuchClip:noSuchClip_____},
+	errors: { noSuchClip: noSuchClip_____ },
 	res,
 } as const;
 
@@ -33,22 +33,18 @@ export default class extends Endpoint<
 		private prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			// Fetch the clip
 			const clip = await this.prismaService.client.clip.findUnique({
-				where: { id: ps.clipId },
+				where: {
+					id: ps.clipId,
+					OR: [{ isPublic: true }, ...(me ? [{ userId: me.id }] : [])],
+				},
 			});
 
-			if (clip == null) {
+			if (clip === null) {
 				throw new ApiError(meta.errors.noSuchClip);
 			}
 
-			if (!clip.isPublic && (me == null || clip.userId !== me.id)) {
-				throw new ApiError(meta.errors.noSuchClip);
-			}
-
-			return (await this.clipEntityService.pack(clip, me)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.clipEntityService.pack(clip, me);
 		});
 	}
 }
