@@ -48,30 +48,6 @@ db:
   user: example-misskey-user
   pass: example-misskey-pass
 
-  # Whether disable Caching queries
-  #disableCache: true
-
-  # Extra Connection options
-  #extra:
-  #  ssl: true
-
-dbReplications: false
-
-# You can configure any number of replicas here
-#dbSlaves:
-#  -
-#    host: 
-#    port: 
-#    db: 
-#    user: 
-#    pass: 
-#  -
-#    host: 
-#    port: 
-#    db: 
-#    user: 
-#    pass: 
-
 #   ┌─────────────────────┐
 #───┘ Redis configuration └─────────────────────────────────────
 
@@ -82,8 +58,6 @@ redis:
   #pass: example-pass
   #prefix: example-prefix
   #db: 1
-  # You can specify more ioredis options...
-  #username: example-username
 
 #redisForPubsub:
 #  host: localhost
@@ -92,8 +66,6 @@ redis:
 #  #pass: example-pass
 #  #prefix: example-prefix
 #  #db: 1
-#  # You can specify more ioredis options...
-#  #username: example-username
 
 #redisForJobQueue:
 #  host: localhost
@@ -102,8 +74,6 @@ redis:
 #  #pass: example-pass
 #  #prefix: example-prefix
 #  #db: 1
-#  # You can specify more ioredis options...
-#  #username: example-username
 
 #   ┌───────────────────────────┐
 #───┘ MeiliSearch configuration └─────────────────────────────

@@ -6,93 +6,91 @@ import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import * as yaml from 'js-yaml';
-import type { RedisOptions } from 'ioredis';
+import { z } from 'zod';
+import { pick } from 'omick';
 
-type RedisOptionsSource = Partial<RedisOptions> & {
-	host: string;
-	port: number;
-	family?: number;
-	pass: string;
-	db?: number;
-	prefix?: string;
-};
+const RedisOptionsSourceSchema = z.object({
+	host: z.string(),
+	port: z.number(),
+	family: z.number().default(0),
+	pass: z.string().optional(),
+	db: z.number().default(0),
+	prefix: z.string().optional(),
+});
 
-/**
- * ユーザーが設定する必要のある情報
- */
-export type Source = {
-	repository_url?: string;
-	feedback_url?: string;
-	url: string;
-	port?: number;
-	socket?: string;
-	chmodSocket?: string;
-	disableHsts?: boolean;
-	db: {
-		host: string;
-		port: number;
-		db: string;
-		user: string;
-		pass: string;
-		disableCache?: boolean;
-		extra?: { [x: string]: string };
-	};
-	dbReplications?: boolean;
-	dbSlaves?: {
-		host: string;
-		port: number;
-		db: string;
-		user: string;
-		pass: string;
-	}[];
-	redis: RedisOptionsSource;
-	redisForPubsub?: RedisOptionsSource;
-	redisForJobQueue?: RedisOptionsSource;
-	meilisearch?: {
-		host: string;
-		port: string;
-		apiKey: string;
-		ssl?: boolean;
-		index: string;
-		scope?: 'local' | 'global' | string[];
-	};
+type RedisOptionsSource = z.infer<typeof RedisOptionsSourceSchema>;
 
-	proxy?: string;
-	proxySmtp?: string;
-	proxyBypassHosts?: string[];
+/** ユーザーが設定する必要のある情報 */
+const SourceSchema = z.object({
+	repository_url: z.string().optional(),
+	feedback_url: z.string().optional(),
+	url: z.string(),
+	port: z.number().default(parseInt(process.env['PORT'] ?? '', 10)),
+	socket: z.string().optional(),
+	chmodSocket: z.string().optional(),
+	disableHsts: z.boolean().optional(),
 
-	allowedPrivateNetworks?: string[];
+	db: z.object({
+		host: z.string(),
+		port: z.number(),
+		db: z.string(),
+		user: z.string(),
+		pass: z.string(),
+	}),
 
-	maxFileSize?: number;
+	redis: RedisOptionsSourceSchema,
+	redisForPubsub: RedisOptionsSourceSchema.optional(),
+	redisForJobQueue: RedisOptionsSourceSchema.optional(),
 
-	accesslog?: string;
+	meilisearch: z
+		.object({
+			host: z.string(),
+			port: z.string(),
+			apiKey: z.string(),
+			ssl: z.boolean().optional(),
+			index: z.string(),
+			scope: z.enum(['local', 'global']).or(z.string().array()),
+		})
+		.optional(),
 
-	clusterLimit?: number;
+	proxy: z.string().optional(),
+	proxySmtp: z.string().optional(),
+	proxyBypassHosts: z.string().array().optional(),
 
-	id: string;
+	allowedPrivateNetworks: z.string().array().optional(),
 
-	outgoingAddressFamily?: 'ipv4' | 'ipv6' | 'dual';
+	maxFileSize: z.number().optional(),
 
-	deliverJobConcurrency?: number;
-	inboxJobConcurrency?: number;
-	relashionshipJobConcurrency?: number;
-	deliverJobPerSec?: number;
-	inboxJobPerSec?: number;
-	relashionshipJobPerSec?: number;
-	deliverJobMaxAttempts?: number;
-	inboxJobMaxAttempts?: number;
+	accesslog: z.string().optional(),
 
-	mediaProxy?: string;
-	proxyRemoteFiles?: boolean;
-	videoThumbnailGenerator?: string;
+	clusterLimit: z.number().optional(),
 
-	signToActivityPubGet?: boolean;
-};
+	id: z.string(),
 
-/**
- * Misskeyが自動的に(ユーザーが設定した情報から推論して)設定する情報
- */
-export type Mixin = {
+	outgoingAddressFamily: z.enum(['ipv4', 'ipv6', 'dual']).optional(),
+
+	deliverJobConcurrency: z.number().optional(),
+	inboxJobConcurrency: z.number().optional(),
+	relashionshipJobConcurrency: z.number().optional(),
+	deliverJobPerSec: z.number().optional(),
+	inboxJobPerSec: z.number().optional(),
+	relashionshipJobPerSec: z.number().optional(),
+	deliverJobMaxAttempts: z.number().optional(),
+	inboxJobMaxAttempts: z.number().optional(),
+
+	mediaProxy: z.string().nullable().default(null),
+	proxyRemoteFiles: z.boolean().optional(),
+	videoThumbnailGenerator: z.string().nullable().default(null),
+
+	signToActivityPubGet: z.boolean().optional(),
+});
+
+type Source = z.infer<typeof SourceSchema>;
+
+const MetaSchema = z.object({ version: z.string() });
+
+/** Misskeyが自動的に（ユーザーが設定した情報から推論して）設定する情報 */
+type Mixin = {
 	version: string;
 	host: string;
 	hostname: string;
@@ -108,9 +106,9 @@ export type Mixin = {
 	mediaProxy: string;
 	externalMediaProxyEnabled: boolean;
 	videoThumbnailGenerator: string | null;
-	redis: RedisOptions & RedisOptionsSource;
-	redisForPubsub: RedisOptions & RedisOptionsSource;
-	redisForJobQueue: RedisOptions & RedisOptionsSource;
+	redis: RedisOptionsSource;
+	redisForPubsub: RedisOptionsSource;
+	redisForJobQueue: RedisOptionsSource;
 };
 
 export type Config = Source & Mixin;
@@ -118,82 +116,125 @@ export type Config = Source & Mixin;
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
 
-/**
- * Path of configuration directory
- */
-const dir = `${_dirname}/../../../.config`;
+/** Path of configuration file */
+const configPath = ((): string => {
+	/** Path of configuration directory */
+	const dir = _dirname + '/../../../.config';
 
-/**
- * Path of configuration file
- */
-const path = process.env['MISSKEY_CONFIG_YML']
-	? resolve(dir, process.env['MISSKEY_CONFIG_YML'])
-	: process.env['NODE_ENV'] === 'test'
-		? resolve(dir, 'test.yml')
-		: resolve(dir, 'default.yml');
+	if (process.env['MISSKEY_CONFIG_YML']) {
+		return resolve(dir, process.env['MISSKEY_CONFIG_YML']);
+	}
 
-export function loadConfig(): Source & Mixin {
-	const meta = JSON.parse(fs.readFileSync(`${_dirname}/../../../built/meta.json`, 'utf-8'));
-	const clientManifestExists = fs.existsSync(_dirname + '/../../../built/_vite_/manifest.json');
-	const clientManifest = clientManifestExists ?
-		JSON.parse(fs.readFileSync(`${_dirname}/../../../built/_vite_/manifest.json`, 'utf-8'))
-		: { 'src/_boot_.ts': { file: 'src/_boot_.ts' } };
-	const config = yaml.load(fs.readFileSync(path, 'utf-8')) as Source;
+	if (process.env['NODE_ENV'] === 'test') {
+		return resolve(dir, 'test.yml');
+	}
 
-	const mixin = {} as Mixin;
+	return resolve(dir, 'default.yml');
+})();
+const metaPath = _dirname + '/../../../built/meta.json';
+const clientManifestPath = _dirname + '/../../../built/_vite_/manifest.json';
 
-	const url = tryCreateUrl(config.url);
+const removeLastSlash = (value: string): string => {
+	if (!value.endsWith('/')) return value;
+	return value.substring(0, value.length - 1);
+};
 
-	config.url = url.origin;
+const convertRedisOptions = (
+	options: RedisOptionsSource,
+	host: string,
+): {
+	db: number;
+	family: number;
+	host: string;
+	keyPrefix: string;
+	pass?: string;
+	password?: string;
+	port: number;
+	prefix: string;
+} => ({
+	...pick(options, ['host', 'pass', 'port', 'family', 'db']),
+	keyPrefix: `${options.prefix ?? host}:`,
+	password: options.pass,
+	prefix: options.prefix ?? host,
+});
 
-	config.port = config.port ?? parseInt(process.env['PORT'] ?? '', 10);
-
-	mixin.version = meta.version;
-	mixin.host = url.host;
-	mixin.hostname = url.hostname;
-	mixin.scheme = url.protocol.replace(/:$/, '');
-	mixin.wsScheme = mixin.scheme.replace('http', 'ws');
-	mixin.wsUrl = `${mixin.wsScheme}://${mixin.host}`;
-	mixin.apiUrl = `${mixin.scheme}://${mixin.host}/api`;
-	mixin.authUrl = `${mixin.scheme}://${mixin.host}/auth`;
-	mixin.driveUrl = `${mixin.scheme}://${mixin.host}/files`;
-	mixin.userAgent = `Misskey/${meta.version} (${config.url})`;
-	mixin.clientEntry = clientManifest['src/_boot_.ts'];
-	mixin.clientManifestExists = clientManifestExists;
-
-	const externalMediaProxy = config.mediaProxy ?
-		config.mediaProxy.endsWith('/') ? config.mediaProxy.substring(0, config.mediaProxy.length - 1) : config.mediaProxy
-		: null;
-	const internalMediaProxy = `${mixin.scheme}://${mixin.host}/proxy`;
-	mixin.mediaProxy = externalMediaProxy ?? internalMediaProxy;
-	mixin.externalMediaProxyEnabled = externalMediaProxy !== null && externalMediaProxy !== internalMediaProxy;
-
-	mixin.videoThumbnailGenerator = config.videoThumbnailGenerator ?
-		config.videoThumbnailGenerator.endsWith('/') ? config.videoThumbnailGenerator.substring(0, config.videoThumbnailGenerator.length - 1) : config.videoThumbnailGenerator
-		: null;
-
-	mixin.redis = convertRedisOptions(config.redis, mixin.host);
-	mixin.redisForPubsub = config.redisForPubsub ? convertRedisOptions(config.redisForPubsub, mixin.host) : mixin.redis;
-	mixin.redisForJobQueue = config.redisForJobQueue ? convertRedisOptions(config.redisForJobQueue, mixin.host) : mixin.redis;
-
-	return Object.assign(config, mixin);
-}
-
-function tryCreateUrl(url: string): URL {
+const tryCreateUrl = (url: string): URL => {
 	try {
 		return new URL(url);
-	} catch (e) {
+	} catch {
 		throw new Error(`url="${url}" is not a valid URL.`);
 	}
-}
+};
 
-function convertRedisOptions(options: RedisOptionsSource, host: string): RedisOptions & RedisOptionsSource {
-	return {
-		...options,
-		password: options.pass,
-		prefix: options.prefix ?? host,
-		family: options.family == null ? 0 : options.family,
-		keyPrefix: `${options.prefix ?? host}:`,
-		db: options.db ?? 0,
+export const loadConfig = (): Config => {
+	const meta = MetaSchema.parse(JSON.parse(fs.readFileSync(metaPath, 'utf-8')));
+	const clientManifestExists = fs.existsSync(clientManifestPath);
+	const clientManifest = clientManifestExists
+		? JSON.parse(fs.readFileSync(clientManifestPath, 'utf-8'))
+		: { 'src/_boot_.ts': { file: 'src/_boot_.ts' } };
+	const config = SourceSchema.parse(
+		yaml.load(fs.readFileSync(configPath, 'utf-8')),
+	);
+	const url = tryCreateUrl(config.url);
+
+	const version = meta.version;
+	const host = url.host;
+	const hostname = url.hostname;
+	const scheme = url.protocol.replace(/:$/, '');
+	const wsScheme = scheme.replace('http', 'ws');
+	const wsUrl = `${wsScheme}://${host}`;
+	const apiUrl = `${scheme}://${host}/api`;
+	const authUrl = `${scheme}://${host}/auth`;
+	const driveUrl = `${scheme}://${host}/files`;
+	const userAgent = `Misskey/${meta.version} (${config.url})`;
+	const clientEntry = clientManifest['src/_boot_.ts'];
+
+	const externalMediaProxy =
+		config.mediaProxy !== null ? removeLastSlash(config.mediaProxy) : null;
+	const internalMediaProxy = `${scheme}://${host}/proxy`;
+	const mediaProxy = externalMediaProxy ?? internalMediaProxy;
+	const externalMediaProxyEnabled =
+		externalMediaProxy !== null && externalMediaProxy !== internalMediaProxy;
+
+	const videoThumbnailGenerator =
+		config.videoThumbnailGenerator !== null
+			? removeLastSlash(config.videoThumbnailGenerator)
+			: null;
+
+	const redis = convertRedisOptions(config.redis, host);
+	const redisForPubsub =
+		config.redisForPubsub !== undefined
+			? convertRedisOptions(config.redisForPubsub, host)
+			: redis;
+	const redisForJobQueue =
+		config.redisForJobQueue !== undefined
+			? convertRedisOptions(config.redisForJobQueue, host)
+			: redis;
+
+	const mixin: Mixin = {
+		version,
+		host,
+		hostname,
+		scheme,
+		wsScheme,
+		wsUrl,
+		apiUrl,
+		authUrl,
+		driveUrl,
+		userAgent,
+		clientEntry,
+		clientManifestExists,
+		mediaProxy,
+		externalMediaProxyEnabled,
+		videoThumbnailGenerator,
+		redis,
+		redisForPubsub,
+		redisForJobQueue,
 	};
-}
+
+	return {
+		...config,
+		url: url.origin,
+		...mixin,
+	};
+};

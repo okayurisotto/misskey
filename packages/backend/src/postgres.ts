@@ -202,37 +202,9 @@ export function createPostgresDataSource(config: Config) {
 		database: config.db.db,
 		extra: {
 			statement_timeout: 1000 * 10,
-			...config.db.extra,
 		},
-		replication: config.dbReplications ? {
-			master: {
-				host: config.db.host,
-				port: config.db.port,
-				username: config.db.user,
-				password: config.db.pass,
-				database: config.db.db,
-			},
-			slaves: config.dbSlaves!.map(rep => ({
-				host: rep.host,
-				port: rep.port,
-				username: rep.user,
-				password: rep.pass,
-				database: rep.db,
-			})),
-		} : undefined,
 		synchronize: process.env['NODE_ENV'] === 'test',
 		dropSchema: process.env['NODE_ENV'] === 'test',
-		cache: !config.db.disableCache && process.env['NODE_ENV'] !== 'test' ? { // dbをcloseしても何故かredisのコネクションが内部的に残り続けるようで、テストの際に支障が出るため無効にする(キャッシュも含めてテストしたいため本当は有効にしたいが...)
-			type: 'ioredis',
-			options: {
-				host: config.redis.host,
-				port: config.redis.port,
-				family: config.redis.family == null ? 0 : config.redis.family,
-				password: config.redis.pass,
-				keyPrefix: `${config.redis.prefix}:query:`,
-				db: config.redis.db ?? 0,
-			},
-		} : false,
 		logging: log,
 		logger: log ? new MyCustomLogger() : undefined,
 		maxQueryExecutionTime: 300,
