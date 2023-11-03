@@ -32,11 +32,11 @@ export default class extends Endpoint<
 				include: { clip: true },
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				favorites.map((favorite) =>
 					this.clipEntityService.pack(favorite.clip, me),
 				),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
