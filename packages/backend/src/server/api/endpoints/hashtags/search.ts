@@ -25,7 +25,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private readonly prismaService: PrismaService) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const hashtags = await this.prismaService.client.hashtag.findMany({
 				where: { name: { startsWith: ps.query.toLowerCase() } },
 				orderBy: { mentionedUsersCount: 'desc' },
@@ -33,7 +33,7 @@ export default class extends Endpoint<
 				skip: ps.offset,
 			});
 
-			return hashtags.map((tag) => tag.name) satisfies z.infer<typeof res>;
+			return hashtags.map((tag) => tag.name);
 		});
 	}
 }
