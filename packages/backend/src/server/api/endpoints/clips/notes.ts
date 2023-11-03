@@ -1,20 +1,17 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchClip___ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
-import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
 	tags: ['account', 'notes', 'clips'],
 	requireCredential: false,
 	kind: 'read:account',
-	errors: { noSuchClip: noSuchClip___ },
 	res,
 } as const;
 
@@ -38,26 +35,20 @@ export default class extends Endpoint<
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const clip = await this.prismaService.client.clip.findUnique({
-				where: { id: ps.clipId },
-			});
-
-			if (clip == null) {
-				throw new ApiError(meta.errors.noSuchClip);
-			}
-
-			if (!clip.isPublic && (me == null || clip.userId !== me.id)) {
-				throw new ApiError(meta.errors.noSuchClip);
-			}
-
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({
 				sinceId: ps.sinceId,
 				untilId: ps.untilId,
+				take: ps.limit,
 			});
+
 			const clipNotes = await this.prismaService.client.clip_note.findMany({
 				where: {
 					AND: [
-						{ clipId: clip.id },
+						{
+							clip: {
+								OR: [{ isPublic: true }, ...(me ? [{ userId: me.id }] : [])],
+							},
+						},
 						{
 							note: {
 								AND: [
@@ -80,13 +71,14 @@ export default class extends Endpoint<
 				},
 				include: { note: true },
 				orderBy: { note: paginationQuery.orderBy },
-				take: ps.limit,
+				skip: paginationQuery.skip,
+				take: paginationQuery.take,
 			});
 
-			return (await this.noteEntityService.packMany(
+			return await this.noteEntityService.packMany(
 				clipNotes.map((clipNote) => clipNote.note),
 				me,
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
