@@ -12,7 +12,7 @@ const res = GalleryPostSchema;
 export const meta = {
 	tags: ['gallery'],
 	requireCredential: false,
-	errors: {noSuchPost:noSuchPost__},
+	errors: { noSuchPost: noSuchPost__ },
 	res,
 } as const;
 
@@ -33,19 +33,14 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const post = await this.prismaService.client.gallery_post.findUnique({
-				where: {
-					id: ps.postId,
-				},
+				where: { id: ps.postId },
 			});
 
-			if (post == null) {
+			if (post === null) {
 				throw new ApiError(meta.errors.noSuchPost);
 			}
 
-			return (await this.galleryPostEntityService.pack(
-				post,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.galleryPostEntityService.pack(post, me);
 		});
 	}
 }
