@@ -13,6 +13,7 @@ type Context = {
 
 type Level = 'error' | 'success' | 'warning' | 'debug' | 'info';
 
+// eslint-disable-next-line import/no-default-export
 export default class Logger {
 	private context: Context;
 	private parentLogger: Logger | null = null;
@@ -82,25 +83,29 @@ export default class Logger {
 		}
 	}
 
+	/** 実行を継続できるが改善すべき状況で使う */
 	@bindThis
-	public warn(message: string, data?: Record<string, any> | null, important = false): void { // 実行を継続できるが改善すべき状況で使う
+	public warn(message: string, data?: Record<string, any> | null, important = false): void {
 		this.log('warning', message, data, important);
 	}
 
+	/** 何かに成功した状況で使う */
 	@bindThis
-	public succ(message: string, data?: Record<string, any> | null, important = false): void { // 何かに成功した状況で使う
+	public succ(message: string, data?: Record<string, any> | null, important = false): void {
 		this.log('success', message, data, important);
 	}
 
+	/** デバッグ用に使う(開発者に必要だが利用者に不要な情報) */
 	@bindThis
-	public debug(message: string, data?: Record<string, any> | null, important = false): void { // デバッグ用に使う(開発者に必要だが利用者に不要な情報)
+	public debug(message: string, data?: Record<string, any> | null, important = false): void {
 		if (process.env['NODE_ENV'] !== 'production' || envOption.verbose) {
 			this.log('debug', message, data, important);
 		}
 	}
 
+	/** それ以外 */
 	@bindThis
-	public info(message: string, data?: Record<string, any> | null, important = false): void { // それ以外
+	public info(message: string, data?: Record<string, any> | null, important = false): void {
 		this.log('info', message, data, important);
 	}
 }

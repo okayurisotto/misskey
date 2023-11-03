@@ -19,7 +19,6 @@ interface UserToken {
 }
 
 const config = loadConfig();
-export const port = config.port;
 
 export const cookie = (me: UserToken): string => {
 	return `token=${me.token};`;
@@ -91,7 +90,7 @@ const request = async (path: string, params: any, me?: UserToken): Promise<{ sta
 };
 
 const relativeFetch = async (path: string, init?: RequestInit | undefined) => {
-	return await fetch(new URL(path, `http://127.0.0.1:${port}/`).toString(), init);
+	return await fetch(new URL(path, `http://127.0.0.1:${config.port}/`).toString(), init);
 };
 
 export const signup = async (params?: Partial<misskey.Endpoints['signup']['req']>): Promise<NonNullable<misskey.Endpoints['signup']['res']>> => {
@@ -313,7 +312,7 @@ export const uploadUrl = async (user: UserToken, url: string) => {
 
 export function connectStream(user: UserToken, channel: string, listener: (message: Record<string, any>) => any, params?: any): Promise<WebSocket> {
 	return new Promise((res, rej) => {
-		const url = new URL(`ws://127.0.0.1:${port}/streaming`);
+		const url = new URL(`ws://127.0.0.1:${config.port}/streaming`);
 		const options: ClientOptions = {};
 		if (user.bearer) {
 			options.headers = { Authorization: `Bearer ${user.token}` };

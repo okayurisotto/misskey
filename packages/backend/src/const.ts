@@ -19,9 +19,11 @@ export const DB_MAX_NOTE_TEXT_LENGTH = 8192;
 export const DB_MAX_IMAGE_COMMENT_LENGTH = 512;
 //#endregion
 
-// ブラウザで直接表示することを許可するファイルの種類のリスト
-// ここに含まれないものは application/octet-stream としてレスポンスされる
-// SVGはXSSを生むので許可しない
+/**
+ * ブラウザで直接表示することを許可するファイルの種類のリスト。
+ * ここに含まれないものは application/octet-stream としてレスポンスされる。
+ * SVGはXSSを生むので許可しない。
+ */
 export const FILE_TYPE_BROWSERSAFE = [
 	// Images
 	'image/png',
@@ -64,8 +66,9 @@ export const FILE_TYPE_BROWSERSAFE = [
 	'audio/x-flac',
 	'audio/vnd.wave',
 ];
+
 /*
-https://github.com/sindresorhus/file-type/blob/main/supported.js
-https://github.com/sindresorhus/file-type/blob/main/core.js
-https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers
-*/
+ * https://github.com/sindresorhus/file-type/blob/main/supported.js
+ * https://github.com/sindresorhus/file-type/blob/main/core.js
+ * https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers
+ */

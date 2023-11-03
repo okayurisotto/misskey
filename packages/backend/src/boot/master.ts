@@ -99,10 +99,11 @@ function showNodejsVersion(): void {
 
 function loadConfigBoot(): Config {
 	const configLogger = bootLogger.createSubLogger('config');
-	let config;
 
 	try {
-		config = loadConfig();
+		const config = loadConfig();
+		configLogger.succ('Loaded');
+		return config;
 	} catch (exception) {
 		if (typeof exception === 'string') {
 			configLogger.error(exception);
@@ -113,10 +114,6 @@ function loadConfigBoot(): Config {
 		}
 		throw exception;
 	}
-
-	configLogger.succ('Loaded');
-
-	return config;
 }
 
 /*
