@@ -13,7 +13,7 @@ export const meta = {
 	tags: ['hashtags'],
 	requireCredential: false,
 	res,
-	errors: {noSuchHashtag:noSuchHashtag},
+	errors: { noSuchHashtag: noSuchHashtag },
 } as const;
 
 export const paramDef = z.object({
@@ -31,19 +31,18 @@ export default class extends Endpoint<
 		private readonly hashtagEntityService: HashtagEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const hashtag = await this.prismaService.client.hashtag.findUnique({
 				where: {
 					name: normalizeForSearch(ps.tag),
 				},
 			});
-			if (hashtag == null) {
+
+			if (hashtag === null) {
 				throw new ApiError(meta.errors.noSuchHashtag);
 			}
 
-			return (await this.hashtagEntityService.pack(hashtag)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.hashtagEntityService.pack(hashtag);
 		});
 	}
 }
