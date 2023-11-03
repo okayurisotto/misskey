@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
-import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -33,17 +33,19 @@ export default class extends Endpoint<
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({
 				sinceId: ps.sinceId,
 				untilId: ps.untilId,
+				take: ps.limit,
 			});
 
 			const posts = await this.prismaService.client.gallery_post.findMany({
 				where: { AND: [paginationQuery.where] },
 				orderBy: paginationQuery.orderBy,
-				take: ps.limit,
+				skip: paginationQuery.skip,
+				take: paginationQuery.take,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				posts.map((post) => this.galleryPostEntityService.pack(post, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
