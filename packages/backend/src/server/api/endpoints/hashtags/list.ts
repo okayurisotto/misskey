@@ -46,7 +46,7 @@ export default class extends Endpoint<
 		private readonly hashtagEntityService: HashtagEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const orderBy = ((): Prisma.hashtagOrderByWithRelationInput => {
 				switch (ps.sort) {
 					case '+mentionedUsers':
@@ -92,9 +92,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				tags.map((tag) => this.hashtagEntityService.pack(tag)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }
