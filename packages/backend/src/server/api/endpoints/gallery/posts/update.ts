@@ -1,4 +1,3 @@
-import {  } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -7,7 +6,7 @@ import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityServi
 import { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { drive_file } from '@prisma/client';
+import { ApiError } from '@/server/api/error.js';
 
 const res = GalleryPostSchema;
 export const meta = {
@@ -20,7 +19,6 @@ export const meta = {
 		max: 300,
 	},
 	res,
-	errors: {},
 } as const;
 
 export const paramDef = z.object({
@@ -43,24 +41,18 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const files = (
-				await Promise.all(
-					ps.fileIds.map((fileId) =>
-						this.prismaService.client.drive_file.findUnique({
-							where: {
-								id: fileId,
-								userId: me.id,
-							},
-						}),
-					),
-				)
-			).filter((file): file is drive_file => file != null);
+			const files = await this.prismaService.client.drive_file.findMany({
+				where: {
+					id: { in: ps.fileIds },
+					userId: me.id,
+				},
+			});
 
-			if (files.length === 0) {
-				throw new Error();
+			if (ps.fileIds.length !== files.length) {
+				throw new ApiError();
 			}
 
-			await this.prismaService.client.gallery_post.update({
+			const post = await this.prismaService.client.gallery_post.update({
 				where: {
 					id: ps.postId,
 					userId: me.id,
@@ -74,17 +66,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			const post =
-				await this.prismaService.client.gallery_post.findUniqueOrThrow({
-					where: {
-						id: ps.postId,
-					},
-				});
-
-			return (await this.galleryPostEntityService.pack(
-				post,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.galleryPostEntityService.pack(post, me);
 		});
 	}
 }
