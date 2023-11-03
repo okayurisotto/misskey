@@ -277,7 +277,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		tags = tags.filter(tag => Array.from(tag ?? '').length <= 128).splice(0, 32);
 
 		if (data.reply && (user.id !== data.reply.userId) && !mentionedUsers.some(u => u.id === data.reply!.userId)) {
-			mentionedUsers.push(await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.reply!.userId } }));
+			mentionedUsers.push(await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.reply.userId } }));
 		}
 
 		if (data.visibility === 'specified') {
@@ -290,7 +290,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 			}
 
 			if (data.reply && !data.visibleUsers.some(x => x.id === data.reply!.userId)) {
-				data.visibleUsers.push(await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.reply!.userId } }));
+				data.visibleUsers.push(await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.reply.userId } }));
 			}
 		}
 

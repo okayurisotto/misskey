@@ -64,7 +64,7 @@ export default class extends Endpoint<
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
-					name: ps.name!,
+					name: ps.name,
 					parentId: parent !== null ? parent.id : null,
 					userId: me.id,
 				},

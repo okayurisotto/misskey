@@ -163,8 +163,7 @@ export default class extends Endpoint<
 				profileUpdates.mutedInstances = ps.mutedInstances;
 			}
 			if (ps.mutingNotificationTypes !== undefined) {
-				profileUpdates.mutingNotificationTypes =
-					ps.mutingNotificationTypes as (typeof notificationTypes)[number][];
+				profileUpdates.mutingNotificationTypes = ps.mutingNotificationTypes;
 			}
 			if (typeof ps.isLocked === 'boolean') updates.isLocked = ps.isLocked;
 			if (typeof ps.isExplorable === 'boolean') {

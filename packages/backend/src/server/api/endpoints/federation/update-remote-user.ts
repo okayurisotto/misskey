@@ -27,7 +27,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps) => {
 			const user = await this.getterService.getRemoteUser(ps.userId);
-			await this.apPersonService.updatePerson(user.uri!);
+			await this.apPersonService.updatePerson(user.uri);
 		});
 	}
 }

@@ -54,7 +54,7 @@ export default class extends Endpoint<
 				});
 				if (p == null) return;
 
-				if (i > ps.offset!) {
+				if (i > ps.offset) {
 					conversation.push(p);
 				}
 

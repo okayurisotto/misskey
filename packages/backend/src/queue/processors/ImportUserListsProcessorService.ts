@@ -76,7 +76,7 @@ export class ImportUserListsProcessorService {
 					});
 				}
 
-				let target: user | null = this.utilityService.isSelfHost(host!)
+				let target: user | null = this.utilityService.isSelfHost(host)
 					? await this.prismaService.client.user.findFirst({
 						where: {
 							host: null,
@@ -96,9 +96,9 @@ export class ImportUserListsProcessorService {
 					target = await this.remoteUserResolveService.resolveUser(username, host);
 				}
 
-				if (await this.prismaService.client.user_list_joining.findFirst({ where: { userListId: list!.id, userId: target.id }}) != null) continue;
+				if (await this.prismaService.client.user_list_joining.findFirst({ where: { userListId: list.id, userId: target.id }}) != null) continue;
 
-				this.userListService.push(target, list!, user);
+				this.userListService.push(target, list, user);
 			} catch (e) {
 				this.logger.warn(`Error in line:${linenum} ${e}`);
 			}

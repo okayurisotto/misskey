@@ -150,7 +150,7 @@ export class InboxProcessorService {
 
 		// activity.idがあればホストが署名者のホストであることを確認する
 		if (typeof activity.id === 'string') {
-			const signerHost = this.utilityService.extractDbHost(authUser.user.uri!);
+			const signerHost = this.utilityService.extractDbHost(authUser.user.uri);
 			const activityIdHost = this.utilityService.extractDbHost(activity.id);
 			if (signerHost !== activityIdHost) {
 				throw new Bull.UnrecoverableError(`skip: signerHost(${signerHost}) !== activity.id host(${activityIdHost}`);

@@ -75,9 +75,7 @@ export default class extends Endpoint<
 					);
 					throw new ApiError(meta.errors.noSuchUser);
 				});
-			const destination = (await this.getterService.getUser(moveTo.id)) as
-				| LocalUser
-				| RemoteUser;
+			const destination = await this.getterService.getUser(moveTo.id);
 			const newUri = this.userEntityService.getUserUri(destination);
 
 			// update local db

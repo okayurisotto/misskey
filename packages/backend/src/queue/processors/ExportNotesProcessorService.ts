@@ -63,14 +63,14 @@ export class ExportNotesProcessorService {
 			let cursor: note['id'] | null = null;
 
 			while (true) {
-				const notes = await this.prismaService.client.note.findMany({
+				const notes: note[] = await this.prismaService.client.note.findMany({
 					where: {
 						userId: user.id,
 						...(cursor ? { id: { gt: cursor } } : {}),
 					},
 					take: 100,
 					orderBy: { id: 'asc' },
-				}) as note[];
+				});
 
 				if (notes.length === 0) {
 					job.updateProgress(100);

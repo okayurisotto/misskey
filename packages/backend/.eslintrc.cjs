@@ -49,7 +49,6 @@ module.exports = {
 		'@typescript-eslint/no-non-null-assertion': ['warn'], // TODO
 		'@typescript-eslint/no-redundant-type-constituents': ['warn'], // TODO
 		'@typescript-eslint/no-unnecessary-condition': ['warn'], // TODO: 既存の型が`as`などされていて信用できないため
-		'@typescript-eslint/no-unnecessary-type-assertion': ['warn'], // TODO
 		'@typescript-eslint/no-unsafe-argument': ['warn'], // TODO
 		'@typescript-eslint/no-unsafe-assignment': ['warn'], // TODO
 		'@typescript-eslint/no-unsafe-call': ['warn'], // TODO

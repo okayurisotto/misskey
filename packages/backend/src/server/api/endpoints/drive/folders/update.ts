@@ -80,7 +80,7 @@ export default class extends Endpoint<
 								},
 							});
 
-						if (folder2!.id === folder!.id) {
+						if (folder2!.id === folder.id) {
 							return true;
 						} else if (folder2!.parentId) {
 							return await checkCircle(folder2!.parentId);

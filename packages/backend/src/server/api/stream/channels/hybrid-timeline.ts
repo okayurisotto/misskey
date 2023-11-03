@@ -53,7 +53,7 @@ class HybridTimelineChannel extends Channel {
 		)) return;
 
 		if (['followers', 'specified'].includes(note.visibility)) {
-			note = await this.noteEntityService.pack(note.id, this.user!, {
+			note = await this.noteEntityService.pack(note.id, this.user, {
 				detail: true,
 			});
 
@@ -63,13 +63,13 @@ class HybridTimelineChannel extends Channel {
 		} else {
 			// リプライなら再pack
 			if (note.replyId != null) {
-				note.reply = await this.noteEntityService.pack(note.replyId, this.user!, {
+				note.reply = await this.noteEntityService.pack(note.replyId, this.user, {
 					detail: true,
 				});
 			}
 			// Renoteなら再pack
 			if (note.renoteId != null) {
-				note.renote = await this.noteEntityService.pack(note.renoteId, this.user!, {
+				note.renote = await this.noteEntityService.pack(note.renoteId, this.user, {
 					detail: true,
 				});
 			}

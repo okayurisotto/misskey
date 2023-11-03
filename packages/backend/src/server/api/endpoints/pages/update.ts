@@ -108,7 +108,7 @@ export default class extends Endpoint<
 							? null
 							: ps.eyeCatchingImageId === undefined
 							? page.eyeCatchingImageId
-							: eyeCatchingImage!.id,
+							: eyeCatchingImage?.id,
 				},
 			});
 		});
