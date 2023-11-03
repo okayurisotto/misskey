@@ -49,9 +49,9 @@ const ZodType = z.discriminatedUnion("typeName", [
 ]);
 
 export const generateOpenApiSpec = (
-  components: { key: string; schema: OpenApiZod }[],
+  components: { key: string; schema: OpenApiZod | z.ZodType }[],
 ) => {
-  return (schema: OpenApiZod): SchemaObject | ReferenceObject => {
+  return (schema: OpenApiZod | z.ZodType): SchemaObject | ReferenceObject => {
     if (key in schema) {
       return schema[key];
     }
