@@ -8,7 +8,7 @@ export const pick = <T extends Record<string, unknown>, U extends (keyof T)[]>(
 ) => {
   const entries = toEntries(data);
   const result = entries.filter(([k]) => includes(keys, k));
-  return fromEntries(result) as Pick<T, U[number]>;
+  return fromEntries(result) as unknown as Pick<T, U[number]>;
 };
 
 export const pickBy = <T extends Record<string, unknown>>(
@@ -17,5 +17,5 @@ export const pickBy = <T extends Record<string, unknown>>(
 ) => {
   const entries = toEntries(data);
   const result = entries.filter((entry) => fn(entry));
-  return fromEntries(result) as Partial<T>;
+  return fromEntries(result) as unknown as Partial<T>;
 };
