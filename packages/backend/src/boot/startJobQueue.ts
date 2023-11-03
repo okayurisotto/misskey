@@ -12,10 +12,8 @@ export const startJobQueue = async (): Promise<INestApplicationContext> => {
 	);
 	jobQueue.enableShutdownHooks();
 
-	await Promise.all([
-		jobQueue.get(QueueProcessorService).start(),
-		jobQueue.get(ChartManagementService).start(),
-	]);
+	jobQueue.get(QueueProcessorService).start(); // TODO: `await`するとテストに通らなくなる？
+	await jobQueue.get(ChartManagementService).start();
 
 	return jobQueue;
 };
