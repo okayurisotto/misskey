@@ -24,7 +24,7 @@ class HashtagChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		this.q = params.q;
 
 		if (this.q == null) return;
@@ -34,7 +34,7 @@ class HashtagChannel extends Channel {
 	}
 
 	@bindThis
-	private async onNote(note: z.infer<typeof NoteSchema>) {
+	private async onNote(note: z.infer<typeof NoteSchema>): Promise<void> {
 		const noteTags = note.tags ? note.tags.map((t: string) => t.toLowerCase()) : [];
 		const matched = this.q.some(tags => tags.every(tag => noteTags.includes(normalizeForSearch(tag))));
 		if (!matched) return;
@@ -59,7 +59,7 @@ class HashtagChannel extends Channel {
 	}
 
 	@bindThis
-	public override dispose() {
+	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

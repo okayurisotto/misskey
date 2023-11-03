@@ -24,14 +24,14 @@ class RoleTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		this.roleId = params.roleId as string;
 
 		this.subscriber.on(`roleTimelineStream:${this.roleId}`, this.onEvent);
 	}
 
 	@bindThis
-	private async onEvent(data: StreamMessages['roleTimeline']['payload']) {
+	private async onEvent(data: StreamMessages['roleTimeline']['payload']): Promise<void> {
 		if (data.type === 'note') {
 			const note = data.body;
 
@@ -54,7 +54,7 @@ class RoleTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public override dispose() {
+	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off(`roleTimelineStream:${this.roleId}`, this.onEvent);
 	}

@@ -20,7 +20,7 @@ class MainChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		// Subscribe main stream channel
 		this.subscriber.on(`mainStream:${this.user!.id}`, async data => {
 			switch (data.type) {

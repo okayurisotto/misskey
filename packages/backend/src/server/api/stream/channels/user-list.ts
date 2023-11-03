@@ -29,7 +29,7 @@ class UserListChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		this.listId = params.listId as string;
 
 		// Check existence and owner
@@ -52,7 +52,7 @@ class UserListChannel extends Channel {
 	}
 
 	@bindThis
-	private async updateListUsers() {
+	private async updateListUsers(): Promise<void> {
 		const users = await this.prismaService.client.user_list_joining.findMany({
 			where: {
 				userListId: this.listId,
@@ -63,7 +63,7 @@ class UserListChannel extends Channel {
 	}
 
 	@bindThis
-	private async onNote(note: z.infer<typeof NoteSchema>) {
+	private async onNote(note: z.infer<typeof NoteSchema>): Promise<void> {
 		if (!this.listUsers.includes(note.userId)) return;
 
 		if (['followers', 'specified'].includes(note.visibility)) {
@@ -100,7 +100,7 @@ class UserListChannel extends Channel {
 	}
 
 	@bindThis
-	public override dispose() {
+	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off(`userListStream:${this.listId}`, this.send);
 		this.subscriber.off('notesStream', this.onNote);

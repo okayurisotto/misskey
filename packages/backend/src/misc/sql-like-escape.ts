@@ -1,3 +1,3 @@
-export function sqlLikeEscape(s: string) {
+export function sqlLikeEscape(s: string): string {
 	return s.replace(/([%_])/g, '\\$1');
 }

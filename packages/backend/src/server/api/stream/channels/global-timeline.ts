@@ -29,7 +29,7 @@ class GlobalTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		const policies = await this.roleService.getUserPolicies(this.user ? this.user.id : null);
 		if (!policies.gtlAvailable) return;
 
@@ -40,7 +40,7 @@ class GlobalTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	private async onNote(note: z.infer<typeof NoteSchema>) {
+	private async onNote(note: z.infer<typeof NoteSchema>): Promise<void> {
 		if (note.visibility !== 'public') return;
 		if (note.channelId != null) return;
 
@@ -87,7 +87,7 @@ class GlobalTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public override dispose() {
+	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

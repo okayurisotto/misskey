@@ -37,7 +37,7 @@ import { QueueLoggerService } from './QueueLoggerService.js';
 import { QUEUE, baseQueueOptions } from './const.js';
 
 // ref. https://github.com/misskey-dev/misskey/pull/7635#issue-971097019
-function httpRelatedBackoff(attemptsMade: number) {
+function httpRelatedBackoff(attemptsMade: number): number {
 	const baseDelay = 60 * 1000;	// 1min
 	const maxBackoff = 8 * 60 * 60 * 1000;	// 8hours
 	let backoff = (Math.pow(2, attemptsMade) - 1) * baseDelay;

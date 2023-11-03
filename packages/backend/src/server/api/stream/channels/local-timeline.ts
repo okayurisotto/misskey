@@ -28,7 +28,7 @@ class LocalTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		const policies = await this.roleService.getUserPolicies(this.user ? this.user.id : null);
 		if (!policies.ltlAvailable) return;
 
@@ -39,7 +39,7 @@ class LocalTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	private async onNote(note: z.infer<typeof NoteSchema>) {
+	private async onNote(note: z.infer<typeof NoteSchema>): Promise<void> {
 		if (note.user.host !== null) return;
 		if (note.visibility !== 'public') return;
 		if (note.channelId != null && !this.followingChannels.has(note.channelId)) return;
@@ -84,7 +84,7 @@ class LocalTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public override dispose() {
+	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

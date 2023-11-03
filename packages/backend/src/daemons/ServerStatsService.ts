@@ -10,8 +10,8 @@ const ev = new Xev();
 
 const interval = 2000;
 
-const roundCpu = (num: number) => Math.round(num * 1000) / 1000;
-const round = (num: number) => Math.round(num * 10) / 10;
+const roundCpu = (num: number): number => Math.round(num * 1000) / 1000;
+const round = (num: number): number => Math.round(num * 10) / 10;
 
 @Injectable()
 export class ServerStatsService implements OnApplicationShutdown {
@@ -35,7 +35,7 @@ export class ServerStatsService implements OnApplicationShutdown {
 			ev.emit(`serverStatsLog:${x.id}`, log.slice(0, x.length ?? 50));
 		});
 
-		const tick = async () => {
+		const tick = async (): Promise<void> => {
 			const cpu = await cpuUsage();
 			const memStats = await mem();
 			const netStats = await net();
@@ -89,20 +89,20 @@ function cpuUsage(): Promise<number> {
 }
 
 // MEMORY STAT
-async function mem() {
+async function mem(): Promise<si.Systeminformation.MemData> {
 	const data = await si.mem();
 	return data;
 }
 
 // NETWORK STAT
-async function net() {
+async function net(): Promise<si.Systeminformation.NetworkStatsData> {
 	const iface = await si.networkInterfaceDefault();
 	const data = await si.networkStats(iface);
 	return data[0];
 }
 
 // FS STAT
-async function fs() {
+async function fs(): Promise<si.Systeminformation.DisksIoData | { rIO_sec: number; wIO_sec: number; }> {
 	const data = await si.disksIO().catch(() => ({ rIO_sec: 0, wIO_sec: 0 }));
 	return data ?? { rIO_sec: 0, wIO_sec: 0 };
 }

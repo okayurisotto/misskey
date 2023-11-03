@@ -47,7 +47,7 @@ export default class extends Endpoint<
 			const conversation: note[] = [];
 			let i = 0;
 
-			const get = async (id: any) => {
+			const get = async (id: any): Promise<void> => {
 				i++;
 				const p = await this.prismaService.client.note.findUnique({
 					where: { id },

@@ -49,7 +49,7 @@ export class QueueStatsService implements OnApplicationShutdown {
 			activeInboxJobs++;
 		});
 
-		const tick = async () => {
+		const tick = async (): Promise<void> => {
 			const deliverJobCounts = await this.queueService.deliverQueue.getJobCounts();
 			const inboxJobCounts = await this.queueService.inboxQueue.getJobCounts();
 

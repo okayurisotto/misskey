@@ -8,7 +8,7 @@ class AdminChannel extends Channel {
 	public static override requireCredential = true;
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		// Subscribe admin stream
 		this.subscriber.on(`adminStream:${this.user!.id}`, data => {
 			this.send(data);

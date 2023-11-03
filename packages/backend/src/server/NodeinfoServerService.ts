@@ -17,6 +17,52 @@ import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 const nodeinfo2_1path = '/nodeinfo/2.1';
 const nodeinfo2_0path = '/nodeinfo/2.0';
 
+type NodeInfo2 = {
+	software: {
+		name: string;
+		version: string;
+		repository: string;
+	};
+	protocols: string[];
+	services: {
+		inbound: string[];
+		outbound: string[];
+	};
+	openRegistrations: boolean;
+	usage: {
+		users: {
+			total: number;
+			activeHalfyear: null;
+			activeMonth: null;
+		};
+		localPosts: number;
+		localComments: number;
+	};
+	metadata: {
+		nodeName: string | null;
+		nodeDescription: string | null;
+		maintainer: {
+			name: string | null;
+			email: string | null;
+		};
+		langs: string[];
+		tosUrl: string | null;
+		repositoryUrl: string;
+		feedbackUrl: string | null;
+		disableRegistration: boolean;
+		disableLocalTimeline: boolean;
+		disableGlobalTimeline: boolean;
+		emailRequiredForSignup: boolean;
+		enableHcaptcha: boolean;
+		enableRecaptcha: boolean;
+		maxNoteTextLength: number;
+		enableEmail: boolean;
+		enableServiceWorker: boolean;
+		proxyAccountName: string | null;
+		themeColor: string;
+	};
+};
+
 @Injectable()
 export class NodeinfoServerService {
 	constructor(
@@ -33,7 +79,7 @@ export class NodeinfoServerService {
 	}
 
 	@bindThis
-	public getLinks() {
+	public getLinks(): { rel: string; href: string; }[] {
 		return [/* (awaiting release) {
 			rel: 'http://nodeinfo.diaspora.software/ns/schema/2.1',
 			href: config.url + nodeinfo2_1path
@@ -44,8 +90,8 @@ export class NodeinfoServerService {
 	}
 
 	@bindThis
-	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void) {
-		const nodeinfo2 = async () => {
+	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
+		const nodeinfo2 = async (): Promise<NodeInfo2> => {
 			const now = Date.now();
 
 			const notesChart = await this.notesChart.getChart('hour', 1, null);

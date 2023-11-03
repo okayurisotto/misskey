@@ -16,6 +16,8 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { SigninService } from './SigninService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { registration_ticket } from '@prisma/client';
+import { z } from 'zod';
+import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 
 @Injectable()
 export class SignupApiService {
@@ -48,7 +50,7 @@ export class SignupApiService {
 			}
 		}>,
 		reply: FastifyReply,
-	) {
+	): Promise<(z.infer<typeof UserDetailedSchema> & { token: string }) | void> {
 		const body = request.body;
 
 		const instance = await this.metaService.fetch(true);
@@ -203,7 +205,7 @@ export class SignupApiService {
 	}
 
 	@bindThis
-	public async signupPending(request: FastifyRequest<{ Body: { code: string; } }>, reply: FastifyReply) {
+	public async signupPending(request: FastifyRequest<{ Body: { code: string; } }>, reply: FastifyReply): Promise<{ id: string; i: string | null }> {
 		const body = request.body;
 
 		const code = body['code'];

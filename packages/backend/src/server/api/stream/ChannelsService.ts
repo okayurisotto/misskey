@@ -15,6 +15,22 @@ import { DriveChannelService } from './channels/drive.js';
 import { HashtagChannelService } from './channels/hashtag.js';
 import { RoleTimelineChannelService } from './channels/role-timeline.js';
 
+type ChannelService =
+  | MainChannelService
+  | HomeTimelineChannelService
+  | LocalTimelineChannelService
+  | HybridTimelineChannelService
+  | GlobalTimelineChannelService
+  | UserListChannelService
+  | HashtagChannelService
+  | RoleTimelineChannelService
+  | AntennaChannelService
+  | ChannelChannelService
+  | DriveChannelService
+  | ServerStatsChannelService
+  | QueueStatsChannelService
+  | AdminChannelService;
+
 @Injectable()
 export class ChannelsService {
 	constructor(
@@ -36,7 +52,7 @@ export class ChannelsService {
 	}
 
 	@bindThis
-	public getChannelService(name: string) {
+	public getChannelService(name: string): ChannelService {
 		switch (name) {
 			case 'main': return this.mainChannelService;
 			case 'homeTimeline': return this.homeTimelineChannelService;

@@ -104,6 +104,20 @@ function PEMString(pemBuffer: Buffer, type = 'CERTIFICATE'): string {
 	);
 }
 
+type VerifyOptions = {
+	attStmt: any;
+	authenticatorData: Buffer;
+	clientDataHash: Buffer;
+	publicKey: Map<number, any>;
+	rpIdHash: Buffer;
+	credentialId: Buffer;
+};
+
+type VerifyResult = {
+	valid: boolean;
+	publicKey: Buffer;
+};
+
 @Injectable()
 export class TwoFactorAuthenticationService {
 	constructor(
@@ -158,7 +172,13 @@ export class TwoFactorAuthenticationService {
 	}
 
 	@bindThis
-	public getProcedures() {
+	public getProcedures(): {
+		none: {                verify(opts: { publicKey: Map<number, Buffer>; }): VerifyResult };
+		'android-key': {       verify(opts: VerifyOptions): VerifyResult                       };
+		'android-safetynet': { verify(opts: VerifyOptions): VerifyResult                       };
+		packed: {              verify(opts: VerifyOptions): VerifyResult                       };
+		'fido-u2f': {          verify(opts: VerifyOptions): VerifyResult                       };
+	} {
 		return {
 			none: {
 				verify({ publicKey }: { publicKey: Map<number, Buffer> }): { publicKey: Buffer; valid: boolean } {

@@ -37,7 +37,7 @@ module.exports = {
 
 		/* typescript */
 		'@typescript-eslint/consistent-type-imports': ['off'], // TODO: デコレータのメタデータとして参照される型を通常の`import`に置き換えなければならなくなり、結果として動かなくなることがあるため
-		'@typescript-eslint/explicit-function-return-type': ['warn'], // TODO
+		'@typescript-eslint/explicit-function-return-type': ['error'],
 		'@typescript-eslint/naming-convention': [
 			'error',
 			{ selector: 'typeLike', format: ['PascalCase'] },

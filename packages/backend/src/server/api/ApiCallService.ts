@@ -167,7 +167,7 @@ export class ApiCallService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private send(reply: FastifyReply, x?: any, y?: ApiError) {
+	private send(reply: FastifyReply, x?: any, y?: ApiError): void {
 		if (x == null) {
 			reply.code(204);
 			reply.send();
@@ -189,7 +189,7 @@ export class ApiCallService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async logIp(request: FastifyRequest, user: LocalUser) {
+	private async logIp(request: FastifyRequest, user: LocalUser): Promise<void> {
 		const meta = await this.metaService.fetch();
 		if (!meta.enableIpLogging) return;
 		const ip = request.ip;
@@ -226,7 +226,7 @@ export class ApiCallService implements OnApplicationShutdown {
 			path: string;
 		} | null,
 		request: FastifyRequest<{ Body: Record<string, unknown> | undefined, Querystring: Record<string, unknown> }>,
-	) {
+	): Promise<any> {
 		const isSecure = user != null && token == null;
 
 		if (ep.meta.secure && !isSecure) {

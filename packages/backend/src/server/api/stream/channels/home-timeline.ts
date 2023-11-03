@@ -25,14 +25,14 @@ class HomeTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		this.withReplies = params.withReplies as boolean;
 
 		this.subscriber.on('notesStream', this.onNote);
 	}
 
 	@bindThis
-	private async onNote(note: z.infer<typeof NoteSchema>) {
+	private async onNote(note: z.infer<typeof NoteSchema>): Promise<void> {
 		if (note.channelId) {
 			if (!this.followingChannels.has(note.channelId)) return;
 		} else {
@@ -93,7 +93,7 @@ class HomeTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	public override dispose() {
+	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

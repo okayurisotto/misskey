@@ -65,7 +65,7 @@ export class ActivityPubServerService {
 	}
 
 	@bindThis
-	private inbox(request: FastifyRequest, reply: FastifyReply) {
+	private inbox(request: FastifyRequest, reply: FastifyReply): void {
 		let signature;
 
 		try {
@@ -85,7 +85,7 @@ export class ActivityPubServerService {
 	private async followers(
 		request: FastifyRequest<{ Params: { user: string; }; Querystring: { cursor?: string; page?: string; }; }>,
 		reply: FastifyReply,
-	) {
+	): Promise<any> {
 		const userId = request.params.user;
 
 		const cursor = request.query.cursor;
@@ -179,7 +179,7 @@ export class ActivityPubServerService {
 	private async following(
 		request: FastifyRequest<{ Params: { user: string; }; Querystring: { cursor?: string; page?: string; }; }>,
 		reply: FastifyReply,
-	) {
+	): Promise<any> {
 		const userId = request.params.user;
 
 		const cursor = request.query.cursor;
@@ -270,7 +270,7 @@ export class ActivityPubServerService {
 	}
 
 	@bindThis
-	private async featured(request: FastifyRequest<{ Params: { user: string; }; }>, reply: FastifyReply) {
+	private async featured(request: FastifyRequest<{ Params: { user: string; }; }>, reply: FastifyReply): Promise<any> {
 		const userId = request.params.user;
 
 		const user = await this.prismaService.client.user.findUnique({
@@ -315,7 +315,7 @@ export class ActivityPubServerService {
 			Querystring: { since_id?: string; until_id?: string; page?: string; };
 		}>,
 		reply: FastifyReply,
-	) {
+	): Promise<any> {
 		const userId = request.params.user;
 
 		const sinceId = request.query.since_id;
@@ -404,7 +404,7 @@ export class ActivityPubServerService {
 	}
 
 	@bindThis
-	private async userInfo(request: FastifyRequest, reply: FastifyReply, user: user | null) {
+	private async userInfo(request: FastifyRequest, reply: FastifyReply, user: user | null): Promise<any> {
 		if (user == null) {
 			reply.code(404);
 			return;
@@ -416,17 +416,17 @@ export class ActivityPubServerService {
 	}
 
 	@bindThis
-	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void) {
+	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		// addConstraintStrategy の型定義がおかしいため
 		(fastify.addConstraintStrategy as any)({
 			name: 'apOrHtml',
 			storage() {
 				const store = {} as any;
 				return {
-					get(key: string) {
+					get(key: string): any {
 						return store[key] ?? null;
 					},
-					set(key: string, value: any) {
+					set(key: string, value: any): void {
 						store[key] = value;
 					},
 				};

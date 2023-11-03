@@ -24,6 +24,7 @@ import { correctFilename } from '@/misc/correct-filename.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import type { drive_file } from '@prisma/client';
+import { Readable } from 'node:stream';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -52,7 +53,7 @@ export class FileServerService {
 	}
 
 	@bindThis
-	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void) {
+	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		fastify.addHook('onRequest', (request, reply, done) => {
 			reply.header('Content-Security-Policy', 'default-src \'none\'; img-src \'self\'; media-src \'self\'; style-src \'unsafe-inline\'');
 			done();
@@ -86,7 +87,7 @@ export class FileServerService {
 	}
 
 	@bindThis
-	private async errorHandler(request: FastifyRequest<{ Params?: { [x: string]: any }; Querystring?: { [x: string]: any }; }>, reply: FastifyReply, err?: any) {
+	private async errorHandler(request: FastifyRequest<{ Params?: { [x: string]: any }; Querystring?: { [x: string]: any }; }>, reply: FastifyReply, err?: any): Promise<undefined> {
 		this.logger.error(`${err}`);
 
 		reply.header('Cache-Control', 'max-age=300');
@@ -105,7 +106,7 @@ export class FileServerService {
 	}
 
 	@bindThis
-	private async sendDriveFile(request: FastifyRequest<{ Params: { key: string; } }>, reply: FastifyReply) {
+	private async sendDriveFile(request: FastifyRequest<{ Params: { key: string; } }>, reply: FastifyReply): Promise<Readable | Buffer | undefined> {
 		const key = request.params.key;
 		const file = await this.getFileFromKey(key).then();
 
@@ -208,7 +209,7 @@ export class FileServerService {
 	}
 
 	@bindThis
-	private async proxyHandler(request: FastifyRequest<{ Params: { url: string; }; Querystring: { url?: string; }; }>, reply: FastifyReply) {
+	private async proxyHandler(request: FastifyRequest<{ Params: { url: string; }; Querystring: { url?: string; }; }>, reply: FastifyReply): Promise<Readable | Buffer | undefined> {
 		const url = 'url' in request.query ? request.query.url : 'https://' + request.params.url;
 
 		if (typeof url !== 'string') {

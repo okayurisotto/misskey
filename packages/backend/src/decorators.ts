@@ -5,7 +5,7 @@
  * The getter will return a .bind version of the function
  * and memoize the result against a symbol on the instance
  */
-export function bindThis(target: any, key: string, descriptor: any) {
+export function bindThis(target: any, key: string, descriptor: any): { configurable: boolean; get(): any; set(value: any): void; } {
 	let fn = descriptor.value;
 
 	if (typeof fn !== 'function') {
@@ -14,7 +14,7 @@ export function bindThis(target: any, key: string, descriptor: any) {
 
 	return {
 		configurable: true,
-		get() {
+		get(): any {
 			// eslint-disable-next-line no-prototype-builtins
 			if (this === target.prototype || this.hasOwnProperty(key) ||
         typeof fn !== 'function') {
@@ -34,7 +34,7 @@ export function bindThis(target: any, key: string, descriptor: any) {
 			});
 			return boundFn;
 		},
-		set(value: any) {
+		set(value: any): void {
 			fn = value;
 		},
 	};

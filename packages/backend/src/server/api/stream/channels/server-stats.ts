@@ -17,17 +17,17 @@ class ServerStatsChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		ev.addListener('serverStats', this.onStats);
 	}
 
 	@bindThis
-	private onStats(stats: any) {
+	private onStats(stats: any): void {
 		this.send('stats', stats);
 	}
 
 	@bindThis
-	public override onMessage(type: string, body: any) {
+	public override onMessage(type: string, body: any): void {
 		switch (type) {
 			case 'requestLog':
 				ev.once(`serverStatsLog:${body.id}`, statsLog => {
@@ -42,7 +42,7 @@ class ServerStatsChannel extends Channel {
 	}
 
 	@bindThis
-	public override dispose() {
+	public override dispose(): void {
 		ev.removeListener('serverStats', this.onStats);
 	}
 }

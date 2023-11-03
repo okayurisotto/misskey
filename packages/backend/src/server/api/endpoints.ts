@@ -796,8 +796,8 @@ export interface IEndpoint {
 const endpoints: IEndpoint[] = (eps as [string, any]).map(([name, ep]) => {
 	return {
 		name: name,
-		get meta() { return ep.meta ?? {}; },
-		get params() { return ep.paramDef; },
+		get meta(): any { return ep.meta ?? {}; },
+		get params(): any { return ep.paramDef; },
 	};
 });
 

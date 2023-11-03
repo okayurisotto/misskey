@@ -7,7 +7,7 @@ import { Upload } from '@aws-sdk/lib-storage';
 import { NodeHttpHandler, NodeHttpHandlerOptions } from '@aws-sdk/node-http-handler';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { bindThis } from '@/decorators.js';
-import type { DeleteObjectCommandInput, PutObjectCommandInput } from '@aws-sdk/client-s3';
+import type { AbortMultipartUploadCommandOutput, CompleteMultipartUploadCommandOutput, DeleteObjectCommandInput, DeleteObjectCommandOutput, PutObjectCommandInput } from '@aws-sdk/client-s3';
 import type { meta } from '@prisma/client';
 
 @Injectable()
@@ -42,7 +42,10 @@ export class S3Service {
 	}
 
 	@bindThis
-	public async upload(meta: meta, input: PutObjectCommandInput) {
+	public async upload(
+		meta: meta,
+		input: PutObjectCommandInput,
+	): Promise<AbortMultipartUploadCommandOutput | CompleteMultipartUploadCommandOutput> {
 		const client = this.getS3Client(meta);
 		return await new Upload({
 			client,
@@ -54,7 +57,7 @@ export class S3Service {
 	}
 
 	@bindThis
-	public async delete(meta: meta, input: DeleteObjectCommandInput) {
+	public async delete(meta: meta, input: DeleteObjectCommandInput): Promise<DeleteObjectCommandOutput> {
 		const client = this.getS3Client(meta);
 		return await client.send(new DeleteObjectCommand(input));
 	}

@@ -54,7 +54,7 @@ export class ServerService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async launch() {
+	public async launch(): Promise<void> {
 		const fastify = Fastify({
 			trustProxy: true,
 			logger: !['production', 'test'].includes(process.env['NODE_ENV'] ?? ''),

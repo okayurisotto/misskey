@@ -22,7 +22,7 @@ class AntennaChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		this.antennaId = params.antennaId as string;
 
 		// Subscribe stream
@@ -30,7 +30,7 @@ class AntennaChannel extends Channel {
 	}
 
 	@bindThis
-	private async onEvent(data: StreamMessages['antenna']['payload']) {
+	private async onEvent(data: StreamMessages['antenna']['payload']): Promise<void> {
 		if (data.type === 'note') {
 			const note = await this.noteEntityService.pack(data.body.id, this.user, { detail: true });
 
@@ -50,7 +50,7 @@ class AntennaChannel extends Channel {
 	}
 
 	@bindThis
-	public override dispose() {
+	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off(`antennaStream:${this.antennaId}`, this.onEvent);
 	}

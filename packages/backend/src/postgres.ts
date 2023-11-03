@@ -83,39 +83,39 @@ const sqlLogger = dbLogger.createSubLogger('sql', 'gray', false);
 
 class MyCustomLogger implements Logger {
 	@bindThis
-	private highlight(sql: string) {
+	private highlight(sql: string): string {
 		return highlight.highlight(sql, {
 			language: 'sql', ignoreIllegals: true,
 		});
 	}
 
 	@bindThis
-	public logQuery(query: string, parameters?: any[]) {
+	public logQuery(query: string, parameters?: any[]): void {
 		sqlLogger.info(this.highlight(query).substring(0, 100));
 	}
 
 	@bindThis
-	public logQueryError(error: string, query: string, parameters?: any[]) {
+	public logQueryError(error: string, query: string, parameters?: any[]): void {
 		sqlLogger.error(this.highlight(query));
 	}
 
 	@bindThis
-	public logQuerySlow(time: number, query: string, parameters?: any[]) {
+	public logQuerySlow(time: number, query: string, parameters?: any[]): void {
 		sqlLogger.warn(this.highlight(query));
 	}
 
 	@bindThis
-	public logSchemaBuild(message: string) {
+	public logSchemaBuild(message: string): void {
 		sqlLogger.info(message);
 	}
 
 	@bindThis
-	public log(message: string) {
+	public log(message: string): void {
 		sqlLogger.info(message);
 	}
 
 	@bindThis
-	public logMigration(message: string) {
+	public logMigration(message: string): void {
 		sqlLogger.info(message);
 	}
 }
@@ -192,7 +192,7 @@ export const entities = [
 
 const log = process.env['NODE_ENV'] !== 'production';
 
-export function createPostgresDataSource(config: Config) {
+export function createPostgresDataSource(config: Config): DataSource {
 	return new DataSource({
 		type: 'postgres',
 		host: config.db.host,

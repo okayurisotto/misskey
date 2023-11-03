@@ -77,7 +77,7 @@ export class RedisKVCache<T> {
 	}
 
 	@bindThis
-	public async refresh(key: string) {
+	public async refresh(key: string): Promise<void> {
 		const value = await this.fetcher(key);
 		this.set(key, value);
 
@@ -85,12 +85,12 @@ export class RedisKVCache<T> {
 	}
 
 	@bindThis
-	public gc() {
+	public gc(): void {
 		this.memoryCache.gc();
 	}
 
 	@bindThis
-	public dispose() {
+	public dispose(): void {
 		this.memoryCache.dispose();
 	}
 }
@@ -171,7 +171,7 @@ export class RedisSingleCache<T> {
 	}
 
 	@bindThis
-	public async refresh() {
+	public async refresh(): Promise<void> {
 		const value = await this.fetcher();
 		this.set(value);
 
@@ -330,7 +330,7 @@ export class MemorySingleCache<T> {
 	}
 
 	@bindThis
-	public delete() {
+	public delete(): void {
 		this.value = undefined;
 		this.cachedAt = null;
 	}

@@ -19,6 +19,8 @@ import { ApMfmService } from './ApMfmService.js';
 import type { IAccept, IActivity, IAdd, IAnnounce, IApDocument, IApEmoji, IApHashtag, IApImage, IApMention, IBlock, ICreate, IDelete, IFlag, IFollow, IKey, ILike, IMove, IObject, IPost, IQuestion, IReject, IRemove, ITombstone, IUndo, IUpdate } from './type.js';
 import type { relay, note_reaction, emoji, blocking, drive_file, note, poll, poll_vote, user, user_keypair } from '@prisma/client';
 
+export type AddContext<T extends IObject> = T & { '@context': any; id: string };
+
 @Injectable()
 export class ApRendererService {
 	constructor(
@@ -588,7 +590,7 @@ export class ApRendererService {
 	}
 
 	@bindThis
-	public addContext<T extends IObject>(x: T): T & { '@context': any; id: string; } {
+	public addContext<T extends IObject>(x: T): AddContext<T> {
 		if (typeof x === 'object' && x.id == null) {
 			x.id = `${this.config.url}/${randomUUID()}`;
 		}

@@ -26,7 +26,7 @@ export class RateLimiterService {
 	}
 
 	@bindThis
-	public limit(limitation: IEndpointMeta['limit'] & { key: NonNullable<string> }, actor: string, factor = 1) {
+	public limit(limitation: IEndpointMeta['limit'] & { key: NonNullable<string> }, actor: string, factor = 1): Promise<void> {
 		return new Promise<void>((ok, reject) => {
 			if (this.disabled) ok();
 

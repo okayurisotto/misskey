@@ -4,7 +4,40 @@ import endpoints from '../endpoints.js';
 import { errors as basicErrors } from './errors.js';
 import { models } from './models.js';
 
-export function genOpenapiSpec(config: Config) {
+type OpenApiSpec = {
+  openapi: string;
+  info: {
+    version: string;
+    title: string;
+    "x-logo": { url: string };
+  };
+  externalDocs: { description: string; url: string };
+  servers: { url: string }[];
+  paths: Record<string, unknown>;
+  components: {
+    schemas: {
+      Error: {
+        type: string;
+        properties: {
+          error: {
+            type: string;
+            description: string;
+            properties: {
+              code: { type: string; description: string };
+              message: { type: string; description: string };
+              id: { type: string; format: string; description: string };
+            };
+            required: string[];
+          };
+        };
+        required: string[];
+      };
+    };
+    securitySchemes: { ApiKeyAuth: { type: string; in: string; name: string } };
+  };
+};
+
+export function genOpenapiSpec(config: Config): OpenApiSpec {
 	const spec = {
 		openapi: '3.0.0',
 		info: {

@@ -37,6 +37,7 @@ import { UrlPreviewService } from './UrlPreviewService.js';
 import { ClientLoggerService } from './ClientLoggerService.js';
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply } from 'fastify';
 import type { meta } from '@prisma/client';
+import { Feed } from 'feed';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -46,6 +47,40 @@ const clientAssets = `${_dirname}/../../../../frontend/assets/`;
 const assets = `${_dirname}/../../../../../built/_frontend_dist_/`;
 const swAssets = `${_dirname}/../../../../../built/_sw_dist_/`;
 const viteOut = `${_dirname}/../../../../../built/_vite_/`;
+
+type Manifest = {
+	short_name: string;
+	name: string;
+	start_url: string;
+	display: string;
+	background_color: string;
+	theme_color: string;
+	icons: {
+		src: string;
+		sizes: string;
+		type: string;
+		purpose: string;
+	}[];
+	share_target: {
+		action: string;
+		method: string;
+		enctype: string;
+		params: {
+			title: string;
+			text: string;
+			url: string;
+		};
+	};
+};
+
+type CommonPugData = {
+	instanceName: string;
+	icon: string | null;
+	themeColor: string | null;
+	serverErrorImageUrl: string;
+	infoImageUrl: string;
+	notFoundImageUrl: string;
+};
 
 @Injectable()
 export class ClientServerService {
@@ -77,7 +112,7 @@ export class ClientServerService {
 	) {}
 
 	@bindThis
-	private async manifestHandler(reply: FastifyReply) {
+	private async manifestHandler(reply: FastifyReply): Promise<Manifest> {
 		const res = deepClone(manifest);
 
 		const instance = await this.metaService.fetch(true);
@@ -91,7 +126,7 @@ export class ClientServerService {
 	}
 
 	@bindThis
-	private generateCommonPugData(meta: meta) {
+	private generateCommonPugData(meta: meta): CommonPugData {
 		return {
 			instanceName: meta.name ?? 'Misskey',
 			icon: meta.iconUrl,
@@ -103,7 +138,7 @@ export class ClientServerService {
 	}
 
 	@bindThis
-	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void) {
+	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		fastify.register(fastifyCookie, {});
 
 		//#region Bull Dashboard
@@ -321,7 +356,7 @@ export class ClientServerService {
 
 		//#endregion
 
-		const renderBase = async (reply: FastifyReply) => {
+		const renderBase = async (reply: FastifyReply): Promise<never> => {
 			const meta = await this.metaService.fetch();
 			reply.header('Cache-Control', 'public, max-age=30');
 			return await reply.view('base', {
@@ -336,7 +371,7 @@ export class ClientServerService {
 		// URL preview endpoint
 		fastify.get<{ Querystring: { url: string; lang: string; } }>('/url', (request, reply) => this.urlPreviewService.handle(request, reply));
 
-		const getFeed = async (acct: string) => {
+		const getFeed = async (acct: string): Promise<Feed | null> => {
 			const { username, host } = Acct.parse(acct);
 			const user = await this.prismaService.client.user.findFirst({
 				where: {

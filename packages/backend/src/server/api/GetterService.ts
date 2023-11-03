@@ -17,7 +17,7 @@ export class GetterService {
 	 * Get note for API processing
 	 */
 	@bindThis
-	public async getNote(noteId: note['id']) {
+	public async getNote(noteId: note['id']): Promise<note> {
 		const note = await this.prismaService.client.note.findUnique({ where: { id: noteId } });
 
 		if (note == null) {
@@ -31,7 +31,7 @@ export class GetterService {
 	 * Get user for API processing
 	 */
 	@bindThis
-	public async getUser(userId: user['id']) {
+	public async getUser(userId: user['id']): Promise<LocalUser | RemoteUser> {
 		const user = await this.prismaService.client.user.findUnique({ where: { id: userId } });
 
 		if (user == null) {
@@ -45,7 +45,7 @@ export class GetterService {
 	 * Get remote user for API processing
 	 */
 	@bindThis
-	public async getRemoteUser(userId: user['id']) {
+	public async getRemoteUser(userId: user['id']): Promise<RemoteUser> {
 		const user = await this.getUser(userId);
 
 		if (!this.userEntityService.isRemoteUser(user)) {
@@ -59,7 +59,7 @@ export class GetterService {
 	 * Get local user for API processing
 	 */
 	@bindThis
-	public async getLocalUser(userId: user['id']) {
+	public async getLocalUser(userId: user['id']): Promise<LocalUser> {
 		const user = await this.getUser(userId);
 
 		if (!this.userEntityService.isLocalUser(user)) {

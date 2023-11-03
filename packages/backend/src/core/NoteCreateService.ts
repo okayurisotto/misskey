@@ -32,7 +32,7 @@ import { AntennaService } from '@/core/AntennaService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
+import { AddContext, ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
@@ -43,6 +43,7 @@ import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { Prisma, app, channel, drive_file, note, user, user_profile } from '@prisma/client';
+import { IAnnounce, ICreate } from './activitypub/type.js';
 
 const mutedWordsCache = new MemorySingleCache<{ userId: user_profile['userId']; mutedWords: user_profile['mutedWords']; }[]>(1000 * 60 * 5);
 
@@ -318,7 +319,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		tags: string[],
 		emojis: string[],
 		mentionedUsers: MinimumUser[],
-	) {
+	): Promise<note> {
 		const insert: Prisma.noteUncheckedCreateInput = {
 			id: this.idService.genId(data.createdAt!),
 			createdAt: data.createdAt!,
@@ -754,7 +755,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	private async renderNoteOrRenoteActivity(data: Option, note: note) {
+	private async renderNoteOrRenoteActivity(data: Option, note: note): Promise<AddContext<IAnnounce | ICreate> | null> {
 		if (data.localOnly) return null;
 
 		const content = data.renote && data.text == null && data.poll == null && (data.files == null || data.files.length === 0)

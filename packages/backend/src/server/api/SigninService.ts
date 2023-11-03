@@ -17,7 +17,7 @@ export class SigninService {
 	) {}
 
 	@bindThis
-	public signin(request: FastifyRequest, reply: FastifyReply, user: LocalUser) {
+	public signin(request: FastifyRequest, reply: FastifyReply, user: LocalUser): { id: string; i: string | null } {
 		setImmediate(async () => {
 			// Append signin history
 			const record = await this.prismaService.client.signin.create({

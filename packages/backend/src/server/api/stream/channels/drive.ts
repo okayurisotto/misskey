@@ -8,7 +8,7 @@ class DriveChannel extends Channel {
 	public static override requireCredential = true;
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		// Subscribe drive stream
 		this.subscriber.on(`driveStream:${this.user!.id}`, data => {
 			this.send(data);

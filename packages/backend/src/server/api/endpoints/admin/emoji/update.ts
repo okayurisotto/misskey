@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { drive_file } from '@prisma/client';
 import { noSuchEmoji__, noSuchFile__, sameNameEmojiExists } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
@@ -42,7 +43,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const driveFile = await (async () => {
+			const driveFile = await (async (): Promise<drive_file | undefined> => {
 				if (!ps.fileId) return undefined;
 
 				const result = await this.prismaService.client.drive_file.findUnique({

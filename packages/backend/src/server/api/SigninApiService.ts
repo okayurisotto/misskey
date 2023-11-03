@@ -14,6 +14,23 @@ import { RateLimiterService } from './RateLimiterService.js';
 import { SigninService } from './SigninService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
+type SignInResult =
+  | { error: { id: string } }
+  | { id: string; i: string | null }
+  | {
+      challenge?: undefined;
+      challengeId?: undefined;
+      error: { message: string; code: string; id: string };
+      securityKeys?: undefined;
+    }
+  | {
+      challenge: string;
+      challengeId: string;
+      error?: undefined;
+      securityKeys: { id: string }[];
+    }
+  | undefined;
+
 @Injectable()
 export class SigninApiService {
 	constructor(
@@ -43,7 +60,7 @@ export class SigninApiService {
 			};
 		}>,
 		reply: FastifyReply,
-	) {
+	): Promise<SignInResult> {
 		reply.header('Access-Control-Allow-Origin', this.config.url);
 		reply.header('Access-Control-Allow-Credentials', 'true');
 
@@ -52,7 +69,7 @@ export class SigninApiService {
 		const password = body['password'];
 		const token = body['token'];
 
-		function error(status: number, error: { id: string }) {
+		function error<T extends { id: string }>(status: number, error: T): { error: T } {
 			reply.code(status);
 			return { error };
 		}
@@ -111,7 +128,7 @@ export class SigninApiService {
 		// Compare password
 		const same = await bcrypt.compare(password, profile.password!);
 
-		const fail = async (status?: number, failure?: { id: string }) => {
+		const fail = async (status?: number, failure?: { id: string }): Promise<{ error: { id: string } }> => {
 		// Append signin history
 			await this.prismaService.client.signin.create({
 				data: {

@@ -3,7 +3,12 @@ import * as util from 'node:util';
 
 const generateKeyPair = util.promisify(crypto.generateKeyPair);
 
-export async function genRsaKeyPair(modulusLength = 2048) {
+type KeyPair = {
+	publicKey: string;
+	privateKey: string;
+};
+
+export async function genRsaKeyPair(modulusLength = 2048): Promise<KeyPair> {
 	return await generateKeyPair('rsa', {
 		modulusLength,
 		publicKeyEncoding: {
@@ -19,7 +24,7 @@ export async function genRsaKeyPair(modulusLength = 2048) {
 	});
 }
 
-export async function genEcKeyPair(namedCurve: 'prime256v1' | 'secp384r1' | 'secp521r1' | 'curve25519' = 'prime256v1') {
+export async function genEcKeyPair(namedCurve: 'prime256v1' | 'secp384r1' | 'secp521r1' | 'curve25519' = 'prime256v1'): Promise<KeyPair> {
 	return await generateKeyPair('ec', {
 		namedCurve,
 		publicKeyEncoding: {

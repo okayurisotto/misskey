@@ -20,7 +20,7 @@ export class FeedService {
 	) {}
 
 	@bindThis
-	public async packFeed(user: user) {
+	public async packFeed(user: user): Promise<Feed> {
 		const author = {
 			link: `${this.config.url}/@${user.username}`,
 			name: user.name ?? user.username,

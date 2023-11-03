@@ -249,7 +249,7 @@ export class RoleService implements OnApplicationShutdown {
 
 		const roles = await this.getUserRoles(userId);
 
-		function calc<T extends keyof RolePolicies>(name: T, aggregate: (values: RolePolicies[T][]) => RolePolicies[T]) {
+		function calc<T extends keyof RolePolicies>(name: T, aggregate: (values: RolePolicies[T][]) => RolePolicies[T]): RolePolicies[T] {
 			if (roles.length === 0) return basePolicies[name];
 
 			const policies = roles.map(role => RolePoliciesSchema.parse(role.policies)[name] ?? { priority: 0, useDefault: true });

@@ -23,7 +23,7 @@ class ChannelChannel extends Channel {
 	}
 
 	@bindThis
-	public async init(params: any) {
+	public async init(params: any): Promise<void> {
 		this.channelId = params.channelId as string;
 
 		// Subscribe stream
@@ -31,7 +31,7 @@ class ChannelChannel extends Channel {
 	}
 
 	@bindThis
-	private async onNote(note: z.infer<typeof NoteSchema>) {
+	private async onNote(note: z.infer<typeof NoteSchema>): Promise<void> {
 		if (note.channelId !== this.channelId) return;
 
 		// リプライなら再pack
@@ -60,7 +60,7 @@ class ChannelChannel extends Channel {
 	}
 
 	@bindThis
-	public override dispose() {
+	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off('notesStream', this.onNote);
 	}

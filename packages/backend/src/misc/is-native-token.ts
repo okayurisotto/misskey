@@ -1,1 +1,1 @@
-export default (token: string) => token.length === 16;
+export default (token: string): boolean => token.length === 16;

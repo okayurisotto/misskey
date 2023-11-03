@@ -24,8 +24,8 @@ export class WellKnownServerService {
 	) {}
 
 	@bindThis
-	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void) {
-		const XRD = (...x: { element: string, value?: string, attributes?: Record<string, string> }[]) =>
+	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
+		const XRD = (...x: { element: string, value?: string, attributes?: Record<string, string> }[]): string =>
 			`<?xml version="1.0" encoding="UTF-8"?><XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">${x.map(({ element, value, attributes }) =>
 				`<${
 					Object.entries(typeof attributes === 'object' && attributes || {}).reduce((a, [k, v]) => `${a} ${k}="${escapeAttribute(v)}"`, element)
@@ -88,7 +88,7 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 				isSuspended: false,
 			});
 
-			const generateQuery = (resource: string) =>
+			const generateQuery = (resource: string): number | Prisma.userWhereInput =>
 				resource.startsWith(`${this.config.url.toLowerCase()}/users/`)
 					? fromId(resource.split('/').pop()!)
 					: fromAcct(
