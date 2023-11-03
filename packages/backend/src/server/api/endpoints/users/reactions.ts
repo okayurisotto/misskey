@@ -52,10 +52,7 @@ export default class extends Endpoint<
 								id: ps.userId,
 								OR: [
 									{ user_profile: { publicReactions: true } },
-									{
-										user_profile: { publicReactions: false },
-										id: { in: me ? [me.id] : [] },
-									},
+									...(me ? [{ id: me.id }] : []),
 								],
 							},
 						},
