@@ -2,119 +2,97 @@ import type { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
-import type { UserSchema } from '@/models/zod/UserSchema.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import type { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
-import type { UnionToIntersection } from 'type-fest';
+import type { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import type { Meta } from '@/models/index.js';
+import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
+import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
+import type { Jsonify, UnionToIntersection } from 'type-fest';
 import type { z } from 'zod';
 import type { EventEmitter } from 'events';
 import type Emitter from 'strict-event-emitter-types';
 import type {
 	AbuseUserReport,
 	antenna,
-	channel,
 	drive_file,
 	drive_folder,
-	meta,
 	note,
 	page,
 	role_assignment,
 	role,
 	signin,
 	user_list,
-	user_profile,
 	user,
 	webhook,
 } from '@prisma/client';
 
 //#region Stream type-body definitions
 export interface InternalStreamTypes {
+	antennaCreated: antenna;
+	antennaDeleted: antenna;
+	antennaUpdated: antenna;
+	blockingCreated: { blockerId: user['id']; blockeeId: user['id'] };
+	blockingDeleted: { blockerId: user['id']; blockeeId: user['id'] };
+	follow: { followerId: user['id']; followeeId: user['id'] };
+	metaUpdated: Meta;
+	policiesUpdated: z.infer<typeof RolePoliciesSchema>;
+	remoteUserUpdated: { id: user['id'] };
+	roleCreated: role;
+	roleDeleted: role;
+	roleUpdated: role;
+	unfollow: { followerId: user['id']; followeeId: user['id'] };
 	userChangeSuspendedState: {
 		id: user['id'];
 		isSuspended: user['isSuspended'];
 	};
-	userTokenRegenerated: { id: user['id']; oldToken: string; newToken: string };
-	remoteUserUpdated: { id: user['id'] };
-	follow: { followerId: user['id']; followeeId: user['id'] };
-	unfollow: { followerId: user['id']; followeeId: user['id'] };
-	blockingCreated: { blockerId: user['id']; blockeeId: user['id'] };
-	blockingDeleted: { blockerId: user['id']; blockeeId: user['id'] };
-	policiesUpdated: z.infer<typeof RolePoliciesSchema>;
-	roleCreated: role;
-	roleDeleted: role;
-	roleUpdated: role;
 	userRoleAssigned: role_assignment;
 	userRoleUnassigned: role_assignment;
+	userTokenRegenerated: { id: user['id']; oldToken: string; newToken: string };
 	webhookCreated: webhook;
 	webhookDeleted: webhook;
 	webhookUpdated: webhook;
-	antennaCreated: antenna;
-	antennaDeleted: antenna;
-	antennaUpdated: antenna;
-	metaUpdated: meta;
-	followChannel: { userId: user['id']; channelId: channel['id'] };
-	unfollowChannel: { userId: user['id']; channelId: channel['id'] };
-	updateUserProfile: user_profile;
-	mute: { muterId: user['id']; muteeId: user['id'] };
-	unmute: { muterId: user['id']; muteeId: user['id'] };
 }
 
 export interface BroadcastTypes {
-	emojiAdded: {
-		emoji: z.infer<typeof EmojiDetailedSchema>;
-	};
-	emojiUpdated: {
-		emojis: z.infer<typeof EmojiDetailedSchema>[];
-	};
-	emojiDeleted: {
-		emojis: {
-			id?: string;
-			name: string;
-			[other: string]: any;
-		}[];
-	};
+	emojiAdded: { emoji: z.infer<typeof EmojiDetailedSchema> };
+	emojiDeleted: { emojis: z.infer<typeof EmojiDetailedSchema>[] };
+	emojiUpdated: { emojis: z.infer<typeof EmojiDetailedSchema>[] };
 }
 
 export interface MainStreamTypes {
-	notification: z.infer<typeof NotificationSchema>;
-	mention: z.infer<typeof NoteSchema>;
-	reply: z.infer<typeof NoteSchema>;
-	renote: z.infer<typeof NoteSchema>;
+	driveFileCreated: z.infer<typeof DriveFileSchema>;
 	follow: z.infer<typeof UserDetailedNotMeSchema>;
-	followed: z.infer<typeof UserSchema>;
-	unfollow: z.infer<typeof UserSchema>;
-	meUpdated: z.infer<typeof UserSchema>;
+	followed: z.infer<typeof UserLiteSchema>;
+	mention: z.infer<typeof NoteSchema>;
+	meUpdated: z.infer<typeof MeDetailedSchema>;
+	myTokenRegenerated: undefined;
+	notification: z.infer<typeof NotificationSchema>;
 	pageEvent: {
 		pageId: page['id'];
 		event: string;
-		var: any;
+		var: unknown;
 		userId: user['id'];
-		user: z.infer<typeof UserSchema>;
+		user: z.infer<typeof UserDetailedSchema>;
 	};
+	readAllAnnouncements: undefined;
+	readAllNotifications: undefined;
+	readAllUnreadMentions: undefined;
+	readAllUnreadSpecifiedNotes: undefined;
+	receiveFollowRequest: z.infer<typeof UserLiteSchema>;
+	registryUpdated: { scope: string[]; key: string; value: unknown };
+	renote: z.infer<typeof NoteSchema>;
+	reply: z.infer<typeof NoteSchema>;
+	signin: signin;
+	unfollow: z.infer<typeof UserDetailedNotMeSchema>;
+	unreadMention: note['id'];
+	unreadNotification: z.infer<typeof NotificationSchema>;
+	unreadSpecifiedNote: note['id'];
 	urlUploadFinished: {
-		marker?: string | null;
+		marker: string | null;
 		file: z.infer<typeof DriveFileSchema>;
 	};
-	readAllNotifications: undefined;
-	unreadNotification: z.infer<typeof NotificationSchema>;
-	unreadMention: note['id'];
-	readAllUnreadMentions: undefined;
-	unreadSpecifiedNote: note['id'];
-	readAllUnreadSpecifiedNotes: undefined;
-	readAllAntennas: undefined;
-	unreadAntenna: antenna;
-	readAllAnnouncements: undefined;
-	myTokenRegenerated: undefined;
-	signin: signin;
-	registryUpdated: {
-		scope?: string[];
-		key: string;
-		value: any | null;
-	};
-	driveFileCreated: z.infer<typeof DriveFileSchema>;
-	readAntenna: antenna;
-	receiveFollowRequest: z.infer<typeof UserSchema>;
 }
 
 export interface DriveStreamTypes {
@@ -126,37 +104,26 @@ export interface DriveStreamTypes {
 	folderUpdated: z.infer<typeof DriveFolderSchema>;
 }
 
-export interface NoteStreamTypes {
-	pollVoted: {
-		choice: number;
-		userId: user['id'];
-	};
-	deleted: {
-		deletedAt: Date;
-	};
+export interface NoteStreamTypesBody {
+	deleted: { deletedAt: Date };
+	pollVoted: { choice: number; userId: user['id'] };
 	reacted: {
 		reaction: string;
-		emoji?: {
-			name: string;
-			url: string;
-		} | null;
+		emoji: { name: string; url: string } | null;
 		userId: user['id'];
 	};
-	unreacted: {
-		reaction: string;
-		userId: user['id'];
-	};
+	unreacted: { reaction: string; userId: user['id'] };
 }
-type NoteStreamEventTypes = {
-	[key in keyof NoteStreamTypes]: {
+type NoteStreamTypes = {
+	[key in keyof NoteStreamTypesBody]: {
 		id: note['id'];
-		body: NoteStreamTypes[key];
+		body: NoteStreamTypesBody[key];
 	};
 };
 
 export interface UserListStreamTypes {
-	userAdded: z.infer<typeof UserSchema>;
-	userRemoved: z.infer<typeof UserSchema>;
+	userAdded: z.infer<typeof UserLiteSchema>;
+	userRemoved: z.infer<typeof UserLiteSchema>;
 }
 
 export interface AntennaStreamTypes {
@@ -183,62 +150,47 @@ export interface AdminStreamTypes {
 type Events<T extends object> = { [K in keyof T]: { type: K; body: T[K] } };
 type EventUnionFromDictionary<T extends object, U = Events<T>> = U[keyof U];
 
-// redis通すとDateのインスタンスはstringに変換されるので
-export type Serialized<T> = {
-	[K in keyof T]: T[K] extends Date
-		? string
-		: T[K] extends Date | null
-		? string | null
-		: T[K] extends Record<string, any>
-		? Serialized<T[K]>
-		: T[K];
-};
-
-type SerializedAll<T> = {
-	[K in keyof T]: Serialized<T[K]>;
-};
-
 // name/messages(spec) pairs dictionary
 export type StreamMessages = {
 	internal: {
 		name: 'internal';
-		payload: EventUnionFromDictionary<SerializedAll<InternalStreamTypes>>;
+		payload: EventUnionFromDictionary<Jsonify<InternalStreamTypes>>;
 	};
 	broadcast: {
 		name: 'broadcast';
-		payload: EventUnionFromDictionary<SerializedAll<BroadcastTypes>>;
+		payload: EventUnionFromDictionary<Jsonify<BroadcastTypes>>;
 	};
 	main: {
 		name: `mainStream:${user['id']}`;
-		payload: EventUnionFromDictionary<SerializedAll<MainStreamTypes>>;
+		payload: EventUnionFromDictionary<Jsonify<MainStreamTypes>>;
 	};
 	drive: {
 		name: `driveStream:${user['id']}`;
-		payload: EventUnionFromDictionary<SerializedAll<DriveStreamTypes>>;
+		payload: EventUnionFromDictionary<Jsonify<DriveStreamTypes>>;
 	};
 	note: {
 		name: `noteStream:${note['id']}`;
-		payload: EventUnionFromDictionary<SerializedAll<NoteStreamEventTypes>>;
+		payload: EventUnionFromDictionary<Jsonify<NoteStreamTypes>>;
 	};
 	userList: {
 		name: `userListStream:${user_list['id']}`;
-		payload: EventUnionFromDictionary<SerializedAll<UserListStreamTypes>>;
+		payload: EventUnionFromDictionary<Jsonify<UserListStreamTypes>>;
 	};
 	roleTimeline: {
 		name: `roleTimelineStream:${role['id']}`;
-		payload: EventUnionFromDictionary<SerializedAll<RoleTimelineStreamTypes>>;
+		payload: EventUnionFromDictionary<Jsonify<RoleTimelineStreamTypes>>;
 	};
 	antenna: {
 		name: `antennaStream:${antenna['id']}`;
-		payload: EventUnionFromDictionary<SerializedAll<AntennaStreamTypes>>;
+		payload: EventUnionFromDictionary<Jsonify<AntennaStreamTypes>>;
 	};
 	admin: {
 		name: `adminStream:${user['id']}`;
-		payload: EventUnionFromDictionary<SerializedAll<AdminStreamTypes>>;
+		payload: EventUnionFromDictionary<Jsonify<AdminStreamTypes>>;
 	};
 	notes: {
 		name: 'notesStream';
-		payload: Serialized<z.infer<typeof NoteSchema>>;
+		payload: Jsonify<z.infer<typeof NoteSchema>>;
 	};
 };
 
@@ -254,11 +206,8 @@ type EventEmitterDictionary = {
 		}
 	>;
 };
-// Emitter辞書から共用体型を作り、UnionToIntersectionで交差型にする
 export type StreamEventEmitter = UnionToIntersection<
 	EventEmitterDictionary[keyof StreamMessages]
 >;
-// { [y in name]: (e: spec) => void }をまとめてその交差型をEmitterにかけるとts(2590)にひっかかる
 
-// provide stream channels union
 export type StreamChannels = StreamMessages[keyof StreamMessages]['name'];

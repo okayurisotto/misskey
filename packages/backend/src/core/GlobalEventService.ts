@@ -8,7 +8,7 @@ import type {
 	DriveStreamTypes,
 	InternalStreamTypes,
 	MainStreamTypes,
-	NoteStreamTypes,
+	NoteStreamTypesBody,
 	UserListStreamTypes,
 	RoleTimelineStreamTypes,
 } from '@/server/api/stream/types.js';
@@ -64,7 +64,7 @@ export class GlobalEventService {
 	}
 
 	@bindThis
-	public publishNoteStream<K extends keyof NoteStreamTypes>(noteId: note['id'], type: K, value?: NoteStreamTypes[K]): void {
+	public publishNoteStream<K extends keyof NoteStreamTypesBody>(noteId: note['id'], type: K, value?: NoteStreamTypesBody[K]): void {
 		this.publish(`noteStream:${noteId}`, type, {
 			id: noteId,
 			body: value,

@@ -75,7 +75,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			const iObj = await this.userEntityService.packDetailed(me.id, me, { includeSecrets: true });
+			const iObj = await this.userEntityService.packDetailedMe(me.id, { includeSecrets: true });
 
 			// Publish meUpdated event
 			this.globalEventService.publishMainStream(me.id, 'meUpdated', iObj);

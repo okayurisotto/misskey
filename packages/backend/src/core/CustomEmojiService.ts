@@ -8,11 +8,11 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { bindThis } from '@/decorators.js';
 import { MemoryKVCache, RedisSingleCache } from '@/misc/cache.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import type { Serialized } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import type { Prisma, role, drive_file, emoji } from '@prisma/client';
+import type { Jsonify } from 'type-fest';
 
 const parseEmojiStrRegexp = /^(\w+)(?:@([\w.-]+))?$/;
 
@@ -45,7 +45,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 			toRedisConverter: (value): string => JSON.stringify(Array.from(value.values())),
 			fromRedisConverter: (value): Map<string, emoji> | undefined => {
 				if (!Array.isArray(JSON.parse(value))) return undefined; // 古いバージョンの壊れたキャッシュが残っていることがある(そのうち消す)
-				return new Map(JSON.parse(value).map((x: Serialized<emoji>) => [x.name, {
+				return new Map(JSON.parse(value).map((x: Jsonify<emoji>) => [x.name, {
 					...x,
 					updatedAt: x.updatedAt ? new Date(x.updatedAt) : null,
 				}]));

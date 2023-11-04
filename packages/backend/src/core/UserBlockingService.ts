@@ -12,7 +12,9 @@ import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import type { blocking, user } from '@prisma/client';
+import type { z } from 'zod';
 
 @Injectable()
 export class UserBlockingService implements OnModuleInit {
@@ -106,7 +108,7 @@ export class UserBlockingService implements OnModuleInit {
 
 		if (this.userEntityService.isLocalUser(follower) && !silent) {
 			this.userEntityService.packDetailed(followee, follower).then(async packed => {
-				this.globalEventService.publishMainStream(follower.id, 'unfollow', packed);
+				this.globalEventService.publishMainStream(follower.id, 'unfollow', packed as z.infer<typeof UserDetailedNotMeSchema>);
 
 				const webhooks = (await this.webhookService.getActiveWebhooks()).filter(x => x.userId === follower.id && x.on.includes('unfollow'));
 				for (const webhook of webhooks) {
