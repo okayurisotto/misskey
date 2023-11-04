@@ -212,29 +212,35 @@ export class RoleService implements OnApplicationShutdown {
 		return [...assignedRoles, ...matchedCondRoles];
 	}
 
-	/**
-	 * 指定ユーザーのバッジロール一覧取得
-	 */
+	/** 指定ユーザーのバッジロール一覧取得 */
 	@bindThis
 	public async getUserBadgeRoles(userId: user['id']): Promise<role[]> {
-		const now = Date.now();
-		const assigns = (
-			await this.roleAssignmentByUserIdCache.fetch(
-				userId,
-				() => this.prismaService.client.role_assignment.findMany({ where: { userId } }),
-			)
-		).filter(a => a.expiresAt == null || (a.expiresAt.getTime() > now)); // 期限切れのロールを除外
-		const assignedRoleIds = assigns.map(x => x.roleId);
-		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
-		const assignedBadgeRoles = roles.filter(r => r.asBadge && assignedRoleIds.includes(r.id));
-		const badgeCondRoles = roles.filter(r => r.asBadge && (r.target === 'conditional'));
-		if (badgeCondRoles.length === 0) {
-			return assignedBadgeRoles;
-		} else {
-			const user = roles.some(r => r.target === 'conditional') ? await this.cacheService.findUserById(userId) : null;
-			const matchedBadgeCondRoles = badgeCondRoles.filter(r => this.evalCond(user!, RoleCondFormulaValueSchema.parse(r.condFormula)));
-			return [...assignedBadgeRoles, ...matchedBadgeCondRoles];
-		}
+		const [user, badgeCondRoles] = await Promise.all([
+			this.prismaService.client.user.findUniqueOrThrow({
+				where: { id: userId, host: null },
+				include: {
+					role_assignment: {
+						where: {
+							userId,
+							OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+							role: { asBadge: true },
+						},
+						include: { role: true },
+					},
+				},
+			}),
+			this.prismaService.client.role.findMany({
+				where: { target: "conditional" },
+			}),
+		]);
+
+		const assigns = user.role_assignment;
+		const assignedBadgeRoles = assigns.map(({ role }) => role);
+		const matchedBadgeCondRoles = badgeCondRoles.filter((role) => {
+			return this.evalCond(user, RoleCondFormulaValueSchema.parse(role.condFormula));
+		});
+
+		return [...assignedBadgeRoles, ...matchedBadgeCondRoles];
 	}
 
 	@bindThis
