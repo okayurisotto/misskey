@@ -1,32 +1,13 @@
 import { z } from 'zod';
-import sanitizeHtml from 'sanitize-html';
 import { Injectable } from '@nestjs/common';
-import { pick } from 'omick';
-import {
-	noSuchUser_________________________,
-	cannotReportYourself,
-	cannotReportAdmin,
-} from '@/server/api/errors.js';
-import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { MetaService } from '@/core/MetaService.js';
-import { EmailService } from '@/core/EmailService.js';
-import { GetterService } from '@/server/api/GetterService.js';
-import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { PrismaService } from '@/core/PrismaService.js';
-import { ApiError } from '../../error.js';
+import { AbuseUserReportEntityService } from '@/core/entities/AbuseUserReportEntityService.js';
 
 export const meta = {
 	tags: ['users'],
 	requireCredential: true,
 	description: 'File a report.',
-	errors: {
-		noSuchUser: noSuchUser_________________________,
-		cannotReportYourself: cannotReportYourself,
-		cannotReportAdmin: cannotReportAdmin,
-	},
 } as const;
 
 export const paramDef = z.object({
@@ -42,63 +23,17 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly idService: IdService,
-		private readonly metaService: MetaService,
-		private readonly emailService: EmailService,
-		private readonly getterService: GetterService,
-		private readonly roleService: RoleService,
-		private readonly globalEventService: GlobalEventService,
-		private readonly prismaService: PrismaService,
+		private readonly abuseUserReportEntityService: AbuseUserReportEntityService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const user = await this.getterService.getUser(ps.userId).catch((err) => {
-				if (err.id === '15348ddd-432d-49c2-8a5a-8069753becff') {
-					throw new ApiError(meta.errors.noSuchUser);
-				}
-				throw err;
+			const report = await this.abuseUserReportEntityService.create({
+				comment: ps.comment,
+				reporterId: me.id,
+				targetUserId: ps.userId,
 			});
 
-			if (user.id === me.id) {
-				throw new ApiError(meta.errors.cannotReportYourself);
-			}
-
-			if (await this.roleService.isAdministrator(user)) {
-				throw new ApiError(meta.errors.cannotReportAdmin);
-			}
-
-			const report = await this.prismaService.client.abuse_user_report.create({
-				data: {
-					id: this.idService.genId(),
-					createdAt: new Date(),
-					targetUserId: user.id,
-					targetUserHost: user.host,
-					reporterId: me.id,
-					reporterHost: null,
-					comment: ps.comment,
-				},
-			});
-
-			// Publish event to moderators
 			setImmediate(async () => {
-				const moderators = await this.roleService.getModerators();
-
-				for (const moderator of moderators) {
-					this.globalEventService.publishAdminStream(
-						moderator.id,
-						'newAbuseUserReport',
-						pick(report, ['id', 'targetUserId', 'reporterId', 'comment']),
-					);
-				}
-
-				const meta = await this.metaService.fetch();
-				if (meta.email) {
-					this.emailService.sendEmail(
-						meta.email,
-						'New abuse report',
-						sanitizeHtml(ps.comment),
-						sanitizeHtml(ps.comment),
-					);
-				}
+				await this.abuseUserReportEntityService.publishToModerators(report);
 			});
 		});
 	}

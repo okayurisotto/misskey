@@ -561,20 +561,20 @@ model chart_day__users {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model abuse_user_report {
-  id                                        String   @id(map: "PK_87873f5f5cc5c321a1306b2d18c") @db.VarChar(32)
-  createdAt                                 DateTime @db.Timestamptz(6)
-  targetUserId                              String   @db.VarChar(32)
-  reporterId                                String   @db.VarChar(32)
-  assigneeId                                String?  @db.VarChar(32)
-  resolved                                  Boolean  @default(false)
-  comment                                   String   @db.VarChar(2048)
-  targetUserHost                            String?  @db.VarChar(128)
-  reporterHost                              String?  @db.VarChar(128)
-  forwarded                                 Boolean  @default(false)
-  user_abuse_user_report_reporterIdTouser   user     @relation("abuse_user_report_reporterIdTouser", fields: [reporterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_04cc96756f89d0b7f9473e8cdf3")
-  user_abuse_user_report_assigneeIdTouser   user?    @relation("abuse_user_report_assigneeIdTouser", fields: [assigneeId], references: [id], onUpdate: NoAction, map: "FK_08b883dd5fdd6f9c4c1572b36de")
-  user_abuse_user_report_targetUserIdTouser user     @relation("abuse_user_report_targetUserIdTouser", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9021cc2e1feb5f72d3db6e9f5f")
+model AbuseUserReport {
+  id             String   @id(map: "PK_87873f5f5cc5c321a1306b2d18c") @db.VarChar(32)
+  createdAt      DateTime @db.Timestamptz(6)
+  reporterId     String   @db.VarChar(32)
+  targetUserId   String   @db.VarChar(32)
+  assigneeId     String?  @db.VarChar(32)
+  resolved       Boolean  @default(false)
+  forwarded      Boolean  @default(false)
+  comment        String   @db.VarChar(2048)
+  targetUserHost String?  @ignore @db.VarChar(128)
+  reporterHost   String?  @ignore @db.VarChar(128)
+  reporter       user     @relation("abuse_user_report_reporterIdTouser", fields: [reporterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_04cc96756f89d0b7f9473e8cdf3")
+  targetUser     user     @relation("abuse_user_report_targetUserIdTouser", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9021cc2e1feb5f72d3db6e9f5f")
+  assignee       user?    @relation("abuse_user_report_assigneeIdTouser", fields: [assigneeId], references: [id], onUpdate: NoAction, map: "FK_08b883dd5fdd6f9c4c1572b36de")
 
   @@index([reporterId], map: "IDX_04cc96756f89d0b7f9473e8cdf")
   @@index([resolved], map: "IDX_2b15aaf4a0dc5be3499af7ab6a")
@@ -582,6 +582,7 @@ model abuse_user_report {
   @@index([targetUserId], map: "IDX_a9021cc2e1feb5f72d3db6e9f5")
   @@index([createdAt], map: "IDX_db2098070b2b5a523c58181f74")
   @@index([reporterHost], map: "IDX_f8d8b93740ad12c4ce8213a199")
+  @@map("abuse_user_report")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
@@ -1739,9 +1740,9 @@ model user {
   movedToUri                                                String?                  @db.VarChar(512)
   alsoKnownAs                                               String?
   movedAt                                                   DateTime?                @db.Timestamptz(6)
-  abuse_user_report_abuse_user_report_reporterIdTouser      abuse_user_report[]      @relation("abuse_user_report_reporterIdTouser")
-  abuse_user_report_abuse_user_report_assigneeIdTouser      abuse_user_report[]      @relation("abuse_user_report_assigneeIdTouser")
-  abuse_user_report_abuse_user_report_targetUserIdTouser    abuse_user_report[]      @relation("abuse_user_report_targetUserIdTouser")
+  abuse_user_report_abuse_user_report_reporterIdTouser      AbuseUserReport[]        @relation("abuse_user_report_reporterIdTouser")
+  abuse_user_report_abuse_user_report_assigneeIdTouser      AbuseUserReport[]        @relation("abuse_user_report_assigneeIdTouser")
+  abuse_user_report_abuse_user_report_targetUserIdTouser    AbuseUserReport[]        @relation("abuse_user_report_targetUserIdTouser")
   access_token                                              access_token[]
   announcement_read                                         announcement_read[]
   antenna                                                   antenna[]

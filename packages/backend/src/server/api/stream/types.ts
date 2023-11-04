@@ -11,7 +11,7 @@ import type { z } from 'zod';
 import type { EventEmitter } from 'events';
 import type Emitter from 'strict-event-emitter-types';
 import type {
-	abuse_user_report,
+	AbuseUserReport,
 	antenna,
 	channel,
 	drive_file,
@@ -169,7 +169,7 @@ export interface RoleTimelineStreamTypes {
 
 export interface AdminStreamTypes {
 	newAbuseUserReport: {
-		id: abuse_user_report['id'];
+		id: AbuseUserReport['id'];
 		targetUserId: user['id'];
 		reporterId: user['id'];
 		comment: string;

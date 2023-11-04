@@ -31,6 +31,8 @@ import { ApPersonService } from './models/ApPersonService.js';
 import { ApQuestionService } from './models/ApQuestionService.js';
 import type { Resolver } from './ApResolverService.js';
 import type { IAccept, IAdd, IAnnounce, IBlock, ICreate, IDelete, IFlag, IFollow, ILike, IObject, IReject, IRemove, IUndo, IUpdate, IMove } from './type.js';
+import { isNotNull } from '@/misc/is-not-null.js';
+import { AbuseUserReportEntityService } from '../entities/AbuseUserReportEntityService.js';
 
 @Injectable()
 export class ApInboxService {
@@ -62,6 +64,7 @@ export class ApInboxService {
 		private readonly apQuestionService: ApQuestionService,
 		private readonly queueService: QueueService,
 		private readonly prismaService: PrismaService,
+		private readonly abuseUserReportEntityService: AbuseUserReportEntityService,
 	) {
 		this.logger = this.apLoggerService.logger;
 	}
@@ -489,24 +492,18 @@ export class ApInboxService {
 		const uris = getApIds(activity.object);
 
 		const userIds = uris
-			.filter(uri => uri.startsWith(this.config.url + '/users/'))
-			.map(uri => uri.split('/').at(-1))
-			.filter((userId): userId is string => userId !== undefined);
+			.filter((uri) => uri.startsWith(this.config.url + '/users/'))
+			.map((uri) => uri.split('/').at(-1))
+			.filter(isNotNull);
 		const users = await this.prismaService.client.user.findMany({
 			where: { id: { in: userIds } },
 		});
 		if (users.length < 1) return 'skip';
 
-		await this.prismaService.client.abuse_user_report.create({
-			data: {
-				id: this.idService.genId(),
-				createdAt: new Date(),
-				targetUserId: users[0].id,
-				targetUserHost: users[0].host,
-				reporterId: actor.id,
-				reporterHost: actor.host,
-				comment: `${activity.content}\n${JSON.stringify(uris, null, 2)}`,
-			},
+		await this.abuseUserReportEntityService.create({
+			comment: `${activity.content}\n${JSON.stringify(uris, null, 2)}`,
+			reporterId: actor.id,
+			targetUserId: users[0].id,
 		});
 
 		return 'ok';
