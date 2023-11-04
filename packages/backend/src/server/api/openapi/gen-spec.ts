@@ -1,43 +1,45 @@
-import { generateOpenApiSpec } from 'zod2spec';
+import { generateOpenApiSpec as generateOpenApiSpec_ } from 'zod2spec';
 import type { Config } from '@/config.js';
 import endpoints from '../endpoints.js';
 import { errors as basicErrors } from './errors.js';
 import { models } from './models.js';
 
+const generateOpenApiSpec = generateOpenApiSpec_(models);
+
 type OpenApiSpec = {
-  openapi: string;
-  info: {
-    version: string;
-    title: string;
-    "x-logo": { url: string };
-  };
-  externalDocs: { description: string; url: string };
-  servers: { url: string }[];
-  paths: Record<string, unknown>;
-  components: {
-    schemas: {
-      Error: {
-        type: string;
-        properties: {
-          error: {
-            type: string;
-            description: string;
-            properties: {
-              code: { type: string; description: string };
-              message: { type: string; description: string };
-              id: { type: string; format: string; description: string };
-            };
-            required: string[];
-          };
-        };
-        required: string[];
-      };
-    };
-    securitySchemes: { ApiKeyAuth: { type: string; in: string; name: string } };
-  };
+	openapi: string;
+	info: {
+		version: string;
+		title: string;
+		'x-logo': { url: string };
+	};
+	externalDocs: { description: string; url: string };
+	servers: { url: string }[];
+	paths: Record<string, unknown>;
+	components: {
+		schemas: {
+			Error: {
+				type: string;
+				properties: {
+					error: {
+						type: string;
+						description: string;
+						properties: {
+							code: { type: string; description: string };
+							message: { type: string; description: string };
+							id: { type: string; format: string; description: string };
+						};
+						required: string[];
+					};
+				};
+				required: string[];
+			};
+		};
+		securitySchemes: { ApiKeyAuth: { type: string; in: string; name: string } };
+	};
 };
 
-export function genOpenapiSpec(config: Config): OpenApiSpec {
+export function generateFullOpenApiSpec(config: Config): OpenApiSpec {
 	const spec = {
 		openapi: '3.0.0',
 		info: {
@@ -80,28 +82,22 @@ export function genOpenapiSpec(config: Config): OpenApiSpec {
 					required: ['error'],
 				},
 				...Object.fromEntries(
-					models.map(({ key, schema }) => {
-						return [
-							key,
-							generateOpenApiSpec(
-								models.filter((model) => model.schema !== schema),
-							)(schema),
-						]; // TODO: 計算量を減らす
-					}),
+					models.map(({ key, schema }) => [
+						key,
+						generateOpenApiSpec_(
+							models.filter((model) => model.schema !== schema),
+						)(schema),
+					]),
 				),
 			},
 			securitySchemes: {
-				ApiKeyAuth: {
-					type: 'apiKey',
-					in: 'body',
-					name: 'i',
-				},
+				ApiKeyAuth: { type: 'apiKey', in: 'body', name: 'i' },
 			},
 		},
 	};
 
 	for (const endpoint of endpoints.filter((ep) => !ep.meta.secure)) {
-		const errors = {} as any;
+		const errors = {} as Record<string, { value: unknown }>;
 
 		if (endpoint.meta.errors) {
 			for (const e of Object.values(endpoint.meta.errors)) {
@@ -115,13 +111,11 @@ export function genOpenapiSpec(config: Config): OpenApiSpec {
 
 		const resSpec =
 			endpoint.meta.res !== undefined
-				? generateOpenApiSpec(models)(endpoint.meta.res)
+				? generateOpenApiSpec(endpoint.meta.res)
 				: {};
 
 		let desc =
-			(endpoint.meta.description
-				? endpoint.meta.description
-				: 'No description provided.') + '\n\n';
+			(endpoint.meta.description ?? 'No description provided.') + '\n\n';
 		desc += `**Credential required**: *${
 			endpoint.meta.requireCredential ? 'Yes' : 'No'
 		}*`;
@@ -133,7 +127,7 @@ export function genOpenapiSpec(config: Config): OpenApiSpec {
 		const requestType = endpoint.meta.requireFile
 			? 'multipart/form-data'
 			: 'application/json';
-		let reqSpec = generateOpenApiSpec(models)(endpoint.params);
+		let reqSpec = generateOpenApiSpec(endpoint.params);
 
 		if (endpoint.meta.requireFile) {
 			reqSpec = {

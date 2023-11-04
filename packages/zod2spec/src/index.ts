@@ -18,13 +18,12 @@ import { ZodRecord, convertZodRecord } from "./ZodRecord.js";
 import { ZodString, convertZodString } from "./ZodString.js";
 import { ZodUnion, convertZodUnion } from "./ZodUnion.js";
 import { ZodUnknown, convertZodUnknown } from "./ZodUnknown.js";
-import { OpenApiZod } from "./type.js";
 
-export const defineOpenApiSpec = <T extends OpenApiZod>(
+export const defineOpenApiSpec = <T extends z.ZodTypeAny | z.ZodRecord>(
   schema: T,
   spec: SchemaObject | ReferenceObject,
 ): T => {
-  schema[key] = spec;
+  (schema as any)[key] = spec;
   return schema;
 };
 
@@ -49,18 +48,20 @@ const ZodType = z.discriminatedUnion("typeName", [
 ]);
 
 export const generateOpenApiSpec = (
-  components: { key: string; schema: OpenApiZod | z.ZodType }[],
+  components: { key: string; schema: z.ZodTypeAny }[],
 ) => {
-  return (schema: OpenApiZod | z.ZodType): SchemaObject | ReferenceObject => {
+  const componentMap = new Map(
+    components.map(({ key, schema }) => [schema, key]),
+  );
+
+  return (schema: z.ZodTypeAny): SchemaObject | ReferenceObject => {
     if (key in schema) {
-      return schema[key];
+      return schema[key] as SchemaObject | ReferenceObject;
     }
 
-    const component = components.find((component) => {
-      return component.schema === schema;
-    });
-    if (component !== undefined) {
-      return { $ref: `#/components/schemas/${component.key}` };
+    const componentKey = componentMap.get(schema);
+    if (componentKey !== undefined) {
+      return { $ref: `#/components/schemas/${componentKey}` };
     }
 
     const recursive = generateOpenApiSpec(components);

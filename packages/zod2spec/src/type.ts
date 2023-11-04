@@ -1,12 +1,7 @@
 import { z } from "zod";
 import { ReferenceObject, SchemaObject } from "openapi3-ts/oas30";
-import { key } from "./const.js";
 
-export type OpenApiZod = z.ZodType & {
-  [key]?: SchemaObject | ReferenceObject;
-};
-
-export type Converter<T extends OpenApiZod> = (
+export type Converter<T extends z.ZodType> = (
   result: z.infer<T>,
-  recursive: (schema: OpenApiZod) => SchemaObject | ReferenceObject,
+  recursive: (schema: z.ZodType) => SchemaObject | ReferenceObject,
 ) => SchemaObject | ReferenceObject;
