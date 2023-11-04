@@ -1,4 +1,3 @@
-import { bindThis } from '@/decorators.js';
 import type Connection from './index.js';
 import type { user, user_profile } from '@prisma/client';
 import type { StreamEventEmitter } from './types.js';
@@ -6,12 +5,13 @@ import type { StreamEventEmitter } from './types.js';
 /**
  * Stream channel
  */
+// eslint-disable-next-line import/no-default-export
 export default abstract class Channel {
-	protected connection: Connection;
-	public id: string;
+	protected readonly connection: Connection;
 	public abstract readonly chName: string;
-	public static readonly shouldShare: boolean;
+	public readonly id: string;
 	public static readonly requireCredential: boolean;
+	public static readonly shouldShare: boolean;
 
 	protected get user(): user | undefined {
 		return this.connection.user;
@@ -50,19 +50,15 @@ export default abstract class Channel {
 		this.connection = connection;
 	}
 
-	@bindThis
-	public send(typeOrPayload: any, payload?: any): void {
-		const type = payload === undefined ? typeOrPayload.type : typeOrPayload;
-		const body = payload === undefined ? typeOrPayload.body : payload;
-
+	public send(typeOrPayload: string, payload: unknown): void {
 		this.connection.sendMessageToWs('channel', {
 			id: this.id,
-			type: type,
-			body: body,
+			type: typeOrPayload,
+			body: payload,
 		});
 	}
 
-	public abstract init(params: any): void;
+	public abstract init(params: unknown): void;
 	public dispose?(): void;
-	public onMessage?(type: string, body: any): void;
+	public onMessage?(type: string, body: unknown): void;
 }

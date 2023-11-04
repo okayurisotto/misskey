@@ -43,7 +43,7 @@ class UserListChannel extends Channel {
 		if (!listExist) return;
 
 		// Subscribe stream
-		this.subscriber.on(`userListStream:${this.listId}`, this.send);
+		this.subscriber.on(`userListStream:${this.listId}`, ({ type, body }) => this.send(type, body));
 
 		this.subscriber.on('notesStream', this.onNote);
 
@@ -102,7 +102,7 @@ class UserListChannel extends Channel {
 	@bindThis
 	public override dispose(): void {
 		// Unsubscribe events
-		this.subscriber.off(`userListStream:${this.listId}`, this.send);
+		this.subscriber.off(`userListStream:${this.listId}`, () => {});
 		this.subscriber.off('notesStream', this.onNote);
 
 		clearInterval(this.listUsersClock);

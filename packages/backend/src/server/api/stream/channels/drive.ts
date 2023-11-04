@@ -11,7 +11,7 @@ class DriveChannel extends Channel {
 	public async init(params: any): Promise<void> {
 		// Subscribe drive stream
 		this.subscriber.on(`driveStream:${this.user!.id}`, data => {
-			this.send(data);
+			this.send(data.type, data.body);
 		});
 	}
 }

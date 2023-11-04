@@ -11,7 +11,7 @@ class AdminChannel extends Channel {
 	public async init(params: any): Promise<void> {
 		// Subscribe admin stream
 		this.subscriber.on(`adminStream:${this.user!.id}`, data => {
-			this.send(data);
+			this.send(data.type, data.body);
 		});
 	}
 }
