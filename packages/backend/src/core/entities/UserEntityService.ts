@@ -11,7 +11,6 @@ import { type LocalUser, type PartialLocalUser, type PartialRemoteUser, type Rem
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
-import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import type { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -45,13 +44,12 @@ function isRemoteUser(user: user | { host: user['host'] }): boolean {
 @Injectable()
 export class UserEntityService implements OnModuleInit {
 	private apPersonService: ApPersonService;
-	private noteEntityService: NoteEntityService;
-	private driveFileEntityService: DriveFileEntityService;
-	private pageEntityService: PageEntityService;
 	private customEmojiService: CustomEmojiService;
-	private roleService: RoleService;
-	private federatedInstanceService: FederatedInstanceService;
+	private driveFileEntityService: DriveFileEntityService;
 	private instanceEntityService: InstanceEntityService;
+	private noteEntityService: NoteEntityService;
+	private pageEntityService: PageEntityService;
+	private roleService: RoleService;
 
 	constructor(
 		private readonly moduleRef: ModuleRef,
@@ -67,13 +65,12 @@ export class UserEntityService implements OnModuleInit {
 
 	public onModuleInit(): void {
 		this.apPersonService = this.moduleRef.get('ApPersonService');
-		this.noteEntityService = this.moduleRef.get('NoteEntityService');
-		this.driveFileEntityService = this.moduleRef.get('DriveFileEntityService');
-		this.pageEntityService = this.moduleRef.get('PageEntityService');
 		this.customEmojiService = this.moduleRef.get('CustomEmojiService');
-		this.roleService = this.moduleRef.get('RoleService');
-		this.federatedInstanceService = this.moduleRef.get('FederatedInstanceService');
+		this.driveFileEntityService = this.moduleRef.get('DriveFileEntityService');
 		this.instanceEntityService = this.moduleRef.get('InstanceEntityService');
+		this.noteEntityService = this.moduleRef.get('NoteEntityService');
+		this.pageEntityService = this.moduleRef.get('PageEntityService');
+		this.roleService = this.moduleRef.get('RoleService');
 	}
 
 	public isLocalUser = isLocalUser;
@@ -244,13 +241,12 @@ export class UserEntityService implements OnModuleInit {
 		}
 	}
 
-	public async getInstance(user: user): Promise<instance | undefined> {
-		if (user.host === null) return undefined;
+	private async getInstance(user: user): Promise<instance | null> {
+		if (user.host === null) return null;
 
-		const instance = await this.federatedInstanceService.federatedInstanceCache.fetch(user.host);
-		if (instance === null) return undefined;
-
-		return instance;
+		return await this.prismaService.client.instance.findUniqueOrThrow({
+			where: { host: user.host },
+		});
 	}
 
 	private async packDetailsOnly(
@@ -451,13 +447,13 @@ export class UserEntityService implements OnModuleInit {
 		};
 	};
 
-	private async packSecretsOnly(
+	private packSecretsOnly(
 		userId: string,
 		data: {
 			user_profile: user_profile[],
 			user_security_key: user_security_key[],
 		},
-	): Promise<z.infer<typeof UserSecretsSchema>> {
+	): z.infer<typeof UserSecretsSchema> {
 		const profile = data.user_profile.find((profile) => profile.userId === userId);
 		if (profile === undefined) throw new Error('profile is undefined');
 
@@ -475,23 +471,16 @@ export class UserEntityService implements OnModuleInit {
 
 		const [instance, badgeRoles, emojis] = await Promise.all([
 			this.getInstance(user),
-			user.host === null // パフォーマンス上の理由でローカルユーザーのみ
-				? this.roleService.getUserBadgeRoles(user.id).then(roles => roles
-						.sort((a, b) => b.displayOrder - a.displayOrder)
-						.map(role => pick(role, ['name', 'iconUrl', 'displayOrder']))
-					)
-				: Promise.resolve(undefined),
+			this.roleService.getUserBadgeRoles(user.id),
 			this.customEmojiService.populateEmojis(user.emojis, user.host),
 		]);
 
 		return {
 			...pick(user, ['id', 'name', 'username', 'host', 'avatarBlurhash', 'isBot', 'isCat']),
-
+			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
 			badgeRoles,
 			emojis,
-
-			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
-			instance: instance !== undefined ? this.instanceEntityService.packLite(instance) : undefined,
+			instance: instance !== null ? this.instanceEntityService.packLite(instance) : undefined,
 			onlineStatus: this.getOnlineStatus(user),
 		};
 	}
@@ -512,12 +501,12 @@ export class UserEntityService implements OnModuleInit {
 		const result = await this.prismaService.client.user.findUniqueOrThrow({
 			where: { id: userId },
 			include: {
-				user_profile: true,
-				user_note_pining: { include: { note: true }, orderBy: { id: 'desc' } },
-				user_security_key: true,
-				user_memo_user_memo_targetUserIdTouser: { where: { targetUserId: userId } },
-				note_unread: true,
 				follow_request_follow_request_followeeIdTouser: true,
+				note_unread: true,
+				user_memo_user_memo_targetUserIdTouser: true,
+				user_note_pining: { include: { note: true }, orderBy: { id: 'desc' } },
+				user_profile: true,
+				user_security_key: true,
 			},
 		});
 		if (result.user_profile === null) throw new Error('data.user_profile is null');
@@ -547,11 +536,12 @@ export class UserEntityService implements OnModuleInit {
 			]);
 		};
 
-		const [packedUserLite, detail, detailMe, secrets] = await Promise.all([
+		const secrets = opts.includeSecrets ? this.packSecretsOnly(userId, data) : {};
+
+		const [packedUserLite, detail, detailMe] = await Promise.all([
 			this.packLite(result),
 			this.packDetailsOnly(userId, meId, data),
 			isMe ? this.packDetailsMeOnly(userId, data) : {},
-			opts.includeSecrets ? this.packSecretsOnly(userId, data) : {},
 		]);
 
 		return {
@@ -600,18 +590,19 @@ export class UserEntityService implements OnModuleInit {
 			user: [result],
 		};
 
-		const [packedUserLite, detail, detailMe, secrets] = await Promise.all([
+		const secrets = includeSecrets ? this.packSecretsOnly(result.id, data) : {};
+
+		const [packedUserLite, detail, detailMe] = await Promise.all([
 			this.packLite(result),
 			this.packDetailsOnly(result.id, result.id, data),
 			this.packDetailsMeOnly(result.id, data),
-			this.packSecretsOnly(result.id, data),
 		]);
 
 		return {
 			...packedUserLite,
 			...detail,
 			...detailMe,
-			...(includeSecrets ? secrets : {}),
+			...secrets,
 		};
 	}
 }
