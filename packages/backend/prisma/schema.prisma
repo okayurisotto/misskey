@@ -610,7 +610,7 @@ model access_token {
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
-model ad {
+model Ad {
   id        String   @id(map: "PK_0193d5ef09746e88e9ea92c634d") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   expiresAt DateTime @db.Timestamptz(6)
@@ -625,6 +625,7 @@ model ad {
 
   @@index([createdAt], map: "IDX_1129c2ef687fc272df040bafaa")
   @@index([expiresAt], map: "IDX_2da24ce20ad209f1d9dc032457")
+  @@map("ad")
 }
 
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments

@@ -1,17 +1,19 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { Prisma, ad } from '@prisma/client';
-import { AdSchema } from '@/models/zod/AdSchema.js';
+import { Prisma, Ad } from '@prisma/client';
+import { pick } from 'omick';
+import type { AdSchema } from '@/models/zod/AdSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
-import { ApiError } from '@/server/api/error.js';
-import { noSuchAd } from '@/server/api/errors.js';
+import type { AdLiteSchema } from '@/models/zod/AdLiteSchema.js';
 import { PaginationQuery } from '../PrismaQueryService.js';
 import { PrismaService } from '../PrismaService.js';
 import { IdService } from '../IdService.js';
 
 type AdPackData = {
-	ad: EntityMap<'id', ad>;
+	ad: EntityMap<'id', Ad>;
 };
+
+type AdLitePackData = AdPackData;
 
 @Injectable()
 export class AdEntityService {
@@ -21,8 +23,8 @@ export class AdEntityService {
 	) {}
 
 	public async create(
-		data: Omit<Prisma.adCreateInput, 'id' | 'createdAt'>,
-	): Promise<z.infer<typeof AdSchema>> {
+		data: Omit<Prisma.AdCreateInput, 'id' | 'createdAt'>,
+	): Promise<AdPackData> {
 		const result = await this.prismaService.client.ad.create({
 			data: {
 				...data,
@@ -30,73 +32,62 @@ export class AdEntityService {
 				createdAt: new Date(),
 			},
 		});
-		return this.pack(result.id, { ad: new EntityMap('id', [result]) });
+		return { ad: new EntityMap('id', [result]) };
 	}
 
-	public async delete(where: Prisma.adWhereUniqueInput): Promise<void> {
-		try {
-			await this.prismaService.client.ad.delete({ where });
-		} catch (e) {
-			if (e instanceof Prisma.PrismaClientKnownRequestError) {
-				if (e.code === 'P2025') {
-					throw new ApiError(noSuchAd);
-				}
-			}
-
-			throw e;
-		}
+	public async delete(where: Prisma.AdWhereUniqueInput): Promise<void> {
+		await this.prismaService.client.ad.delete({ where });
 	}
 
 	public async showMany(
-		where: Prisma.adWhereInput,
+		where: Prisma.AdWhereInput,
 		paginationQuery?: PaginationQuery,
-	): Promise<z.infer<typeof AdSchema>[]> {
+	): Promise<AdPackData> {
 		const results = await this.prismaService.client.ad.findMany({
 			...paginationQuery,
-			where: paginationQuery ? { AND: [where, paginationQuery.where] } : where,
+			where:
+				paginationQuery === undefined
+					? where
+					: { AND: [where, paginationQuery.where] },
 		});
-
-		return this.packMany(
-			results.map((result) => result.id),
-			{ ad: new EntityMap('id', results) },
-		);
+		return { ad: new EntityMap('id', results) };
 	}
 
 	public async update(
-		where: Prisma.adWhereUniqueInput,
-		data: Prisma.adUpdateInput,
+		where: Prisma.AdWhereUniqueInput,
+		data: Omit<Prisma.AdUpdateInput, 'id' | 'createdAt'>,
 	): Promise<void> {
-		try {
-			await this.prismaService.client.ad.update({
-				where,
-				data,
-			});
-		} catch (e) {
-			if (e instanceof Prisma.PrismaClientKnownRequestError) {
-				if (e.code === 'P2025') {
-					throw new ApiError(noSuchAd);
-				}
-			}
-
-			throw e;
-		}
+		await this.prismaService.client.ad.update({
+			where,
+			data,
+		});
 	}
 
-	public pack(id: ad['id'], data: AdPackData): z.infer<typeof AdSchema> {
+	public packLite(
+		id: Ad['id'],
+		data: AdLitePackData,
+	): z.infer<typeof AdLiteSchema> {
+		const ad = data.ad.get(id);
+		return pick(ad, ['id', 'dayOfWeek', 'imageUrl', 'place', 'ratio', 'url']);
+	}
+
+	public pack(id: Ad['id'], data: AdPackData): z.infer<typeof AdSchema> {
 		const ad = data.ad.get(id);
 
 		return {
-			...ad,
+			...pick(ad, [
+				'dayOfWeek',
+				'id',
+				'imageUrl',
+				'memo',
+				'place',
+				'priority',
+				'ratio',
+				'url',
+			]),
 			createdAt: +ad.createdAt,
 			expiresAt: +ad.expiresAt,
 			startsAt: +ad.startsAt,
 		};
-	}
-
-	public packMany(
-		ids: ad['id'][],
-		data: AdPackData,
-	): z.infer<typeof AdSchema>[] {
-		return ids.map((target) => this.pack(target, data));
 	}
 }

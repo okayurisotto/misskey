@@ -10,71 +10,10 @@ import { DI } from '@/di-symbols.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
+import { AdEntityService } from '@/core/entities/AdEntityService.js';
+import { MetaSchema } from '../../../models/zod/MetaSchema.js';
 
-const res = z.object({
-	maintainerName: z.string().nullable(),
-	maintainerEmail: z.string().nullable(),
-	version: z.string(),
-	name: z.string().nullable(),
-	uri: z.string().url(),
-	description: z.string().nullable(),
-	langs: z.array(z.string()),
-	tosUrl: z.string().nullable(),
-	repositoryUrl: z.string(), // https://github.com/misskey-dev/misskey
-	feedbackUrl: z.string().nullable(), // https://github.com/misskey-dev/misskey/issues/new
-	defaultDarkTheme: z.string().nullable(),
-	defaultLightTheme: z.string().nullable(),
-	disableRegistration: z.boolean(),
-	cacheRemoteFiles: z.boolean().optional(),
-	cacheRemoteSensitiveFiles: z.boolean().optional(),
-	emailRequiredForSignup: z.boolean(),
-	enableHcaptcha: z.boolean(),
-	hcaptchaSiteKey: z.string().nullable(),
-	enableRecaptcha: z.boolean(),
-	recaptchaSiteKey: z.string().nullable(),
-	enableTurnstile: z.boolean(),
-	turnstileSiteKey: z.string().nullable(),
-	swPublickey: z.string().nullable(),
-	mascotImageUrl: z.string().nullable(),
-	bannerUrl: z.string().nullable(),
-	serverErrorImageUrl: z.string().nullable(),
-	infoImageUrl: z.string().nullable(),
-	notFoundImageUrl: z.string().nullable(),
-	iconUrl: z.string().nullable(),
-	maxNoteTextLength: z.number(),
-	ads: z.array(
-		z.object({
-			place: z.string(),
-			url: z.string().url(),
-			imageUrl: z.string().url(),
-		}),
-	),
-	requireSetup: z.boolean().optional(),
-	enableEmail: z.boolean(),
-	enableServiceWorker: z.boolean(),
-	translatorAvailable: z.boolean(),
-	proxyAccountName: z.string().nullable().optional(),
-	mediaProxy: z.string(),
-	features: z
-		.object({
-			registration: z.boolean(),
-			localTimeLine: z.boolean().optional(),
-			globalTimeLine: z.boolean().optional(),
-			hcaptcha: z.boolean(),
-			recaptcha: z.boolean(),
-			objectStorage: z.boolean(),
-			serviceWorker: z.boolean(),
-			miauth: z.boolean().default(true),
-			emailRequiredForSignup: z.boolean().optional(),
-			turnstile: z.boolean().optional(),
-		})
-		.optional(),
-	themeColor: z.string().nullable(),
-	backgroundImageUrl: z.string().nullable(),
-	logoImageUrl: z.string().nullable(),
-	serverRules: z.array(z.string()),
-	policies: z.record(z.string(), z.unknown()),
-});
+const res = MetaSchema;
 export const meta = {
 	tags: ['meta'],
 	requireCredential: false,
@@ -99,20 +38,20 @@ export default class extends Endpoint<
 		private readonly userEntityService: UserEntityService,
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
+		private readonly adEntityService: AdEntityService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const instance = await this.metaService.fetch(true);
 
 			const now = new Date();
 			const dayOfWeek = 1 << now.getDay();
-			const ads = (
-				await this.prismaService.client.ad.findMany({
-					where: {
-						expiresAt: { gt: now },
-						startsAt: { lte: now },
-					},
-				})
-			).filter((ad) => ad.dayOfWeek === 0 || (ad.dayOfWeek & dayOfWeek) > 0);
+			const adPackData = await this.adEntityService.showMany({
+				expiresAt: { gt: now },
+				startsAt: { lte: now },
+			});
+			const ads = [...adPackData.ad.values()].filter((ad) => {
+				return ad.dayOfWeek === 0 || (ad.dayOfWeek & dayOfWeek) > 0;
+			});
 
 			const response: z.infer<typeof res> = {
 				maintainerName: instance.maintainerName,
@@ -153,14 +92,9 @@ export default class extends Endpoint<
 				defaultDarkTheme: instance.defaultDarkTheme
 					? JSON.stringify(JSON5.parse(instance.defaultDarkTheme))
 					: null,
-				ads: ads.map((ad) => ({
-					id: ad.id,
-					url: ad.url,
-					place: ad.place,
-					ratio: ad.ratio,
-					imageUrl: ad.imageUrl,
-					dayOfWeek: ad.dayOfWeek,
-				})),
+				ads: ads.map((ad) => {
+					return this.adEntityService.packLite(ad.id, adPackData);
+				}),
 				enableEmail: instance.enableEmail,
 				enableServiceWorker: instance.enableServiceWorker,
 
@@ -188,13 +122,16 @@ export default class extends Endpoint<
 			};
 
 			if (ps.detail) {
-				const getProxyAccount = async (): Promise<z.infer<typeof UserLiteSchema> | null> => {
+				const getProxyAccount = async (): Promise<z.infer<
+					typeof UserLiteSchema
+				> | null> => {
 					if (instance.proxyAccountId === null) return null;
 
 					try {
-						const proxyAccount = await this.prismaService.client.user.findUniqueOrThrow({
-							where: { id: instance.proxyAccountId },
-						});
+						const proxyAccount =
+							await this.prismaService.client.user.findUniqueOrThrow({
+								where: { id: instance.proxyAccountId },
+							});
 						return await this.userEntityService.packLite(proxyAccount);
 					} catch {
 						return null;
@@ -216,7 +153,7 @@ export default class extends Endpoint<
 				};
 			}
 
-			return response satisfies z.infer<typeof res>;
+			return response;
 		});
 	}
 }

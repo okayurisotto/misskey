@@ -13,8 +13,14 @@ import { RoleService } from '@/core/RoleService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { EmailService } from '@/core/EmailService.js';
+import { PaginationQuery } from '../PrismaQueryService.js';
 import type { AbuseUserReport, Prisma, user } from '@prisma/client';
 import type { z } from 'zod';
+
+type AbuseUserReportPackData = {
+	report: EntityMap<'id', AbuseUserReport>;
+	user: EntityMap<'id', user>;
+};
 
 @Injectable()
 export class AbuseUserReportEntityService {
@@ -33,10 +39,7 @@ export class AbuseUserReportEntityService {
 
 	public async pack(
 		id: AbuseUserReport['id'],
-		data: {
-			report: EntityMap<'id', AbuseUserReport>;
-			user: EntityMap<'id', user>;
-		},
+		data: AbuseUserReportPackData,
 	): Promise<z.infer<typeof AbuseUserReportSchema>> {
 		const report = data.report.get(id);
 		const reporter = data.user.get(report.reporterId);
@@ -105,14 +108,19 @@ export class AbuseUserReportEntityService {
 	}
 
 	public async showMany(
-		args: Omit<Prisma.AbuseUserReportFindManyArgs, 'select' | 'include'>,
+		where: Prisma.AbuseUserReportWhereInput,
+		paginationQuery?: PaginationQuery,
 	): Promise<z.infer<typeof AbuseUserReportSchema>[]> {
 		const reports = await this.prismaService.client.abuseUserReport.findMany({
-			...args,
+			...paginationQuery,
+			where:
+				paginationQuery === undefined
+					? where
+					: { AND: [where, paginationQuery.where] },
 			include: { assignee: true, reporter: true, targetUser: true },
 		});
 
-		const data = {
+		const data: AbuseUserReportPackData = {
 			report: new EntityMap('id', reports),
 			user: new EntityMap(
 				'id',

@@ -44,10 +44,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return await this.abuseUserReportEntityService.showMany({
-				where: {
+			return await this.abuseUserReportEntityService.showMany(
+				{
 					AND: [
-						paginationQuery.where,
 						ps.state === 'resolved' ? { resolved: true } : {},
 						ps.state === 'unresolved' ? { resolved: false } : {},
 						ps.reporterOrigin === 'local' ? { reporter: { host: null } } : {},
@@ -62,10 +61,8 @@ export default class extends Endpoint<
 							: {},
 					],
 				},
-				orderBy: paginationQuery.orderBy,
-				skip: paginationQuery.skip,
-				take: paginationQuery.take,
-			});
+				paginationQuery,
+			);
 		});
 	}
 }

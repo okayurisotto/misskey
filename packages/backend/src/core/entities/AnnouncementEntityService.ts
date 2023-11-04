@@ -4,8 +4,6 @@ import { z } from 'zod';
 import { pick } from 'omick';
 import type { AnnouncementForAdminSchema } from '@/models/zod/AnnouncementForAdminSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
-import { ApiError } from '@/server/api/error.js';
-import { noSuchAnnouncement } from '@/server/api/errors.js';
 import { PrismaService } from '../PrismaService.js';
 import { IdService } from '../IdService.js';
 import { PaginationQuery } from '../PrismaQueryService.js';
@@ -36,11 +34,14 @@ export class AnnouncementEntityService {
 
 	public async showMany(
 		where: Prisma.announcementWhereInput,
-		paginationQuery: PaginationQuery,
+		paginationQuery?: PaginationQuery,
 	): Promise<z.infer<typeof AnnouncementForAdminSchema>[]> {
 		const results = await this.prismaService.client.announcement.findMany({
 			...paginationQuery,
-			where: { AND: [where, paginationQuery.where] },
+			where:
+				paginationQuery === undefined
+					? where
+					: { AND: [where, paginationQuery.where] },
 			include: { announcement_read: true },
 		});
 
@@ -60,24 +61,14 @@ export class AnnouncementEntityService {
 		where: Prisma.announcementWhereUniqueInput,
 		data: Pick<Prisma.announcementUpdateInput, 'imageUrl' | 'text' | 'title'>,
 	): Promise<void> {
-		try {
-			await this.prismaService.client.announcement.update({
-				where,
-				data: {
-					...data,
-					imageUrl: data.imageUrl === '' ? null : data.imageUrl,
-					updatedAt: new Date(),
-				},
-			});
-		} catch (e) {
-			if (e instanceof Prisma.PrismaClientKnownRequestError) {
-				if (e.code === 'P2025') {
-					throw new ApiError(noSuchAnnouncement);
-				}
-			}
-
-			throw e;
-		}
+		await this.prismaService.client.announcement.update({
+			where,
+			data: {
+				...data,
+				imageUrl: data.imageUrl === '' ? null : data.imageUrl,
+				updatedAt: new Date(),
+			},
+		});
 	}
 
 	public async delete(

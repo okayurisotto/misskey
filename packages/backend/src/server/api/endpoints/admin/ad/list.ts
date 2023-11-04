@@ -36,7 +36,11 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return await this.adEntityService.showMany({}, paginationQuery);
+			const result = await this.adEntityService.showMany({}, paginationQuery);
+
+			return [...result.ad.keys()].map((id) => {
+				return this.adEntityService.pack(id, result);
+			});
 		});
 	}
 }
