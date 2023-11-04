@@ -1,5 +1,6 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import * as Redis from 'ioredis';
+import { fromEntries } from 'omick';
 import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
@@ -10,6 +11,7 @@ import { UtilityService } from '@/core/UtilityService.js';
 import type { Serialized } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
+import { isNotNull } from '@/misc/is-not-null.js';
 import type { Prisma, role, drive_file, emoji } from '@prisma/client';
 
 const parseEmojiStrRegexp = /^(\w+)(?:@([\w.-]+))?$/;
@@ -321,45 +323,43 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	}
 
 	/**
-	 * 添付用(リモート)カスタム絵文字URLを解決する
-	 * @param emojiName ノートやユーザープロフィールに添付された、またはリアクションのカスタム絵文字名 (:は含めない, リアクションでローカルホストの場合は@.を付ける (これはdecodeReactionで可能))
-	 * @param noteUserHost ノートやユーザープロフィールの所有者のホスト
-	 * @returns URL, nullは未マッチを意味する
+	 * 複数の添付用（リモート）カスタム絵文字URLを解決する（存在しないものは結果から除外される）
+	 *
+	 * @param emojiNames ノートやユーザープロフィールに添付された、またはリアクションのカスタム絵文字名（`:`は含めない。リアクションでローカルホストの場合は`@.`を付ける（これはdecodeReactionで可能））
+	 * @param host       ノートやユーザープロフィールの所有者のホスト
 	 */
 	@bindThis
-	public async populateEmoji(emojiName: string, noteUserHost: string | null): Promise<string | null> {
-		const { name, host } = this.parseEmojiStr(emojiName, noteUserHost);
-		if (name == null) return null;
-		if (host == null) return null;
+	public async populateEmojis(emojiNames: string[], host: string | null): Promise<Record<string, string>> {
+		const parsedEmojiNames = emojiNames
+			.map((emojiName) => {
+				const result = this.parseEmojiStr(emojiName, host);
+				if (result.name == null) return null;
+				if (result.host === null) return null;
 
-		const emoji = await this.cache.fetch(
-			`${name} ${host}`,
-			async (): Promise<emoji | null> => {
-				return await this.prismaService.client.emoji.findFirst({ where: { name, host } });
-			},
-		);
+				return { value: emojiName, result: result };
+			})
+			.filter(isNotNull);
 
-		if (emoji === null) return null;
-		return emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl; // 後方互換性のため
-	}
+		const emojis = await this.prismaService.client.emoji.findMany({
+			where: { OR: parsedEmojiNames.map(({ result: specifier }) => specifier) },
+		});
 
-	/**
-	 * 複数の添付用(リモート)カスタム絵文字URLを解決する (キャシュ付き, 存在しないものは結果から除外される)
-	 */
-	@bindThis
-	public async populateEmojis(emojiNames: string[], noteUserHost: string | null): Promise<Record<string, string>> {
-		const emojis = await Promise.all(emojiNames.map(emojiName => this.populateEmoji(emojiName, noteUserHost)));
+		const entries = emojis
+			.map<[string, string] | null>((emoji) => {
+				const emojiName = parsedEmojiNames.find((entry) => {
+					return entry.result.host === emoji.host && entry.result.name === emoji.name;
+				});
 
-		const result = emojiNames.reduce<Map<string, string>>((acc, emojiName, i) => {
-			const emoji = emojis.at(i);
-			if (emoji == null) {
-				return acc;
-			} else {
-				return acc.set(emojiName, emoji);
-			}
-		}, new Map());
+				if (emojiName === undefined) return null;
 
-		return Object.fromEntries(result);
+				// 後方互換性のため
+				const emojiUrl = emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl;
+
+				return [emojiName.value, emojiUrl];
+			})
+			.filter(isNotNull);
+
+		return fromEntries(entries);
 	}
 
 	/**
