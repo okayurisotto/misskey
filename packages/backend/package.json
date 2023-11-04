@@ -157,7 +157,7 @@
 		"web-push": "3.6.3",
 		"ws": "8.13.0",
 		"xev": "3.0.2",
-		"zod": "^3.21.4",
+		"zod": "^3.22.4",
 		"zod2spec": "workspace:*"
 	},
 	"devDependencies": {
