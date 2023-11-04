@@ -103,7 +103,7 @@ export class StreamingApiServerService {
 			globalEv.emit('message', parsed);
 		});
 
-		this.#wss.on('connection', async (connection: WebSocket.WebSocket, request: http.IncomingMessage, ctx: {
+		this.#wss.on('connection', (connection: WebSocket.WebSocket, request: http.IncomingMessage, ctx: {
 			stream: MainStreamConnection,
 			user: LocalUser | null;
 			app: access_token | null
@@ -118,7 +118,7 @@ export class StreamingApiServerService {
 
 			globalEv.on('message', onRedisMessage);
 
-			await stream.listen(ev, connection);
+			stream.listen(ev, connection);
 
 			this.#connections.set(connection, Date.now());
 
