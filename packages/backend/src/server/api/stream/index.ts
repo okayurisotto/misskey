@@ -5,7 +5,7 @@ import type { NotificationService } from '@/core/NotificationService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
-import type { ChannelsService } from './ChannelsService.js';
+import { channelServiceNames, type ChannelServiceName, type ChannelsService } from './ChannelsService.js';
 import type { EventEmitter } from 'events';
 import type Channel from './channel.js';
 import type { StreamEventEmitter, StreamMessages } from './types.js';
@@ -110,7 +110,7 @@ export default class Connection {
 			}),
 			z.object({
 				type: z.literal('connect'),
-				body: z.object({ channel: z.string(), id: z.string(), params: z.unknown(), pong: z.boolean().optional() }),
+				body: z.object({ channel: z.enum(channelServiceNames), id: z.string(), params: z.unknown(), pong: z.boolean().optional() }),
 			}),
 			z.object({
 				type: z.literal('disconnect'),
@@ -235,7 +235,7 @@ export default class Connection {
 	/**
 	 * チャンネル接続要求時
 	 */
-	private onChannelConnectRequested(payload: { channel: string; id: string; params?: unknown; pong?: boolean | undefined }): void {
+	private onChannelConnectRequested(payload: { channel: ChannelServiceName; id: string; params?: unknown; pong?: boolean | undefined }): void {
 		const { channel, id, params, pong } = payload;
 		this.connectChannel(id, params, channel, pong);
 	}
@@ -263,7 +263,7 @@ export default class Connection {
 	 * チャンネルに接続
 	 */
 	@bindThis
-	public connectChannel(id: string, params: unknown, channel: string, pong = false): void {
+	public connectChannel(id: string, params: unknown, channel: ChannelServiceName, pong = false): void {
 		const channelService = this.channelsService.getChannelService(channel);
 
 		if (channelService.requireCredential && this.user == null) {
@@ -275,7 +275,7 @@ export default class Connection {
 			return;
 		}
 
-		const ch: Channel = channelService.create(id, this);
+		const ch = channelService.create(id, this);
 		this.channels.push(ch);
 		ch.init(params ?? {});
 

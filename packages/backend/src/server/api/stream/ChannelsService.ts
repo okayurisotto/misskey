@@ -15,62 +15,84 @@ import { DriveChannelService } from './channels/drive.js';
 import { HashtagChannelService } from './channels/hashtag.js';
 import { RoleTimelineChannelService } from './channels/role-timeline.js';
 
-type ChannelService =
-  | MainChannelService
-  | HomeTimelineChannelService
-  | LocalTimelineChannelService
-  | HybridTimelineChannelService
-  | GlobalTimelineChannelService
-  | UserListChannelService
-  | HashtagChannelService
-  | RoleTimelineChannelService
-  | AntennaChannelService
-  | ChannelChannelService
-  | DriveChannelService
-  | ServerStatsChannelService
-  | QueueStatsChannelService
-  | AdminChannelService;
+type ChannelServices = {
+	main: MainChannelService;
+	homeTimeline: HomeTimelineChannelService;
+	localTimeline: LocalTimelineChannelService;
+	hybridTimeline: HybridTimelineChannelService;
+	globalTimeline: GlobalTimelineChannelService;
+	userList: UserListChannelService;
+	hashtag: HashtagChannelService;
+	roleTimeline: RoleTimelineChannelService;
+	antenna: AntennaChannelService;
+	channel: ChannelChannelService;
+	drive: DriveChannelService;
+	serverStats: ServerStatsChannelService;
+	queueStats: QueueStatsChannelService;
+	admin: AdminChannelService;
+};
+
+export const channelServiceNames = [
+	'main',
+	'homeTimeline',
+	'localTimeline',
+	'hybridTimeline',
+	'globalTimeline',
+	'userList',
+	'hashtag',
+	'roleTimeline',
+	'antenna',
+	'channel',
+	'drive',
+	'serverStats',
+	'queueStats',
+	'admin',
+] as const satisfies readonly (keyof ChannelServices)[];
+
+export type ChannelServiceName = (typeof channelServiceNames)[number];
 
 @Injectable()
 export class ChannelsService {
+	private readonly services: ChannelServices;
+
 	constructor(
-		private mainChannelService: MainChannelService,
-		private homeTimelineChannelService: HomeTimelineChannelService,
-		private localTimelineChannelService: LocalTimelineChannelService,
-		private hybridTimelineChannelService: HybridTimelineChannelService,
-		private globalTimelineChannelService: GlobalTimelineChannelService,
-		private userListChannelService: UserListChannelService,
-		private hashtagChannelService: HashtagChannelService,
-		private roleTimelineChannelService: RoleTimelineChannelService,
-		private antennaChannelService: AntennaChannelService,
-		private channelChannelService: ChannelChannelService,
-		private driveChannelService: DriveChannelService,
-		private serverStatsChannelService: ServerStatsChannelService,
-		private queueStatsChannelService: QueueStatsChannelService,
-		private adminChannelService: AdminChannelService,
+		mainChannelService: MainChannelService,
+		homeTimelineChannelService: HomeTimelineChannelService,
+		localTimelineChannelService: LocalTimelineChannelService,
+		hybridTimelineChannelService: HybridTimelineChannelService,
+		globalTimelineChannelService: GlobalTimelineChannelService,
+		userListChannelService: UserListChannelService,
+		hashtagChannelService: HashtagChannelService,
+		roleTimelineChannelService: RoleTimelineChannelService,
+		antennaChannelService: AntennaChannelService,
+		channelChannelService: ChannelChannelService,
+		driveChannelService: DriveChannelService,
+		serverStatsChannelService: ServerStatsChannelService,
+		queueStatsChannelService: QueueStatsChannelService,
+		adminChannelService: AdminChannelService,
 	) {
+		this.services = {
+			main: mainChannelService,
+			homeTimeline: homeTimelineChannelService,
+			localTimeline: localTimelineChannelService,
+			hybridTimeline: hybridTimelineChannelService,
+			globalTimeline: globalTimelineChannelService,
+			userList: userListChannelService,
+			hashtag: hashtagChannelService,
+			roleTimeline: roleTimelineChannelService,
+			antenna: antennaChannelService,
+			channel: channelChannelService,
+			drive: driveChannelService,
+			serverStats: serverStatsChannelService,
+			queueStats: queueStatsChannelService,
+			admin: adminChannelService,
+		};
 	}
 
 	@bindThis
-	public getChannelService(name: string): ChannelService {
-		switch (name) {
-			case 'main': return this.mainChannelService;
-			case 'homeTimeline': return this.homeTimelineChannelService;
-			case 'localTimeline': return this.localTimelineChannelService;
-			case 'hybridTimeline': return this.hybridTimelineChannelService;
-			case 'globalTimeline': return this.globalTimelineChannelService;
-			case 'userList': return this.userListChannelService;
-			case 'hashtag': return this.hashtagChannelService;
-			case 'roleTimeline': return this.roleTimelineChannelService;
-			case 'antenna': return this.antennaChannelService;
-			case 'channel': return this.channelChannelService;
-			case 'drive': return this.driveChannelService;
-			case 'serverStats': return this.serverStatsChannelService;
-			case 'queueStats': return this.queueStatsChannelService;
-			case 'admin': return this.adminChannelService;
-
-			default:
-				throw new Error(`no such channel: ${name}`);
-		}
+	public getChannelService<K extends ChannelServiceName>(
+		name: K,
+	): ChannelServices[K] {
+		return this.services[name];
 	}
 }
