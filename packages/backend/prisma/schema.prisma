@@ -560,7 +560,6 @@ model chart_day__users {
   @@ignore
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model AbuseUserReport {
   id             String   @id(map: "PK_87873f5f5cc5c321a1306b2d18c") @db.VarChar(32)
   createdAt      DateTime @db.Timestamptz(6)
@@ -585,7 +584,6 @@ model AbuseUserReport {
   @@map("abuse_user_report")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model access_token {
   id          String    @id(map: "PK_f20f028607b2603deabd8182d12") @db.VarChar(32)
   createdAt   DateTime  @db.Timestamptz(6)
@@ -609,7 +607,6 @@ model access_token {
   @@index([session], map: "IDX_bf3a053c07d9fb5d87317c56ee")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model Ad {
   id        String   @id(map: "PK_0193d5ef09746e88e9ea92c634d") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -628,7 +625,6 @@ model Ad {
   @@map("ad")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model announcement {
   id                String              @id(map: "PK_e0ef0550174fd1099a308fd18a0") @db.VarChar(32)
   createdAt         DateTime            @db.Timestamptz(6)
@@ -641,7 +637,6 @@ model announcement {
   @@index([createdAt], map: "IDX_118ec703e596086fc4515acb39")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model announcement_read {
   id             String       @id(map: "PK_4b90ad1f42681d97b2683890c5e") @db.VarChar(32)
   userId         String       @db.VarChar(32)
@@ -655,7 +650,6 @@ model announcement_read {
   @@index([userId], map: "IDX_8288151386172b8109f7239ab2")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model antenna {
   id              String           @id(map: "PK_c170b99775e1dccca947c9f2d5f") @db.VarChar(32)
   createdAt       DateTime         @db.Timestamptz(6)
@@ -681,7 +675,6 @@ model antenna {
   @@index([userId], map: "IDX_6446c571a0e8d0f05f01c78909")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model app {
   id           String         @id(map: "PK_9478629fc093d229df09e560aea") @db.VarChar(32)
   createdAt    DateTime       @db.Timestamptz(6)
@@ -700,7 +693,6 @@ model app {
   @@index([secret], map: "IDX_f49922d511d666848f250663c4")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model attestation_challenge {
   id                    String   @db.VarChar(32)
   userId                String   @db.VarChar(32)
@@ -714,7 +706,6 @@ model attestation_challenge {
   @@index([userId], map: "IDX_f1a461a618fa1755692d0e0d59")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model auth_session {
   id        String   @id(map: "PK_19354ed146424a728c1112a8cbf") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -727,7 +718,6 @@ model auth_session {
   @@index([token], map: "IDX_62cb09e1129f6ec024ef66e183")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model blocking {
   id                            String   @id(map: "PK_e5d9a541cc1965ee7e048ea09dd") @db.VarChar(32)
   createdAt                     DateTime @db.Timestamptz(6)
@@ -742,7 +732,6 @@ model blocking {
   @@index([createdAt], map: "IDX_b9a354f7941c1e779f3b33aea6")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model channel {
   id                  String                @id(map: "PK_590f33ee6ee7d76437acf362e39") @db.VarChar(32)
   createdAt           DateTime              @db.Timestamptz(6)
@@ -771,7 +760,6 @@ model channel {
   @@index([isArchived], map: "IDX_cc7c72974f1b2f385a8921f094")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model channel_favorite {
   id        String   @id(map: "PK_59bddfd54d48689a298d41af00c") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -785,7 +773,6 @@ model channel_favorite {
   @@index([channelId], map: "IDX_d3ca0db011b75ac2a940a2337d")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model channel_following {
   id         String   @id(map: "PK_8b104be7f7415113f2a02cd5bdd") @db.VarChar(32)
   createdAt  DateTime @db.Timestamptz(6)
@@ -800,7 +787,6 @@ model channel_following {
   @@index([followerId], map: "IDX_6d8084ec9496e7334a4602707e")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model channel_note_pining {
   id        String   @id(map: "PK_44f7474496bcf2e4b741681146d") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -814,7 +800,6 @@ model channel_note_pining {
   @@ignore
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model clip {
   id            String          @id(map: "PK_f0685dac8d4dd056d7255670b75") @db.VarChar(32)
   createdAt     DateTime        @db.Timestamptz(6)
@@ -843,7 +828,6 @@ model clip_favorite {
   @@index([userId], map: "IDX_25a31662b0b0cc9af6549a9d71")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model clip_note {
   id     String @id(map: "PK_e94cda2f40a99b57e032a1a738b") @db.VarChar(32)
   noteId String @db.VarChar(32)
@@ -856,7 +840,6 @@ model clip_note {
   @@index([clipId], map: "IDX_ebe99317bbbe9968a0c6f579ad")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model drive_file {
   id                             String              @id(map: "PK_43ddaaaf18c9e68029b7cbb032e") @db.VarChar(32)
   createdAt                      DateTime            @db.Timestamptz(6)
@@ -908,7 +891,6 @@ model drive_file {
   @@index([uri], map: "IDX_e5848eac4940934e23dbc17581")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model drive_folder {
   id                 String         @id(map: "PK_7a0c089191f5ebdc214e0af808a") @db.VarChar(32)
   createdAt          DateTime       @db.Timestamptz(6)
@@ -946,7 +928,6 @@ model emoji {
   @@index([name], map: "IDX_b37dafc86e9af007e3295c2781")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model flash {
   id          String       @id(map: "PK_0c01a2c1c5f2266942dd1b3fdbc") @db.VarChar(32)
   createdAt   DateTime     @db.Timestamptz(6)
@@ -977,7 +958,6 @@ model flash_like {
   @@index([userId], map: "IDX_60c4af1c19a7a75f1592f93b28")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model follow_request {
   id                                   String   @id(map: "PK_53a9aa3725f7a3deb150b39dbfc") @db.VarChar(32)
   createdAt                            DateTime @db.Timestamptz(6)
@@ -998,7 +978,6 @@ model follow_request {
   @@index([followerId], map: "IDX_a7fd92dd6dc519e6fb435dd108")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model following {
   id                              String   @id(map: "PK_c76c6e044bdf76ecf8bfb82a645") @db.VarChar(32)
   createdAt                       DateTime @db.Timestamptz(6)
@@ -1033,7 +1012,6 @@ model gallery_like {
   @@index([userId], map: "IDX_8fd5215095473061855ceb948c")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model gallery_post {
   id           String         @id(map: "PK_8e90d7b6015f2c4518881b14753") @db.VarChar(32)
   createdAt    DateTime       @db.Timestamptz(6)
@@ -1081,7 +1059,6 @@ model hashtag {
   @@index([attachedUsersCount], map: "IDX_d57f9030cd3af7f63ffb1c267c")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model instance {
   id                      String    @id(map: "PK_eaf60e4a0c399c9935413e06474") @db.VarChar(32)
   firstRetrievedAt        DateTime  @db.Timestamptz(6)
@@ -1109,7 +1086,6 @@ model instance {
   @@index([isSuspended], map: "IDX_34500da2e38ac393f7bb6b299c")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model messaging_message {
   id                                       String      @id(map: "PK_db398fd79dc95d0eb8c30456eaa") @db.VarChar(32)
   createdAt                                DateTime    @db.Timestamptz(6)
@@ -1222,7 +1198,6 @@ model migrations {
   @@ignore
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model moderation_log {
   id        String   @id(map: "PK_d0adca6ecfd068db83e4526cc26") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -1234,7 +1209,6 @@ model moderation_log {
   @@index([userId], map: "IDX_a08ad074601d204e0f69da9a95")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model muted_note {
   id     String                 @id(map: "PK_897e2eff1c0b9b64e55ca1418a4") @db.VarChar(32)
   noteId String                 @db.VarChar(32)
@@ -1249,7 +1223,6 @@ model muted_note {
   @@index([userId], map: "IDX_d8e07aa18c2d64e86201601aec")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model muting {
   id                        String    @id(map: "PK_2e92d06c8b5c602eeb27ca9ba48") @db.VarChar(32)
   createdAt                 DateTime  @db.Timestamptz(6)
@@ -1269,7 +1242,6 @@ model muting {
   @@index([muterId], map: "IDX_renote_muting_muterId")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model note {
   id                             String                @id(map: "PK_96d0c172a4fba276b1bbed43058") @db.VarChar(32)
   createdAt                      DateTime              @db.Timestamptz(6)
@@ -1339,7 +1311,6 @@ model note {
   @@index([channelId], map: "IDX_f22169eb10657bded6d875ac8f")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model note_favorite {
   id        String   @id(map: "PK_af0da35a60b9fa4463a62082b36") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -1352,7 +1323,6 @@ model note_favorite {
   @@index([userId], map: "IDX_47f4b1892f5d6ba8efb3057d81")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model note_reaction {
   id        String   @id(map: "PK_767ec729b108799b587a3fcc9cf") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -1380,7 +1350,6 @@ model note_thread_muting {
   @@index([threadId], map: "IDX_c426394644267453e76f036926")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model note_unread {
   id            String  @id(map: "PK_1904eda61a784f57e6e51fa9c1f") @db.VarChar(32)
   userId        String  @db.VarChar(32)
@@ -1401,7 +1370,6 @@ model note_unread {
   @@index([noteId], map: "IDX_e637cba4dc4410218c4251260e")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model note_watching {
   id         String   @id(map: "PK_49286fdb23725945a74aa27d757") @db.VarChar(32)
   createdAt  DateTime @db.Timestamptz(6)
@@ -1419,7 +1387,6 @@ model note_watching {
   @@ignore
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model page {
   id                  String               @id(map: "PK_742f4117e065c5b6ad21b37ba1f") @db.VarChar(32)
   createdAt           DateTime             @db.Timestamptz(6)
@@ -1473,7 +1440,6 @@ model password_reset_request {
   @@index([userId], map: "IDX_4bb7fd4a34492ae0e6cc8d30ac")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model poll {
   noteId         String                   @id(map: "PK_da851e06d0dfe2ef397d8b1bf1b") @unique(map: "UQ_da851e06d0dfe2ef397d8b1bf1b") @db.VarChar(32)
   expiresAt      DateTime?                @db.Timestamptz(6)
@@ -1489,7 +1455,6 @@ model poll {
   @@index([userHost], map: "IDX_7fa20a12319c7f6dc3aed98c0a")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model poll_vote {
   id        String   @id(map: "PK_fd002d371201c472490ba89c6a0") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -1505,7 +1470,6 @@ model poll_vote {
   @@index([noteId], map: "IDX_aecfbd5ef60374918e63ee95fa")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model promo_note {
   noteId    String   @id(map: "PK_e263909ca4fe5d57f8d4230dd5c") @unique(map: "UQ_e263909ca4fe5d57f8d4230dd5c") @db.VarChar(32)
   expiresAt DateTime @db.Timestamptz(6)
@@ -1515,7 +1479,6 @@ model promo_note {
   @@index([userId], map: "IDX_83f0862e9bae44af52ced7099e")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model promo_read {
   id        String   @id(map: "PK_61917c1541002422b703318b7c9") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -1544,7 +1507,6 @@ model registration_ticket {
   @@index([createdById], map: "IDX_beba993576db0261a15364ea96")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model registry_item {
   id        String   @id(map: "PK_64b3f7e6008b4d89b826cd3af95") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -1574,7 +1536,6 @@ model renote_muting {
   muterId   String   @db.VarChar(32)
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model retention_aggregation {
   id         String   @id(map: "PK_22aad3e8640b15fb3b90ee02d18") @db.VarChar(32)
   createdAt  DateTime @db.Timestamptz(6)
@@ -1587,7 +1548,6 @@ model retention_aggregation {
   @@index([createdAt], map: "IDX_09f4e5b9e4a2f268d3e284e4b3")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model reversi_game {
   id                              String    @id(map: "PK_76b30eeba71b1193ad7c5311c3f") @db.VarChar(32)
   createdAt                       DateTime  @db.Timestamptz(6)
@@ -1617,7 +1577,6 @@ model reversi_game {
   @@ignore
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model reversi_matching {
   id                                   String   @id(map: "PK_880bd0afbab232f21c8b9d146cf") @db.VarChar(32)
   createdAt                            DateTime @db.Timestamptz(6)
@@ -1632,7 +1591,6 @@ model reversi_matching {
   @@ignore
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model role {
   id                        String            @id(map: "PK_b36bcfe02fc8de3c57a8b2391c2") @db.VarChar(32)
   createdAt                 DateTime          @db.Timestamptz(6)
@@ -1655,7 +1613,6 @@ model role {
   role_assignment           role_assignment[]
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model role_assignment {
   id        String    @id(map: "PK_7e79671a8a5db18936173148cb4") @db.VarChar(32)
   createdAt DateTime  @db.Timestamptz(6)
@@ -1671,7 +1628,6 @@ model role_assignment {
   @@index([roleId], map: "IDX_f0de67fd09cd3cd0aabca79994")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model signin {
   id        String   @id(map: "PK_9e96ddc025712616fc492b3b588") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -1702,7 +1658,6 @@ model used_username {
   createdAt DateTime @db.Timestamptz(6)
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user {
   id                                                        String                   @id(map: "PK_cace4a159ff9f2512dd42373760") @db.VarChar(32)
   createdAt                                                 DateTime                 @db.Timestamptz(6)
@@ -1824,7 +1779,6 @@ model user {
   @@index([tags], map: "IDX_fa99d777623947a5b05f394cae")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_group {
   id                    String                  @id(map: "PK_3c29fba6fe013ec8724378ce7c9") @db.VarChar(32)
   createdAt             DateTime                @db.Timestamptz(6)
@@ -1842,7 +1796,6 @@ model user_group {
   @@ignore
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_group_invitation {
   id          String     @id(map: "PK_160c63ec02bf23f6a5c5e8140d6") @db.VarChar(32)
   createdAt   DateTime   @db.Timestamptz(6)
@@ -1871,7 +1824,6 @@ model user_group_invite {
   @@ignore
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_group_joining {
   id          String     @id(map: "PK_15f2425885253c5507e1599cfe7") @db.VarChar(32)
   createdAt   DateTime   @db.Timestamptz(6)
@@ -1903,7 +1855,6 @@ model user_keypair {
   user       user   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f4853eb41ab722fe05f81cedeb6")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_list {
   id                 String               @id(map: "PK_87bab75775fd9b1ff822b656402") @db.VarChar(32)
   createdAt          DateTime             @db.Timestamptz(6)
@@ -1931,7 +1882,6 @@ model user_list_favorite {
   @@index([userId], map: "IDX_016f613dc4feb807e03e3e7da9")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_list_joining {
   id         String    @id(map: "PK_11abb3768da1c5f8de101c9df45") @db.VarChar(32)
   createdAt  DateTime  @db.Timestamptz(6)
@@ -1945,7 +1895,6 @@ model user_list_joining {
   @@index([userId], map: "IDX_d844bfc6f3f523a05189076efa")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_memo {
   id                                String @id(map: "PK_e9aaa58f7d3699a84d79078f4d9") @db.VarChar(32)
   userId                            String @db.VarChar(32)
@@ -1959,7 +1908,6 @@ model user_memo {
   @@index([targetUserId], map: "IDX_66ac4a82894297fd09ba61f3d3")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_note_pining {
   id        String   @id(map: "PK_a6a2dad4ae000abce2ea9d9b103") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
@@ -1981,7 +1929,6 @@ model user_pending {
   password  String   @db.VarChar(128)
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_profile {
   userId                   String                                      @id(map: "PK_51cb79b5555effaf7d69ba1cff9") @unique(map: "UQ_51cb79b5555effaf7d69ba1cff9") @db.VarChar(32)
   location                 String?                                     @db.VarChar(128)
@@ -2035,7 +1982,6 @@ model user_publickey {
   user   user   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_10c146e4b39b443ede016f6736d")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model user_security_key {
   id        String   @id(map: "PK_3e508571121ab39c5f85d10c166") @db.VarChar
   userId    String   @db.VarChar(32)
@@ -2048,7 +1994,6 @@ model user_security_key {
   @@index([userId], map: "IDX_ff9ca3b5f3ee3d0681367a9b44")
 }
 
-/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model webhook {
   id           String    @id(map: "PK_e6765510c2d078db49632b59020") @db.VarChar(32)
   createdAt    DateTime  @db.Timestamptz(6)
