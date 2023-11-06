@@ -478,7 +478,7 @@ export class UserEntityService implements OnModuleInit {
 		return {
 			...pick(user, ['id', 'name', 'username', 'host', 'avatarBlurhash', 'isBot', 'isCat']),
 			avatarUrl: user.avatarUrl ?? this.getIdenticonUrl(user),
-			badgeRoles,
+			badgeRoles: badgeRoles.map((role) => pick(role, ['displayOrder', 'iconUrl', 'name'])),
 			emojis,
 			instance: instance !== null ? this.instanceEntityService.packLite(instance) : undefined,
 			onlineStatus: this.getOnlineStatus(user),
