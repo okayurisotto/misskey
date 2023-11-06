@@ -342,7 +342,7 @@ import * as ep___users_achievements from './endpoints/users/achievements.js';
 import * as ep___users_updateMemo from './endpoints/users/update-memo.js';
 import * as ep___fetchRss from './endpoints/fetch-rss.js';
 import * as ep___retention from './endpoints/retention.js';
-import type { OpenApiZod } from 'zod2spec/built/type.js';
+import type { z } from 'zod';
 
 const eps = [
 	['admin/meta', ep___admin_meta],
@@ -701,7 +701,7 @@ export interface IEndpointMeta {
 		};
 	};
 
-	readonly res?: OpenApiZod;
+	readonly res?: z.ZodType;
 
 	/**
 	 * このエンドポイントにリクエストするのにユーザー情報が必須か否か
@@ -790,7 +790,7 @@ export interface IEndpointMeta {
 export interface IEndpoint {
 	name: string;
 	meta: IEndpointMeta;
-	params: OpenApiZod;
+	params: z.ZodType;
 }
 
 const endpoints: IEndpoint[] = (eps as [string, any]).map(([name, ep]) => {
