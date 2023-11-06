@@ -686,7 +686,7 @@ const eps = [
 	['users/update-memo', ep___users_updateMemo],
 	['fetch-rss', ep___fetchRss],
 	['retention', ep___retention],
-];
+] as const satisfies readonly (readonly [string, unknown])[];
 
 export interface IEndpointMeta {
 	readonly stability?: 'deprecated' | 'experimental' | 'stable';
@@ -793,12 +793,15 @@ export interface IEndpoint {
 	params: z.ZodType;
 }
 
-const endpoints: IEndpoint[] = (eps as [string, any]).map(([name, ep]) => {
-	return {
-		name: name,
-		get meta(): any { return ep.meta ?? {}; },
-		get params(): any { return ep.paramDef; },
-	};
-});
+const endpoints = eps.map<IEndpoint>(([name, ep]) => ({
+	name: name,
+	get meta(): IEndpointMeta {
+		return ep.meta;
+	},
+	get params(): z.ZodType {
+		return ep.paramDef;
+	},
+}));
 
+// eslint-disable-next-line import/no-default-export
 export default endpoints;
