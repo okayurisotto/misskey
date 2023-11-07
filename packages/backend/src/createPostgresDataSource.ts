@@ -77,11 +77,11 @@ import { Config } from '@/config.js';
 import MisskeyLogger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
 
-export const dbLogger = new MisskeyLogger('db');
+const dbLogger = new MisskeyLogger('db');
 
 const sqlLogger = dbLogger.createSubLogger('sql', 'gray', false);
 
-class MyCustomLogger implements Logger {
+class TypeORMLogger implements Logger {
 	@bindThis
 	private highlight(sql: string): string {
 		return highlight.highlight(sql, {
@@ -120,7 +120,7 @@ class MyCustomLogger implements Logger {
 	}
 }
 
-export const entities = [
+const entities = [
 	Announcement,
 	AnnouncementRead,
 	Meta,
@@ -190,9 +190,10 @@ export const entities = [
 	...charts,
 ];
 
-const log = process.env['NODE_ENV'] !== 'production';
+const isNotProduction = process.env['NODE_ENV'] !== 'production';
+const isTest = process.env['NODE_ENV'] === 'test';
 
-export function createPostgresDataSource(config: Config): DataSource {
+export const createPostgresDataSource = (config: Config): DataSource => {
 	return new DataSource({
 		type: 'postgres',
 		host: config.db.host,
@@ -203,12 +204,12 @@ export function createPostgresDataSource(config: Config): DataSource {
 		extra: {
 			statement_timeout: 1000 * 10,
 		},
-		synchronize: process.env['NODE_ENV'] === 'test',
-		dropSchema: process.env['NODE_ENV'] === 'test',
-		logging: log,
-		logger: log ? new MyCustomLogger() : undefined,
+		synchronize: isTest,
+		dropSchema: isTest,
+		logging: isNotProduction,
+		logger: isNotProduction ? new TypeORMLogger() : undefined,
 		maxQueryExecutionTime: 300,
 		entities: entities,
 		migrations: ['../../migration/*.js'],
 	});
-}
+};
