@@ -4,9 +4,10 @@ import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user } from '@prisma/client';
+import { unique } from '@/misc/prelude/array.js';
+import { isNotNull } from '@/misc/is-not-null.js';
+import type { Acct } from '@/misc/acct.js';
 
 @Injectable()
 export class FeedService {
@@ -19,31 +20,44 @@ export class FeedService {
 		private prismaService: PrismaService,
 	) {}
 
-	@bindThis
-	public async packFeed(user: user): Promise<Feed> {
+	public async packFeed(acct: Acct): Promise<Feed | null> {
+		const user = await this.prismaService.client.user.findFirst({
+			where: {
+				usernameLower: acct.username.toLowerCase(),
+				host: acct.host,
+				isSuspended: false,
+			},
+			include: {
+				user_profile: true,
+				note: {
+					where: { renoteId: null, visibility: { in: ['public', 'home'] } },
+					orderBy: { createdAt: 'desc' },
+					take: 20,
+				},
+			},
+		});
+		if (user === null) return null;
+		if (user.user_profile === null) return null;
+
 		const author = {
 			link: `${this.config.url}/@${user.username}`,
 			name: user.name ?? user.username,
 		};
 
-		const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } });
-
-		const notes = await this.prismaService.client.note.findMany({
-			where: {
-				userId: user.id,
-				renoteId: null,
-				visibility: { in: ['public', 'home'] },
-			},
-			orderBy: { createdAt: 'desc' },
-			take: 20,
-		});
-
 		const feed = new Feed({
 			id: author.link,
 			title: `${author.name} (@${user.username}@${this.config.host})`,
-			updated: notes[0].createdAt,
+			updated: user.note[0].createdAt,
 			generator: 'Misskey',
-			description: `${user.notesCount} Notes, ${profile.ffVisibility === 'public' ? user.followingCount : '?'} Following, ${profile.ffVisibility === 'public' ? user.followersCount : '?'} Followers${profile.description ? ` · ${profile.description}` : ''}`,
+			description: `${user.notesCount} Notes, ${
+				user.user_profile.ffVisibility === 'public' ? user.followingCount : '?'
+			} Following, ${
+				user.user_profile.ffVisibility === 'public' ? user.followersCount : '?'
+			} Followers${
+				user.user_profile.description
+					? ` · ${user.user_profile.description}`
+					: ''
+			}`,
 			link: author.link,
 			image: user.avatarUrl ?? this.userEntityService.getIdenticonUrl(user),
 			feedLinks: {
@@ -54,13 +68,18 @@ export class FeedService {
 			copyright: user.name ?? user.username,
 		});
 
-		for (const note of notes) {
-			const files = note.fileIds.length > 0 ? await this.prismaService.client.drive_file.findMany({
-				where: {
-					id: { in: note.fileIds },
-				},
-			}) : [];
-			const file = files.find(file => file.type.startsWith('image/'));
+		const allFiles = await this.prismaService.client.drive_file.findMany({
+			where: {
+				id: { in: unique(user.note.map(({ fileIds }) => fileIds).flat()) },
+				type: { startsWith: 'image/' },
+			},
+		});
+
+		for (const note of user.note) {
+			const file = note.fileIds
+				.map((fileId) => allFiles.find((file) => file.id === fileId))
+				.filter(isNotNull)
+				.at(0);
 
 			feed.addItem({
 				title: `New note by ${author.name}`,
@@ -68,7 +87,9 @@ export class FeedService {
 				date: note.createdAt,
 				description: note.cw ?? undefined,
 				content: note.text ?? undefined,
-				image: file ? this.driveFileEntityService.getPublicUrl(file) ?? undefined : undefined,
+				image: file
+					? this.driveFileEntityService.getPublicUrl(file)
+					: undefined,
 			});
 		}
 

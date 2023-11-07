@@ -371,22 +371,9 @@ export class ClientServerService {
 		// URL preview endpoint
 		fastify.get<{ Querystring: { url: string; lang: string; } }>('/url', (request, reply) => this.urlPreviewService.handle(request, reply));
 
-		const getFeed = async (acct: string): Promise<Feed | null> => {
-			const { username, host } = Acct.parse(acct);
-			const user = await this.prismaService.client.user.findFirst({
-				where: {
-					usernameLower: username.toLowerCase(),
-					host: host ?? null,
-					isSuspended: false,
-				},
-			});
-
-			return user && await this.feedService.packFeed(user);
-		};
-
 		// Atom
 		fastify.get<{ Params: { user: string; } }>('/@:user.atom', async (request, reply) => {
-			const feed = await getFeed(request.params.user);
+			const feed = await this.feedService.packFeed(Acct.parse(request.params.user));
 
 			if (feed) {
 				reply.header('Content-Type', 'application/atom+xml; charset=utf-8');
@@ -399,7 +386,7 @@ export class ClientServerService {
 
 		// RSS
 		fastify.get<{ Params: { user: string; } }>('/@:user.rss', async (request, reply) => {
-			const feed = await getFeed(request.params.user);
+			const feed = await this.feedService.packFeed(Acct.parse(request.params.user));
 
 			if (feed) {
 				reply.header('Content-Type', 'application/rss+xml; charset=utf-8');
@@ -412,7 +399,7 @@ export class ClientServerService {
 
 		// JSON
 		fastify.get<{ Params: { user: string; } }>('/@:user.json', async (request, reply) => {
-			const feed = await getFeed(request.params.user);
+			const feed = await this.feedService.packFeed(Acct.parse(request.params.user));
 
 			if (feed) {
 				reply.header('Content-Type', 'application/json; charset=utf-8');
