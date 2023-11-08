@@ -1,33 +1,26 @@
-import type { ScreamingSnakeCase } from 'type-fest';
+import { z } from 'zod';
+
+const envOption_ = z
+	.object({
+		MK_DISABLE_CLUSTERING: z.literal('').optional(),
+		MK_NO_DAEMONS: z.literal('').optional(),
+		MK_ONLY_QUEUE: z.literal('').optional(),
+		MK_ONLY_SERVER: z.literal('').optional(),
+		MK_QUIET: z.literal('').optional(),
+		MK_VERBOSE: z.literal('').optional(),
+		MK_WITH_LOG_TIME: z.literal('').optional(),
+	})
+	.parse(process.env);
 
 const envOption = {
-	disableClustering: false,
-	noDaemons: false,
-	onlyQueue: false,
-	onlyServer: false,
-	quiet: false,
-	verbose: false,
-	withLogTime: false,
+	disableClustering: envOption_.MK_DISABLE_CLUSTERING !== undefined,
+	noDaemons: envOption_.MK_NO_DAEMONS !== undefined,
+	onlyQueue: envOption_.MK_ONLY_QUEUE !== undefined,
+	onlyServer: envOption_.MK_ONLY_SERVER !== undefined,
+	quiet: envOption_.MK_QUIET !== undefined,
+	verbose: envOption_.MK_VERBOSE !== undefined,
+	withLogTime: envOption_.MK_WITH_LOG_TIME !== undefined,
 };
-
-const keyMapping = new Map<
-	`MK_${ScreamingSnakeCase<keyof typeof envOption>}`,
-	keyof typeof envOption
->([
-	['MK_DISABLE_CLUSTERING', 'disableClustering'],
-	['MK_ONLY_QUEUE', 'onlyQueue'],
-	['MK_ONLY_SERVER', 'onlyServer'],
-	['MK_QUIET', 'quiet'],
-	['MK_VERBOSE', 'verbose'],
-	['MK_WITH_LOG_TIME', 'withLogTime'],
-	['MK_NO_DAEMONS', 'noDaemons'],
-]);
-
-for (const [envKey, optionKey] of keyMapping) {
-	if (process.env[envKey]) {
-		envOption[optionKey] = true;
-	}
-}
 
 if (process.env['NODE_ENV'] === 'test') {
 	envOption.disableClustering = true;
