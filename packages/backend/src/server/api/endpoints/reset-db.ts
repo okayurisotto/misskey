@@ -1,3 +1,4 @@
+import { setTimeout } from 'node:timers/promises';
 import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
@@ -37,7 +38,7 @@ export default class extends Endpoint<
 			await this.redisClient.flushdb();
 			await resetDb(this.db);
 
-			await new Promise((resolve) => setTimeout(resolve, 1000));
+			await setTimeout(1000);
 		});
 	}
 }

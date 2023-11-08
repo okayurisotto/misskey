@@ -1,7 +1,7 @@
+import { setTimeout } from 'node:timers/promises';
 import { z } from 'zod';
 import type { DataSource } from 'typeorm';
 
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 export const resetDb = async (db: DataSource): Promise<void> => {
 	const reset = async (): Promise<void> => {
 		const tables_ = await db.query(`
@@ -27,7 +27,7 @@ export const resetDb = async (db: DataSource): Promise<void> => {
 			if (count === maxRetries) {
 				throw e;
 			} else {
-				await sleep(1000);
+				await setTimeout(1000);
 				continue;
 			}
 		}
