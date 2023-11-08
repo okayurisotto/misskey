@@ -21,89 +21,70 @@ export class DeleteAccountProcessorService {
 		private readonly searchService: SearchService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.logger = this.queueLoggerService.logger.createSubLogger('delete-account');
+		this.logger =
+			this.queueLoggerService.logger.createSubLogger('delete-account');
+	}
+
+	async deleteNotes(notes: note[]): Promise<void> {
+		await this.prismaService.client.note.deleteMany({
+			where: { id: { in: notes.map(({ id }) => id) } },
+		});
+	}
+
+	async unindexNotes(notes: note[]): Promise<void> {
+		await Promise.all(
+			notes.map(async (note) => {
+				await this.searchService.unindexNote(note);
+			}),
+		);
+	}
+
+	async deleteFiles(files: drive_file[]): Promise<void> {
+		await Promise.all(
+			files.map(async (file) => {
+				await this.driveService.deleteFileSync(file);
+			}),
+		);
 	}
 
 	@bindThis
-	public async process(job: Bull.Job<DbUserDeleteJobData>): Promise<string | void> {
+	public async process(
+		job: Bull.Job<DbUserDeleteJobData>,
+	): Promise<string | void> {
 		this.logger.info(`Deleting account of ${job.data.user.id} ...`);
 
-		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
-		if (user == null) {
-			return;
-		}
+		const user = await this.prismaService.client.user.findUnique({
+			where: { id: job.data.user.id },
+			include: {
+				note: true,
+				drive_file_drive_file_userIdTouser: true,
+				user_profile: true,
+			},
+		});
+		if (user === null) return;
+		if (user.user_profile === null) throw new Error();
 
-		{
-			// Delete notes
-			let cursor: note['id'] | null = null;
+		await Promise.all([
+			await Promise.all([
+				this.deleteNotes(user.note),
+				this.unindexNotes(user.note),
+			]).then(() => {
+				this.logger.succ('All of notes deleted');
+			}),
+			this.deleteFiles(user.drive_file_drive_file_userIdTouser).then(() => {
+				this.logger.succ('All of files deleted');
+			}),
+		]);
 
-			while (true) {
-				const notes: note[] = await this.prismaService.client.note.findMany({
-					where: {
-						userId: user.id,
-						...(cursor ? { id: { gt: cursor } } : {}),
-					},
-					take: 100,
-					orderBy: { id: 'asc' },
-				});
-
-				if (notes.length === 0) {
-					break;
-				}
-
-				cursor = notes.at(-1)?.id ?? null;
-
-				await this.prismaService.client.note.deleteMany({
-					where: { id: { in: notes.map(note => note.id) } },
-				});
-
-				for (const note of notes) {
-					await this.searchService.unindexNote(note);
-				}
-			}
-
-			this.logger.succ('All of notes deleted');
-		}
-
-		{
-			// Delete files
-			let cursor: drive_file['id'] | null = null;
-
-			while (true) {
-				const files: drive_file[] = await this.prismaService.client.drive_file.findMany({
-					where: {
-						userId: user.id,
-						...(cursor ? { id: { gt: cursor } } : {}),
-					},
-					take: 10,
-					orderBy: { id: 'asc' },
-				});
-
-				if (files.length === 0) {
-					break;
-				}
-
-				cursor = files.at(-1)?.id ?? null;
-
-				for (const file of files) {
-					await this.driveService.deleteFileSync(file);
-				}
-			}
-
-			this.logger.succ('All of files deleted');
-		}
-
-		{
-			// Send email notification
-			const profile = await this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } });
-			if (profile.email && profile.emailVerified) {
-				await this.emailService.sendEmail(
-					profile.email,
-					'Account deleted',
-					'Your account has been deleted.',
-					'Your account has been deleted.',
-				);
-			}
+		// Send email notification
+		const profile = user.user_profile;
+		if (profile.email && profile.emailVerified) {
+			await this.emailService.sendEmail(
+				profile.email,
+				'Account deleted',
+				'Your account has been deleted.',
+				'Your account has been deleted.',
+			);
 		}
 
 		// soft指定されている場合は物理削除しない
@@ -111,10 +92,10 @@ export class DeleteAccountProcessorService {
 			// nop
 		} else {
 			await this.prismaService.client.user.delete({
-				where: { id: job.data.user.id },
+				where: { id: user.id },
 			});
 		}
 
-		return 'Account deleted';
+		this.logger.info(`Account deleted: ${user.id}`);
 	}
 }
