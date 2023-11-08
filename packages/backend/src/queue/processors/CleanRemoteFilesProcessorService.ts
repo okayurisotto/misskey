@@ -4,7 +4,6 @@ import { DriveService } from '@/core/DriveService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
-import type { drive_file } from '@prisma/client';
 import type * as Bull from 'bullmq';
 
 @Injectable()
@@ -16,48 +15,28 @@ export class CleanRemoteFilesProcessorService {
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.logger = this.queueLoggerService.logger.createSubLogger('clean-remote-files');
+		this.logger =
+			this.queueLoggerService.logger.createSubLogger('clean-remote-files');
 	}
 
 	@bindThis
 	public async process(job: Bull.Job<Record<string, unknown>>): Promise<void> {
 		this.logger.info('Deleting cached remote files...');
 
-		let deletedCount = 0;
-		let cursor: drive_file['id'] | null = null;
-		const take = 8;
+		const files = await this.prismaService.client.drive_file.findMany({
+			where: { userHost: { not: null }, isLink: false },
+		});
 
-		while (true) {
-			const files: drive_file[] = await this.prismaService.client.drive_file.findMany({
-				where: {
-					userHost: { not: null },
-					isLink: false,
-					...(cursor ? { id: { gt: cursor } } : {}),
-				},
-				take,
-				orderBy: { id: 'asc' },
-			});
+		let count = 0;
+		const max = files.length;
 
-			if (files.length === 0) {
-				job.updateProgress(100);
-				break;
-			}
-
-			cursor = files.at(-1)?.id ?? null;
-
-			await Promise.all(files.map(file => this.driveService.deleteFileSync(file, true)));
-
-			deletedCount += take;
-
-			const total = await this.prismaService.client.drive_file.count({
-				where: {
-					userHost: { not: null },
-					isLink: false,
-				},
-			});
-
-			job.updateProgress(deletedCount / total);
-		}
+		await Promise.all(
+			files.map(async (file) => {
+				await this.driveService.deleteFileSync(file, true);
+				count++;
+				await job.updateProgress(count / max);
+			}),
+		);
 
 		this.logger.succ('All cached remote files has been deleted.');
 	}
