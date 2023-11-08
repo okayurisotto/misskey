@@ -12,12 +12,15 @@ export enum Queue {
 	WebhoookDeliver = 'webhookDeliver',
 }
 
-export function baseQueueOptions(config: Config, queueName: Queue): Bull.QueueOptions {
-	return {
-		connection: {
-			...config.redisForJobQueue,
-			keyPrefix: undefined
-		},
-		prefix: config.redisForJobQueue.prefix ? `${config.redisForJobQueue.prefix}:queue:${queueName}` : `queue:${queueName}`,
-	};
-}
+export const baseQueueOptions = (
+	config: Config,
+	queueName: Queue,
+): Bull.QueueOptions => ({
+	connection: {
+		...config.redisForJobQueue,
+		keyPrefix: undefined,
+	},
+	prefix: config.redisForJobQueue.prefix
+		? `${config.redisForJobQueue.prefix}:queue:${queueName}`
+		: `queue:${queueName}`,
+});
