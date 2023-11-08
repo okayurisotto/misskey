@@ -10,7 +10,8 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbExportFollowingData } from '../types.js';
-import type { following } from '@prisma/client';
+
+const INACTIVE_BORDER = 1000 * 60 * 60 * 24 * 90;
 
 @Injectable()
 export class ExportFollowingProcessorService {
@@ -22,82 +23,66 @@ export class ExportFollowingProcessorService {
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.logger = this.queueLoggerService.logger.createSubLogger('export-following');
+		this.logger =
+			this.queueLoggerService.logger.createSubLogger('export-following');
 	}
 
 	@bindThis
 	public async process(job: Bull.Job<DbExportFollowingData>): Promise<void> {
 		this.logger.info(`Exporting following of ${job.data.user.id} ...`);
 
-		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
-		if (user == null) {
-			return;
-		}
-
-		// Create temp file
-		const [path, cleanup] = await createTemp();
-
-		this.logger.info(`Temp file is ${path}`);
-
-		try {
-			const stream = fs.createWriteStream(path, { flags: 'a' });
-
-			let cursor: following['id'] | null = null;
-
-			const mutings = job.data.excludeMuting
-				? await this.prismaService.client.muting.findMany({
-					where: {
-						muterId: user.id,
-					},
-				})
-				: [];
-
-			while (true) {
-				const followings: following[] = await this.prismaService.client.following.findMany({
-					where: {
-						followerId: user.id,
-						...(mutings.length > 0 ? { followeeId: { notIn: mutings.map(x => x.muteeId) } } : {}),
-						...(cursor ? { id: { gt: cursor } } : {}),
-					},
-					take: 100,
+		const user = await this.prismaService.client.user.findUnique({
+			where: { id: job.data.user.id },
+			include: {
+				muting_muting_muterIdTouser: true,
+				following_following_followeeIdTouser: {
 					orderBy: { id: 'asc' },
-				});
+					include: { user_following_followerIdTouser: true },
+				},
+			},
+		});
+		if (user === null) return;
 
-				if (followings.length === 0) {
-					break;
+		const muteeIds = new Set(
+			user.muting_muting_muterIdTouser.map(({ muteeId }) => muteeId),
+		);
+
+		const content = user.following_following_followeeIdTouser
+			.filter((following) => {
+				if (!job.data.excludeMuting) return true;
+				return !muteeIds.has(following.followeeId);
+			})
+			.map((following) => {
+				const user = following.user_following_followerIdTouser;
+
+				if (
+					job.data.excludeInactive &&
+					user.updatedAt &&
+					Date.now() - +user.updatedAt > INACTIVE_BORDER
+				) {
+					return;
 				}
 
-				cursor = followings.at(-1)?.id ?? null;
+				return this.utilityService.getFullApAccount(user.username, user.host);
+			})
+			.map((entry) => entry + '\n')
+			.join();
 
-				for (const following of followings) {
-					const u = await this.prismaService.client.user.findUnique({ where: { id: following.followeeId } });
-					if (u == null) {
-						continue;
-					}
-
-					if (job.data.excludeInactive && u.updatedAt && (Date.now() - u.updatedAt.getTime() > 1000 * 60 * 60 * 24 * 90)) {
-						continue;
-					}
-
-					const content = this.utilityService.getFullApAccount(u.username, u.host);
-					await new Promise<void>((res, rej) => {
-						stream.write(content + '\n', err => {
-							if (err) {
-								this.logger.error(err);
-								rej(err);
-							} else {
-								res();
-							}
-						});
-					});
-				}
-			}
-
-			stream.end();
+		const [path, cleanup] = await createTemp();
+		try {
+			this.logger.info(`Temp file is ${path}`);
+			fs.writeFileSync(path, content);
 			this.logger.succ(`Exported to: ${path}`);
 
-			const fileName = 'following-' + dateFormat(new Date(), 'yyyy-MM-dd-HH-mm-ss') + '.csv';
-			const driveFile = await this.driveService.addFile({ user, path, name: fileName, force: true, ext: 'csv' });
+			const fileName =
+				'following-' + dateFormat(new Date(), 'yyyy-MM-dd-HH-mm-ss') + '.csv';
+			const driveFile = await this.driveService.addFile({
+				user,
+				path,
+				name: fileName,
+				force: true,
+				ext: 'csv',
+			});
 
 			this.logger.succ(`Exported to: ${driveFile.id}`);
 		} finally {
