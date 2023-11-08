@@ -8,8 +8,8 @@ import { dirname, resolve } from 'node:path';
 import * as yaml from 'js-yaml';
 import { z } from 'zod';
 import { pick } from 'omick';
-import { idGenerationMethods } from './const.js';
-import { NODE_ENV } from './env.js';
+import { MISSKEY_CONFIG_YML, NODE_ENV, PORT } from '@/env.js';
+import { idGenerationMethods } from '@/const.js';
 
 const RedisOptionsSourceSchema = z.object({
 	host: z.string(),
@@ -25,7 +25,7 @@ type RedisOptionsSource = z.infer<typeof RedisOptionsSourceSchema>;
 /** ユーザーが設定する必要のある情報 */
 const SourceSchema = z.object({
 	url: z.string().url(),
-	port: z.number().default(parseInt(process.env['PORT'] ?? '', 10)),
+	port: z.number().default(PORT ?? 3000),
 	socket: z.string().optional(),
 	allowedPrivateNetworks: z.string().array().default([]),
 	chmodSocket: z.string().optional(),
@@ -118,8 +118,8 @@ const configPath = ((): string => {
 	/** Path of configuration directory */
 	const dir = _dirname + '/../../../.config';
 
-	if (process.env['MISSKEY_CONFIG_YML']) {
-		return resolve(dir, process.env['MISSKEY_CONFIG_YML']);
+	if (MISSKEY_CONFIG_YML !== undefined) {
+		return resolve(dir, MISSKEY_CONFIG_YML);
 	}
 
 	if (NODE_ENV === 'test') {
