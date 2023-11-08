@@ -13,27 +13,24 @@ export class EndedPollNotificationProcessorService {
 	) {}
 
 	@bindThis
-	public async process(job: Bull.Job<EndedPollNotificationJobData>): Promise<void> {
-		const note = await this.prismaService.client.note.findUnique({ where: { id: job.data.noteId } });
-		if (note == null || !note.hasPoll) {
-			return;
-		}
-
-		const votes = await this.prismaService.client.poll_vote.findMany({
-			where: {
-				noteId: note.id,
-				user: { host: null },
-			},
+	public async process(
+		job: Bull.Job<EndedPollNotificationJobData>,
+	): Promise<void> {
+		const note = await this.prismaService.client.note.findUnique({
+			where: { id: job.data.noteId, hasPoll: true },
+			include: { poll_vote: { where: { user: { host: null } } } },
 		});
+		if (note === null) return;
 
-		const userIds = [...new Set([note.userId, ...votes.map(v => v.userId)])];
+		const votes = note.poll_vote;
+		const userIds = [...new Set([note.userId, ...votes.map((v) => v.userId)])];
 
-		for (const userId of userIds) {
-			this.notificationService.createNotification(
-				userId,
-				'pollEnded',
-				{ noteId: note.id },
-			);
-		}
+		await Promise.all(
+			userIds.map(async (userId) => {
+				await this.notificationService.createNotification(userId, 'pollEnded', {
+					noteId: note.id,
+				});
+			}),
+		);
 	}
 }
