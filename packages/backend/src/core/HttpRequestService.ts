@@ -56,7 +56,7 @@ export class HttpRequestService {
 			lookup: cache.lookup as unknown as net.LookupFunction,
 		});
 
-		const maxSockets = Math.max(256, config.deliverJobConcurrency ?? 128);
+		const maxSockets = Math.max(256, config.deliverJobConcurrency);
 
 		this.httpAgent = config.proxy
 			? new HttpProxyAgent({
@@ -88,7 +88,7 @@ export class HttpRequestService {
 	 */
 	@bindThis
 	public getAgentByUrl(url: URL, bypassProxy = false): http.Agent | https.Agent {
-		if (bypassProxy || (this.config.proxyBypassHosts || []).includes(url.hostname)) {
+		if (bypassProxy || this.config.proxyBypassHosts.includes(url.hostname)) {
 			return url.protocol === 'http:' ? this.http : this.https;
 		} else {
 			return url.protocol === 'http:' ? this.httpAgent : this.httpsAgent;

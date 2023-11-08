@@ -8,16 +8,14 @@ import { genMeidg, parseMeidg } from '@/misc/id/meidg.js';
 import { genObjectId, parseObjectId } from '@/misc/id/object-id.js';
 import { bindThis } from '@/decorators.js';
 import { parseUlid } from '@/misc/id/ulid.js';
+import { idGenerationMethods } from '@/const.js';
 
 @Injectable()
 export class IdService {
-	private method: string;
+	private method: (typeof idGenerationMethods)[number];
 
-	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
-	) {
-		this.method = config.id.toLowerCase();
+	constructor(@Inject(DI.config) config: Config) {
+		this.method = config.id;
 	}
 
 	@bindThis

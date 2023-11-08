@@ -8,6 +8,7 @@ import { dirname, resolve } from 'node:path';
 import * as yaml from 'js-yaml';
 import { z } from 'zod';
 import { pick } from 'omick';
+import { idGenerationMethods } from './const.js';
 
 const RedisOptionsSourceSchema = z.object({
 	host: z.string(),
@@ -22,13 +23,15 @@ type RedisOptionsSource = z.infer<typeof RedisOptionsSourceSchema>;
 
 /** ユーザーが設定する必要のある情報 */
 const SourceSchema = z.object({
-	repository_url: z.string().optional(),
-	feedback_url: z.string().optional(),
-	url: z.string(),
+	url: z.string().url(),
 	port: z.number().default(parseInt(process.env['PORT'] ?? '', 10)),
 	socket: z.string().optional(),
+	allowedPrivateNetworks: z.string().array().default([]),
 	chmodSocket: z.string().optional(),
-	disableHsts: z.boolean().optional(),
+	disableHsts: z.boolean().default(false),
+	signToActivityPubGet: z.boolean().default(false),
+
+	id: z.enum(idGenerationMethods),
 
 	db: z.object({
 		host: z.string(),
@@ -47,7 +50,7 @@ const SourceSchema = z.object({
 			host: z.string(),
 			port: z.string(),
 			apiKey: z.string(),
-			ssl: z.boolean().optional(),
+			ssl: z.boolean().default(false),
 			index: z.string(),
 			scope: z.enum(['local', 'global']).or(z.string().array()),
 		})
@@ -55,34 +58,27 @@ const SourceSchema = z.object({
 
 	proxy: z.string().optional(),
 	proxySmtp: z.string().optional(),
-	proxyBypassHosts: z.string().array().optional(),
-
-	allowedPrivateNetworks: z.string().array().optional(),
-
-	maxFileSize: z.number().optional(),
-
-	accesslog: z.string().optional(),
+	proxyBypassHosts: z.string().array().default([]),
 
 	clusterLimit: z.number().default(1),
+	deliverJobConcurrency: z.number().default(128),
+	deliverJobMaxAttempts: z.number().default(12),
+	deliverJobPerSec: z.number().default(128),
+	inboxJobConcurrency: z.number().default(16),
+	inboxJobMaxAttempts: z.number().default(8),
+	inboxJobPerSec: z.number().default(16),
+	relashionshipJobConcurrency: z.number().default(16), // typo?
+	relashionshipJobPerSec: z.number().default(64), // typo?
 
-	id: z.string(),
-
-	outgoingAddressFamily: z.enum(['ipv4', 'ipv6', 'dual']).optional(),
-
-	deliverJobConcurrency: z.number().optional(),
-	inboxJobConcurrency: z.number().optional(),
-	relashionshipJobConcurrency: z.number().optional(),
-	deliverJobPerSec: z.number().optional(),
-	inboxJobPerSec: z.number().optional(),
-	relashionshipJobPerSec: z.number().optional(),
-	deliverJobMaxAttempts: z.number().optional(),
-	inboxJobMaxAttempts: z.number().optional(),
-
+	maxFileSize: z.number().default(262144000),
 	mediaProxy: z.string().nullable().default(null),
-	proxyRemoteFiles: z.boolean().optional(),
+	proxyRemoteFiles: z.boolean().default(false),
 	videoThumbnailGenerator: z.string().nullable().default(null),
 
-	signToActivityPubGet: z.boolean().optional(),
+	repository_url: z.string().optional(), // unused?
+	feedback_url: z.string().optional(), // unused?
+	accesslog: z.string().optional(), // unused?
+	outgoingAddressFamily: z.enum(['ipv4', 'ipv6', 'dual']).optional(), // unused?
 });
 
 type Source = z.infer<typeof SourceSchema>;

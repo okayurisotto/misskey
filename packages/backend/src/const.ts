@@ -1,3 +1,5 @@
+export const idGenerationMethods = ['aid', 'meid', 'meidg', 'ulid', 'objectid'] as const;
+
 export const MAX_NOTE_TEXT_LENGTH = 3000;
 
 export const USER_ONLINE_THRESHOLD = 1000 * 60 * 10; // 10min

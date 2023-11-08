@@ -195,9 +195,9 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		this.deliverQueueWorker = new Bull.Worker(Queue.Deliver, (job) => this.deliverProcessorService.process(job), {
 			...baseQueueOptions(this.config, Queue.Deliver),
 			autorun: false,
-			concurrency: this.config.deliverJobConcurrency ?? 128,
+			concurrency: this.config.deliverJobConcurrency,
 			limiter: {
-				max: this.config.deliverJobPerSec ?? 128,
+				max: this.config.deliverJobPerSec,
 				duration: 1000,
 			},
 			settings: {
@@ -219,9 +219,9 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		this.inboxQueueWorker = new Bull.Worker(Queue.Inbox, (job) => this.inboxProcessorService.process(job), {
 			...baseQueueOptions(this.config, Queue.Inbox),
 			autorun: false,
-			concurrency: this.config.inboxJobConcurrency ?? 16,
+			concurrency: this.config.inboxJobConcurrency,
 			limiter: {
-				max: this.config.inboxJobPerSec ?? 16,
+				max: this.config.inboxJobPerSec,
 				duration: 1000,
 			},
 			settings: {
@@ -275,9 +275,9 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		}, {
 			...baseQueueOptions(this.config, Queue.Relationship),
 			autorun: false,
-			concurrency: this.config.relashionshipJobConcurrency ?? 16,
+			concurrency: this.config.relashionshipJobConcurrency,
 			limiter: {
-				max: this.config.relashionshipJobPerSec ?? 64,
+				max: this.config.relashionshipJobPerSec,
 				duration: 1000,
 			},
 		});
