@@ -769,22 +769,30 @@ export class DriveService {
 				this.internalStorageService.del(file.webpublicAccessKey);
 			}
 		} else if (!file.isLink) {
-			const promises = [];
+			const deleteFile = async (): Promise<void> => {
+				if (file.accessKey === null) throw new Error();
+				await this.deleteObjectStorageFile(file.accessKey);
+			};
 
-			if (file.accessKey === null) throw new Error();
-			promises.push(this.deleteObjectStorageFile(file.accessKey));
+			const deleteThumbnail = async (): Promise<void> => {
+				if (file.thumbnailUrl) {
+					if (file.thumbnailAccessKey === null) throw new Error();
+					await this.deleteObjectStorageFile(file.thumbnailAccessKey);
+				}
+			};
 
-			if (file.thumbnailUrl) {
-				if (file.thumbnailAccessKey === null) throw new Error();
-				promises.push(this.deleteObjectStorageFile(file.thumbnailAccessKey));
-			}
+			const deleteWebpublic = async (): Promise<void> => {
+				if (file.webpublicUrl) {
+					if (file.webpublicAccessKey === null) throw new Error();
+					await this.deleteObjectStorageFile(file.webpublicAccessKey);
+				}
+			};
 
-			if (file.webpublicUrl) {
-				if (file.webpublicAccessKey === null) throw new Error();
-				promises.push(this.deleteObjectStorageFile(file.webpublicAccessKey));
-			}
-
-			await Promise.all(promises);
+			await Promise.all([
+				deleteFile(),
+				deleteThumbnail(),
+				deleteWebpublic(),
+			]);
 		}
 
 		await this.deletePostProcess(file, isExpired);
