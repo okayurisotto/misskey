@@ -3,7 +3,7 @@ import chalk from 'chalk';
 import { default as convertColor } from 'color-convert';
 import { format as dateFormat } from 'date-fns';
 import { bindThis } from '@/decorators.js';
-import { envOption } from './env.js';
+import { NODE_ENV, envOption } from './env.js';
 import type { KEYWORD } from 'color-convert/conversions.js';
 
 type Context = {
@@ -98,7 +98,7 @@ export default class Logger {
 	/** デバッグ用に使う(開発者に必要だが利用者に不要な情報) */
 	@bindThis
 	public debug(message: string, data?: Record<string, any> | null, important = false): void {
-		if (process.env['NODE_ENV'] !== 'production' || envOption.verbose) {
+		if (NODE_ENV !== 'production' || envOption.verbose) {
 			this.log('debug', message, data, important);
 		}
 	}

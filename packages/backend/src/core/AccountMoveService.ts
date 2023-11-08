@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
+import { NODE_ENV } from '@/env.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { RelationshipJobData, ThinUser } from '@/queue/types.js';
 import { IdService } from '@/core/IdService.js';
@@ -88,7 +89,7 @@ export class AccountMoveService {
 		await this.queueService.createDelayedUnfollowJob(followings.map(following => ({
 			from: { id: src.id },
 			to: { id: following.followeeId },
-		})), process.env['NODE_ENV'] === 'test' ? 10000 : 1000 * 60 * 60 * 24);
+		})), NODE_ENV === 'test' ? 10000 : 1000 * 60 * 60 * 24);
 
 		await this.postMoveProcess(src, dst);
 

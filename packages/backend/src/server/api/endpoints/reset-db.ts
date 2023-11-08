@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { Inject, Injectable } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { DataSource } from 'typeorm';
+import { NODE_ENV } from '@/env.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DI } from '@/di-symbols.js';
 import { resetDb } from '@/misc/reset-db.js';
@@ -31,7 +32,7 @@ export default class extends Endpoint<
 		private readonly redisClient: Redis.Redis,
 	) {
 		super(meta, paramDef, async () => {
-			if (process.env['NODE_ENV'] !== 'test') {
+			if (NODE_ENV !== 'test') {
 				throw new Error('NODE_ENV is not a test');
 			}
 

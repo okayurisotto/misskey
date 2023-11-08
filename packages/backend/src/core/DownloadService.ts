@@ -5,6 +5,7 @@ import ipaddr from 'ipaddr.js';
 import chalk from 'chalk';
 import got, * as Got from 'got';
 import { parse } from 'content-disposition';
+import { NODE_ENV } from '@/env.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
@@ -65,7 +66,7 @@ export class DownloadService {
 			},
 			enableUnixSockets: false,
 		}).on('response', (res: Got.Response) => {
-			if ((process.env['NODE_ENV'] === 'production' || process.env['NODE_ENV'] === 'test') && !this.config.proxy && res.ip) {
+			if ((NODE_ENV === 'production' || NODE_ENV === 'test') && !this.config.proxy && res.ip) {
 				if (this.isPrivateIp(res.ip)) {
 					this.logger.warn(`Blocked address: ${res.ip}`);
 					req.destroy();

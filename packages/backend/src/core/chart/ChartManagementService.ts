@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { NODE_ENV } from '@/env.js';
 import { bindThis } from '@/decorators.js';
 import FederationChart from './charts/federation.js';
 import NotesChart from './charts/notes.js';
@@ -63,7 +64,7 @@ export class ChartManagementService implements OnApplicationShutdown {
 	@bindThis
 	public async dispose(): Promise<void> {
 		clearInterval(this.saveIntervalId);
-		if (process.env['NODE_ENV'] !== 'test') {
+		if (NODE_ENV !== 'test') {
 			await Promise.all(
 				this.charts.map(chart => chart.save()),
 			);

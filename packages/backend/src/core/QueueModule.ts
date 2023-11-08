@@ -1,6 +1,7 @@
 import { setTimeout } from 'node:timers/promises';
 import { Inject, Module, OnApplicationShutdown } from '@nestjs/common';
 import * as Bull from 'bullmq';
+import { NODE_ENV } from '@/env.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { Queue, baseQueueOptions } from '@/queue/const.js';
@@ -101,7 +102,7 @@ export class QueueModule implements OnApplicationShutdown {
 	) {}
 
 	public async dispose(): Promise<void> {
-		if (process.env['NODE_ENV'] === 'test') {
+		if (NODE_ENV === 'test') {
 			// XXX:
 			// Shutting down the existing connections causes errors on Jest as
 			// Misskey has asynchronous postgres/redis connections that are not

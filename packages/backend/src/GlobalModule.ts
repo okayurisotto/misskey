@@ -3,6 +3,7 @@ import { Global, Inject, Module } from '@nestjs/common';
 import * as Redis from 'ioredis';
 import { DataSource } from 'typeorm';
 import { MeiliSearch } from 'meilisearch';
+import { NODE_ENV } from '@/env.js';
 import { DI } from './di-symbols.js';
 import { Config, loadConfig } from './config.js';
 import { createPostgresDataSource } from './createPostgresDataSource.js';
@@ -79,7 +80,7 @@ export class GlobalModule implements OnApplicationShutdown {
 	) {}
 
 	public async dispose(): Promise<void> {
-		if (process.env['NODE_ENV'] === 'test') {
+		if (NODE_ENV === 'test') {
 			// XXX:
 			// Shutting down the existing connections causes errors on Jest as
 			// Misskey has asynchronous postgres/redis connections that are not

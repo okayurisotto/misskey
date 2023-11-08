@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import Limiter from 'ratelimiter';
 import * as Redis from 'ioredis';
+import { NODE_ENV } from '@/env.js';
 import { DI } from '@/di-symbols.js';
 import type Logger from '@/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
@@ -20,7 +21,7 @@ export class RateLimiterService {
 	) {
 		this.logger = this.loggerService.getLogger('limiter');
 
-		if (process.env['NODE_ENV'] !== 'production') {
+		if (NODE_ENV !== 'production') {
 			this.disabled = true;
 		}
 	}

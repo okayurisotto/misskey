@@ -74,6 +74,7 @@ import { FlashLike } from '@/models/entities/FlashLike.js';
 import { UserMemo } from '@/models/entities/UserMemo.js';
 
 import { Config } from '@/config.js';
+import { NODE_ENV } from '@/env.js';
 import MisskeyLogger from '@/logger.js';
 import { bindThis } from '@/decorators.js';
 
@@ -190,8 +191,8 @@ export const entities = [
 	...charts,
 ];
 
-const isNotProduction = process.env['NODE_ENV'] !== 'production';
-const isTest = process.env['NODE_ENV'] === 'test';
+const isNotProduction = NODE_ENV !== 'production';
+const isTest = NODE_ENV === 'test';
 
 export const createPostgresDataSource = (config: Config): DataSource => {
 	return new DataSource({

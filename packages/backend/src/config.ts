@@ -9,6 +9,7 @@ import * as yaml from 'js-yaml';
 import { z } from 'zod';
 import { pick } from 'omick';
 import { idGenerationMethods } from './const.js';
+import { NODE_ENV } from './env.js';
 
 const RedisOptionsSourceSchema = z.object({
 	host: z.string(),
@@ -121,7 +122,7 @@ const configPath = ((): string => {
 		return resolve(dir, process.env['MISSKEY_CONFIG_YML']);
 	}
 
-	if (process.env['NODE_ENV'] === 'test') {
+	if (NODE_ENV === 'test') {
 		return resolve(dir, 'test.yml');
 	}
 

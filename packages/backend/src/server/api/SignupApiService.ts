@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
+import { NODE_ENV } from '@/env.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -57,7 +58,7 @@ export class SignupApiService {
 
 		// Verify *Captcha
 		// ただしテスト時はこの機構は障害となるため無効にする
-		if (process.env['NODE_ENV'] !== 'test') {
+		if (NODE_ENV !== 'test') {
 			if (instance.enableHcaptcha && instance.hcaptchaSecretKey) {
 				await this.captchaService.verifyHcaptcha(instance.hcaptchaSecretKey, body['hcaptcha-response']).catch(err => {
 					throw new FastifyReplyError(400, err);
@@ -79,7 +80,7 @@ export class SignupApiService {
 
 		const username = body['username'];
 		const password = body['password'];
-		const host: string | null = process.env['NODE_ENV'] === 'test' ? (body['host'] ?? null) : null;
+		const host: string | null = NODE_ENV === 'test' ? (body['host'] ?? null) : null;
 		const invitationCode = body['invitationCode'];
 		const emailAddress = body['emailAddress'];
 

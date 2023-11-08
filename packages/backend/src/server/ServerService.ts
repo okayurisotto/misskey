@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import Fastify, { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
+import { NODE_ENV } from '@/env.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
@@ -57,7 +58,7 @@ export class ServerService implements OnApplicationShutdown {
 	public async launch(): Promise<void> {
 		const fastify = Fastify({
 			trustProxy: true,
-			logger: !['production', 'test'].includes(process.env['NODE_ENV'] ?? ''),
+			logger: !['production', 'test'].includes(NODE_ENV),
 		});
 		this.#fastify = fastify;
 

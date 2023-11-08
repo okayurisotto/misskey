@@ -1,3 +1,5 @@
+import { NODE_ENV } from '@/env.js';
+
 import { entity as FederationChart } from './charts/entities/federation.js';
 import { entity as NotesChart } from './charts/entities/notes.js';
 import { entity as UsersChart } from './charts/entities/users.js';
@@ -30,7 +32,7 @@ export const entities = [
 	PerUserDriveChart.hour, PerUserDriveChart.day,
 	ApRequestChart.hour, ApRequestChart.day,
 
-	...(process.env['NODE_ENV'] === 'test' ? [
+	...(NODE_ENV === 'test' ? [
 		TestChart.hour, TestChart.day,
 		TestGroupedChart.hour, TestGroupedChart.day,
 		TestUniqueChart.hour, TestUniqueChart.day,

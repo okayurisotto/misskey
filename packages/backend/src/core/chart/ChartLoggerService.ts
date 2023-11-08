@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { NODE_ENV } from '@/env.js';
 import type Logger from '@/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
 
@@ -9,6 +10,6 @@ export class ChartLoggerService {
 	constructor(
 		private loggerService: LoggerService,
 	) {
-		this.logger = this.loggerService.getLogger('chart', 'white', process.env['NODE_ENV'] !== 'test');
+		this.logger = this.loggerService.getLogger('chart', 'white', NODE_ENV !== 'test');
 	}
 }

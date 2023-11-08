@@ -2,6 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 import * as Redis from 'ioredis';
 import { z } from 'zod';
+import { NODE_ENV } from '@/env.js';
 import { DI } from '@/di-symbols.js';
 import { Meta } from '@/models/entities/Meta.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -26,7 +27,7 @@ export class MetaService implements OnApplicationShutdown {
 	) {
 		//this.onMessage = this.onMessage.bind(this);
 
-		if (process.env['NODE_ENV'] !== 'test') {
+		if (NODE_ENV !== 'test') {
 			this.intervalId = setInterval(() => {
 				this.fetch(true).then(meta => {
 					// fetch内でもセットしてるけど仕様変更の可能性もあるため一応

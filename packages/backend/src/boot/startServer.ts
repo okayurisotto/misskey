@@ -6,6 +6,7 @@ import { QueueStatsService } from '@/daemons/QueueStatsService.js';
 import { ServerStatsService } from '@/daemons/ServerStatsService.js';
 import { ServerService } from '@/server/ServerService.js';
 import { MainModule } from '@/MainModule.js';
+import { NODE_ENV } from '@/env.js';
 import type { INestApplicationContext } from '@nestjs/common';
 
 export const startServer = async (): Promise<INestApplicationContext> => {
@@ -17,7 +18,7 @@ export const startServer = async (): Promise<INestApplicationContext> => {
 	const serverService = app.get(ServerService);
 	await serverService.launch();
 
-	if (process.env['NODE_ENV'] !== 'test') {
+	if (NODE_ENV !== 'test') {
 		await Promise.all([
 			app.get(ChartManagementService).start(),
 			app.get(JanitorService).start(),

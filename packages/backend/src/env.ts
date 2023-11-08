@@ -2,6 +2,12 @@ import { z } from 'zod';
 
 const envOption_ = z
 	.object({
+		NODE_ENV: z.enum(['dev', 'development', 'test', 'production']).optional(),
+		PORT: z.coerce.number().int().nonnegative().optional(),
+
+		MISSKEY_CONFIG_YML: z.string().optional(),
+		MISSKEY_WEBFINGER_USE_HTTP: z.string().optional(),
+
 		MK_DISABLE_CLUSTERING: z.literal('').optional(),
 		MK_NO_DAEMONS: z.literal('').optional(),
 		MK_ONLY_QUEUE: z.literal('').optional(),
@@ -11,6 +17,8 @@ const envOption_ = z
 		MK_WITH_LOG_TIME: z.literal('').optional(),
 	})
 	.parse(process.env);
+
+export const NODE_ENV = envOption_.NODE_ENV;
 
 const envOption = {
 	disableClustering: envOption_.MK_DISABLE_CLUSTERING !== undefined,
@@ -22,7 +30,7 @@ const envOption = {
 	withLogTime: envOption_.MK_WITH_LOG_TIME !== undefined,
 };
 
-if (process.env['NODE_ENV'] === 'test') {
+if (NODE_ENV === 'test') {
 	envOption.disableClustering = true;
 	envOption.noDaemons = true;
 	envOption.quiet = true;
