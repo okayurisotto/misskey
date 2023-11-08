@@ -21,41 +21,28 @@ export class CleanProcessorService {
 	public async process(): Promise<void> {
 		this.logger.info('Cleaning...');
 
-		await this.prismaService.client.user_ip.deleteMany({
-			where: {
-				createdAt: { lt: new Date(Date.now() - (1000 * 60 * 60 * 24 * 90)) },
-			},
-		});
+		const now = new Date();
+		const untilDate7 = new Date(+now - 1000 * 60 * 60 * 24 * 7);
+		const untilDate90 = new Date(+now - 1000 * 60 * 60 * 24 * 90);
 
-		await this.prismaService.client.muted_note.deleteMany({
-			where: {
-				id: { lt: this.idService.genId(new Date(Date.now() - (1000 * 60 * 60 * 24 * 90))) },
-				reason: 'word',
-			},
-		});
-
-		await this.prismaService.client.muted_note.deleteMany({
-			where: {
-				id: { lt: this.idService.genId(new Date(Date.now() - (1000 * 60 * 60 * 24 * 90))) },
-				reason: 'word',
-			},
-		});
-
-		// 7日以上使われてないアンテナを停止
-		await this.prismaService.client.antenna.updateMany({
-			where: { lastUsedAt: { lt: new Date(Date.now() - (1000 * 60 * 60 * 24 * 7)) } },
-			data: { isActive: false },
-		});
-
-		const expiredRoleAssignments = await this.prismaService.client.role_assignment.findMany({
-			where: { expiresAt: { not: null, lt: new Date() } },
-		});
-
-		if (expiredRoleAssignments.length > 0) {
-			await this.prismaService.client.role_assignment.deleteMany({
-				where: { id: { in: expiredRoleAssignments.map((x) => x.id) } },
-			});
-		}
+		await Promise.all([
+			this.prismaService.client.user_ip.deleteMany({
+				where: { createdAt: { lt: untilDate90 } },
+			}),
+			this.prismaService.client.muted_note.deleteMany({
+				where: {
+					id: { lt: this.idService.genId(untilDate90) },
+					reason: 'word',
+				},
+			}),
+			this.prismaService.client.antenna.updateMany({
+				where: { isActive: true, lastUsedAt: { lt: untilDate7 } },
+				data: { isActive: false },
+			}),
+			this.prismaService.client.role_assignment.deleteMany({
+				where: { expiresAt: { not: null, lt: now } },
+			}),
+		]);
 
 		this.logger.succ('Cleaned.');
 	}
