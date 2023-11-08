@@ -1,4 +1,6 @@
-node_modules
-/built
-/.eslintrc.js
-/@types/**/*
+/.eslintrc.cjs
+/built/
+/jest.config.cjs
+/node_modules/
+/ormconfig.js
+/src/@types/
