@@ -34,7 +34,7 @@ import { CheckExpiredMutingsProcessorService } from './processors/CheckExpiredMu
 import { CleanProcessorService } from './processors/CleanProcessorService.js';
 import { AggregateRetentionProcessorService } from './processors/AggregateRetentionProcessorService.js';
 import { QueueLoggerService } from './QueueLoggerService.js';
-import { QUEUE, baseQueueOptions } from './const.js';
+import { Queue, baseQueueOptions } from './const.js';
 
 // ref. https://github.com/misskey-dev/misskey/pull/7635#issue-971097019
 function httpRelatedBackoff(attemptsMade: number): number {
@@ -128,7 +128,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		}
 
 		//#region system
-		this.systemQueueWorker = new Bull.Worker(QUEUE.SYSTEM, (job) => {
+		this.systemQueueWorker = new Bull.Worker(Queue.System, (job) => {
 			switch (job.name) {
 				case 'tickCharts': return this.tickChartsProcessorService.process();
 				case 'resyncCharts': return this.resyncChartsProcessorService.process();
@@ -139,7 +139,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				default: throw new Error(`unrecognized job type ${job.name} for system`);
 			}
 		}, {
-			...baseQueueOptions(this.config, QUEUE.SYSTEM),
+			...baseQueueOptions(this.config, Queue.System),
 			autorun: false,
 		});
 
@@ -154,7 +154,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		//#endregion
 
 		//#region db
-		this.dbQueueWorker = new Bull.Worker(QUEUE.DB, (job) => {
+		this.dbQueueWorker = new Bull.Worker(Queue.Db, (job) => {
 			switch (job.name) {
 				case 'deleteDriveFiles': return this.deleteDriveFilesProcessorService.process(job);
 				case 'exportCustomEmojis': return this.exportCustomEmojisProcessorService.process(job);
@@ -177,7 +177,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				default: throw new Error(`unrecognized job type ${job.name} for db`);
 			}
 		}, {
-			...baseQueueOptions(this.config, QUEUE.DB),
+			...baseQueueOptions(this.config, Queue.Db),
 			autorun: false,
 		});
 
@@ -192,8 +192,8 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		//#endregion
 
 		//#region deliver
-		this.deliverQueueWorker = new Bull.Worker(QUEUE.DELIVER, (job) => this.deliverProcessorService.process(job), {
-			...baseQueueOptions(this.config, QUEUE.DELIVER),
+		this.deliverQueueWorker = new Bull.Worker(Queue.Deliver, (job) => this.deliverProcessorService.process(job), {
+			...baseQueueOptions(this.config, Queue.Deliver),
 			autorun: false,
 			concurrency: this.config.deliverJobConcurrency ?? 128,
 			limiter: {
@@ -216,8 +216,8 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		//#endregion
 
 		//#region inbox
-		this.inboxQueueWorker = new Bull.Worker(QUEUE.INBOX, (job) => this.inboxProcessorService.process(job), {
-			...baseQueueOptions(this.config, QUEUE.INBOX),
+		this.inboxQueueWorker = new Bull.Worker(Queue.Inbox, (job) => this.inboxProcessorService.process(job), {
+			...baseQueueOptions(this.config, Queue.Inbox),
 			autorun: false,
 			concurrency: this.config.inboxJobConcurrency ?? 16,
 			limiter: {
@@ -240,8 +240,8 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		//#endregion
 
 		//#region webhook deliver
-		this.webhookDeliverQueueWorker = new Bull.Worker(QUEUE.WEBHOOK_DELIVER, (job) => this.webhookDeliverProcessorService.process(job), {
-			...baseQueueOptions(this.config, QUEUE.WEBHOOK_DELIVER),
+		this.webhookDeliverQueueWorker = new Bull.Worker(Queue.WebhoookDeliver, (job) => this.webhookDeliverProcessorService.process(job), {
+			...baseQueueOptions(this.config, Queue.WebhoookDeliver),
 			autorun: false,
 			concurrency: 64,
 			limiter: {
@@ -264,7 +264,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		//#endregion
 
 		//#region relationship
-		this.relationshipQueueWorker = new Bull.Worker(QUEUE.RELATIONSHIP, (job) => {
+		this.relationshipQueueWorker = new Bull.Worker(Queue.Relationship, (job) => {
 			switch (job.name) {
 				case 'follow': return this.relationshipProcessorService.processFollow(job);
 				case 'unfollow': return this.relationshipProcessorService.processUnfollow(job);
@@ -273,7 +273,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				default: throw new Error(`unrecognized job type ${job.name} for relationship`);
 			}
 		}, {
-			...baseQueueOptions(this.config, QUEUE.RELATIONSHIP),
+			...baseQueueOptions(this.config, Queue.Relationship),
 			autorun: false,
 			concurrency: this.config.relashionshipJobConcurrency ?? 16,
 			limiter: {
@@ -293,14 +293,14 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		//#endregion
 
 		//#region object storage
-		this.objectStorageQueueWorker = new Bull.Worker(QUEUE.OBJECT_STORAGE, (job) => {
+		this.objectStorageQueueWorker = new Bull.Worker(Queue.ObjectStorage, (job) => {
 			switch (job.name) {
 				case 'deleteFile': return this.deleteFileProcessorService.process(job);
 				case 'cleanRemoteFiles': return this.cleanRemoteFilesProcessorService.process(job);
 				default: throw new Error(`unrecognized job type ${job.name} for objectStorage`);
 			}
 		}, {
-			...baseQueueOptions(this.config, QUEUE.OBJECT_STORAGE),
+			...baseQueueOptions(this.config, Queue.ObjectStorage),
 			autorun: false,
 			concurrency: 16,
 		});
@@ -316,8 +316,8 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		//#endregion
 
 		//#region ended poll notification
-		this.endedPollNotificationQueueWorker = new Bull.Worker(QUEUE.ENDED_POLL_NOTIFICATION, (job) => this.endedPollNotificationProcessorService.process(job), {
-			...baseQueueOptions(this.config, QUEUE.ENDED_POLL_NOTIFICATION),
+		this.endedPollNotificationQueueWorker = new Bull.Worker(Queue.EndedPollNotification, (job) => this.endedPollNotificationProcessorService.process(job), {
+			...baseQueueOptions(this.config, Queue.EndedPollNotification),
 			autorun: false,
 		});
 		//#endregion

@@ -3,7 +3,7 @@ import { Inject, Module, OnApplicationShutdown } from '@nestjs/common';
 import * as Bull from 'bullmq';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import { QUEUE, baseQueueOptions } from '@/queue/const.js';
+import { Queue, baseQueueOptions } from '@/queue/const.js';
 import type { Provider } from '@nestjs/common';
 import type { DeliverJobData, InboxJobData, EndedPollNotificationJobData, WebhookDeliverJobData, RelationshipJobData } from '../queue/types.js';
 
@@ -18,49 +18,49 @@ export type WebhookDeliverQueue = Bull.Queue<WebhookDeliverJobData>;
 
 const $system: Provider = {
 	provide: 'queue:system',
-	useFactory: (config: Config) => new Bull.Queue(QUEUE.SYSTEM, baseQueueOptions(config, QUEUE.SYSTEM)),
+	useFactory: (config: Config) => new Bull.Queue(Queue.System, baseQueueOptions(config, Queue.System)),
 	inject: [DI.config],
 };
 
 const $endedPollNotification: Provider = {
 	provide: 'queue:endedPollNotification',
-	useFactory: (config: Config) => new Bull.Queue(QUEUE.ENDED_POLL_NOTIFICATION, baseQueueOptions(config, QUEUE.ENDED_POLL_NOTIFICATION)),
+	useFactory: (config: Config) => new Bull.Queue(Queue.EndedPollNotification, baseQueueOptions(config, Queue.EndedPollNotification)),
 	inject: [DI.config],
 };
 
 const $deliver: Provider = {
 	provide: 'queue:deliver',
-	useFactory: (config: Config) => new Bull.Queue(QUEUE.DELIVER, baseQueueOptions(config, QUEUE.DELIVER)),
+	useFactory: (config: Config) => new Bull.Queue(Queue.Deliver, baseQueueOptions(config, Queue.Deliver)),
 	inject: [DI.config],
 };
 
 const $inbox: Provider = {
 	provide: 'queue:inbox',
-	useFactory: (config: Config) => new Bull.Queue(QUEUE.INBOX, baseQueueOptions(config, QUEUE.INBOX)),
+	useFactory: (config: Config) => new Bull.Queue(Queue.Inbox, baseQueueOptions(config, Queue.Inbox)),
 	inject: [DI.config],
 };
 
 const $db: Provider = {
 	provide: 'queue:db',
-	useFactory: (config: Config) => new Bull.Queue(QUEUE.DB, baseQueueOptions(config, QUEUE.DB)),
+	useFactory: (config: Config) => new Bull.Queue(Queue.Db, baseQueueOptions(config, Queue.Db)),
 	inject: [DI.config],
 };
 
 const $relationship: Provider = {
 	provide: 'queue:relationship',
-	useFactory: (config: Config) => new Bull.Queue(QUEUE.RELATIONSHIP, baseQueueOptions(config, QUEUE.RELATIONSHIP)),
+	useFactory: (config: Config) => new Bull.Queue(Queue.Relationship, baseQueueOptions(config, Queue.Relationship)),
 	inject: [DI.config],
 };
 
 const $objectStorage: Provider = {
 	provide: 'queue:objectStorage',
-	useFactory: (config: Config) => new Bull.Queue(QUEUE.OBJECT_STORAGE, baseQueueOptions(config, QUEUE.OBJECT_STORAGE)),
+	useFactory: (config: Config) => new Bull.Queue(Queue.ObjectStorage, baseQueueOptions(config, Queue.ObjectStorage)),
 	inject: [DI.config],
 };
 
 const $webhookDeliver: Provider = {
 	provide: 'queue:webhookDeliver',
-	useFactory: (config: Config) => new Bull.Queue(QUEUE.WEBHOOK_DELIVER, baseQueueOptions(config, QUEUE.WEBHOOK_DELIVER)),
+	useFactory: (config: Config) => new Bull.Queue(Queue.WebhoookDeliver, baseQueueOptions(config, Queue.WebhoookDeliver)),
 	inject: [DI.config],
 };
 
