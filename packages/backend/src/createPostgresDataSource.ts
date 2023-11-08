@@ -120,7 +120,7 @@ class TypeORMLogger implements Logger {
 	}
 }
 
-const entities = [
+export const entities = [
 	Announcement,
 	AnnouncementRead,
 	Meta,

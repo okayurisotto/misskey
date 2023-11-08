@@ -7,7 +7,7 @@ import fetch, { Blob, File, RequestInit } from 'node-fetch';
 import { DataSource } from 'typeorm';
 import { JSDOM } from 'jsdom';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
-import { entities } from '../src/postgres.js';
+import { entities } from '../src/createPostgresDataSource.js';
 import { loadConfig } from '../src/config.js';
 import type * as misskey from 'misskey-js';
 
