@@ -1,27 +1,29 @@
-process.env.NODE_ENV = 'test';
+process.env['NODE_ENV'] = 'test';
 
 import * as assert from 'assert';
-import { Following } from '@/models/entities/Following.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { signup, api, post, startServer, initTestDb, waitFire } from '../utils.js';
 import type { INestApplicationContext } from '@nestjs/common';
 import type * as misskey from 'misskey-js';
 
 describe('Streaming', () => {
 	let app: INestApplicationContext;
-	let Followings: any;
+	let prismaService: PrismaService;
 
 	const follow = async (follower: any, followee: any) => {
-		await Followings.save({
-			id: 'a',
-			createdAt: new Date(),
-			followerId: follower.id,
-			followeeId: followee.id,
-			followerHost: follower.host,
-			followerInbox: null,
-			followerSharedInbox: null,
-			followeeHost: followee.host,
-			followeeInbox: null,
-			followeeSharedInbox: null,
+		await prismaService.client.following.create({
+			data: {
+				id: 'a',
+				createdAt: new Date(),
+				followerId: follower.id,
+				followeeId: followee.id,
+				followerHost: follower.host,
+				followerInbox: null,
+				followerSharedInbox: null,
+				followeeHost: followee.host,
+				followeeInbox: null,
+				followeeSharedInbox: null,
+			},
 		});
 	};
 
@@ -40,8 +42,8 @@ describe('Streaming', () => {
 
 		beforeAll(async () => {
 			app = await startServer();
+			prismaService = await app.resolve(PrismaService);
 			const connection = await initTestDb(true);
-			Followings = connection.getRepository(Following);
 
 			ayano = await signup({ username: 'ayano' });
 			kyoko = await signup({ username: 'kyoko' });

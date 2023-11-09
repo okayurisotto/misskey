@@ -1,23 +1,22 @@
-process.env.NODE_ENV = 'test';
+process.env['NODE_ENV'] = 'test';
 
 import * as assert from 'assert';
-import { Note } from '@/models/entities/Note.js';
-import { signup, post, uploadUrl, startServer, initTestDb, api, uploadFile } from '../utils.js';
+import { PrismaService } from '@/core/PrismaService.js';
+import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
+import { signup, post, uploadUrl, startServer, api, uploadFile } from '../utils.js';
 import type { INestApplicationContext } from '@nestjs/common';
 import type * as misskey from 'misskey-js';
-import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 
 describe('Note', () => {
 	let app: INestApplicationContext;
-	let Notes: any;
+	let prisma: PrismaService;
 
 	let alice: misskey.entities.MeSignup;
 	let bob: misskey.entities.MeSignup;
 
 	beforeAll(async () => {
 		app = await startServer();
-		const connection = await initTestDb(true);
-		Notes = connection.getRepository(Note);
+		prisma = await app.resolve(PrismaService);
 		alice = await signup({ username: 'alice' });
 		bob = await signup({ username: 'bob' });
 	}, 1000 * 60 * 2);
@@ -236,7 +235,7 @@ describe('Note', () => {
 		assert.strictEqual(typeof res.body === 'object' && !Array.isArray(res.body), true);
 		assert.strictEqual(res.body.createdNote.text, post.text);
 
-		const noteDoc = await Notes.findOneBy({ id: res.body.createdNote.id });
+		const noteDoc = await prisma.client.note.findFirstOrThrow({ where: { id: res.body.createdNote.id } });
 		assert.deepStrictEqual(noteDoc.mentions, [bob.id]);
 	});
 
@@ -619,7 +618,7 @@ describe('Note', () => {
 			}, alice);
 
 			assert.strictEqual(deleteOneRes.status, 204);
-			let mainNote = await Notes.findOneBy({ id: mainNoteRes.body.createdNote.id });
+			let mainNote = await prisma.client.note.findFirstOrThrow({ where: { id: mainNoteRes.body.createdNote.id } });
 			assert.strictEqual(mainNote.repliesCount, 1);
 
 			const deleteTwoRes = await api('notes/delete', {
@@ -627,7 +626,7 @@ describe('Note', () => {
 			}, alice);
 
 			assert.strictEqual(deleteTwoRes.status, 204);
-			mainNote = await Notes.findOneBy({ id: mainNoteRes.body.createdNote.id });
+			mainNote = await prisma.client.note.findFirstOrThrow({ where: { id: mainNoteRes.body.createdNote.id } });
 			assert.strictEqual(mainNote.repliesCount, 0);
 		});
 	});

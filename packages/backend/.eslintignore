@@ -4,3 +4,4 @@
 /node_modules/
 /ormconfig.js
 /src/@types/
+/test/.eslintrc.cjs
