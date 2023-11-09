@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as stream from 'node:stream/promises';
 import { Injectable } from '@nestjs/common';
 import { generateOpenApiSpec } from 'zod2spec';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js';
 import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser } from '@/models/entities/User.js';
 import type Logger from '@/logger.js';
@@ -11,6 +12,7 @@ import { createTemp } from '@/misc/create-temp.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { handlePrismaError } from '@/misc/handlePrismaError.js';
 import { ApiError } from './error.js';
 import { RateLimiterService } from './RateLimiterService.js';
 import { ApiLoggerService } from './ApiLoggerService.js';
@@ -365,6 +367,8 @@ export class ApiCallService implements OnApplicationShutdown {
 		return await ep.exec(data, user, token, file, request.ip, request.headers).catch((err: Error) => {
 			if (err instanceof ApiError || err instanceof AuthenticationError) {
 				throw err;
+			} else if (err instanceof PrismaClientKnownRequestError) {
+				throw handlePrismaError(err);
 			} else {
 				const errId = randomUUID();
 				this.logger.error(`Internal error occurred in ${ep.name}: ${err.message}`, {
