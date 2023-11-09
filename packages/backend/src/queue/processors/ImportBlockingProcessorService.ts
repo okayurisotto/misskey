@@ -10,7 +10,6 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbUserImportJobData, DbUserImportToDbJobData } from '../types.js';
-import type { user } from '@prisma/client';
 
 @Injectable()
 export class ImportBlockingProcessorService {
@@ -24,34 +23,37 @@ export class ImportBlockingProcessorService {
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.logger = this.queueLoggerService.logger.createSubLogger('import-blocking');
+		this.logger =
+			this.queueLoggerService.logger.createSubLogger('import-blocking');
 	}
 
 	@bindThis
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		this.logger.info(`Importing blocking of ${job.data.user.id} ...`);
 
-		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
-		if (user == null) {
-			return;
-		}
-
 		const file = await this.prismaService.client.drive_file.findUnique({
-			where: { id: job.data.fileId }
+			where: { id: job.data.fileId, userId: job.data.user.id },
+			include: { user_drive_file_userIdTouser: true },
 		});
-		if (file == null) {
-			return;
-		}
+		if (file === null) return;
+		const user = file.user_drive_file_userIdTouser;
+		if (user === null) return;
 
 		const csv = await this.downloadService.downloadTextFile(file.url);
 		const targets = csv.trim().split('\n');
-		this.queueService.createImportBlockingToDbJob({ id: user.id }, targets);
+
+		await this.queueService.createImportBlockingToDbJob(
+			{ id: user.id },
+			targets,
+		);
 
 		this.logger.succ('Import jobs created');
 	}
 
 	@bindThis
-	public async processDb(job: Bull.Job<DbUserImportToDbJobData>): Promise<void> {
+	public async processDb(
+		job: Bull.Job<DbUserImportToDbJobData>,
+	): Promise<void> {
 		const line = job.data.target;
 		const user = job.data.user;
 
@@ -59,32 +61,29 @@ export class ImportBlockingProcessorService {
 			const acct = line.split(',')[0].trim();
 			const { username, host } = Acct.parse(acct);
 
-			if (!host) return;
+			if (host === null) return;
 
-			let target: user | null = this.utilityService.isSelfHost(host)
+			let target = this.utilityService.isSelfHost(host)
 				? await this.prismaService.client.user.findFirst({
-					where: {
-						host: null,
-						usernameLower: username.toLowerCase(),
-					},
-				})
-				: await this.prismaService.client.user.findUnique({
-					where: {
-						usernameLower_host: {
-							host: this.utilityService.toPuny(host),
+						where: {
+							host: null,
 							usernameLower: username.toLowerCase(),
 						},
-					},
-				});
-
-			if (host == null && target == null) return;
+				  })
+				: await this.prismaService.client.user.findUnique({
+						where: {
+							usernameLower_host: {
+								host: this.utilityService.toPuny(host),
+								usernameLower: username.toLowerCase(),
+							},
+						},
+				  });
 
 			if (target == null) {
-				target = await this.remoteUserResolveService.resolveUser(username, host);
-			}
-
-			if (target == null) {
-				throw new Error(`Unable to resolve user: @${username}@${host}`);
+				target = await this.remoteUserResolveService.resolveUser(
+					username,
+					host,
+				);
 			}
 
 			// skip myself
@@ -92,7 +91,9 @@ export class ImportBlockingProcessorService {
 
 			this.logger.info(`Block ${target.id} ...`);
 
-			this.queueService.createBlockJob([{ from: { id: user.id }, to: { id: target.id }, silent: true }]);
+			await this.queueService.createBlockJob([
+				{ from: { id: user.id }, to: { id: target.id }, silent: true },
+			]);
 		} catch (e) {
 			this.logger.warn(`Error: ${e}`);
 		}
