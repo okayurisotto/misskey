@@ -21,65 +21,59 @@ export class ExportUserListsProcessorService {
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.logger = this.queueLoggerService.logger.createSubLogger('export-user-lists');
+		this.logger =
+			this.queueLoggerService.logger.createSubLogger('export-user-lists');
 	}
 
 	@bindThis
 	public async process(job: Bull.Job<DbJobDataWithUser>): Promise<void> {
 		this.logger.info(`Exporting user lists of ${job.data.user.id} ...`);
 
-		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
-		if (user == null) {
-			return;
-		}
-
-		const lists = await this.prismaService.client.user_list.findMany({
-			where: {
-				userId: user.id,
+		const user = await this.prismaService.client.user.findUnique({
+			where: { id: job.data.user.id },
+			include: {
+				user_list: {
+					include: { user_list_joining: { include: { user: true } } },
+				},
 			},
 		});
+		if (user === null) return;
+
+		const content = user.user_list
+			.map((list) => {
+				return list.user_list_joining
+					.map(({ user }) => {
+						return this.utilityService.getFullApAccount(
+							user.username,
+							user.host,
+						);
+					})
+					.map((acct) => [list.name, acct].join(','));
+			})
+			.flat()
+			.map((entry) => entry + '\n')
+			.join('');
 
 		// Create temp file
-		const [path, cleanup] = await createTemp();
 
+		const [path, cleanup] = await createTemp();
 		this.logger.info(`Temp file is ${path}`);
 
-		try {
-			const stream = fs.createWriteStream(path, { flags: 'a' });
+		fs.writeFileSync(path, content);
+		this.logger.succ(`Exported to: ${path}`);
 
-			for (const list of lists) {
-				const joinings = await this.prismaService.client.user_list_joining.findMany({ where: { userListId: list.id } });
-				const users = await this.prismaService.client.user.findMany({
-					where: {
-						id: { in: joinings.map(j => j.userId) },
-					},
-				});
+		const fileName =
+			'user-lists-' + dateFormat(new Date(), 'yyyy-MM-dd-HH-mm-ss') + '.csv';
+		const driveFile = await this.driveService.addFile({
+			user,
+			path,
+			name: fileName,
+			force: true,
+			ext: 'csv',
+		});
 
-				for (const u of users) {
-					const acct = this.utilityService.getFullApAccount(u.username, u.host);
-					const content = `${list.name},${acct}`;
-					await new Promise<void>((res, rej) => {
-						stream.write(content + '\n', err => {
-							if (err) {
-								this.logger.error(err);
-								rej(err);
-							} else {
-								res();
-							}
-						});
-					});
-				}
-			}
+		this.logger.succ(`Exported to: ${driveFile.id}`);
 
-			stream.end();
-			this.logger.succ(`Exported to: ${path}`);
-
-			const fileName = 'user-lists-' + dateFormat(new Date(), 'yyyy-MM-dd-HH-mm-ss') + '.csv';
-			const driveFile = await this.driveService.addFile({ user, path, name: fileName, force: true, ext: 'csv' });
-
-			this.logger.succ(`Exported to: ${driveFile.id}`);
-		} finally {
-			cleanup();
-		}
+		cleanup();
 	}
 }
