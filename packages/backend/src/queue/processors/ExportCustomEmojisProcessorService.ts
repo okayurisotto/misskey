@@ -14,6 +14,7 @@ import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
+import type { ExportedCustomEmojisMetaSchema } from './ImportCustomEmojisProcessorService.js';
 
 @Injectable()
 export class ExportCustomEmojisProcessorService {
@@ -106,19 +107,19 @@ export class ExportCustomEmojisProcessorService {
 
 		const metaPath = path + '/meta.json';
 
-		const metaContent = customEmoji_.map(({ emoji, fileName, downloaded }) => {
+		const emojis = customEmoji_.map(({ emoji, fileName, downloaded }) => {
 			return {
-				emoji: emoji,
+				emoji: { ...emoji, updatedAt: emoji.updatedAt?.toISOString() ?? null },
 				fileName: fileName,
 				downloaded: downloaded,
 			};
 		});
 
-		const meta = {
+		const meta: z.infer<typeof ExportedCustomEmojisMetaSchema> = {
 			metaVersion: 2,
 			host: this.config.host,
 			exportedAt: new Date().toString(),
-			emojis: metaContent,
+			emojis,
 		};
 
 		fs.writeFileSync(metaPath, JSON.stringify(meta));
