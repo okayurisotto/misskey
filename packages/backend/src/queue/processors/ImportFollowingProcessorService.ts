@@ -10,7 +10,6 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbUserImportJobData, DbUserImportToDbJobData } from '../types.js';
-import type { user } from '@prisma/client';
 
 @Injectable()
 export class ImportFollowingProcessorService {
@@ -24,36 +23,38 @@ export class ImportFollowingProcessorService {
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.logger = this.queueLoggerService.logger.createSubLogger('import-following');
+		this.logger =
+			this.queueLoggerService.logger.createSubLogger('import-following');
 	}
 
 	@bindThis
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		this.logger.info(`Importing following of ${job.data.user.id} ...`);
 
-		const user = await this.prismaService.client.user.findUnique({ where: { id: job.data.user.id } });
-		if (user == null) {
-			return;
-		}
+		const user = await this.prismaService.client.user.findUnique({
+			where: { id: job.data.user.id },
+		});
+		if (user === null) return;
 
 		const file = await this.prismaService.client.drive_file.findUnique({
-			where: {
-				id: job.data.fileId,
-			},
+			where: { id: job.data.fileId },
 		});
-		if (file == null) {
-			return;
-		}
+		if (file === null) return;
 
 		const csv = await this.downloadService.downloadTextFile(file.url);
 		const targets = csv.trim().split('\n');
-		this.queueService.createImportFollowingToDbJob({ id: user.id }, targets);
+		await this.queueService.createImportFollowingToDbJob(
+			{ id: user.id },
+			targets,
+		);
 
 		this.logger.succ('Import jobs created');
 	}
 
 	@bindThis
-	public async processDb(job: Bull.Job<DbUserImportToDbJobData>): Promise<void> {
+	public async processDb(
+		job: Bull.Job<DbUserImportToDbJobData>,
+	): Promise<void> {
 		const line = job.data.target;
 		const user = job.data.user;
 
@@ -63,38 +64,36 @@ export class ImportFollowingProcessorService {
 
 			if (!host) return;
 
-			let target: user | null = this.utilityService.isSelfHost(host)
+			let target = this.utilityService.isSelfHost(host)
 				? await this.prismaService.client.user.findFirst({
-					where: {
-						host: null,
-						usernameLower: username.toLowerCase(),
-					},
-				})
-				: await this.prismaService.client.user.findUnique({
-					where: {
-						usernameLower_host: {
-							host: this.utilityService.toPuny(host),
+						where: {
+							host: null,
 							usernameLower: username.toLowerCase(),
 						},
-					},
-				});
-
-			if (host == null && target == null) return;
+				  })
+				: await this.prismaService.client.user.findUnique({
+						where: {
+							usernameLower_host: {
+								host: this.utilityService.toPuny(host),
+								usernameLower: username.toLowerCase(),
+							},
+						},
+				  });
 
 			if (target == null) {
-				target = await this.remoteUserResolveService.resolveUser(username, host);
+				target = await this.remoteUserResolveService.resolveUser(
+					username,
+					host,
+				);
 			}
 
-			if (target == null) {
-				throw new Error(`Unable to resolve user: @${username}@${host}`);
-			}
-
-			// skip myself
 			if (target.id === job.data.user.id) return;
 
 			this.logger.info(`Follow ${target.id} ...`);
 
-			this.queueService.createFollowJob([{ from: user, to: { id: target.id }, silent: true }]);
+			await this.queueService.createFollowJob([
+				{ from: user, to: { id: target.id }, silent: true },
+			]);
 		} catch (e) {
 			this.logger.warn(`Error: ${e}`);
 		}
