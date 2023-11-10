@@ -23,17 +23,9 @@
 		"paths": {
 			"@/*": ["./src/*"]
 		},
-		"typeRoots": [
-			"node_modules/@types",
-			"@types"
-		],
-		"lib": [
-			"esnext",
-			"webworker"
-		]
+		"typeRoots": ["node_modules/@types", "@types"],
+		"lib": ["esnext", "webworker"]
 	},
 	"compileOnSave": false,
-	"include": [
-		"./**/*.ts"
-	]
+	"include": ["./**/*.ts"]
 }

@@ -1,10 +1,5 @@
 {
-  "compilerOptions": {
-    "noEmit": true
-  },
-  "extends": [
-    "@tsconfig/node18/tsconfig.json",
-    "@tsconfig/strictest/tsconfig.json"
-  ],
-  "include": ["./src"]
+  "exclude": ["./src/**/*.test.ts"],
+  "extends": ["../shared/tsconfig.json", "@tsconfig/node-lts/tsconfig.json"],
+  "include": ["./src/**/*.ts"]
 }

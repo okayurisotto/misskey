@@ -22,9 +22,6 @@
 		"typeRoots": ["./node_modules/@types", "./src/@types"],
 		"types": ["node"]
 	},
-	"extends": [
-		"@tsconfig/node-lts/tsconfig.json",
-		"@tsconfig/strictest/tsconfig.json"
-	],
+	"extends": ["../shared/tsconfig.json", "@tsconfig/node-lts/tsconfig.json"],
 	"include": ["./src/**/*.ts"]
 }

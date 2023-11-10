@@ -25,28 +25,12 @@
 		"paths": {
 			"@/*": ["./src/*"]
 		},
-		"typeRoots": [
-			"node_modules/@types",
-			"node_modules/@vue-macros",
-			"@types"
-		],
-		"types": [
-			"vite/client",
-			"reactivity-transform/macros-global"
-		],
-		"lib": [
-			"esnext",
-			"dom"
-		],
+		"typeRoots": ["node_modules/@types", "node_modules/@vue-macros", "@types"],
+		"types": ["vite/client", "reactivity-transform/macros-global"],
+		"lib": ["esnext", "dom"],
 		"jsx": "preserve"
 	},
 	"compileOnSave": false,
-	"include": [
-		".eslintrc.js",
-		"./**/*.ts",
-		"./**/*.vue"
-	],
-	"exclude": [
-		".storybook/**/*"
-	]
+	"include": [".eslintrc.js", "./**/*.ts", "./**/*.vue"],
+	"exclude": [".storybook/**/*"]
 }

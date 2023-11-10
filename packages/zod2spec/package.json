@@ -11,14 +11,9 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@swc/cli": "^0.1.62",
-    "@swc/core": "^1.3.95",
-    "@tsconfig/node18": "^18.2.2",
-    "@tsconfig/strictest": "^2.0.2",
     "@types/node": "^20.8.10",
     "prettier": "^3.0.3",
     "type-fest": "^4.6.0",
-    "typescript": "^5.2.2",
     "vitest": "0.34.1"
   },
   "dependencies": {
