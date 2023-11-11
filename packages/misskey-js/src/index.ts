@@ -1,14 +1,18 @@
-import { Endpoints } from './wrapper';
 import Stream, { Connection } from './streaming.js';
-import { Channels } from './streaming.types.js';
-import { Acct } from './acct.js';
+import * as Acct from './acct.js';
 import * as consts from './consts.js';
+import * as api from './api.js';
+import * as entities from './entities.js';
+import type { Channels } from './streaming.types.js';
+import type { Endpoints } from './wrapper.js';
+
+export { api, entities };
 
 export {
-	Endpoints,
+	type Endpoints,
 	Stream,
 	Connection as ChannelConnection,
-	Channels,
+	type Channels,
 	Acct,
 };
 
@@ -17,10 +21,3 @@ export const notificationTypes = consts.notificationTypes;
 export const noteVisibilities = consts.noteVisibilities;
 export const mutedNoteReasons = consts.mutedNoteReasons;
 export const ffVisibility = consts.ffVisibility;
-
-// api extractor not supported yet
-//export * as api from './api.js';
-//export * as entities from './entities.js';
-import * as api from './api.js';
-import * as entities from './entities.js';
-export { api, entities };

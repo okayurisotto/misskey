@@ -1,5 +1,5 @@
 import { markRaw } from 'vue';
-import type { Locale } from '../../../locales';
+import type { Locale } from 'locales';
 import { locale } from '@/config';
 import { I18n } from '@/scripts/i18n';
 

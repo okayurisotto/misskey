@@ -1,21 +1,24 @@
 {
   "name": "omick",
+  "private": true,
   "version": "0.0.0",
   "license": "CC0-1.0",
   "main": "./built/index.js",
-  "types": "./built/index.d.ts",
+  "types": "./types/index.d.ts",
+  "files": [
+    "./built",
+    "./types"
+  ],
   "type": "module",
   "scripts": {
     "build": "swc -d built src",
-    "build:type": "tsc --declaration --emitDeclarationOnly --outDir built src/index.ts",
+    "build:type": "tsc --declaration --emitDeclarationOnly --outDir ./types",
     "format": "prettier -w ./src",
     "test": "vitest",
-    "typecheck": "tsc"
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^20.8.10",
-    "prettier": "^3.0.3",
-    "vitest": "^0.34.6"
+    "@types/node": "^20.8.10"
   },
   "dependencies": {
     "type-fest": "^4.6.0"

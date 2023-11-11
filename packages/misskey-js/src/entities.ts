@@ -1,4 +1,4 @@
-import type { components } from './api.types';
+import type { components } from './api.types.js';
 
 export type ID = string;
 export type DateString = string;

@@ -1,4 +1,4 @@
-import { paths } from './api.types';
+import { paths } from './api.types.js';
 
 type RemoveSlash<T extends `/${string}`> = T extends `/${infer U}` ? U : never;
 

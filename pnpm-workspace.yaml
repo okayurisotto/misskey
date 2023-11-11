@@ -5,3 +5,4 @@ packages:
   - 'packages/misskey-js'
   - 'packages/zod2spec'
   - 'packages/omick'
+  - 'packages/locales'

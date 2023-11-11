@@ -1,9 +1,8 @@
 import { get } from 'idb-keyval';
-import * as Acct from 'misskey-js/built/acct';
-import type { PushNotificationDataMap } from '@/types';
-import { createEmptyNotification, createNotification } from '@/scripts/create-notification';
-import { swLang } from '@/scripts/lang';
-import * as swos from '@/scripts/operations';
+import type { PushNotificationDataMap } from '@/types.js';
+import { createEmptyNotification, createNotification } from '@/scripts/create-notification.js';
+import { swLang } from '@/scripts/lang.js';
+import * as swos from '@/scripts/operations.js';
 
 globalThis.addEventListener('install', () => {
 	// ev.waitUntil(globalThis.skipWaiting());

@@ -7,7 +7,6 @@
 		"experimentalDecorators": true,
 		"isolatedModules": true,
 		"lib": ["esnext"],
-		"module": "ESNext",
 		"noEmit": true,
 		"noLib": false,
 		"noUncheckedIndexedAccess": false, // TODO

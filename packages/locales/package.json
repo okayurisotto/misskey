@@ -1,0 +1,9 @@
+{
+	"name": "locales",
+	"main": "./index.js",
+	"types": "./index.d.ts",
+	"files": [
+		"./"
+	],
+	"type": "module"
+}

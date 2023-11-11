@@ -2,14 +2,16 @@
  * Gulp tasks
  */
 
+// @ts-check
+
 import * as fs from 'node:fs';
 import gulp from 'gulp';
 import replace from 'gulp-replace';
 import terser from 'gulp-terser';
 import cssnano from 'gulp-cssnano';
 
-import locales from './locales/index.js';
-import meta from './package.json' assert { type: "json" };
+import locales from './packages/locales/index.js';
+import meta from './package.json' assert { type: 'json' };
 
 gulp.task('copy:backend:views', () =>
 	gulp.src('./packages/backend/src/server/web/views/**/*').pipe(gulp.dest('./packages/backend/built/server/web/views'))

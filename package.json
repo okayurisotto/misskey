@@ -59,13 +59,18 @@
 		"@tsconfig/strictest": "^2.0.2",
 		"@types/gulp": "4.0.10",
 		"@types/gulp-rename": "2.0.1",
-		"@typescript-eslint/eslint-plugin": "5.61.0",
-		"@typescript-eslint/parser": "5.61.0",
+		"@typescript-eslint/eslint-plugin": "^6.10.0",
+		"@typescript-eslint/parser": "^6.10.0",
 		"cross-env": "7.0.3",
 		"cypress": "12.17.1",
-		"eslint": "8.45.0",
+		"eslint": "^8.53.0",
+		"eslint-config-prettier": "^9.0.0",
+		"eslint-import-resolver-typescript": "^3.6.1",
+		"eslint-plugin-import": "npm:eslint-plugin-i@^2.29.0",
+		"prettier": "^3.0.3",
 		"start-server-and-test": "2.0.0",
-		"typescript": "^5.2.2"
+		"typescript": "^5.2.2",
+		"vitest": "0.33.0"
 	},
 	"optionalDependencies": {
 		"@tensorflow/tfjs-core": "4.4.0"
