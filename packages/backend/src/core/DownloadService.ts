@@ -90,7 +90,7 @@ export class DownloadService {
 						filename = parsed.parameters['filename'];
 					}
 				} catch (e) {
-					this.logger.warn(`Failed to parse content-disposition: ${contentDisposition}`, { stack: e });
+					this.logger.warn(`Failed to parse content-disposition: ${contentDisposition}`);
 				}
 			}
 		}).on('downloadProgress', (progress: Got.Progress) => {

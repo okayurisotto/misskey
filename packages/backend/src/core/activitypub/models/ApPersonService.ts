@@ -318,7 +318,11 @@ export class ApPersonService implements OnModuleInit {
 
 				user = u as RemoteUser;
 			} else {
-				this.logger.error(e instanceof Error ? e : new Error(e as string));
+				if (e instanceof Error) {
+					this.logger.error(e);
+				} else if (typeof e === 'string') {
+					this.logger.error(new Error(e));
+				}
 				throw e;
 			}
 		}
@@ -360,7 +364,11 @@ export class ApPersonService implements OnModuleInit {
 		}
 		//#endregion
 
-		await this.updateFeatured(user.id, resolver).catch(err => this.logger.error(err));
+		await this.updateFeatured(user.id, resolver).catch(err => {
+			if (err instanceof Error || typeof err === 'string') {
+				return this.logger.error(err);
+			}
+		});
 
 		return user;
 	}
@@ -492,7 +500,11 @@ export class ApPersonService implements OnModuleInit {
 			data: { followerSharedInbox: person.sharedInbox ?? person.endpoints?.sharedInbox },
 		});
 
-		await this.updateFeatured(exist.id, resolver).catch(err => this.logger.error(err));
+		await this.updateFeatured(exist.id, resolver).catch(err => {
+			if (err instanceof Error || typeof err === 'string') {
+				return this.logger.error(err);
+			}
+		});
 
 		const updated = { ...exist, ...updates };
 
@@ -513,7 +525,7 @@ export class ApPersonService implements OnModuleInit {
 					return result;
 				})
 				.catch(e => {
-					this.logger.info(`Processing Move Failed @${updated.username}@${updated.host} (${uri})`, { stack: e });
+					this.logger.info(`Processing Move Failed @${updated.username}@${updated.host} (${uri})`);
 				});
 		}
 

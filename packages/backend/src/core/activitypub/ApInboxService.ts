@@ -114,9 +114,21 @@ export class ApInboxService {
 		} else if (isReject(activity)) {
 			await this.reject(actor, activity);
 		} else if (isAdd(activity)) {
-			await this.add(actor, activity).catch(err => this.logger.error(err));
+			await this.add(actor, activity).catch(err => {
+				if (err instanceof Error || typeof err === 'string') {
+					return this.logger.error(err);
+				} else {
+					throw err;
+				}
+			});
 		} else if (isRemove(activity)) {
-			await this.remove(actor, activity).catch(err => this.logger.error(err));
+			await this.remove(actor, activity).catch(err => {
+				if (err instanceof Error || typeof err === 'string') {
+					return this.logger.error(err);
+				} else {
+					throw err;
+				}
+			});
 		} else if (isAnnounce(activity)) {
 			await this.announce(actor, activity);
 		} else if (isLike(activity)) {

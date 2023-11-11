@@ -51,7 +51,7 @@ export class ServerService implements OnApplicationShutdown {
 		private readonly loggerService: LoggerService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.logger = this.loggerService.getLogger('server', 'gray', false);
+		this.logger = this.loggerService.getLogger('server', 'gray');
 	}
 
 	@bindThis

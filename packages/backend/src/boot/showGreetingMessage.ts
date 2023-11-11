@@ -49,5 +49,5 @@ export const showGreetingMessage = (logger: Logger): void => {
 	}
 
 	logger.info('Welcome to Misskey!');
-	logger.info(`Misskey v${meta.version}`, null, true);
+	logger.info(`Misskey v${meta.version}`, true);
 };

@@ -7,6 +7,6 @@ export const showEnvironment = (parentLogger: Logger): void => {
 
 	if (NODE_ENV !== 'production') {
 		logger.warn('The environment is not in production mode.');
-		logger.warn('DO NOT USE FOR PRODUCTION PURPOSE!', null, true);
+		logger.warn('DO NOT USE FOR PRODUCTION PURPOSE!', true);
 	}
 };

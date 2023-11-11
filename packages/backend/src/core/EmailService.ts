@@ -137,7 +137,9 @@ export class EmailService {
 
 			this.logger.info(`Message sent: ${info.messageId}`);
 		} catch (err) {
-			this.logger.error(err as Error);
+			if (err instanceof Error || typeof err === 'string') {
+				this.logger.error(err);
+			}
 			throw err;
 		}
 	}

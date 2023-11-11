@@ -3,7 +3,7 @@ import Logger from '@/logger.js';
 import { NODE_ENV } from './env.js';
 
 const logger = new Logger('core', 'cyan');
-const nestLogger = logger.createSubLogger('nest', 'green', false);
+const nestLogger = logger.createSubLogger('nest', 'green');
 
 export class NestLogger implements LoggerService {
 	/**

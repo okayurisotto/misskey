@@ -12,7 +12,7 @@ import { showEnvironment } from './showEnvironment.js';
 
 export const initializeMasterProcess = async (): Promise<void> => {
 	const logger = new Logger('core', 'cyan');
-	const bootLogger = logger.createSubLogger('boot', 'magenta', false);
+	const bootLogger = logger.createSubLogger('boot', 'magenta');
 
 	let config!: Config;
 
@@ -46,7 +46,6 @@ export const initializeMasterProcess = async (): Promise<void> => {
 		config.socket
 			? `Now listening on socket ${config.socket} on ${config.url}`
 			: `Now listening on port ${config.port} on ${config.url}`,
-		null,
 		true,
 	);
 };

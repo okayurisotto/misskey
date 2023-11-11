@@ -80,7 +80,7 @@ import { bindThis } from '@/decorators.js';
 
 const dbLogger = new MisskeyLogger('db');
 
-const sqlLogger = dbLogger.createSubLogger('sql', 'gray', false);
+const sqlLogger = dbLogger.createSubLogger('sql', 'gray');
 
 class TypeORMLogger implements Logger {
 	@bindThis

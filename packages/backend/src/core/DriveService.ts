@@ -353,7 +353,7 @@ export class DriveService {
 					this.registerLogger.debug('web image not created (not an required image)');
 				}
 			} catch (err) {
-				this.registerLogger.warn('web image not created (an error occured)', err as Error);
+				this.registerLogger.warn('web image not created (an error occured)');
 			}
 		} else {
 			if (satisfyWebpublic) this.registerLogger.info('web image not created (original satisfies webpublic)');
@@ -372,7 +372,7 @@ export class DriveService {
 				thumbnail = await this.imageProcessingService.convertSharpToWebp(img, 498, 422);
 			}
 		} catch (err) {
-			this.registerLogger.warn('thumbnail not created (an error occured)', err as Error);
+			this.registerLogger.warn('thumbnail not created (an error occured)');
 		}
 		// #endregion thumbnail
 
@@ -688,8 +688,10 @@ export class DriveService {
 						properties: FilePropertiesSchema.parse(result.properties),
 						requestHeaders: z.record(z.string(), z.string()).nullable().parse(result.requestHeaders),
 					};
+				} else if (err instanceof Error || typeof err === 'string') {
+					this.registerLogger.error(err);
+					throw err;
 				} else {
-					this.registerLogger.error(err as Error);
 					throw err;
 				}
 			}
@@ -843,7 +845,7 @@ export class DriveService {
 			await this.s3Service.delete(meta, param);
 		} catch (err: unknown) {
 			if (err !== null && typeof err === 'object' && 'name' in err && err.name === 'NoSuchKey') {
-				this.deleteLogger.warn(`The object storage had no such key to delete: ${key}. Skipping this.`, err as Error);
+				this.deleteLogger.warn(`The object storage had no such key to delete: ${key}. Skipping this.`);
 				return;
 			} else {
 				throw new Error(`Failed to delete the file from the object storage with the given key: ${key}`, {

@@ -47,7 +47,7 @@ export class FileServerService {
 		private readonly loggerService: LoggerService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.logger = this.loggerService.getLogger('server', 'gray', false);
+		this.logger = this.loggerService.getLogger('server', 'gray');
 
 		//this.createServer = this.createServer.bind(this);
 	}

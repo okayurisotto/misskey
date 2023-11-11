@@ -1,5 +1,13 @@
-import { QueryFailedError } from 'typeorm';
+import { Prisma } from '@prisma/client';
 
-export function isDuplicateKeyValueError(e: unknown | Error): boolean {
-	return e instanceof QueryFailedError && e.driverError.code === '23505';
+export function isDuplicateKeyValueError(e: unknown): boolean {
+	if (e instanceof Prisma.PrismaClientKnownRequestError) {
+		if (e.code === 'P2002') {
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
 }
