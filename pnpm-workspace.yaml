@@ -8,3 +8,4 @@ packages:
   - 'packages/locales'
   - 'packages/range'
   - 'packages/memoize'
+  - 'packages/identicon-generator'
