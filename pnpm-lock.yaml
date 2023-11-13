@@ -985,6 +985,8 @@ importers:
         specifier: ^20.8.10
         version: 20.8.10
 
+  packages/range: {}
+
   packages/sw:
     dependencies:
       esbuild:

@@ -6,3 +6,4 @@ packages:
   - 'packages/zod2spec'
   - 'packages/omick'
   - 'packages/locales'
+  - 'packages/range'
