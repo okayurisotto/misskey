@@ -2,9 +2,8 @@ import { z } from "zod";
 import { describe, expect, test } from "vitest";
 import { defineOpenApiSpec, generateOpenApiSpec } from "./index.js";
 import type { ReferenceObject, SchemaObject } from "openapi3-ts/oas30";
-import type { ReadonlyDeep } from "type-fest";
 
-type Entries = ReadonlyDeep<[string, z.ZodType, SchemaObject][]>;
+type Entries = [string, z.ZodType, SchemaObject][];
 
 const entries = [
   // any
@@ -146,7 +145,7 @@ const entries = [
     z.record(z.string(), z.string()),
     { type: "object", additionalProperties: { type: "string" } },
   ],
-] as const satisfies Entries;
+] satisfies Entries;
 
 describe("-", () => {
   test.each(entries)("%s", (_name, input, output) => {
@@ -206,7 +205,7 @@ describe("default", () => {
       z.enum(["foo", "bar"]).default("foo"),
       { type: "string", default: "foo", enum: ["foo", "bar"] },
     ],
-  ] as const satisfies Entries;
+  ] satisfies Entries;
 
   test.each(entries)("%s", (_name, input, output) => {
     expect(generateOpenApiSpec([])(input)).toStrictEqual(output);

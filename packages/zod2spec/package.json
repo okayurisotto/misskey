@@ -11,8 +11,7 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@types/node": "^20.8.10",
-    "type-fest": "^4.6.0"
+    "@types/node": "^20.8.10"
   },
   "dependencies": {
     "openapi3-ts": "^4.1.2",
