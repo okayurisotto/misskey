@@ -7,3 +7,4 @@ packages:
   - 'packages/omick'
   - 'packages/locales'
   - 'packages/range'
+  - 'packages/memoize'

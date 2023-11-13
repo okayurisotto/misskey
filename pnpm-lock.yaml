@@ -935,6 +935,8 @@ importers:
 
   packages/locales: {}
 
+  packages/memoize: {}
+
   packages/misskey-js:
     dependencies:
       eventemitter3:
