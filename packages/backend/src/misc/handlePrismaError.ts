@@ -15,10 +15,10 @@ export const handlePrismaError = (
 		});
 	}
 
-	if (err.code === 'P2002') {
+	if (err.code === 'P2003') {
 		return new ApiError({
-			code: 'P2002',
-			id: 'P2002',
+			code: 'P2003',
+			id: 'P2003',
 			message: '外部キー制約違反により操作は失敗しました。',
 			httpStatusCode: 400,
 		});
@@ -28,7 +28,7 @@ export const handlePrismaError = (
 		return new ApiError({
 			code: 'P2025',
 			id: 'P2025',
-			message: '依存するレコードが見つからなかったため操作は失敗しました。',
+			message: 'レコードが見つからなかったため操作は失敗しました。',
 			httpStatusCode: 400,
 		});
 	}
