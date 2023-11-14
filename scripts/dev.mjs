@@ -1,16 +1,11 @@
 import fs from 'node:fs';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { setTimeout } from 'node:timers/promises';
 import { execa } from 'execa';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
-
-await execa('pnpm', ['clean'], {
-	cwd: _dirname + '/../',
-	stdout: process.stdout,
-	stderr: process.stderr,
-});
 
 await execa('pnpm', ['build-pre'], {
 	cwd: _dirname + '/../',
@@ -18,13 +13,13 @@ await execa('pnpm', ['build-pre'], {
 	stderr: process.stderr,
 });
 
-execa('pnpm', ['exec', 'gulp', 'watch'], {
+await execa('pnpm', ['turbo', '--scope', 'backend', 'build'], {
 	cwd: _dirname + '/../',
 	stdout: process.stdout,
 	stderr: process.stderr,
 });
 
-execa('pnpm', ['--filter', 'backend', 'watch'], {
+execa('pnpm', ['exec', 'gulp', 'watch'], {
 	cwd: _dirname + '/../',
 	stdout: process.stdout,
 	stderr: process.stderr,
@@ -60,7 +55,7 @@ const start = async () => {
 			process.exit(0);
 		});
 	} catch (e) {
-		await new Promise(resolve => setTimeout(resolve, 3000));
+		await setTimeout(3000);
 		start();
 	}
 };
