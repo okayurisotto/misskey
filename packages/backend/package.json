@@ -116,6 +116,7 @@
 		"pug": "3.0.2",
 		"punycode": "2.3.0",
 		"qrcode": "1.5.3",
+		"range": "workspace:*",
 		"ratelimiter": "3.4.1",
 		"re2": "1.19.1",
 		"redis-lock": "0.1.4",

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { range } from 'range';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -84,11 +85,11 @@ export default class extends Endpoint<
 				.map((tag) => tag.name);
 
 			//#region 2(または3)で話題と判定されたタグそれぞれについて過去の投稿数グラフを取得する
-			const range = 20;
+			const length = 20;
 			const interval = 1000 * 60 * 10; // 10分
 
 			const countsLog = await Promise.all(
-				Array.from({ length: range }, async (_, i) => {
+				range({ stop: length }).map(async (i) => {
 					return await Promise.all(
 						hotTags.map(async (tag) => {
 							const result = await this.prismaService.client.note.aggregate({

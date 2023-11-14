@@ -4,6 +4,7 @@ import * as Redis from 'ioredis';
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import RE2 from 're2';
 import { z } from 'zod';
+import { range } from 'range';
 import { extractMentions } from '@/misc/extract-mentions.js';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
 import { extractHashtags } from '@/misc/extract-hashtags.js';
@@ -391,7 +392,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 								choices: data.poll.choices,
 								expiresAt: data.poll.expiresAt,
 								multiple: data.poll.multiple,
-								votes: new Array(data.poll.choices.length).fill(0),
+								votes: range({ stop: data.poll.choices.length }).fill(0),
 								noteVisibility: insert.visibility,
 								userId: user.id,
 								userHost: user.host,

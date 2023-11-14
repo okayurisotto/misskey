@@ -320,6 +320,9 @@ importers:
       qrcode:
         specifier: 1.5.3
         version: 1.5.3
+      range:
+        specifier: workspace:*
+        version: link:../range
       ratelimiter:
         specifier: 3.4.1
         version: 3.4.1

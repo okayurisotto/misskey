@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
+import { range } from 'range';
 import { invalidDateTime } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { InviteCodeEntityService } from '@/core/entities/InviteCodeEntityService.js';
@@ -14,7 +15,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {invalidDateTime:invalidDateTime},
+	errors: { invalidDateTime: invalidDateTime },
 	res,
 } as const;
 
@@ -40,7 +41,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.invalidDateTime);
 			}
 
-			const ticketdata = Array.from({ length: ps.count }).map(() => ({
+			const ticketdata = range({ stop: ps.count }).map(() => ({
 				id: this.idService.genId(),
 				createdAt: new Date(),
 				expiresAt: ps.expiresAt ? new Date(ps.expiresAt) : null,
