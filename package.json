@@ -7,11 +7,6 @@
 		"url": "https://github.com/misskey-dev/misskey.git"
 	},
 	"packageManager": "pnpm@8.10.2",
-	"workspaces": [
-		"packages/frontend",
-		"packages/backend",
-		"packages/sw"
-	],
 	"private": true,
 	"scripts": {
 		"build-pre": "node ./scripts/build-pre.js",
