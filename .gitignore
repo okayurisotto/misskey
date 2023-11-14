@@ -1,6 +1,9 @@
 # Node.js
 node_modules/
 
+# Turborepo
+.turbo/
+
 # Misskey
 /built/
 /packages/*/built/
