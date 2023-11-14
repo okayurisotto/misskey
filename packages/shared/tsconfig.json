@@ -1,3 +1,6 @@
 {
+	"compilerOptions": {
+		"noEmit": false // for declaration emitting
+	},
 	"extends": ["@tsconfig/strictest/tsconfig.json"]
 }

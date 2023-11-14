@@ -2,7 +2,6 @@
 	"compilerOptions": {
 		"allowSyntheticDefaultImports": true,
 		"baseUrl": "./",
-		"noEmit": true,
 		"experimentalDecorators": true,
 		"isolatedModules": true,
 		"paths": {
