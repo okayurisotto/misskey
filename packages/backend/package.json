@@ -96,6 +96,7 @@
 		"jsonld": "8.2.0",
 		"jsrsasign": "10.8.6",
 		"meilisearch": "0.33.0",
+		"memoize": "workspace:*",
 		"mfm-js": "0.23.3",
 		"mime-types": "2.1.35",
 		"misskey-js": "workspace:*",

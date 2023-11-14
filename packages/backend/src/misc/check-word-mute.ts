@@ -1,6 +1,6 @@
 import { AhoCorasick } from 'slacc';
 import RE2 from 're2';
-import { Memoize } from './Memoize.js';
+import { Memoize } from 'memoize';
 import type { note, user } from '@prisma/client';
 
 type CustomPartial<T, U extends keyof T> = Omit<T, U> & Partial<Pick<T, U>>;
@@ -8,10 +8,23 @@ type CustomPartial<T, U extends keyof T> = Omit<T, U> & Partial<Pick<T, U>>;
 type NoteLike = CustomPartial<Pick<note, 'userId' | 'text' | 'cw'>, 'cw'>;
 type UserLike = Pick<user, 'id'>;
 
-const memoizedAcFn = new Memoize(
-	(patterns: string[]) => AhoCorasick.withPatterns(patterns),
-	1000,
-);
+const AHOCORASICK_CACHE_LIMIT = 1000;
+
+class MemoizedAc extends Memoize<string[], AhoCorasick, string> {
+	constructor() {
+		super(AHOCORASICK_CACHE_LIMIT);
+	}
+
+	protected override serialize(arg: string[]): string {
+		return JSON.stringify(arg);
+	}
+
+	protected override execute(arg: string[]): AhoCorasick {
+		return AhoCorasick.withPatterns(arg);
+	}
+}
+
+const memoizedAc = new MemoizedAc();
 
 /**
  * ノートがワードミュートすべきものか判定する。
@@ -39,7 +52,7 @@ export const checkWordMute = (
 			.map((filter) => filter[0])
 			.sort();
 
-		const ac = memoizedAcFn.compute(acable);
+		const ac = memoizedAc.compute(acable);
 
 		if (ac.isMatch(text)) return true;
 	}
