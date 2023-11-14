@@ -1,11 +1,2 @@
 packages:
-  - 'packages/backend'
-  - 'packages/frontend'
-  - 'packages/sw'
-  - 'packages/misskey-js'
-  - 'packages/zod2spec'
-  - 'packages/omick'
-  - 'packages/locales'
-  - 'packages/range'
-  - 'packages/memoize'
-  - 'packages/identicon-generator'
+  - 'packages/*'
