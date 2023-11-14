@@ -13,10 +13,6 @@
 		"experimental": {
 			"keepImportAssertions": true
 		},
-		"baseUrl": "src",
-		"paths": {
-			"@/*": ["*"]
-		},
 		"target": "es2022"
 	},
 	"minify": false
