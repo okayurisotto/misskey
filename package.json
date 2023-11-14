@@ -1,7 +1,6 @@
 {
 	"name": "misskey",
 	"version": "13.14.2",
-	"codename": "nasubi",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/misskey-dev/misskey.git"
