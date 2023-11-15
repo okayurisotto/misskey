@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
-
 import { NODE_ENV } from '@/env.js';
-import { bindThis } from '@/decorators.js';
 import FederationChart from './charts/federation.js';
 import NotesChart from './charts/notes.js';
 import UsersChart from './charts/users.js';
@@ -16,63 +14,58 @@ import PerUserDriveChart from './charts/per-user-drive.js';
 import ApRequestChart from './charts/ap-request.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 
+const INTERVAL = 1000 * 60 * 20;
+
 @Injectable()
 export class ChartManagementService implements OnApplicationShutdown {
 	private charts;
 	private saveIntervalId: NodeJS.Timer;
 
 	constructor(
-		private federationChart: FederationChart,
-		private notesChart: NotesChart,
-		private usersChart: UsersChart,
-		private activeUsersChart: ActiveUsersChart,
-		private instanceChart: InstanceChart,
-		private perUserNotesChart: PerUserNotesChart,
-		private perUserPvChart: PerUserPvChart,
-		private driveChart: DriveChart,
-		private perUserReactionsChart: PerUserReactionsChart,
-		private perUserFollowingChart: PerUserFollowingChart,
-		private perUserDriveChart: PerUserDriveChart,
-		private apRequestChart: ApRequestChart,
+		federationChart: FederationChart,
+		notesChart: NotesChart,
+		usersChart: UsersChart,
+		activeUsersChart: ActiveUsersChart,
+		instanceChart: InstanceChart,
+		perUserNotesChart: PerUserNotesChart,
+		perUserPvChart: PerUserPvChart,
+		driveChart: DriveChart,
+		perUserReactionsChart: PerUserReactionsChart,
+		perUserFollowingChart: PerUserFollowingChart,
+		perUserDriveChart: PerUserDriveChart,
+		apRequestChart: ApRequestChart,
 	) {
 		this.charts = [
-			this.federationChart,
-			this.notesChart,
-			this.usersChart,
-			this.activeUsersChart,
-			this.instanceChart,
-			this.perUserNotesChart,
-			this.perUserPvChart,
-			this.driveChart,
-			this.perUserReactionsChart,
-			this.perUserFollowingChart,
-			this.perUserDriveChart,
-			this.apRequestChart,
+			federationChart,
+			notesChart,
+			usersChart,
+			activeUsersChart,
+			instanceChart,
+			perUserNotesChart,
+			perUserPvChart,
+			driveChart,
+			perUserReactionsChart,
+			perUserFollowingChart,
+			perUserDriveChart,
+			apRequestChart,
 		];
 	}
 
-	@bindThis
-	public async start(): Promise<void> {
-		// 20分おきにメモリ情報をDBに書き込み
-		this.saveIntervalId = setInterval(() => {
-			for (const chart of this.charts) {
-				chart.save();
-			}
-		}, 1000 * 60 * 20);
+	private async tick(): Promise<void> {
+		await Promise.all(this.charts.map((chart) => chart.save()));
 	}
 
-	@bindThis
-	public async dispose(): Promise<void> {
-		clearInterval(this.saveIntervalId);
-		if (NODE_ENV !== 'test') {
-			await Promise.all(
-				this.charts.map(chart => chart.save()),
-			);
-		}
+	public start(): void {
+		this.saveIntervalId = setInterval(async () => {
+			await this.tick();
+		}, INTERVAL);
 	}
 
-	@bindThis
 	async onApplicationShutdown(): Promise<void> {
-		await this.dispose();
+		clearInterval(this.saveIntervalId);
+
+		if (NODE_ENV !== 'test') {
+			await Promise.all(this.charts.map((chart) => chart.save()));
+		}
 	}
 }
