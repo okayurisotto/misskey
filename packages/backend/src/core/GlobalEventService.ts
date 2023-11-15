@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
 import type {
 	StreamChannels,
 	AdminStreamTypes,
@@ -16,6 +15,7 @@ import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { RedisPubService } from '@/core/RedisPubService.js';
 import type { z } from 'zod';
 import type { role, note, antenna, user, user_list } from '@prisma/client';
 
@@ -25,8 +25,7 @@ export class GlobalEventService {
 		@Inject(DI.config)
 		private readonly config: Config,
 
-		@Inject(DI.redisForPub)
-		private readonly redisForPub: Redis.Redis,
+		private readonly redisForPub: RedisPubService,
 	) {}
 
 	@bindThis

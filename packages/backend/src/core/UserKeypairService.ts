@@ -1,9 +1,8 @@
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { RedisKVCache } from '@/misc/cache.js';
-import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisService } from '@/core/RedisService.js';
 import type { user_keypair, user } from '@prisma/client';
 
 @Injectable()
@@ -11,8 +10,7 @@ export class UserKeypairService implements OnApplicationShutdown {
 	private cache: RedisKVCache<user_keypair>;
 
 	constructor(
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
+		private readonly redisClient: RedisService,
 
 		private readonly prismaService: PrismaService,
 	) {

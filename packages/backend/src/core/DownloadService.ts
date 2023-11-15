@@ -12,7 +12,7 @@ import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { StatusError } from '@/misc/status-error.js';
 import { LoggerService } from '@/core/LoggerService.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 
 import { bindThis } from '@/decorators.js';
 

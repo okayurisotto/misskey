@@ -1,11 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import Limiter from 'ratelimiter';
-import * as Redis from 'ioredis';
 import { NODE_ENV } from '@/env.js';
-import { DI } from '@/di-symbols.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
+import { RedisService } from '@/core/RedisService.js';
 import type { IEndpointMeta } from './endpoints.js';
 
 @Injectable()
@@ -14,8 +13,7 @@ export class RateLimiterService {
 	private disabled = false;
 
 	constructor(
-		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private redisClient: RedisService,
 
 		private loggerService: LoggerService,
 	) {

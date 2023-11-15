@@ -9,7 +9,7 @@ import { NODE_ENV } from '@/env.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { Config } from '@/config.js';
 import { DI } from '@/di-symbols.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import * as Acct from '@/misc/acct.js';
 import { genIdenticon } from '@/misc/gen-identicon.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';

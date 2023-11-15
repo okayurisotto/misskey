@@ -1,5 +1,5 @@
 import { NODE_ENV } from '@/env.js';
-import Logger from '@/logger.js';
+import Logger from '@/misc/logger.js';
 
 export const showEnvironment = (parentLogger: Logger): void => {
 	const logger = parentLogger.createSubLogger('env');

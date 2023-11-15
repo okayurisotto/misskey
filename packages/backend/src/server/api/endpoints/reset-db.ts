@@ -1,12 +1,11 @@
 import { setTimeout } from 'node:timers/promises';
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { NODE_ENV } from '@/env.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { resetDb } from '@/misc/reset-db.js';
+import { RedisService } from '@/core/RedisService.js';
+import { TypeORMService } from '@/core/TypeORMService.js';
 
 export const meta = {
 	tags: ['non-productive'],
@@ -25,11 +24,8 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
-
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
+		private readonly db: TypeORMService,
+		private readonly redisClient: RedisService,
 	) {
 		super(meta, paramDef, async () => {
 			if (NODE_ENV !== 'test') {

@@ -1,7 +1,5 @@
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { fromEntries } from 'omick';
-import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -11,6 +9,7 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { isNotNull } from '@/misc/is-not-null.js';
+import { RedisService } from '@/core/RedisService.js';
 import type { Prisma, role, drive_file, emoji } from '@prisma/client';
 import type { Jsonify } from 'type-fest';
 
@@ -22,8 +21,7 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	public localEmojisCache: RedisSingleCache<Map<string, emoji>>;
 
 	constructor(
-		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private redisClient: RedisService,
 
 		private readonly utilityService: UtilityService,
 		private readonly idService: IdService,

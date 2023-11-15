@@ -9,7 +9,7 @@ import { JSDOM } from 'jsdom';
 import { z } from 'zod';
 import { fromEntries, omit, toEntries } from 'omick';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
-import { entities } from '../src/createPostgresDataSource.js';
+import { entities } from '../src/core/TypeORMService.js';
 import { loadConfig } from '../src/config.js';
 import type * as misskey from 'misskey-js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';

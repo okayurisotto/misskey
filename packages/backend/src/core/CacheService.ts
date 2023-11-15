@@ -1,12 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Injectable } from '@nestjs/common';
 import { MemoryKVCache, RedisKVCache } from '@/misc/cache.js';
 import type { LocalUser } from '@/models/entities/User.js';
-import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisService } from '@/core/RedisService.js';
+import { RedisSubService } from '@/core/RedisSubService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { user, user_profile } from '@prisma/client';
 
@@ -25,12 +25,8 @@ export class CacheService implements OnApplicationShutdown {
 	public userFollowingChannelsCache: RedisKVCache<Set<string>>;
 
 	constructor(
-		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
-
-		@Inject(DI.redisForSub)
-		private redisForSub: Redis.Redis,
-
+		private readonly redisClient: RedisService,
+		private readonly redisForSub: RedisSubService,
 		private readonly prismaService: PrismaService,
 		private readonly userEntityService: UserEntityService,
 	) {

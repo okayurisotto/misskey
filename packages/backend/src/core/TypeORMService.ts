@@ -2,8 +2,18 @@
 import pg from 'pg';
 pg.types.setTypeParser(20, Number);
 
+import {
+	Inject,
+	Injectable,
+	type OnApplicationBootstrap,
+	type OnApplicationShutdown,
+} from '@nestjs/common';
 import { DataSource, Logger } from 'typeorm';
 import * as highlight from 'cli-highlight';
+import { DI } from '@/di-symbols.js';
+import { NODE_ENV } from '@/env.js';
+import MisskeyLogger from '@/misc/logger.js';
+import type { Config } from '@/config.js';
 import { entities as charts } from '@/core/chart/entities.js';
 
 import { AbuseUserReport } from '@/models/entities/AbuseUserReport.js';
@@ -73,49 +83,38 @@ import { Flash } from '@/models/entities/Flash.js';
 import { FlashLike } from '@/models/entities/FlashLike.js';
 import { UserMemo } from '@/models/entities/UserMemo.js';
 
-import { Config } from '@/config.js';
-import { NODE_ENV } from '@/env.js';
-import MisskeyLogger from '@/logger.js';
-import { bindThis } from '@/decorators.js';
-
 const dbLogger = new MisskeyLogger('db');
 
 const sqlLogger = dbLogger.createSubLogger('sql', 'gray');
 
 class TypeORMLogger implements Logger {
-	@bindThis
 	private highlight(sql: string): string {
 		return highlight.highlight(sql, {
-			language: 'sql', ignoreIllegals: true,
+			language: 'sql',
+			ignoreIllegals: true,
 		});
 	}
 
-	@bindThis
-	public logQuery(query: string, parameters?: any[]): void {
+	public logQuery(query: string): void {
 		sqlLogger.info(this.highlight(query).substring(0, 100));
 	}
 
-	@bindThis
-	public logQueryError(error: string, query: string, parameters?: any[]): void {
+	public logQueryError(error: string, query: string): void {
 		sqlLogger.error(this.highlight(query));
 	}
 
-	@bindThis
-	public logQuerySlow(time: number, query: string, parameters?: any[]): void {
+	public logQuerySlow(time: number, query: string): void {
 		sqlLogger.warn(this.highlight(query));
 	}
 
-	@bindThis
 	public logSchemaBuild(message: string): void {
 		sqlLogger.info(message);
 	}
 
-	@bindThis
 	public log(message: string): void {
 		sqlLogger.info(message);
 	}
 
-	@bindThis
 	public logMigration(message: string): void {
 		sqlLogger.info(message);
 	}
@@ -191,26 +190,40 @@ export const entities = [
 	...charts,
 ];
 
-const isNotProduction = NODE_ENV !== 'production';
-const isTest = NODE_ENV === 'test';
+@Injectable()
+export class TypeORMService
+	extends DataSource
+	implements OnApplicationBootstrap, OnApplicationShutdown
+{
+	constructor(@Inject(DI.config) config: Config) {
+		const isNotProduction = NODE_ENV !== 'production';
+		const isTest = NODE_ENV === 'test';
 
-export const createPostgresDataSource = (config: Config): DataSource => {
-	return new DataSource({
-		type: 'postgres',
-		host: config.db.host,
-		port: config.db.port,
-		username: config.db.user,
-		password: config.db.pass,
-		database: config.db.db,
-		extra: {
-			statement_timeout: 1000 * 10,
-		},
-		synchronize: isTest,
-		dropSchema: isTest,
-		logging: isNotProduction,
-		logger: isNotProduction ? new TypeORMLogger() : undefined,
-		maxQueryExecutionTime: 300,
-		entities: entities,
-		migrations: ['../../migration/*.js'],
-	});
-};
+		super({
+			type: 'postgres',
+			host: config.db.host,
+			port: config.db.port,
+			username: config.db.user,
+			password: config.db.pass,
+			database: config.db.db,
+			extra: {
+				statement_timeout: 1000 * 10,
+			},
+			synchronize: isTest,
+			dropSchema: isTest,
+			logging: isNotProduction,
+			logger: isNotProduction ? new TypeORMLogger() : undefined,
+			maxQueryExecutionTime: 300,
+			entities: entities,
+			migrations: ['../../migration/*.js'],
+		});
+	}
+
+	public async onApplicationBootstrap(): Promise<void> {
+		await this.initialize();
+	}
+
+	public async onApplicationShutdown(): Promise<void> {
+		await this.destroy();
+	}
+}

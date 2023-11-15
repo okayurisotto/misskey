@@ -1,11 +1,10 @@
 import * as os from 'node:os';
 import { z } from 'zod';
 import si from 'systeminformation';
-import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisService } from '@/core/RedisService.js';
 
 const res = z.object({
 	machine: z.string(),
@@ -46,8 +45,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
+		private readonly redisClient: RedisService,
 
 		private readonly prismaService: PrismaService,
 	) {

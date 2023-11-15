@@ -1,8 +1,7 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
-import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
+import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/active-users.js';
@@ -20,11 +19,9 @@ const year = 1000 * 60 * 60 * 24 * 365;
 @Injectable()
 export default class ActiveUsersChart extends Chart<typeof schema> {
 	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
-
-		private appLockService: AppLockService,
-		private chartLoggerService: ChartLoggerService,
+		db: TypeORMService,
+		appLockService: AppLockService,
+		chartLoggerService: ChartLoggerService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema);
 	}

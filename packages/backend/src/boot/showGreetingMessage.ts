@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
 import chalk from 'chalk';
 import chalkTemplate from 'chalk-template';
-import Logger from '@/logger.js';
+import Logger from '@/misc/logger.js';
 import { envOption } from '@/env.js';
 
 export const showGreetingMessage = (logger: Logger): void => {

@@ -7,7 +7,7 @@ import { DeleteObjectCommandInput, PutObjectCommandInput } from '@aws-sdk/client
 import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import Logger from '@/logger.js';
+import Logger from '@/misc/logger.js';
 import type { RemoteUser } from '@/models/entities/User.js';
 import { MetaService } from '@/core/MetaService.js';
 import { IdService } from '@/core/IdService.js';

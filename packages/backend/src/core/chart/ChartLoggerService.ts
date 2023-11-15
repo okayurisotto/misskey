@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { NODE_ENV } from '@/env.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
 
 @Injectable()

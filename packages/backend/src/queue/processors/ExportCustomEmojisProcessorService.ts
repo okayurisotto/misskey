@@ -6,7 +6,7 @@ import archiver from 'archiver';
 import { z } from 'zod';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp, createTempDir } from '@/misc/create-temp.js';
 import { DownloadService } from '@/core/DownloadService.js';

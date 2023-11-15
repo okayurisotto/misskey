@@ -1,6 +1,5 @@
 import { setImmediate } from 'node:timers/promises';
 import * as mfm from 'mfm-js';
-import * as Redis from 'ioredis';
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import RE2 from 're2';
 import { z } from 'zod';
@@ -43,8 +42,9 @@ import { RoleService } from '@/core/RoleService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { Prisma, app, channel, drive_file, note, user, user_profile } from '@prisma/client';
+import { RedisService } from '@/core/RedisService.js';
 import { IAnnounce, ICreate } from './activitypub/type.js';
+import type { Prisma, app, channel, drive_file, note, user, user_profile } from '@prisma/client';
 
 const mutedWordsCache = new MemorySingleCache<{ userId: user_profile['userId']; mutedWords: user_profile['mutedWords']; }[]>(1000 * 60 * 5);
 
@@ -147,8 +147,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		@Inject(DI.config)
 		private readonly config: Config,
 
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
+		private readonly redisClient: RedisService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly noteEntityService: NoteEntityService,

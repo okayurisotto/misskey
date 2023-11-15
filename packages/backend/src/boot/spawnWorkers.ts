@@ -1,6 +1,6 @@
 import * as os from 'node:os';
 import { range } from 'range';
-import Logger from '@/logger.js';
+import Logger from '@/misc/logger.js';
 import { spawnWorker } from './spawnWorker.js';
 
 export const spawnWorkers = async (

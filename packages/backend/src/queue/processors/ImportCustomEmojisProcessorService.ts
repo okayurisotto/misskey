@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { ZipReader } from 'slacc';
 import { z } from 'zod';
 import { pick } from 'omick';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { createTempDir } from '@/misc/create-temp.js';
 import { DriveService } from '@/core/DriveService.js';

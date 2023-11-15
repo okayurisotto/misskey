@@ -7,7 +7,7 @@ import { toArray, toSingle, unique } from '@/misc/prelude/array.js';
 import { MetaService } from '@/core/MetaService.js';
 import { AppLockService } from '@/core/AppLockService.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { IdService } from '@/core/IdService.js';
 import { PollService } from '@/core/PollService.js';
 import { StatusError } from '@/misc/status-error.js';

@@ -1,7 +1,5 @@
 import { setTimeout } from 'node:timers/promises';
-import * as Redis from 'ioredis';
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import type { Notification } from '@/models/entities/Notification.js';
 import { bindThis } from '@/decorators.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -10,6 +8,7 @@ import { NotificationEntityService } from '@/core/entities/NotificationEntitySer
 import { IdService } from '@/core/IdService.js';
 import { CacheService } from '@/core/CacheService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisService } from '@/core/RedisService.js';
 import type { user } from '@prisma/client';
 
 @Injectable()
@@ -17,8 +16,7 @@ export class NotificationService implements OnApplicationShutdown {
 	#shutdownController = new AbortController();
 
 	constructor(
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
+		private readonly redisClient: RedisService,
 
 		private readonly notificationEntityService: NotificationEntityService,
 		private readonly idService: IdService,

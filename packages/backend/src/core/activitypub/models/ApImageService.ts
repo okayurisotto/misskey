@@ -4,7 +4,7 @@ import { MetaService } from '@/core/MetaService.js';
 import { truncate } from '@/misc/truncate.js';
 import { DB_MAX_IMAGE_COMMENT_LENGTH } from '@/const.js';
 import { DriveService } from '@/core/DriveService.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { bindThis } from '@/decorators.js';
 import { checkHttps } from '@/misc/check-https.js';
 import { PrismaService } from '@/core/PrismaService.js';

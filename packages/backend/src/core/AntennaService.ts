@@ -1,14 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import * as Acct from '@/misc/acct.js';
-import { DI } from '@/di-symbols.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisService } from '@/core/RedisService.js';
+import { RedisSubService } from '@/core/RedisSubService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { antenna, note, user } from '@prisma/client';
 
@@ -18,15 +18,11 @@ export class AntennaService implements OnApplicationShutdown {
 	private antennas: antenna[] = [];
 
 	constructor(
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
-
-		@Inject(DI.redisForSub)
-		private readonly redisForSub: Redis.Redis,
-
+		private readonly redisClient: RedisService,
 		private readonly utilityService: UtilityService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
+		private readonly redisForSub: RedisSubService,
 	) {
 		this.redisForSub.on('message', this.onRedisMessage);
 	}

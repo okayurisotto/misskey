@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import * as Acct from '@/misc/acct.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { DownloadService } from '@/core/DownloadService.js';

@@ -1,4 +1,4 @@
-import Logger from '@/logger.js';
+import Logger from '@/misc/logger.js';
 import { loadConfig } from '@/config.js';
 import type { Config } from '@/config.js';
 

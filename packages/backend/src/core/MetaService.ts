@@ -1,13 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DataSource } from 'typeorm';
-import * as Redis from 'ioredis';
+import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { NODE_ENV } from '@/env.js';
-import { DI } from '@/di-symbols.js';
 import { Meta } from '@/models/entities/Meta.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
+import { RedisSubService } from '@/core/RedisSubService.js';
+import { TypeORMService } from '@/core/TypeORMService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { meta } from '@prisma/client';
 
@@ -17,13 +16,9 @@ export class MetaService implements OnApplicationShutdown {
 	private intervalId: NodeJS.Timer;
 
 	constructor(
-		@Inject(DI.redisForSub)
-		private readonly redisForSub: Redis.Redis,
-
-		@Inject(DI.db)
-		private readonly db: DataSource,
-
+		private readonly db: TypeORMService,
 		private readonly globalEventService: GlobalEventService,
+		private readonly redisForSub: RedisSubService,
 	) {
 		//this.onMessage = this.onMessage.bind(this);
 

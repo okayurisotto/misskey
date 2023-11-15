@@ -1,9 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
-import { DI } from '@/di-symbols.js';
+import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisSubService } from '@/core/RedisSubService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { webhook } from '@prisma/client';
 
@@ -13,9 +12,7 @@ export class WebhookService implements OnApplicationShutdown {
 	private webhooks: webhook[] = [];
 
 	constructor(
-		@Inject(DI.redisForSub)
-		private redisForSub: Redis.Redis,
-
+		private readonly redisForSub: RedisSubService,
 		private readonly prismaService: PrismaService,
 	) {
 		//this.onMessage = this.onMessage.bind(this);

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { EmailService } from '@/core/EmailService.js';
 import { bindThis } from '@/decorators.js';

@@ -1,14 +1,13 @@
 import { URL } from 'node:url';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { JSDOM } from 'jsdom';
 import tinycolor from 'tinycolor2';
-import * as Redis from 'ioredis';
-import type Logger from '@/logger.js';
-import { DI } from '@/di-symbols.js';
+import type Logger from '@/misc/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { bindThis } from '@/decorators.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
+import { RedisService } from '@/core/RedisService.js';
 import type { DOMWindow } from 'jsdom';
 import type { instance } from '@prisma/client';
 
@@ -39,8 +38,7 @@ export class FetchInstanceMetadataService {
 		private readonly httpRequestService: HttpRequestService,
 		private readonly loggerService: LoggerService,
 		private readonly federatedInstanceService: FederatedInstanceService,
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
+		private readonly redisClient: RedisService,
 	) {
 		this.logger = this.loggerService.getLogger('metadata', 'cyan');
 	}

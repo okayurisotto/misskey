@@ -10,7 +10,7 @@ import { NoteDeleteService } from '@/core/NoteDeleteService.js';
 import { NoteCreateService } from '@/core/NoteCreateService.js';
 import { concat, toArray, toSingle, unique } from '@/misc/prelude/array.js';
 import { AppLockService } from '@/core/AppLockService.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { MetaService } from '@/core/MetaService.js';
 import { IdService } from '@/core/IdService.js';
 import { StatusError } from '@/misc/status-error.js';

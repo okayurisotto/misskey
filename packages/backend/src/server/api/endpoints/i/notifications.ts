@@ -1,16 +1,15 @@
 import { z } from 'zod';
-import * as Redis from 'ioredis';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { obsoleteNotificationTypes, notificationTypes } from '@/types.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { NotificationEntityService } from '@/core/entities/NotificationEntityService.js';
 import { NotificationService } from '@/core/NotificationService.js';
-import { DI } from '@/di-symbols.js';
 import { IdService } from '@/core/IdService.js';
 import { NotificationSchema } from '@/models/zod/NotificationSchema.js';
-import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisService } from '@/core/RedisService.js';
 
 const RedisNotificationSchema = z.object({
 	id: z.string(),
@@ -61,8 +60,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
+		private readonly redisClient: RedisService,
 
 		private readonly idService: IdService,
 		private readonly notificationEntityService: NotificationEntityService,

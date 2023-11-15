@@ -1,6 +1,5 @@
 import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
 import push from 'web-push';
-import * as Redis from 'ioredis';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
@@ -10,6 +9,7 @@ import { RedisKVCache } from '@/misc/cache.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisService } from '@/core/RedisService.js';
 import type { sw_subscription } from '@prisma/client';
 import type { z } from 'zod';
 
@@ -52,8 +52,7 @@ export class PushNotificationService implements OnApplicationShutdown {
 		@Inject(DI.config)
 		private config: Config,
 
-		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private redisClient: RedisService,
 
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,

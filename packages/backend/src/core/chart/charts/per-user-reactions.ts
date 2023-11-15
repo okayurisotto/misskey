@@ -1,9 +1,8 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
-import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
+import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-reactions.js';
@@ -17,12 +16,11 @@ import type { note, user } from '@prisma/client';
 @Injectable()
 export default class PerUserReactionsChart extends Chart<typeof schema> {
 	constructor(
-		@Inject(DI.db)
-		private db: DataSource,
+		db: TypeORMService,
+		appLockService: AppLockService,
+		chartLoggerService: ChartLoggerService,
 
-		private appLockService: AppLockService,
 		private userEntityService: UserEntityService,
-		private chartLoggerService: ChartLoggerService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
 	}

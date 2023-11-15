@@ -8,7 +8,7 @@ import { truncate } from '@/misc/truncate.js';
 import type { CacheService } from '@/core/CacheService.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import type { IdService } from '@/core/IdService.js';
 import type { MfmService } from '@/core/MfmService.js';
 import { toArray } from '@/misc/prelude/array.js';

@@ -1,6 +1,6 @@
 import { NestFactory } from '@nestjs/core';
 import { ChartManagementService } from '@/core/chart/ChartManagementService.js';
-import { NestLogger } from '@/NestLogger.js';
+import { NestLogger } from '@/misc/NestLogger.js';
 import { JanitorService } from '@/daemons/JanitorService.js';
 import { QueueStatsService } from '@/daemons/QueueStatsService.js';
 import { ServerStatsService } from '@/daemons/ServerStatsService.js';

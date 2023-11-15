@@ -1,5 +1,4 @@
 import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
 import { ModuleRef } from '@nestjs/core';
 import { pick } from 'omick';
 import { z } from 'zod';
@@ -21,6 +20,7 @@ import { UserFieldsSchema } from '@/models/zod/UserFieldsSchema.js';
 import type { UserSecretsSchema } from '@/models/zod/UserSecretsSchema.js';
 import { AchievementSchema } from '@/models/zod/AchievementSchema.js';
 import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
+import { RedisService } from '@/core/RedisService.js';
 import { InstanceEntityService } from './InstanceEntityService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
@@ -57,8 +57,7 @@ export class UserEntityService implements OnModuleInit {
 		@Inject(DI.config)
 		private readonly config: Config,
 
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
+		private readonly redisClient: RedisService,
 
 		private readonly prismaService: PrismaService,
 	) {}

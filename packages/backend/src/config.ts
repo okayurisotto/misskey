@@ -49,11 +49,11 @@ const SourceSchema = z.object({
 	meilisearch: z
 		.object({
 			host: z.string(),
-			port: z.string(),
+			port: z.number(),
 			apiKey: z.string(),
 			ssl: z.boolean().default(false),
 			index: z.string(),
-			scope: z.enum(['local', 'global']).or(z.string().array()),
+			scope: z.enum(['local', 'global']).or(z.string().array()).optional(),
 		})
 		.optional(),
 

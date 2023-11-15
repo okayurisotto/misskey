@@ -4,7 +4,7 @@ import { validate as validateEmail } from 'deep-email-validator';
 import { MetaService } from '@/core/MetaService.js';
 import { DI } from '@/di-symbols.js';
 import type { Config } from '@/config.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { bindThis } from '@/decorators.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RelationshipJobData } from '../types.js';

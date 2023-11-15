@@ -1,14 +1,13 @@
 import { EventEmitter } from 'events';
-import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Injectable } from '@nestjs/common';
 import * as WebSocket from 'ws';
-import { DI } from '@/di-symbols.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { LocalUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisSubService } from '@/core/RedisSubService.js';
 import { AuthenticateService, AuthenticationError } from './AuthenticateService.js';
 import MainStreamConnection from './stream/index.js';
 import { ChannelsService } from './stream/ChannelsService.js';
@@ -22,15 +21,13 @@ export class StreamingApiServerService {
 	#cleanConnectionsIntervalId: NodeJS.Timeout | null = null;
 
 	constructor(
-		@Inject(DI.redisForSub)
-		private redisForSub: Redis.Redis,
-
 		private cacheService: CacheService,
 		private noteReadService: NoteReadService,
 		private authenticateService: AuthenticateService,
 		private channelsService: ChannelsService,
 		private notificationService: NotificationService,
 		private prismaService: PrismaService,
+		private redisForSub: RedisSubService,
 	) {}
 
 	@bindThis

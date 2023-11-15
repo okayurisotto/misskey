@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { format as DateFormat } from 'date-fns';
 import { z } from 'zod';
 import { pick } from 'omick';
-import Logger from '@/logger.js';
+import Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { bindThis } from '@/decorators.js';
 import { createTemp } from '@/misc/create-temp.js';

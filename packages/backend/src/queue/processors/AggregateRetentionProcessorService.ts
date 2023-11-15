@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { bindThis } from '@/decorators.js';
 import { deepClone } from '@/misc/clone.js';
 import { IdService } from '@/core/IdService.js';

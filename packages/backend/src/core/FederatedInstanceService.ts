@@ -1,11 +1,10 @@
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { RedisKVCache } from '@/misc/cache.js';
 import { IdService } from '@/core/IdService.js';
-import { DI } from '@/di-symbols.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RedisService } from '@/core/RedisService.js';
 import type { instance } from '@prisma/client';
 
 @Injectable()
@@ -13,8 +12,7 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 	public federatedInstanceCache: RedisKVCache<instance | null>;
 
 	constructor(
-		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private redisClient: RedisService,
 
 		private readonly utilityService: UtilityService,
 		private readonly idService: IdService,

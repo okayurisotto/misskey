@@ -22,7 +22,7 @@ import type { Config } from '@/config.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import Logger from '../logger.js';
+import Logger from '../misc/logger.js';
 import type { z } from 'zod';
 import type { user } from '@prisma/client';
 

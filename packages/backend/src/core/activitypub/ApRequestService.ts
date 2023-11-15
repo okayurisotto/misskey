@@ -7,7 +7,7 @@ import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import type { user } from '@prisma/client';
 
 type Request = {

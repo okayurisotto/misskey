@@ -4,7 +4,7 @@ import chalk from 'chalk';
 import { DI } from '@/di-symbols.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { Config } from '@/config.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { ILink, WebfingerService } from '@/core/WebfingerService.js';
 import { RemoteLoggerService } from '@/core/RemoteLoggerService.js';

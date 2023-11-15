@@ -1,8 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { MemoryKVCache, MemorySingleCache } from '@/misc/cache.js';
-import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { CacheService } from '@/core/CacheService.js';
@@ -14,6 +12,8 @@ import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
 import { RolePoliciesSchema, UserPoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
+import { RedisService } from '@/core/RedisService.js';
+import { RedisSubService } from '@/core/RedisSubService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { role, role_assignment, user } from '@prisma/client';
 
@@ -52,12 +52,8 @@ export class RoleService implements OnApplicationShutdown {
 	public static NotAssignedError = class extends Error {};
 
 	constructor(
-		@Inject(DI.redis)
-		private readonly redisClient: Redis.Redis,
-
-		@Inject(DI.redisForSub)
-		private readonly redisForSub: Redis.Redis,
-
+		private readonly redisClient: RedisService,
+		private readonly redisForSub: RedisSubService,
 		private readonly metaService: MetaService,
 		private readonly cacheService: CacheService,
 		private readonly userEntityService: UserEntityService,

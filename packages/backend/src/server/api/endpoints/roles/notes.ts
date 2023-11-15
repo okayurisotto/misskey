@@ -1,15 +1,14 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
-import * as Redis from 'ioredis';
+import { Injectable } from '@nestjs/common';
 import { noSuchRole______ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import { RedisService } from '@/core/RedisService.js';
 import { ApiError } from '../../error.js';
 
 const res = z.array(NoteSchema);
@@ -35,8 +34,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.redis)
-		private redisClient: Redis.Redis,
+		private redisClient: RedisService,
 
 		private readonly idService: IdService,
 		private readonly noteEntityService: NoteEntityService,

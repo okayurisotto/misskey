@@ -1,4 +1,4 @@
-import Logger from '@/logger.js';
+import Logger from '@/misc/logger.js';
 import type { Config } from '@/config.js';
 import { showMachineInfo } from '@/boot/showMachineInfo.js';
 import { envOption } from '@/env.js';

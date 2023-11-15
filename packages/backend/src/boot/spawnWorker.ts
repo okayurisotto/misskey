@@ -1,5 +1,5 @@
 import cluster from 'node:cluster';
-import Logger from '@/logger.js';
+import Logger from '@/misc/logger.js';
 
 export const spawnWorker = (logger: Logger): Promise<void> => {
 	return new Promise((res) => {

@@ -1,9 +1,8 @@
-import { Injectable, Inject } from '@nestjs/common';
-import { DataSource } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
-import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/notes.js';
@@ -17,11 +16,10 @@ import type { note } from '@prisma/client';
 // eslint-disable-next-line import/no-default-export
 export default class NotesChart extends Chart<typeof schema> {
 	constructor(
-		@Inject(DI.db)
-		private readonly db: DataSource,
+		db: TypeORMService,
+		appLockService: AppLockService,
+		chartLoggerService: ChartLoggerService,
 
-		private readonly appLockService: AppLockService,
-		private readonly chartLoggerService: ChartLoggerService,
 		private readonly prismaService: PrismaService,
 	) {
 		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema);

@@ -6,7 +6,7 @@ import cluster from 'node:cluster';
 import { EventEmitter } from 'node:events';
 import chalk from 'chalk';
 import Xev from 'xev';
-import Logger from '@/logger.js';
+import Logger from '@/misc/logger.js';
 import { envOption } from '../env.js';
 import { initializeMasterProcess } from './initializeMasterProcess.js';
 import { initializeWorkerProcess } from './initializeWorkerProcess.js';

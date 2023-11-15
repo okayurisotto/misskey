@@ -6,7 +6,7 @@ import { generateOpenApiSpec } from 'zod2spec';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js';
 import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser } from '@/models/entities/User.js';
-import type Logger from '@/logger.js';
+import type Logger from '@/misc/logger.js';
 import { MetaService } from '@/core/MetaService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { bindThis } from '@/decorators.js';
