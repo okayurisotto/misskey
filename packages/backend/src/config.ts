@@ -98,7 +98,7 @@ type Mixin = {
 	authUrl: string;
 	driveUrl: string;
 	userAgent: string;
-	clientEntry: string;
+	clientEntry: { file: string; css?: string[] };
 	clientManifestExists: boolean;
 	mediaProxy: string;
 	externalMediaProxyEnabled: boolean;
@@ -109,6 +109,14 @@ type Mixin = {
 };
 
 export type Config = Source & Mixin;
+
+const ClientManifestSchema = z.record(
+	z.string(),
+	z.object({
+		file: z.string(),
+		css: z.string().array().optional(),
+	}),
+);
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -167,7 +175,9 @@ export const loadConfig = (): Config => {
 	const meta = MetaSchema.parse(JSON.parse(fs.readFileSync(metaPath, 'utf-8')));
 	const clientManifestExists = fs.existsSync(clientManifestPath);
 	const clientManifest = clientManifestExists
-		? JSON.parse(fs.readFileSync(clientManifestPath, 'utf-8'))
+		? ClientManifestSchema.parse(
+				JSON.parse(fs.readFileSync(clientManifestPath, 'utf-8')),
+		  )
 		: { 'src/_boot_.ts': { file: 'src/_boot_.ts' } };
 	const config = SourceSchema.parse(
 		yaml.load(fs.readFileSync(configPath, 'utf-8')),
