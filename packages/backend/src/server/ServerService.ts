@@ -17,6 +17,7 @@ import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ProcessMessage } from '@/boot/ProcessMessage.js';
 import { ActivityPubServerService } from './ActivityPubServerService.js';
 import { NodeinfoServerService } from './NodeinfoServerService.js';
 import { ApiServerService } from './api/ApiServerService.js';
@@ -262,7 +263,7 @@ export class ServerService implements OnApplicationShutdown {
 				}
 
 				if (cluster.isWorker) {
-					process.send?.('listenFailed');
+					process.send?.(ProcessMessage.ListenFailed);
 				} else {
 					// disableClustering
 					process.exit(1);
@@ -271,7 +272,7 @@ export class ServerService implements OnApplicationShutdown {
 				this.logger.error(err);
 
 				if (cluster.isWorker) {
-					process.send?.('listenFailed');
+					process.send?.(ProcessMessage.ListenFailed);
 				} else {
 					// disableClustering
 					process.exit(1);

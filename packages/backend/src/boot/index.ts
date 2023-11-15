@@ -10,6 +10,7 @@ import Logger from '@/misc/logger.js';
 import { envOption } from '../env.js';
 import { initializeMasterProcess } from './initializeMasterProcess.js';
 import { initializeWorkerProcess } from './initializeWorkerProcess.js';
+import { ProcessMessage } from './ProcessMessage.js';
 
 import 'reflect-metadata';
 
@@ -77,8 +78,4 @@ if (cluster.isWorker || envOption.disableClustering) {
 	await initializeWorkerProcess();
 }
 
-// ユニットテスト時にMisskeyが子プロセスで起動された時のため
-// それ以外のときは`process.send`は使えないので弾く
-if (process.send) {
-	process.send('ok');
-}
+process.send?.(ProcessMessage.Ok);
