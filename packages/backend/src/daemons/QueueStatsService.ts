@@ -1,16 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import Xev from 'xev';
 import * as Bull from 'bullmq';
-import { QueueService } from '@/core/QueueService.js';
-import { bindThis } from '@/decorators.js';
 import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { QueueService } from '@/core/QueueService.js';
 import { Queue, baseQueueOptions } from '@/queue/const.js';
+import type { Config } from '@/config.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 
 const ev = new Xev();
 
-const interval = 10000;
+const INTERVAL = 10000;
 
 @Injectable()
 export class QueueStatsService implements OnApplicationShutdown {
@@ -18,28 +17,29 @@ export class QueueStatsService implements OnApplicationShutdown {
 
 	constructor(
 		@Inject(DI.config)
-		private config: Config,
+		private readonly config: Config,
 
-		private queueService: QueueService,
-	) {
-	}
+		private readonly queueService: QueueService,
+	) {}
 
-	/**
-	 * Report queue stats regularly
-	 */
-	@bindThis
-	public start(): void {
-		const log = [] as any[];
+	public async start(): Promise<void> {
+		const log: unknown[] = [];
 
-		ev.on('requestQueueStatsLog', x => {
+		ev.on('requestQueueStatsLog', (x) => {
 			ev.emit(`queueStatsLog:${x.id}`, log.slice(0, x.length ?? 50));
 		});
 
 		let activeDeliverJobs = 0;
 		let activeInboxJobs = 0;
 
-		const deliverQueueEvents = new Bull.QueueEvents(Queue.Deliver, baseQueueOptions(this.config, Queue.Deliver));
-		const inboxQueueEvents = new Bull.QueueEvents(Queue.Inbox, baseQueueOptions(this.config, Queue.Inbox));
+		const deliverQueueEvents = new Bull.QueueEvents(
+			Queue.Deliver,
+			baseQueueOptions(this.config, Queue.Deliver),
+		);
+		const inboxQueueEvents = new Bull.QueueEvents(
+			Queue.Inbox,
+			baseQueueOptions(this.config, Queue.Inbox),
+		);
 
 		deliverQueueEvents.on('active', () => {
 			activeDeliverJobs++;
@@ -50,8 +50,10 @@ export class QueueStatsService implements OnApplicationShutdown {
 		});
 
 		const tick = async (): Promise<void> => {
-			const deliverJobCounts = await this.queueService.deliverQueue.getJobCounts();
-			const inboxJobCounts = await this.queueService.inboxQueue.getJobCounts();
+			const [deliverJobCounts, inboxJobCounts] = await Promise.all([
+				this.queueService.deliverQueue.getJobCounts(),
+				this.queueService.inboxQueue.getJobCounts(),
+			]);
 
 			const stats = {
 				deliver: {
@@ -77,18 +79,14 @@ export class QueueStatsService implements OnApplicationShutdown {
 			activeInboxJobs = 0;
 		};
 
-		tick();
+		await tick();
 
-		this.intervalId = setInterval(tick, interval);
+		this.intervalId = setInterval(async () => {
+			await tick();
+		}, INTERVAL);
 	}
 
-	@bindThis
-	public dispose(): void {
+	public onApplicationShutdown(): void {
 		clearInterval(this.intervalId);
-	}
-
-	@bindThis
-	public onApplicationShutdown(signal?: string | undefined): void {
-		this.dispose();
 	}
 }
