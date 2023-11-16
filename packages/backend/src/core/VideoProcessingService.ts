@@ -1,18 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import FFmpeg from 'fluent-ffmpeg';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { ImageProcessingService } from '@/core/ImageProcessingService.js';
 import type { IImage } from '@/core/ImageProcessingService.js';
 import { createTempDir } from '@/misc/create-temp.js';
 import { bindThis } from '@/decorators.js';
 import { appendQuery, query } from '@/misc/prelude/url.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class VideoProcessingService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly imageProcessingService: ImageProcessingService,
 	) {}
@@ -44,10 +42,10 @@ export class VideoProcessingService {
 
 	@bindThis
 	public getExternalVideoThumbnailUrl(url: string): string | null {
-		if (this.config.videoThumbnailGenerator == null) return null;
+		if (this.configLoaderService.data.videoThumbnailGenerator == null) return null;
 
 		return appendQuery(
-			`${this.config.videoThumbnailGenerator}/thumbnail.webp`,
+			`${this.configLoaderService.data.videoThumbnailGenerator}/thumbnail.webp`,
 			query({
 				thumbnail: '1',
 				url,

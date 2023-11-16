@@ -1,9 +1,7 @@
 import { URL } from 'node:url';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import chalk from 'chalk';
-import { DI } from '@/di-symbols.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
-import type { Config } from '@/config.js';
 import type Logger from '@/misc/logger.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { ILink, WebfingerService } from '@/core/WebfingerService.js';
@@ -12,14 +10,14 @@ import { ApDbResolverService } from '@/core/activitypub/ApDbResolverService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class RemoteUserResolveService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly utilityService: UtilityService,
 		private readonly webfingerService: WebfingerService,
@@ -46,7 +44,7 @@ export class RemoteUserResolveService {
 
 		const host = this.utilityService.toPuny(host_);
 
-		if (this.config.host === host) {
+		if (this.configLoaderService.data.host === host) {
 			this.logger.info(`return local user: ${usernameLower}`);
 			return await this.prismaService.client.user.findFirst({
 				where: { usernameLower, host: null },
@@ -66,7 +64,7 @@ export class RemoteUserResolveService {
 		if (user == null) {
 			const self = await this.resolveSelf(acctLower);
 
-			if (self.href.startsWith(this.config.url)) {
+			if (self.href.startsWith(this.configLoaderService.data.url)) {
 				const local = this.apDbResolverService.parseUri(self.href);
 				if (local.local && local.type === 'users') {
 					// the LR points to local

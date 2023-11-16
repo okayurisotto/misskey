@@ -1,10 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import Xev from 'xev';
 import * as Bull from 'bullmq';
-import { DI } from '@/di-symbols.js';
 import { QueueService } from '@/core/QueueService.js';
 import { Queue, baseQueueOptions } from '@/queue/const.js';
-import type { Config } from '@/config.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 
 const ev = new Xev();
@@ -16,8 +15,7 @@ export class QueueStatsService implements OnApplicationShutdown {
 	private intervalId: NodeJS.Timer;
 
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly queueService: QueueService,
 	) {}
@@ -34,11 +32,11 @@ export class QueueStatsService implements OnApplicationShutdown {
 
 		const deliverQueueEvents = new Bull.QueueEvents(
 			Queue.Deliver,
-			baseQueueOptions(this.config, Queue.Deliver),
+			baseQueueOptions(this.configLoaderService.data, Queue.Deliver),
 		);
 		const inboxQueueEvents = new Bull.QueueEvents(
 			Queue.Inbox,
-			baseQueueOptions(this.config, Queue.Inbox),
+			baseQueueOptions(this.configLoaderService.data, Queue.Inbox),
 		);
 
 		deliverQueueEvents.on('active', () => {

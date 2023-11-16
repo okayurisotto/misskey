@@ -1,7 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type {
 	OnApplicationBootstrap,
 	OnApplicationShutdown,
@@ -12,12 +11,12 @@ export class RedisSubService
 	extends Redis
 	implements OnApplicationBootstrap, OnApplicationShutdown
 {
-	constructor(@Inject(DI.config) private readonly config_: Config) {
-		super(config_.redisForPubsub);
+	constructor(private readonly configLoaderService: ConfigLoaderService) {
+		super(configLoaderService.data.redisForPubsub);
 	}
 
 	public async onApplicationBootstrap(): Promise<void> {
-		await this.subscribe(this.config_.host);
+		await this.subscribe(this.configLoaderService.data.host);
 	}
 
 	public onApplicationShutdown(): void {

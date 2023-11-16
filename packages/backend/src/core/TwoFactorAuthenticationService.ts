@@ -1,9 +1,8 @@
 import * as crypto from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import jsrsasign from 'jsrsasign';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 const ECC_PRELUDE = Buffer.from([0x04]);
 const NULL_BYTE = Buffer.from([0]);
@@ -121,8 +120,7 @@ type VerifyResult = {
 @Injectable()
 export class TwoFactorAuthenticationService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 	) {}
 
 	@bindThis
@@ -156,7 +154,7 @@ export class TwoFactorAuthenticationService {
 		if (this.hash(clientData.challenge).toString('hex') !== challenge) {
 			throw new Error('challenge mismatch');
 		}
-		if (clientData.origin !== this.config.scheme + '://' + this.config.host) {
+		if (clientData.origin !== this.configLoaderService.data.scheme + '://' + this.configLoaderService.data.host) {
 			throw new Error('origin mismatch');
 		}
 

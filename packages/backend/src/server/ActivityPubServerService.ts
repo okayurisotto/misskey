@@ -1,12 +1,10 @@
 import { IncomingMessage } from 'node:http';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import fastifyAccepts from '@fastify/accepts';
 import httpSignature from '@peertube/http-signature';
 import accepts from 'accepts';
 import vary from 'vary';
-import { DI } from '@/di-symbols.js';
 import * as url from '@/misc/prelude/url.js';
-import type { Config } from '@/config.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { QueueService } from '@/core/QueueService.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
@@ -19,6 +17,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import type { Prisma, note, user } from '@prisma/client';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 const ACTIVITY_JSON = 'application/activity+json; charset=utf-8';
 const LD_JSON = 'application/ld+json; profile="https://www.w3.org/ns/activitystreams"; charset=utf-8';
@@ -26,8 +25,7 @@ const LD_JSON = 'application/ld+json; profile="https://www.w3.org/ns/activitystr
 @Injectable()
 export class ActivityPubServerService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly utilityService: UtilityService,
 		private readonly userEntityService: UserEntityService,
@@ -58,7 +56,7 @@ export class ActivityPubServerService {
 	private async packActivity(note: note): Promise<any> {
 		if (note.renoteId && note.text == null && !note.hasPoll && (note.fileIds == null || note.fileIds.length === 0)) {
 			const renote = await this.prismaService.client.note.findUniqueOrThrow({ where: { id: note.renoteId } });
-			return this.apRendererService.renderAnnounce(renote.uri ? renote.uri : `${this.config.url}/notes/${renote.id}`, note);
+			return this.apRendererService.renderAnnounce(renote.uri ? renote.uri : `${this.configLoaderService.data.url}/notes/${renote.id}`, note);
 		}
 
 		return this.apRendererService.renderCreate(await this.apRendererService.renderNote(note, false), note);
@@ -123,7 +121,7 @@ export class ActivityPubServerService {
 		//#endregion
 
 		const limit = 10;
-		const partOf = `${this.config.url}/users/${userId}/followers`;
+		const partOf = `${this.configLoaderService.data.url}/users/${userId}/followers`;
 
 		if (page) {
 			const query: Prisma.followingWhereInput = {
@@ -217,7 +215,7 @@ export class ActivityPubServerService {
 		//#endregion
 
 		const limit = 10;
-		const partOf = `${this.config.url}/users/${userId}/following`;
+		const partOf = `${this.configLoaderService.data.url}/users/${userId}/following`;
 
 		if (page) {
 			const query: Prisma.followingWhereInput = {
@@ -296,7 +294,7 @@ export class ActivityPubServerService {
 		const renderedNotes = await Promise.all(pinnedNotes.map(note => this.apRendererService.renderNote(note)));
 
 		const rendered = this.apRendererService.renderOrderedCollection(
-			`${this.config.url}/users/${userId}/collections/featured`,
+			`${this.configLoaderService.data.url}/users/${userId}/collections/featured`,
 			renderedNotes.length,
 			undefined,
 			undefined,
@@ -350,7 +348,7 @@ export class ActivityPubServerService {
 		}
 
 		const limit = 20;
-		const partOf = `${this.config.url}/users/${userId}/outbox`;
+		const partOf = `${this.configLoaderService.data.url}/users/${userId}/outbox`;
 
 		if (page) {
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({ sinceId, untilId });

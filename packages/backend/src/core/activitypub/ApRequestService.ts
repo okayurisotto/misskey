@@ -1,13 +1,12 @@
 import * as crypto from 'node:crypto';
 import { URL } from 'node:url';
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
 import type Logger from '@/misc/logger.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { user } from '@prisma/client';
 
 type Request = {
@@ -128,8 +127,7 @@ export class ApRequestService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private userKeypairService: UserKeypairService,
 		private httpRequestService: HttpRequestService,
@@ -148,7 +146,7 @@ export class ApRequestService {
 		const req = ApRequestCreator.createSignedPost({
 			key: {
 				privateKeyPem: keypair.privateKey,
-				keyId: `${this.config.url}/users/${user.id}#main-key`,
+				keyId: `${this.configLoaderService.data.url}/users/${user.id}#main-key`,
 			},
 			url,
 			body,
@@ -175,7 +173,7 @@ export class ApRequestService {
 		const req = ApRequestCreator.createSignedGet({
 			key: {
 				privateKeyPem: keypair.privateKey,
-				keyId: `${this.config.url}/users/${user.id}#main-key`,
+				keyId: `${this.configLoaderService.data.url}/users/${user.id}#main-key`,
 			},
 			url,
 			additionalHeaders: {

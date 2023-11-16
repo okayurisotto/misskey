@@ -1,23 +1,20 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
+import { Injectable } from '@nestjs/common';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { IdService } from '@/core/IdService.js';
 import { RelayService } from '@/core/RelayService.js';
-import type { Config } from '@/config.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { note, user } from '@prisma/client';
 
 @Injectable()
 export class NotePiningService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
+		private configLoaderService: ConfigLoaderService,
 		private readonly userEntityService: UserEntityService,
 		private readonly idService: IdService,
 		private readonly roleService: RoleService,
@@ -113,8 +110,8 @@ export class NotePiningService {
 
 		if (!this.userEntityService.isLocalUser(user)) return;
 
-		const target = `${this.config.url}/users/${user.id}/collections/featured`;
-		const item = `${this.config.url}/notes/${noteId}`;
+		const target = `${this.configLoaderService.data.url}/users/${user.id}/collections/featured`;
+		const item = `${this.configLoaderService.data.url}/notes/${noteId}`;
 		const content = this.apRendererService.addContext(isAddition ? this.apRendererService.renderAdd(user, target, item) : this.apRendererService.renderRemove(user, target, item));
 
 		this.apDeliverManagerService.deliverToFollowers(user, content);

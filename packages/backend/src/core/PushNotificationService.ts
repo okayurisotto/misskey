@@ -1,7 +1,5 @@
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import push from 'web-push';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
 import { MetaService } from '@/core/MetaService.js';
 import { bindThis } from '@/decorators.js';
@@ -10,6 +8,7 @@ import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { sw_subscription } from '@prisma/client';
 import type { z } from 'zod';
 
@@ -49,8 +48,7 @@ export class PushNotificationService implements OnApplicationShutdown {
 	private subscriptionsCache: RedisKVCache<sw_subscription[]>;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private redisClient: RedisService,
 
@@ -77,7 +75,7 @@ export class PushNotificationService implements OnApplicationShutdown {
 		if (!meta.enableServiceWorker || meta.swPublicKey == null || meta.swPrivateKey == null) return;
 
 		// アプリケーションの連絡先と、サーバーサイドの鍵ペアの情報を登録
-		push.setVapidDetails(this.config.url,
+		push.setVapidDetails(this.configLoaderService.data.url,
 			meta.swPublicKey,
 			meta.swPrivateKey);
 
@@ -102,7 +100,7 @@ export class PushNotificationService implements OnApplicationShutdown {
 				userId,
 				dateTime: (new Date()).getTime(),
 			}), {
-				proxy: this.config.proxy,
+				proxy: this.configLoaderService.data.proxy,
 			}).catch(async (err: any) => {
 				//swLogger.info(err.statusCode);
 				//swLogger.info(err.headers);

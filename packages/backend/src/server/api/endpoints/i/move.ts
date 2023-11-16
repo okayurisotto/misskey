@@ -1,15 +1,10 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import { destinationAccountForbids, rootForbidden, noSuchUser___________, uriNull, localUriNull, alreadyMoved } from '@/server/api/errors.js';
 
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
-
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ApiError } from '@/server/api/error.js';
-
-import { LocalUser, RemoteUser } from '@/models/entities/User.js';
 
 import { AccountMoveService } from '@/core/AccountMoveService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
@@ -46,9 +41,6 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
 		private remoteUserResolveService: RemoteUserResolveService,
 		private apiLoggerService: ApiLoggerService,
 		private accountMoveService: AccountMoveService,

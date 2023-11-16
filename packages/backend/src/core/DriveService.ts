@@ -1,12 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import * as fs from 'node:fs';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import sharp from 'sharp';
 import { sharpBmp } from 'sharp-read-bmp';
 import { DeleteObjectCommandInput, PutObjectCommandInput } from '@aws-sdk/client-s3';
 import { z } from 'zod';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import Logger from '@/misc/logger.js';
 import type { RemoteUser } from '@/models/entities/User.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -35,6 +33,7 @@ import { RoleService } from '@/core/RoleService.js';
 import { correctFilename } from '@/misc/correct-filename.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { Prisma, drive_file, drive_folder, user } from '@prisma/client';
 
 type AddFileArgs = {
@@ -92,9 +91,7 @@ export class DriveService {
 	private deleteLogger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
-
+		private readonly configLoaderService: ConfigLoaderService,
 		private readonly fileInfoService: FileInfoService,
 		private readonly userEntityService: UserEntityService,
 		private readonly driveFileEntityService: DriveFileEntityService,
@@ -283,7 +280,7 @@ export class DriveService {
 		generateWeb: boolean,
 	): Promise<{ webpublic: IImage | null; thumbnail: IImage | null; }> {
 		if (type.startsWith('video/')) {
-			if (this.config.videoThumbnailGenerator != null) {
+			if (this.configLoaderService.data.videoThumbnailGenerator != null) {
 				// videoThumbnailGeneratorが指定されていたら動画サムネイル生成はスキップ
 				return {
 					webpublic: null,

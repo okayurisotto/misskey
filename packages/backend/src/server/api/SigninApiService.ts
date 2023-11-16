@@ -1,15 +1,14 @@
 import { randomBytes } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import * as OTPAuth from 'otpauth';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { TwoFactorAuthenticationService } from '@/core/TwoFactorAuthenticationService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { RateLimiterService } from './RateLimiterService.js';
 import { SigninService } from './SigninService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
@@ -34,8 +33,7 @@ type SignInResult =
 @Injectable()
 export class SigninApiService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly idService: IdService,
 		private readonly rateLimiterService: RateLimiterService,
@@ -61,7 +59,7 @@ export class SigninApiService {
 		}>,
 		reply: FastifyReply,
 	): Promise<SignInResult> {
-		reply.header('Access-Control-Allow-Origin', this.config.url);
+		reply.header('Access-Control-Allow-Origin', this.configLoaderService.data.url);
 		reply.header('Access-Control-Allow-Credentials', 'true');
 
 		const body = request.body;

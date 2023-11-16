@@ -1,8 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
+import { z } from 'zod';
 import { NODE_ENV } from '@/env.js';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { MetaService } from '@/core/MetaService.js';
 import { CaptchaService } from '@/core/CaptchaService.js';
 import { IdService } from '@/core/IdService.js';
@@ -14,17 +13,16 @@ import { FastifyReplyError } from '@/misc/fastify-reply-error.js';
 import { bindThis } from '@/decorators.js';
 import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { SigninService } from './SigninService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { registration_ticket } from '@prisma/client';
-import { z } from 'zod';
-import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 
 @Injectable()
 export class SignupApiService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly idService: IdService,
@@ -159,7 +157,7 @@ export class SignupApiService {
 				},
 			});
 
-			const link = `${this.config.url}/signup-complete/${code}`;
+			const link = `${this.configLoaderService.data.url}/signup-complete/${code}`;
 
 			this.emailService.sendEmail(emailAddress!, 'Signup',
 				`To complete signup, please click this link:<br><a href="${link}">${link}</a>`,

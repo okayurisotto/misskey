@@ -1,9 +1,7 @@
 import { z } from 'zod';
 import Parser from 'rss-parser';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 
 const rssParser = new Parser();
@@ -29,9 +27,6 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
 		private httpRequestService: HttpRequestService,
 	) {
 		super(meta, paramDef, async (ps, me) => {

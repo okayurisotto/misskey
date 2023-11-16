@@ -1,17 +1,16 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { MeiliSearch } from 'meilisearch';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class MeiliSearchService {
 	public readonly instance: MeiliSearch | null = null;
 
-	constructor(@Inject(DI.config) config: Config) {
-		if (config.meilisearch) {
+	constructor(configLoaderService: ConfigLoaderService) {
+		if (configLoaderService.data.meilisearch) {
 			this.instance = new MeiliSearch({
-				host: `${config.meilisearch.ssl ? 'https' : 'http'}://${config.meilisearch.host}:${config.meilisearch.port}`,
-				apiKey: config.meilisearch.apiKey,
+				host: `${configLoaderService.data.meilisearch.ssl ? 'https' : 'http'}://${configLoaderService.data.meilisearch.host}:${configLoaderService.data.meilisearch.port}`,
+				apiKey: configLoaderService.data.meilisearch.apiKey,
 			});
 		}
 	}

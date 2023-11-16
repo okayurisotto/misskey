@@ -1,16 +1,15 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import JSON5 from 'json5';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { MetaService } from '@/core/MetaService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { AdEntityService } from '@/core/entities/AdEntityService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { MetaSchema } from '../../../models/zod/MetaSchema.js';
 
 const res = MetaSchema;
@@ -32,8 +31,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly metaService: MetaService,
@@ -57,10 +55,10 @@ export default class extends Endpoint<
 				maintainerName: instance.maintainerName,
 				maintainerEmail: instance.maintainerEmail,
 
-				version: this.config.version,
+				version: this.configLoaderService.data.version,
 
 				name: instance.name,
-				uri: this.config.url,
+				uri: this.configLoaderService.data.url,
 				description: instance.description,
 				langs: instance.langs,
 				tosUrl: instance.termsOfServiceUrl,
@@ -107,7 +105,7 @@ export default class extends Endpoint<
 					...z.record(z.string(), z.any()).parse(instance.policies),
 				},
 
-				mediaProxy: this.config.mediaProxy,
+				mediaProxy: this.configLoaderService.data.mediaProxy,
 
 				...(ps.detail
 					? {

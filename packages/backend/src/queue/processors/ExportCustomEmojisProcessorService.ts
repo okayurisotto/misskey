@@ -1,17 +1,16 @@
 import * as fs from 'node:fs';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
 import mime from 'mime-types';
 import archiver from 'archiver';
 import { z } from 'zod';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import type Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp, createTempDir } from '@/misc/create-temp.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { ExportedCustomEmojisMetaSchema } from './ImportCustomEmojisProcessorService.js';
@@ -21,8 +20,7 @@ export class ExportCustomEmojisProcessorService {
 	private readonly logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly driveService: DriveService,
 		private readonly downloadService: DownloadService,
@@ -117,7 +115,7 @@ export class ExportCustomEmojisProcessorService {
 
 		const meta: z.infer<typeof ExportedCustomEmojisMetaSchema> = {
 			metaVersion: 2,
-			host: this.config.host,
+			host: this.configLoaderService.data.host,
 			exportedAt: new Date().toString(),
 			emojis,
 		};

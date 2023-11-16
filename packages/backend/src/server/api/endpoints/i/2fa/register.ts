@@ -2,11 +2,10 @@ import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import * as OTPAuth from 'otpauth';
 import * as QRCode from 'qrcode';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 const res = z.object({
 	qr: z.string(),
@@ -33,8 +32,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly prismaService: PrismaService,
 	) {
@@ -64,7 +62,7 @@ export default class extends Endpoint<
 				secret,
 				digits: 6,
 				label: me.username,
-				issuer: this.config.host,
+				issuer: this.configLoaderService.data.host,
 			});
 			const url = totp.toString();
 			const qr = await QRCode.toDataURL(url);
@@ -74,7 +72,7 @@ export default class extends Endpoint<
 				url,
 				secret: secret.base32,
 				label: me.username,
-				issuer: this.config.host,
+				issuer: this.configLoaderService.data.host,
 			} satisfies z.infer<typeof res>;
 		});
 	}

@@ -1,13 +1,13 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { InstanceActorService } from '@/core/InstanceActorService.js';
 import type { Config } from '@/config.js';
 import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
-import { DI } from '@/di-symbols.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { isCollectionOrOrderedCollection } from './type.js';
 import { ApDbResolverService } from './ApDbResolverService.js';
 import { ApRendererService } from './ApRendererService.js';
@@ -152,8 +152,7 @@ export class Resolver {
 @Injectable()
 export class ApResolverService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly utilityService: UtilityService,
 		private readonly instanceActorService: InstanceActorService,
@@ -168,7 +167,7 @@ export class ApResolverService {
 	@bindThis
 	public createResolver(): Resolver {
 		return new Resolver(
-			this.config,
+			this.configLoaderService.data,
 			this.utilityService,
 			this.instanceActorService,
 			this.metaService,

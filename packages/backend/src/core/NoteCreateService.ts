@@ -1,6 +1,6 @@
 import { setImmediate } from 'node:timers/promises';
 import * as mfm from 'mfm-js';
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import RE2 from 're2';
 import { z } from 'zod';
 import { range } from 'range';
@@ -18,8 +18,6 @@ import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { MemorySingleCache } from '@/misc/cache.js';
 import { RelayService } from '@/core/RelayService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import NotesChart from '@/core/chart/charts/notes.js';
 import PerUserNotesChart from '@/core/chart/charts/per-user-notes.js';
 import InstanceChart from '@/core/chart/charts/instance.js';
@@ -43,6 +41,7 @@ import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { IAnnounce, ICreate } from './activitypub/type.js';
 import type { Prisma, app, channel, drive_file, note, user, user_profile } from '@prisma/client';
 
@@ -144,8 +143,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	#shutdownController = new AbortController();
 
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly redisClient: RedisService,
 
@@ -759,7 +757,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		if (data.localOnly) return null;
 
 		const content = data.renote && data.text == null && data.poll == null && (data.files == null || data.files.length === 0)
-			? this.apRendererService.renderAnnounce(data.renote.uri ? data.renote.uri : `${this.config.url}/notes/${data.renote.id}`, note)
+			? this.apRendererService.renderAnnounce(data.renote.uri ? data.renote.uri : `${this.configLoaderService.data.url}/notes/${data.renote.id}`, note)
 			: this.apRendererService.renderCreate(await this.apRendererService.renderNote(note, false), note);
 
 		return this.apRendererService.addContext(content);

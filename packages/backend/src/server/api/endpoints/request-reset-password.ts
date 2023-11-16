@@ -1,14 +1,13 @@
 import {  } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { EmailService } from '@/core/EmailService.js';
 import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 export const meta = {
 	tags: ['reset password'],
@@ -34,8 +33,7 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly idService: IdService,
 		private readonly emailService: EmailService,
@@ -80,7 +78,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			const link = `${this.config.url}/reset-password/${token}`;
+			const link = `${this.configLoaderService.data.url}/reset-password/${token}`;
 
 			this.emailService.sendEmail(
 				ps.email,

@@ -1,13 +1,11 @@
 import * as fs from 'node:fs';
 import * as stream from 'node:stream/promises';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ipaddr from 'ipaddr.js';
 import chalk from 'chalk';
 import got, * as Got from 'got';
 import { parse } from 'content-disposition';
 import { NODE_ENV } from '@/env.js';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { StatusError } from '@/misc/status-error.js';
@@ -15,15 +13,14 @@ import { LoggerService } from '@/core/LoggerService.js';
 import type Logger from '@/misc/logger.js';
 
 import { bindThis } from '@/decorators.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class DownloadService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
+		private configLoaderService: ConfigLoaderService,
 		private httpRequestService: HttpRequestService,
 		private loggerService: LoggerService,
 	) {
@@ -38,14 +35,14 @@ export class DownloadService {
 
 		const timeout = 30 * 1000;
 		const operationTimeout = 60 * 1000;
-		const maxSize = this.config.maxFileSize;
+		const maxSize = this.configLoaderService.data.maxFileSize;
 
 		const urlObj = new URL(url);
 		let filename = urlObj.pathname.split('/').pop() ?? 'untitled';
 
 		const req = got.stream(url, {
 			headers: {
-				'User-Agent': this.config.userAgent,
+				'User-Agent': this.configLoaderService.data.userAgent,
 			},
 			timeout: {
 				lookup: timeout,
@@ -66,7 +63,7 @@ export class DownloadService {
 			},
 			enableUnixSockets: false,
 		}).on('response', (res: Got.Response) => {
-			if ((NODE_ENV === 'production' || NODE_ENV === 'test') && !this.config.proxy && res.ip) {
+			if ((NODE_ENV === 'production' || NODE_ENV === 'test') && !this.configLoaderService.data.proxy && res.ip) {
 				if (this.isPrivateIp(res.ip)) {
 					this.logger.warn(`Blocked address: ${res.ip}`);
 					req.destroy();
@@ -140,7 +137,7 @@ export class DownloadService {
 	private isPrivateIp(ip: string): boolean {
 		const parsedIp = ipaddr.parse(ip);
 
-		for (const net of this.config.allowedPrivateNetworks) {
+		for (const net of this.configLoaderService.data.allowedPrivateNetworks) {
 			if (parsedIp.match(ipaddr.parseCIDR(net))) {
 				return false;
 			}

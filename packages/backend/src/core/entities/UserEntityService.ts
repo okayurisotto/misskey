@@ -1,9 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { pick } from 'omick';
 import { z } from 'zod';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { USER_ACTIVE_THRESHOLD, USER_ONLINE_THRESHOLD } from '@/const.js';
 import { type LocalUser, type PartialLocalUser, type PartialRemoteUser, type RemoteUser } from '@/models/entities/User.js';
@@ -21,6 +19,7 @@ import type { UserSecretsSchema } from '@/models/zod/UserSecretsSchema.js';
 import { AchievementSchema } from '@/models/zod/AchievementSchema.js';
 import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
 import { RedisService } from '@/core/RedisService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { InstanceEntityService } from './InstanceEntityService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { CustomEmojiService } from '../CustomEmojiService.js';
@@ -54,8 +53,7 @@ export class UserEntityService implements OnModuleInit {
 	constructor(
 		private readonly moduleRef: ModuleRef,
 
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly redisClient: RedisService,
 
@@ -185,7 +183,7 @@ export class UserEntityService implements OnModuleInit {
 	 */
 	@bindThis
 	public getIdenticonUrl(user: user): string {
-		return `${this.config.url}/identicon/${user.username.toLowerCase()}@${user.host ?? this.config.host}`;
+		return `${this.configLoaderService.data.url}/identicon/${user.username.toLowerCase()}@${user.host ?? this.configLoaderService.data.host}`;
 	}
 
 	/**
@@ -208,7 +206,7 @@ export class UserEntityService implements OnModuleInit {
 	 */
 	@bindThis
 	public genLocalUserUri(userId: string): string {
-		return `${this.config.url}/users/${userId}`;
+		return `${this.configLoaderService.data.url}/users/${userId}`;
 	}
 
 	/**

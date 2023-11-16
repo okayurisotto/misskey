@@ -1,7 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ulid } from 'ulid';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { genAid, parseAid } from '@/misc/id/aid.js';
 import { genMeid, parseMeid } from '@/misc/id/meid.js';
 import { genMeidg, parseMeidg } from '@/misc/id/meidg.js';
@@ -9,13 +7,14 @@ import { genObjectId, parseObjectId } from '@/misc/id/object-id.js';
 import { bindThis } from '@/decorators.js';
 import { parseUlid } from '@/misc/id/ulid.js';
 import { idGenerationMethods } from '@/const.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class IdService {
 	private method: (typeof idGenerationMethods)[number];
 
-	constructor(@Inject(DI.config) config: Config) {
-		this.method = config.id;
+	constructor(configLoaderService: ConfigLoaderService) {
+		this.method = configLoaderService.data.id;
 	}
 
 	@bindThis

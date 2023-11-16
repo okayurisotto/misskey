@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
-import type { Config } from '@/config.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DI } from '@/di-symbols.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { limit } from '@/models/zod/misc.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { Prisma, user } from '@prisma/client';
 
 const res = z.array(UserSchema);
@@ -35,8 +34,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly prismaService: PrismaService,
@@ -55,7 +53,7 @@ export default class extends Endpoint<
 						  }
 						: {},
 					'host' in ps && ps.host !== null
-						? ps.host === this.config.hostname || ps.host === '.'
+						? ps.host === this.configLoaderService.data.hostname || ps.host === '.'
 							? { host: null }
 							: { host: { startsWith: ps.host.toLowerCase() } }
 						: {},

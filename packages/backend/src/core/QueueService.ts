@@ -2,10 +2,9 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { IActivity } from '@/core/activitypub/type.js';
 import type { webhookEventTypes } from '@/models/entities/Webhook.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { bindThis } from '@/decorators.js';
 import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { DbQueue, DeliverQueue, EndedPollNotificationQueue, InboxQueue, ObjectStorageQueue, RelationshipQueue, SystemQueue, WebhookDeliverQueue } from './QueueModule.js';
 import type { DbJobData, DeliverJobData, InboxJobData, RelationshipJobData, ThinUser, WebhookDeliverJobData } from '../queue/types.js';
 import type httpSignature from '@peertube/http-signature';
@@ -16,8 +15,7 @@ import type { z } from 'zod';
 @Injectable()
 export class QueueService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		@Inject('queue:system') public systemQueue: SystemQueue,
 		@Inject('queue:endedPollNotification') public endedPollNotificationQueue: EndedPollNotificationQueue,
@@ -85,7 +83,7 @@ export class QueueService {
 		};
 
 		return this.deliverQueue.add(to, data, {
-			attempts: this.config.deliverJobMaxAttempts,
+			attempts: this.configLoaderService.data.deliverJobMaxAttempts,
 			backoff: {
 				type: 'custom',
 			},
@@ -110,7 +108,7 @@ export class QueueService {
 		if (content == null) return null;
 
 		const opts = {
-			attempts: this.config.deliverJobMaxAttempts,
+			attempts: this.configLoaderService.data.deliverJobMaxAttempts,
 			backoff: {
 				type: 'custom',
 			},
@@ -143,7 +141,7 @@ export class QueueService {
 		};
 
 		return this.inboxQueue.add('', data, {
-			attempts: this.config.inboxJobMaxAttempts,
+			attempts: this.configLoaderService.data.inboxJobMaxAttempts,
 			backoff: {
 				type: 'custom',
 			},

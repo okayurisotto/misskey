@@ -1,7 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { MetaService } from '@/core/MetaService.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { MemorySingleCache } from '@/misc/cache.js';
@@ -12,6 +10,7 @@ import UsersChart from '@/core/chart/charts/users.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 
 const nodeinfo2_1path = '/nodeinfo/2.1';
@@ -66,8 +65,7 @@ type NodeInfo2 = {
 @Injectable()
 export class NodeinfoServerService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly metaService: MetaService,
@@ -85,7 +83,7 @@ export class NodeinfoServerService {
 			href: config.url + nodeinfo2_1path
 		}, */{
 				rel: 'http://nodeinfo.diaspora.software/ns/schema/2.0',
-				href: this.config.url + nodeinfo2_0path,
+				href: this.configLoaderService.data.url + nodeinfo2_0path,
 			}];
 	}
 
@@ -134,7 +132,7 @@ export class NodeinfoServerService {
 			return {
 				software: {
 					name: 'misskey',
-					version: this.config.version,
+					version: this.configLoaderService.data.version,
 					repository: meta.repositoryUrl,
 				},
 				protocols: ['activitypub'],

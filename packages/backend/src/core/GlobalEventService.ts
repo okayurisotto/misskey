@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type {
 	StreamChannels,
 	AdminStreamTypes,
@@ -11,20 +11,17 @@ import type {
 	UserListStreamTypes,
 	RoleTimelineStreamTypes,
 } from '@/server/api/stream/types.js';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { RedisPubService } from '@/core/RedisPubService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { z } from 'zod';
 import type { role, note, antenna, user, user_list } from '@prisma/client';
 
 @Injectable()
 export class GlobalEventService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
-
+		private readonly configLoaderService: ConfigLoaderService,
 		private readonly redisForPub: RedisPubService,
 	) {}
 
@@ -36,7 +33,7 @@ export class GlobalEventService {
 				? { type: type, body: null }
 				: { type: type, body: value };
 
-		this.redisForPub.publish(this.config.host, JSON.stringify({
+		this.redisForPub.publish(this.configLoaderService.data.host, JSON.stringify({
 			channel: channel,
 			message: message,
 		}));

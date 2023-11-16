@@ -1,11 +1,10 @@
-import { Inject, Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { MeiliSearchService } from '@/core/MeiliSearchService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { Index } from 'meilisearch';
 import type { note, user } from '@prisma/client';
 
@@ -69,7 +68,7 @@ export class SearchService implements OnApplicationBootstrap {
 	private meilisearchNoteIndex: Index | null = null;
 
 	constructor(
-		@Inject(DI.config) private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly meiliSearchService: MeiliSearchService,
 		private readonly idService: IdService,
@@ -78,9 +77,9 @@ export class SearchService implements OnApplicationBootstrap {
 	) {}
 
 	public async onApplicationBootstrap(): Promise<void> {
-		if (this.config.meilisearch && this.meiliSearchService.instance) {
+		if (this.configLoaderService.data.meilisearch && this.meiliSearchService.instance) {
 			this.meilisearchNoteIndex = this.meiliSearchService.instance.index(
-				`${this.config.meilisearch.index}---notes`,
+				`${this.configLoaderService.data.meilisearch.index}---notes`,
 			);
 			await this.meilisearchNoteIndex.updateSettings({
 				searchableAttributes: ['text', 'cw'],
@@ -97,8 +96,8 @@ export class SearchService implements OnApplicationBootstrap {
 			});
 		}
 
-		if (this.config.meilisearch?.scope) {
-			this.meilisearchIndexScope = this.config.meilisearch.scope;
+		if (this.configLoaderService.data.meilisearch?.scope) {
+			this.meilisearchIndexScope = this.configLoaderService.data.meilisearch.scope;
 		}
 	}
 

@@ -1,8 +1,5 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
-import { awaitAll } from '@/misc/prelude/await-all.js';
 import { appendQuery, query } from '@/misc/prelude/url.js';
 import { deepClone } from '@/misc/clone.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
@@ -10,6 +7,7 @@ import { bindThis } from '@/decorators.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UtilityService } from '../UtilityService.js';
 import { VideoProcessingService } from '../VideoProcessingService.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -32,8 +30,7 @@ const DriveFilePropertiesSchema = z.object({
 @Injectable()
 export class DriveFileEntityService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		// 循環参照のため / for circular dependency
 		@Inject(forwardRef(() => UserEntityService))
@@ -97,7 +94,7 @@ export class DriveFileEntityService {
 	@bindThis
 	private getProxiedUrl(url: string, mode?: 'static' | 'avatar'): string {
 		return appendQuery(
-			`${this.config.mediaProxy}/${mode ?? 'image'}.webp`,
+			`${this.configLoaderService.data.mediaProxy}/${mode ?? 'image'}.webp`,
 			query({
 				url,
 				...(mode ? { [mode]: '1' } : {}),
@@ -120,12 +117,12 @@ export class DriveFileEntityService {
 		}
 
 		// リモートのファイル && 外部のメディアプロキシを経由する設定になっている
-		if (file.uri !== null && file.userHost !== null && this.config.externalMediaProxyEnabled) {
+		if (file.uri !== null && file.userHost !== null && this.configLoaderService.data.externalMediaProxyEnabled) {
 			return this.getProxiedUrl(file.uri, 'static');
 		}
 
 		// リモートのファイル && 期限切れにより`isLink`が`true`になっている && リモートファイルをプロキシする設定になっている
-		if (file.uri !== null && file.isLink && this.config.proxyRemoteFiles) {
+		if (file.uri !== null && file.isLink && this.configLoaderService.data.proxyRemoteFiles) {
 			// 従来は`/files/${thumbnailAccessKey}`にアクセスしていたが、`/files`はメディアプロキシにリダイレクトするようにしたため直接メディアプロキシを指定する
 			return this.getProxiedUrl(file.uri, 'static');
 		}
@@ -144,17 +141,17 @@ export class DriveFileEntityService {
 	@bindThis
 	public getPublicUrl(file: drive_file, mode?: 'avatar'): string {
 		// リモートのファイル && 外部のメディアプロキシを経由する設定になっている
-		if (file.uri !== null && file.userHost !== null && this.config.externalMediaProxyEnabled) {
+		if (file.uri !== null && file.userHost !== null && this.configLoaderService.data.externalMediaProxyEnabled) {
 			return this.getProxiedUrl(file.uri, mode);
 		}
 
 		// リモートのファイル && 期限切れにより`isLink`が`true`になっている && リモートファイルをプロキシする設定になっている
-		if (file.uri != null && file.isLink && this.config.proxyRemoteFiles) {
+		if (file.uri != null && file.isLink && this.configLoaderService.data.proxyRemoteFiles) {
 			const key = file.webpublicAccessKey;
 
 			// 古いものは`key`にオブジェクトストレージキーが入ってしまっているので除外する
 			if (key && !key.includes('/')) {
-				const url = `${this.config.url}/files/${key}`; // TODO: 直接メディアプロキシを指定しても問題ないはず？
+				const url = `${this.configLoaderService.data.url}/files/${key}`; // TODO: 直接メディアプロキシを指定しても問題ないはず？
 				if (mode === 'avatar') return this.getProxiedUrl(file.uri, 'avatar');
 				return url;
 			}

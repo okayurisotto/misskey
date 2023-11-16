@@ -1,13 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import vary from 'vary';
 import fastifyAccepts from '@fastify/accepts';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { escapeAttribute, escapeValue } from '@/misc/prelude/xml.js';
 import * as Acct from '@/misc/acct.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { NodeinfoServerService } from './NodeinfoServerService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 import type { Prisma, user } from '@prisma/client';
@@ -15,8 +14,7 @@ import type { Prisma, user } from '@prisma/client';
 @Injectable()
 export class WellKnownServerService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly nodeinfoServerService: NodeinfoServerService,
 		private readonly userEntityService: UserEntityService,
@@ -57,7 +55,7 @@ export class WellKnownServerService {
 			return XRD({ element: 'Link', attributes: {
 				rel: 'lrdd',
 				type: xrd,
-				template: `${this.config.url}${webFingerPath}?resource={uri}`,
+				template: `${this.configLoaderService.data.url}${webFingerPath}?resource={uri}`,
 			} });
 		});
 
@@ -67,7 +65,7 @@ export class WellKnownServerService {
 				links: [{
 					rel: 'lrdd',
 					type: jrd,
-					template: `${this.config.url}${webFingerPath}?resource={uri}`,
+					template: `${this.configLoaderService.data.url}${webFingerPath}?resource={uri}`,
 				}],
 			};
 		});
@@ -89,11 +87,11 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 			});
 
 			const generateQuery = (resource: string): number | Prisma.userWhereInput =>
-				resource.startsWith(`${this.config.url.toLowerCase()}/users/`)
+				resource.startsWith(`${this.configLoaderService.data.url.toLowerCase()}/users/`)
 					? fromId(resource.split('/').pop()!)
 					: fromAcct(
 							Acct.parse(
-								resource.startsWith(`${this.config.url.toLowerCase()}/@`)
+								resource.startsWith(`${this.configLoaderService.data.url.toLowerCase()}/@`)
 									? resource.split('/').pop()!
 									: resource.startsWith('acct:')
 										? resource.slice('acct:'.length)
@@ -102,7 +100,7 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 					);
 
 			const fromAcct = (acct: Acct.Acct): Prisma.userWhereInput | number =>
-				!acct.host || acct.host === this.config.host.toLowerCase()
+				!acct.host || acct.host === this.configLoaderService.data.host.toLowerCase()
 					? {
 							usernameLower: acct.username,
 							host: null,
@@ -131,7 +129,7 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 				return;
 			}
 
-			const subject = `acct:${user.username}@${this.config.host}`;
+			const subject = `acct:${user.username}@${this.configLoaderService.data.host}`;
 			const self = {
 				rel: 'self',
 				type: 'application/activity+json',
@@ -140,11 +138,11 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 			const profilePage = {
 				rel: 'http://webfinger.net/rel/profile-page',
 				type: 'text/html',
-				href: `${this.config.url}/@${user.username}`,
+				href: `${this.configLoaderService.data.url}/@${user.username}`,
 			};
 			const subscribe = {
 				rel: 'http://ostatus.org/schema/1.0/subscribe',
-				template: `${this.config.url}/authorize-follow?acct={uri}`,
+				template: `${this.configLoaderService.data.url}/authorize-follow?acct={uri}`,
 			};
 
 			vary(reply.raw, 'Accept');

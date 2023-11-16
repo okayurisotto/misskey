@@ -1,11 +1,9 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { unavailable_ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { SearchService } from '@/core/SearchService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { RoleService } from '@/core/RoleService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
@@ -41,9 +39,6 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
-
 		private noteEntityService: NoteEntityService,
 		private searchService: SearchService,
 		private roleService: RoleService,

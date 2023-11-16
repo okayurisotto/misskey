@@ -1,9 +1,8 @@
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import * as Bull from 'bullmq';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import type Logger from '@/misc/logger.js';
 import { bindThis } from '@/decorators.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { WebhookDeliverProcessorService } from './processors/WebhookDeliverProcessorService.js';
 import { EndedPollNotificationProcessorService } from './processors/EndedPollNotificationProcessorService.js';
 import { DeliverProcessorService } from './processors/DeliverProcessorService.js';
@@ -75,8 +74,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 	private endedPollNotificationQueueWorker: Bull.Worker;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private queueLoggerService: QueueLoggerService,
 		private webhookDeliverProcessorService: WebhookDeliverProcessorService,
@@ -139,7 +137,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				default: throw new Error(`unrecognized job type ${job.name} for system`);
 			}
 		}, {
-			...baseQueueOptions(this.config, Queue.System),
+			...baseQueueOptions(this.configLoaderService.data, Queue.System),
 			autorun: false,
 		});
 
@@ -177,7 +175,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				default: throw new Error(`unrecognized job type ${job.name} for db`);
 			}
 		}, {
-			...baseQueueOptions(this.config, Queue.Db),
+			...baseQueueOptions(this.configLoaderService.data, Queue.Db),
 			autorun: false,
 		});
 
@@ -193,11 +191,11 @@ export class QueueProcessorService implements OnApplicationShutdown {
 
 		//#region deliver
 		this.deliverQueueWorker = new Bull.Worker(Queue.Deliver, (job) => this.deliverProcessorService.process(job), {
-			...baseQueueOptions(this.config, Queue.Deliver),
+			...baseQueueOptions(this.configLoaderService.data, Queue.Deliver),
 			autorun: false,
-			concurrency: this.config.deliverJobConcurrency,
+			concurrency: this.configLoaderService.data.deliverJobConcurrency,
 			limiter: {
-				max: this.config.deliverJobPerSec,
+				max: this.configLoaderService.data.deliverJobPerSec,
 				duration: 1000,
 			},
 			settings: {
@@ -217,11 +215,11 @@ export class QueueProcessorService implements OnApplicationShutdown {
 
 		//#region inbox
 		this.inboxQueueWorker = new Bull.Worker(Queue.Inbox, (job) => this.inboxProcessorService.process(job), {
-			...baseQueueOptions(this.config, Queue.Inbox),
+			...baseQueueOptions(this.configLoaderService.data, Queue.Inbox),
 			autorun: false,
-			concurrency: this.config.inboxJobConcurrency,
+			concurrency: this.configLoaderService.data.inboxJobConcurrency,
 			limiter: {
-				max: this.config.inboxJobPerSec,
+				max: this.configLoaderService.data.inboxJobPerSec,
 				duration: 1000,
 			},
 			settings: {
@@ -241,7 +239,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 
 		//#region webhook deliver
 		this.webhookDeliverQueueWorker = new Bull.Worker(Queue.WebhoookDeliver, (job) => this.webhookDeliverProcessorService.process(job), {
-			...baseQueueOptions(this.config, Queue.WebhoookDeliver),
+			...baseQueueOptions(this.configLoaderService.data, Queue.WebhoookDeliver),
 			autorun: false,
 			concurrency: 64,
 			limiter: {
@@ -273,11 +271,11 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				default: throw new Error(`unrecognized job type ${job.name} for relationship`);
 			}
 		}, {
-			...baseQueueOptions(this.config, Queue.Relationship),
+			...baseQueueOptions(this.configLoaderService.data, Queue.Relationship),
 			autorun: false,
-			concurrency: this.config.relashionshipJobConcurrency,
+			concurrency: this.configLoaderService.data.relashionshipJobConcurrency,
 			limiter: {
-				max: this.config.relashionshipJobPerSec,
+				max: this.configLoaderService.data.relashionshipJobPerSec,
 				duration: 1000,
 			},
 		});
@@ -300,7 +298,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 				default: throw new Error(`unrecognized job type ${job.name} for objectStorage`);
 			}
 		}, {
-			...baseQueueOptions(this.config, Queue.ObjectStorage),
+			...baseQueueOptions(this.configLoaderService.data, Queue.ObjectStorage),
 			autorun: false,
 			concurrency: 16,
 		});
@@ -317,7 +315,7 @@ export class QueueProcessorService implements OnApplicationShutdown {
 
 		//#region ended poll notification
 		this.endedPollNotificationQueueWorker = new Bull.Worker(Queue.EndedPollNotification, (job) => this.endedPollNotificationProcessorService.process(job), {
-			...baseQueueOptions(this.config, Queue.EndedPollNotification),
+			...baseQueueOptions(this.configLoaderService.data, Queue.EndedPollNotification),
 			autorun: false,
 		});
 		//#endregion

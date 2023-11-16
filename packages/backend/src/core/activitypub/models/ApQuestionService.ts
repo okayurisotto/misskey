@@ -1,10 +1,9 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
 import type { IPoll } from '@/models/entities/Poll.js';
 import type Logger from '@/misc/logger.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { isQuestion } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import { ApResolverService } from '../ApResolverService.js';
@@ -16,8 +15,7 @@ export class ApQuestionService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly apResolverService: ApResolverService,
 		private readonly apLoggerService: ApLoggerService,
@@ -60,7 +58,7 @@ export class ApQuestionService {
 		if (uri == null) throw new Error('uri is null');
 
 		// URIがこのサーバーを指しているならスキップ
-		if (uri.startsWith(this.config.url + '/')) throw new Error('uri points local');
+		if (uri.startsWith(this.configLoaderService.data.url + '/')) throw new Error('uri points local');
 
 		//#region このサーバーに既に登録されているか
 		const note = await this.prismaService.client.note.findFirst({ where: { uri } });

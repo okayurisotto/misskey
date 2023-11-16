@@ -1,11 +1,10 @@
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { MemoryKVCache } from '@/misc/cache.js';
 import { CacheService } from '@/core/CacheService.js';
 import { bindThis } from '@/decorators.js';
 import { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { getApId } from './type.js';
 import { ApPersonService } from './models/ApPersonService.js';
 import type { note, user_publickey } from '@prisma/client';
@@ -33,8 +32,7 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	private publicKeyByUserIdCache: MemoryKVCache<user_publickey | null>;
 
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly cacheService: CacheService,
 		private readonly apPersonService: ApPersonService,
@@ -49,7 +47,7 @@ export class ApDbResolverService implements OnApplicationShutdown {
 		const separator = '/';
 
 		const uri = new URL(getApId(value));
-		if (uri.origin !== this.config.url) return { local: false, uri: uri.href };
+		if (uri.origin !== this.configLoaderService.data.url) return { local: false, uri: uri.href };
 
 		const [, type, id, ...rest] = uri.pathname.split(separator);
 		return {

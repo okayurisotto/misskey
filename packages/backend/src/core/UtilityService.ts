@@ -1,26 +1,24 @@
 import { URL } from 'node:url';
 import { toASCII } from 'punycode';
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class UtilityService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 	) {}
 
 	@bindThis
 	public getFullApAccount(username: string, host: string | null): string {
-		return host ? `${username}@${this.toPuny(host)}` : `${username}@${this.toPuny(this.config.host)}`;
+		return host ? `${username}@${this.toPuny(host)}` : `${username}@${this.toPuny(this.configLoaderService.data.host)}`;
 	}
 
 	@bindThis
 	public isSelfHost(host: string | null): boolean {
 		if (host == null) return true;
-		return this.toPuny(this.config.host) === this.toPuny(host);
+		return this.toPuny(this.configLoaderService.data.host) === this.toPuny(host);
 	}
 
 	@bindThis

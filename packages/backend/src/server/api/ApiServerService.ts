@@ -1,13 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import fastifyCookie from '@fastify/cookie';
 import { ModuleRef } from '@nestjs/core';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import endpoints from './endpoints.js';
 import { ApiCallService } from './ApiCallService.js';
 import { SignupApiService } from './SignupApiService.js';
@@ -19,8 +18,7 @@ export class ApiServerService {
 	constructor(
 		private moduleRef: ModuleRef,
 
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly apiCallService: ApiCallService,
@@ -39,7 +37,7 @@ export class ApiServerService {
 
 		fastify.register(multipart, {
 			limits: {
-				fileSize: this.config.maxFileSize,
+				fileSize: this.configLoaderService.data.maxFileSize,
 				files: 1,
 			},
 		});

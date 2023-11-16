@@ -1,8 +1,6 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import promiseLimit from 'promise-limit';
 import { ModuleRef } from '@nestjs/core';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { truncate } from '@/misc/truncate.js';
 import type { CacheService } from '@/core/CacheService.js';
@@ -27,6 +25,7 @@ import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.j
 import type { AccountMoveService } from '@/core/AccountMoveService.js';
 import { checkHttps } from '@/misc/check-https.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { getApId, getApType, getOneApHrefNullable, isActor, isCollection, isCollectionOrOrderedCollection, isPropertyValue } from '../type.js';
 import { extractApHashtags } from './tag.js';
 import type { OnModuleInit } from '@nestjs/common';
@@ -69,8 +68,7 @@ export class ApPersonService implements OnModuleInit {
 	constructor(
 		private readonly moduleRef: ModuleRef,
 
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly prismaService: PrismaService,
 	) {}
@@ -178,7 +176,7 @@ export class ApPersonService implements OnModuleInit {
 		if (cached) return cached;
 
 		// URIがこのサーバーを指しているならデータベースからフェッチ
-		if (uri.startsWith(`${this.config.url}/`)) {
+		if (uri.startsWith(`${this.configLoaderService.data.url}/`)) {
 			const id = uri.split('/').pop();
 			const u = await this.prismaService.client.user.findUnique({ where: { id } }) as LocalUser | null;
 			if (u) this.cacheService.uriPersonCache.set(uri, u);
@@ -221,7 +219,7 @@ export class ApPersonService implements OnModuleInit {
 	public async createPerson(uri: string, resolver?: Resolver): Promise<RemoteUser> {
 		if (typeof uri !== 'string') throw new Error('uri is not string');
 
-		if (uri.startsWith(this.config.url)) {
+		if (uri.startsWith(this.configLoaderService.data.url)) {
 			throw new StatusError('cannot resolve local user', 400, 'cannot resolve local user');
 		}
 
@@ -388,7 +386,7 @@ export class ApPersonService implements OnModuleInit {
 		if (typeof uri !== 'string') throw new Error('uri is not string');
 
 		// URIがこのサーバーを指しているならスキップ
-		if (uri.startsWith(`${this.config.url}/`)) return;
+		if (uri.startsWith(`${this.configLoaderService.data.url}/`)) return;
 
 		//#region このサーバーに既に登録されているか
 		const exist = await this.fetchPerson(uri) as RemoteUser | null;
@@ -639,7 +637,7 @@ export class ApPersonService implements OnModuleInit {
 			await this.updatePerson(src.movedToUri, undefined, undefined, [...movePreventUris, src.uri]);
 			dst = await this.fetchPerson(src.movedToUri) ?? dst;
 		} else {
-			if (src.movedToUri.startsWith(`${this.config.url}/`)) {
+			if (src.movedToUri.startsWith(`${this.configLoaderService.data.url}/`)) {
 				// ローカルユーザーっぽいのにfetchPersonで見つからないということはmovedToUriが間違っている
 				return 'failed: movedTo is local but not found';
 			}

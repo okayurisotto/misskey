@@ -1,16 +1,15 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import ms from 'ms';
 import bcrypt from 'bcryptjs';
 import { incorrectPassword, unavailable } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { EmailService } from '@/core/EmailService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { ApiError } from '../../error.js';
 
 const res = z.record(z.string(), z.unknown());
@@ -38,8 +37,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly emailService: EmailService,
@@ -88,7 +86,7 @@ export default class extends Endpoint<
 					data: { emailVerifyCode: code },
 				});
 
-				const link = `${this.config.url}/verify-email/${code}`;
+				const link = `${this.configLoaderService.data.url}/verify-email/${code}`;
 
 				this.emailService.sendEmail(
 					ps.email,

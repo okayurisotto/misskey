@@ -4,11 +4,10 @@ import * as net from 'node:net';
 import CacheableLookup from 'cacheable-lookup';
 import fetch from 'node-fetch';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
-import { Inject, Injectable } from '@nestjs/common';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { Injectable } from '@nestjs/common';
 import { StatusError } from '@/misc/status-error.js';
 import { bindThis } from '@/decorators.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { Response } from 'node-fetch';
 import type { URL } from 'node:url';
 
@@ -35,8 +34,7 @@ export class HttpRequestService {
 	public httpsAgent: https.Agent;
 
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 	) {
 		const cache = new CacheableLookup({
 			maxTtl: 3600,	// 1hours
@@ -56,27 +54,27 @@ export class HttpRequestService {
 			lookup: cache.lookup as unknown as net.LookupFunction,
 		});
 
-		const maxSockets = Math.max(256, config.deliverJobConcurrency);
+		const maxSockets = Math.max(256, configLoaderService.data.deliverJobConcurrency);
 
-		this.httpAgent = config.proxy
+		this.httpAgent = configLoaderService.data.proxy
 			? new HttpProxyAgent({
 				keepAlive: true,
 				keepAliveMsecs: 30 * 1000,
 				maxSockets,
 				maxFreeSockets: 256,
 				scheduling: 'lifo',
-				proxy: config.proxy,
+				proxy: configLoaderService.data.proxy,
 			})
 			: this.http;
 
-		this.httpsAgent = config.proxy
+		this.httpsAgent = configLoaderService.data.proxy
 			? new HttpsProxyAgent({
 				keepAlive: true,
 				keepAliveMsecs: 30 * 1000,
 				maxSockets,
 				maxFreeSockets: 256,
 				scheduling: 'lifo',
-				proxy: config.proxy,
+				proxy: configLoaderService.data.proxy,
 			})
 			: this.https;
 	}
@@ -88,7 +86,7 @@ export class HttpRequestService {
 	 */
 	@bindThis
 	public getAgentByUrl(url: URL, bypassProxy = false): http.Agent | https.Agent {
-		if (bypassProxy || this.config.proxyBypassHosts.includes(url.hostname)) {
+		if (bypassProxy || this.configLoaderService.data.proxyBypassHosts.includes(url.hostname)) {
 			return url.protocol === 'http:' ? this.http : this.https;
 		} else {
 			return url.protocol === 'http:' ? this.httpAgent : this.httpsAgent;
@@ -144,7 +142,7 @@ export class HttpRequestService {
 		const res = await fetch(url, {
 			method: args.method ?? 'GET',
 			headers: {
-				'User-Agent': this.config.userAgent,
+				'User-Agent': this.configLoaderService.data.userAgent,
 				...(args.headers ?? {}),
 			},
 			body: args.body,

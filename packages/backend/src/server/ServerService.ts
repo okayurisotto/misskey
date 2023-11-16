@@ -1,14 +1,12 @@
 import cluster from 'node:cluster';
 import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { Inject, Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import Fastify, { FastifyInstance } from 'fastify';
 import fastifyStatic from '@fastify/static';
 import { z } from 'zod';
 import { NODE_ENV } from '@/env.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import type Logger from '@/misc/logger.js';
 import * as Acct from '@/misc/acct.js';
 import { genIdenticon } from '@/misc/gen-identicon.js';
@@ -18,6 +16,7 @@ import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ProcessMessage } from '@/boot/ProcessMessage.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { ActivityPubServerService } from './ActivityPubServerService.js';
 import { NodeinfoServerService } from './NodeinfoServerService.js';
 import { ApiServerService } from './api/ApiServerService.js';
@@ -35,8 +34,7 @@ export class ServerService implements OnApplicationShutdown {
 	private fastify: FastifyInstance | null = null;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly metaService: MetaService,
 		private readonly userEntityService: UserEntityService,
@@ -64,7 +62,7 @@ export class ServerService implements OnApplicationShutdown {
 		this.fastify = fastify;
 
 		// HSTS
-		if (this.config.url.startsWith('https') && !this.config.disableHsts) {
+		if (this.configLoaderService.data.url.startsWith('https') && !this.configLoaderService.data.disableHsts) {
 			fastify.addHook('onRequest', async (_request, reply) => {
 				await reply.header('strict-transport-security', 'max-age=15552000; preload'); // 6 months
 			});
@@ -145,11 +143,11 @@ export class ServerService implements OnApplicationShutdown {
 
 				let url: URL;
 				if ('badge' in queries) {
-					url = new URL(`${this.config.mediaProxy}/emoji.png`);
+					url = new URL(`${this.configLoaderService.data.mediaProxy}/emoji.png`);
 					url.searchParams.set('url', emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl);
 					url.searchParams.set('badge', '1');
 				} else {
-					url = new URL(`${this.config.mediaProxy}/emoji.webp`);
+					url = new URL(`${this.configLoaderService.data.mediaProxy}/emoji.webp`);
 					url.searchParams.set('url', emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl);
 					url.searchParams.set('emoji', '1');
 					if ('static' in queries) {
@@ -173,7 +171,7 @@ export class ServerService implements OnApplicationShutdown {
 				const user = await this.prismaService.client.user.findFirst({
 					where: {
 						usernameLower: username.toLowerCase(),
-						host: (host == null) || (host === this.config.host) ? null : host,
+						host: (host == null) || (host === this.configLoaderService.data.host) ? null : host,
 						isSuspended: false,
 					},
 				});
@@ -252,10 +250,10 @@ export class ServerService implements OnApplicationShutdown {
 			if ('code' in err) {
 				switch (err.code) {
 					case 'EACCES':
-						this.logger.error(`You do not have permission to listen on port ${this.config.port}.`);
+						this.logger.error(`You do not have permission to listen on port ${this.configLoaderService.data.port}.`);
 						break;
 					case 'EADDRINUSE':
-						this.logger.error(`Port ${this.config.port} is already in use by another process.`);
+						this.logger.error(`Port ${this.configLoaderService.data.port} is already in use by another process.`);
 						break;
 					default:
 						this.logger.error(err);
@@ -280,16 +278,16 @@ export class ServerService implements OnApplicationShutdown {
 			}
 		});
 
-		if (this.config.socket) {
-			if (fs.existsSync(this.config.socket)) {
-				fs.unlinkSync(this.config.socket);
+		if (this.configLoaderService.data.socket) {
+			if (fs.existsSync(this.configLoaderService.data.socket)) {
+				fs.unlinkSync(this.configLoaderService.data.socket);
 			}
-			await fastify.listen({ path: this.config.socket });
-			if (this.config.chmodSocket) {
-				fs.chmodSync(this.config.socket, this.config.chmodSocket);
+			await fastify.listen({ path: this.configLoaderService.data.socket });
+			if (this.configLoaderService.data.chmodSocket) {
+				fs.chmodSync(this.configLoaderService.data.socket, this.configLoaderService.data.chmodSocket);
 			}
 		} else {
-			await fastify.listen({ port: this.config.port, host: '0.0.0.0' });
+			await fastify.listen({ port: this.configLoaderService.data.port, host: '0.0.0.0' });
 		}
 
 		await fastify.ready();

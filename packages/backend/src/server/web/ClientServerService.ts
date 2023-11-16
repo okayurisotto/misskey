@@ -14,9 +14,7 @@ import fastifyCookie from '@fastify/cookie';
 import fastifyProxy from '@fastify/http-proxy';
 import vary from 'vary';
 import { z } from 'zod';
-import type { Config } from '@/config.js';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
-import { DI } from '@/di-symbols.js';
 import * as Acct from '@/misc/acct.js';
 import { MetaService } from '@/core/MetaService.js';
 import type { DbQueue, DeliverQueue, EndedPollNotificationQueue, InboxQueue, ObjectStorageQueue, SystemQueue, WebhookDeliverQueue } from '@/core/QueueModule.js';
@@ -31,13 +29,13 @@ import { bindThis } from '@/decorators.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import manifest from './manifest.json' assert { type: 'json' };
 import { FeedService } from './FeedService.js';
 import { UrlPreviewService } from './UrlPreviewService.js';
 import { ClientLoggerService } from './ClientLoggerService.js';
 import type { FastifyInstance, FastifyPluginOptions, FastifyReply } from 'fastify';
 import type { meta } from '@prisma/client';
-import { Feed } from 'feed';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -85,8 +83,7 @@ type CommonPugData = {
 @Injectable()
 export class ClientServerService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private flashEntityService: FlashEntityService,
 		private userEntityService: UserEntityService,
@@ -190,8 +187,8 @@ export class ClientServerService {
 				pug: pug,
 			},
 			defaultContext: {
-				version: this.config.version,
-				config: this.config,
+				version: this.configLoaderService.data.version,
+				config: this.configLoaderService.data,
 			},
 		});
 
@@ -202,7 +199,7 @@ export class ClientServerService {
 		});
 
 		//#region vite assets
-		if (this.config.clientManifestExists) {
+		if (this.configLoaderService.data.clientManifestExists) {
 			fastify.register(fastifyStatic, {
 				root: viteOut,
 				prefix: '/vite/',
@@ -346,8 +343,8 @@ export class ClientServerService {
 			content += `<ShortName>${name}</ShortName>`;
 			content += `<Description>${name} Search</Description>`;
 			content += '<InputEncoding>UTF-8</InputEncoding>';
-			content += `<Image width="16" height="16" type="image/x-icon">${this.config.url}/favicon.ico</Image>`;
-			content += `<Url type="text/html" template="${this.config.url}/search?q={searchTerms}"/>`;
+			content += `<Image width="16" height="16" type="image/x-icon">${this.configLoaderService.data.url}/favicon.ico</Image>`;
+			content += `<Url type="text/html" template="${this.configLoaderService.data.url}/search?q={searchTerms}"/>`;
 			content += '</OpenSearchDescription>';
 
 			reply.header('Content-Type', 'application/opensearchdescription+xml');
@@ -361,7 +358,7 @@ export class ClientServerService {
 			reply.header('Cache-Control', 'public, max-age=30');
 			return await reply.view('base', {
 				img: meta.bannerUrl,
-				url: this.config.url,
+				url: this.configLoaderService.data.url,
 				title: meta.name ?? 'Misskey',
 				desc: meta.description,
 				...this.generateCommonPugData(meta),
@@ -652,8 +649,8 @@ export class ClientServerService {
 			reply.removeHeader('X-Frame-Options');
 
 			return await reply.view('info-card', {
-				version: this.config.version,
-				host: this.config.host,
+				version: this.configLoaderService.data.version,
+				host: this.configLoaderService.data.host,
 				meta: meta,
 				originalUsersCount: await this.prismaService.client.user.count({ where: { host: null } }),
 				originalNotesCount: await this.prismaService.client.note.count({ where: { userHost: null } }),
@@ -662,13 +659,13 @@ export class ClientServerService {
 
 		fastify.get('/bios', async (request, reply) => {
 			return await reply.view('bios', {
-				version: this.config.version,
+				version: this.configLoaderService.data.version,
 			});
 		});
 
 		fastify.get('/cli', async (request, reply) => {
 			return await reply.view('cli', {
-				version: this.config.version,
+				version: this.configLoaderService.data.version,
 			});
 		});
 

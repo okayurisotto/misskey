@@ -1,13 +1,12 @@
 import * as nodemailer from 'nodemailer';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { validate as validateEmail } from 'deep-email-validator';
 import { MetaService } from '@/core/MetaService.js';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import type Logger from '@/misc/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 
 @Injectable()
@@ -15,9 +14,7 @@ export class EmailService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
-
+		private readonly configLoaderService: ConfigLoaderService,
 		private readonly metaService: MetaService,
 		private readonly loggerService: LoggerService,
 		private readonly prismaService: PrismaService,
@@ -29,8 +26,8 @@ export class EmailService {
 	public async sendEmail(to: string, subject: string, html: string, text: string): Promise<void> {
 		const meta = await this.metaService.fetch(true);
 
-		const iconUrl = `${this.config.url}/static-assets/mi-white.png`;
-		const emailSettingUrl = `${this.config.url}/settings/email`;
+		const iconUrl = `${this.configLoaderService.data.url}/static-assets/mi-white.png`;
+		const emailSettingUrl = `${this.configLoaderService.data.url}/settings/email`;
 
 		const enableAuth = meta.smtpUser != null && meta.smtpUser !== '';
 
@@ -39,7 +36,7 @@ export class EmailService {
 			port: meta.smtpPort,
 			secure: meta.smtpSecure,
 			ignoreTLS: !enableAuth,
-			proxy: this.config.proxySmtp,
+			proxy: this.configLoaderService.data.proxySmtp,
 			auth: enableAuth ? {
 				user: meta.smtpUser,
 				pass: meta.smtpPass,
@@ -129,7 +126,7 @@ export class EmailService {
 			</footer>
 		</main>
 		<nav>
-			<a href="${ this.config.url }">${ this.config.host }</a>
+			<a href="${ this.configLoaderService.data.url }">${ this.configLoaderService.data.host }</a>
 		</nav>
 	</body>
 </html>`,

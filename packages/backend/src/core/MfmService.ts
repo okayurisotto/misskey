@@ -1,12 +1,11 @@
 import { URL } from 'node:url';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as parse5 from 'parse5';
 import { Window } from 'happy-dom';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { intersperse } from '@/misc/prelude/array.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
 import { bindThis } from '@/decorators.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import * as TreeAdapter from '../../node_modules/parse5/dist/tree-adapters/default.js';
 import type * as mfm from 'mfm-js';
 
@@ -18,8 +17,7 @@ const urlRegexFull = /^https?:\/\/[\w/:%#@$&?!()[\]~.,=+-]+$/;
 @Injectable()
 export class MfmService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 	) {}
 
 	@bindThis
@@ -301,7 +299,7 @@ export class MfmService {
 
 			hashtag: (node) => {
 				const a = doc.createElement('a');
-				a.setAttribute('href', `${this.config.url}/tags/${node.props.hashtag}`);
+				a.setAttribute('href', `${this.configLoaderService.data.url}/tags/${node.props.hashtag}`);
 				a.textContent = `#${node.props.hashtag}`;
 				a.setAttribute('rel', 'tag');
 				return a;
@@ -336,7 +334,7 @@ export class MfmService {
 				const a = doc.createElement('a');
 				const { username, host, acct } = node.props;
 				const remoteUserInfo = mentionedRemoteUsers.find(remoteUser => remoteUser.username === username && remoteUser.host === host);
-				a.setAttribute('href', remoteUserInfo ? (remoteUserInfo.url ? remoteUserInfo.url : remoteUserInfo.uri) : `${this.config.url}/${acct}`);
+				a.setAttribute('href', remoteUserInfo ? (remoteUserInfo.url ? remoteUserInfo.url : remoteUserInfo.uri) : `${this.configLoaderService.data.url}/${acct}`);
 				a.className = 'u-url mention';
 				a.textContent = acct;
 				return a;

@@ -1,12 +1,11 @@
 import * as fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname } from 'node:path';
-import { Inject, Injectable } from '@nestjs/common';
+import { Readable } from 'node:stream';
+import { Injectable } from '@nestjs/common';
 import rename from 'rename';
 import sharp from 'sharp';
 import { sharpBmp } from 'sharp-read-bmp';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { FILE_TYPE_BROWSERSAFE } from '@/const.js';
 import { StatusError } from '@/misc/status-error.js';
@@ -22,9 +21,9 @@ import { bindThis } from '@/decorators.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { correctFilename } from '@/misc/correct-filename.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
 import type { drive_file } from '@prisma/client';
-import { Readable } from 'node:stream';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -36,8 +35,7 @@ export class FileServerService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly fileInfoService: FileInfoService,
 		private readonly downloadService: DownloadService,
@@ -130,7 +128,7 @@ export class FileServerService {
 					if (isMimeImage(file.mime, 'sharp-convertible-image-with-bmp')) {
 						reply.header('Cache-Control', 'max-age=31536000, immutable');
 
-						const url = new URL(`${this.config.mediaProxy}/static.webp`);
+						const url = new URL(`${this.configLoaderService.data.mediaProxy}/static.webp`);
 						url.searchParams.set('url', file.url);
 						url.searchParams.set('static', '1');
 
@@ -151,7 +149,7 @@ export class FileServerService {
 					if (['image/svg+xml'].includes(file.mime)) {
 						reply.header('Cache-Control', 'max-age=31536000, immutable');
 
-						const url = new URL(`${this.config.mediaProxy}/svg.webp`);
+						const url = new URL(`${this.configLoaderService.data.mediaProxy}/svg.webp`);
 						url.searchParams.set('url', file.url);
 
 						file.cleanup();
@@ -220,12 +218,12 @@ export class FileServerService {
 		// アバタークロップなど、どうしてもオリジンである必要がある場合
 		const mustOrigin = 'origin' in request.query;
 
-		if (this.config.externalMediaProxyEnabled && !mustOrigin) {
+		if (this.configLoaderService.data.externalMediaProxyEnabled && !mustOrigin) {
 			// 外部のメディアプロキシが有効なら、そちらにリダイレクト
 
 			reply.header('Cache-Control', 'public, max-age=259200'); // 3 days
 
-			const url = new URL(`${this.config.mediaProxy}/${request.params.url || ''}`);
+			const url = new URL(`${this.configLoaderService.data.mediaProxy}/${request.params.url || ''}`);
 
 			for (const [key, value] of Object.entries(request.query)) {
 				url.searchParams.append(key, value);
@@ -372,8 +370,8 @@ export class FileServerService {
 		| '404'
 		| '204'
 	> {
-		if (url.startsWith(`${this.config.url}/files/`)) {
-			const key = url.replace(`${this.config.url}/files/`, '').split('/').shift();
+		if (url.startsWith(`${this.configLoaderService.data.url}/files/`)) {
+			const key = url.replace(`${this.configLoaderService.data.url}/files/`, '').split('/').shift();
 			if (!key) throw new StatusError('Invalid File Key', 400, 'Invalid File Key');
 
 			return await this.getFileFromKey(key);

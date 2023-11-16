@@ -1,13 +1,12 @@
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { pick } from 'omick';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MetaService } from '@/core/MetaService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 const res = z.object({
 	cacheRemoteFiles: z.boolean(),
@@ -108,8 +107,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly metaService: MetaService,
 	) {
@@ -194,8 +192,8 @@ export default class extends Endpoint<
 				swPublickey: instance.swPublicKey, // 大文字小文字の違いがある
 				tosUrl: instance.termsOfServiceUrl,
 				translatorAvailable: instance.deeplAuthKey !== null,
-				uri: this.config.url,
-				version: this.config.version,
+				uri: this.configLoaderService.data.url,
+				version: this.configLoaderService.data.version,
 				policies: {
 					...DEFAULT_POLICIES,
 					...RolePoliciesSchema.parse(instance.policies),

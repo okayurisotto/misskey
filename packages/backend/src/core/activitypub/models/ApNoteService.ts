@@ -1,7 +1,5 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import promiseLimit from 'promise-limit';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import type { RemoteUser } from '@/models/entities/User.js';
 import { toArray, toSingle, unique } from '@/misc/prelude/array.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -15,6 +13,7 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { bindThis } from '@/decorators.js';
 import { checkHttps } from '@/misc/check-https.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { getOneApId, getApId, getOneApHrefNullable, validPost, isEmoji, getApType } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import { ApMfmService } from '../ApMfmService.js';
@@ -35,8 +34,7 @@ export class ApNoteService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly idService: IdService,
 		private readonly apMfmService: ApMfmService,
@@ -302,7 +300,7 @@ export class ApNoteService {
 			if (exist) return exist;
 			//#endregion
 
-			if (uri.startsWith(this.config.url)) {
+			if (uri.startsWith(this.configLoaderService.data.url)) {
 				throw new StatusError('cannot resolve local note', 400, 'cannot resolve local note');
 			}
 

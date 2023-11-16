@@ -1,7 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { summaly } from 'summaly';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import type Logger from '@/misc/logger.js';
@@ -9,6 +7,7 @@ import { query } from '@/misc/prelude/url.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { bindThis } from '@/decorators.js';
 import { ApiError } from '@/server/api/error.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 @Injectable()
@@ -16,8 +15,7 @@ export class UrlPreviewService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private metaService: MetaService,
 		private httpRequestService: HttpRequestService,
@@ -30,7 +28,7 @@ export class UrlPreviewService {
 	private wrap(url?: string | null): string | null {
 		return url != null
 			? url.match(/^https?:\/\//)
-				? `${this.config.mediaProxy}/preview.webp?${query({
+				? `${this.configLoaderService.data.mediaProxy}/preview.webp?${query({
 					url,
 					preview: '1',
 				})}`
@@ -70,7 +68,7 @@ export class UrlPreviewService {
 				await summaly(url, {
 					followRedirects: false,
 					lang: lang ?? 'ja-JP',
-					agent: this.config.proxy ? {
+					agent: this.configLoaderService.data.proxy ? {
 						http: this.httpRequestService.httpAgent,
 						https: this.httpRequestService.httpsAgent,
 					} : undefined,

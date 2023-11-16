@@ -1,4 +1,4 @@
-import { Inject, Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import type { LocalUser, PartialLocalUser, PartialRemoteUser, RemoteUser } from '@/models/entities/User.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
@@ -11,20 +11,19 @@ import InstanceChart from '@/core/chart/charts/instance.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { WebhookService } from '@/core/WebhookService.js';
 import { NotificationService } from '@/core/NotificationService.js';
-import { DI } from '@/di-symbols.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { bindThis } from '@/decorators.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { CacheService } from '@/core/CacheService.js';
-import type { Config } from '@/config.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import Logger from '../misc/logger.js';
 import type { z } from 'zod';
 import type { user } from '@prisma/client';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 const logger = new Logger('following/create');
 
@@ -48,8 +47,7 @@ export class UserFollowingService implements OnModuleInit {
 	constructor(
 		private moduleRef: ModuleRef,
 
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly cacheService: CacheService,
 		private readonly userEntityService: UserEntityService,
@@ -503,7 +501,7 @@ export class UserFollowingService implements OnModuleInit {
 		}
 
 		if (this.userEntityService.isLocalUser(follower) && this.userEntityService.isRemoteUser(followee)) {
-			const content = this.apRendererService.addContext(this.apRendererService.renderFollow(follower as PartialLocalUser, followee as PartialRemoteUser, requestId ?? `${this.config.url}/follows/${followRequest.id}`));
+			const content = this.apRendererService.addContext(this.apRendererService.renderFollow(follower as PartialLocalUser, followee as PartialRemoteUser, requestId ?? `${this.configLoaderService.data.url}/follows/${followRequest.id}`));
 			this.queueService.deliver(follower, content, followee.inbox, false);
 		}
 	}

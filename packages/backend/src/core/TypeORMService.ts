@@ -3,17 +3,14 @@ import pg from 'pg';
 pg.types.setTypeParser(20, Number);
 
 import {
-	Inject,
 	Injectable,
 	type OnApplicationBootstrap,
 	type OnApplicationShutdown,
 } from '@nestjs/common';
 import { DataSource, Logger } from 'typeorm';
 import * as highlight from 'cli-highlight';
-import { DI } from '@/di-symbols.js';
 import { NODE_ENV } from '@/env.js';
 import MisskeyLogger from '@/misc/logger.js';
-import type { Config } from '@/config.js';
 import { entities as charts } from '@/core/chart/entities.js';
 
 import { AbuseUserReport } from '@/models/entities/AbuseUserReport.js';
@@ -82,6 +79,7 @@ import { RoleAssignment } from '@/models/entities/RoleAssignment.js';
 import { Flash } from '@/models/entities/Flash.js';
 import { FlashLike } from '@/models/entities/FlashLike.js';
 import { UserMemo } from '@/models/entities/UserMemo.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 const dbLogger = new MisskeyLogger('db');
 
@@ -195,17 +193,17 @@ export class TypeORMService
 	extends DataSource
 	implements OnApplicationBootstrap, OnApplicationShutdown
 {
-	constructor(@Inject(DI.config) config: Config) {
+	constructor(configLoaderService: ConfigLoaderService) {
 		const isNotProduction = NODE_ENV !== 'production';
 		const isTest = NODE_ENV === 'test';
 
 		super({
 			type: 'postgres',
-			host: config.db.host,
-			port: config.db.port,
-			username: config.db.user,
-			password: config.db.pass,
-			database: config.db.db,
+			host: configLoaderService.data.db.host,
+			port: configLoaderService.data.db.port,
+			username: configLoaderService.data.db.user,
+			password: configLoaderService.data.db.pass,
+			database: configLoaderService.data.db.db,
 			extra: {
 				statement_timeout: 1000 * 10,
 			},

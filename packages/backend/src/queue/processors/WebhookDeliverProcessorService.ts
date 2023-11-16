@@ -1,12 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as Bull from 'bullmq';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import type Logger from '@/misc/logger.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { StatusError } from '@/misc/status-error.js';
 import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { WebhookDeliverJobData } from '../types.js';
 
@@ -15,8 +14,7 @@ export class WebhookDeliverProcessorService {
 	private logger: Logger;
 
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private httpRequestService: HttpRequestService,
 		private queueLoggerService: QueueLoggerService,
@@ -34,7 +32,7 @@ export class WebhookDeliverProcessorService {
 				method: 'POST',
 				headers: {
 					'User-Agent': 'Misskey-Hooks',
-					'X-Misskey-Host': this.config.host,
+					'X-Misskey-Host': this.configLoaderService.data.host,
 					'X-Misskey-Hook-Id': job.data.webhookId,
 					'X-Misskey-Hook-Secret': job.data.secret,
 					'Content-Type': 'application/json',

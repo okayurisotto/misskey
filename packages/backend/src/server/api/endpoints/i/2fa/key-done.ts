@@ -2,14 +2,13 @@ import { promisify } from 'node:util';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import cbor from 'cbor';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { TwoFactorAuthenticationService } from '@/core/TwoFactorAuthenticationService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 const cborDecodeFirst = promisify(cbor.decodeFirst) as any;
 
@@ -39,8 +38,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly globalEventService: GlobalEventService,
@@ -49,7 +47,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const rpIdHashReal = this.twoFactorAuthenticationService.hash(
-				Buffer.from(this.config.hostname, 'utf-8'),
+				Buffer.from(this.configLoaderService.data.hostname, 'utf-8'),
 			);
 
 			const profile =
@@ -73,7 +71,7 @@ export default class extends Endpoint<
 			if (clientData.type !== 'webauthn.create') {
 				throw new Error('not a creation attestation');
 			}
-			if (clientData.origin !== this.config.scheme + '://' + this.config.host) {
+			if (clientData.origin !== this.configLoaderService.data.scheme + '://' + this.configLoaderService.data.host) {
 				throw new Error('origin mismatch');
 			}
 

@@ -1,9 +1,7 @@
 import { createPublicKey, randomUUID } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import * as mfm from 'mfm-js';
 import { z } from 'zod';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import type { PartialLocalUser, LocalUser, PartialRemoteUser, RemoteUser } from '@/models/entities/User.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
@@ -14,6 +12,7 @@ import { bindThis } from '@/decorators.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { LdSignatureService } from './LdSignatureService.js';
 import { ApMfmService } from './ApMfmService.js';
 import type { IAccept, IActivity, IAdd, IAnnounce, IApDocument, IApEmoji, IApHashtag, IApImage, IApMention, IBlock, ICreate, IDelete, IFlag, IFollow, IKey, ILike, IMove, IObject, IPost, IQuestion, IReject, IRemove, ITombstone, IUndo, IUpdate } from './type.js';
@@ -24,8 +23,7 @@ export type AddContext<T extends IObject> = T & { '@context': any; id: string };
 @Injectable()
 export class ApRendererService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly customEmojiService: CustomEmojiService,
 		private readonly userEntityService: UserEntityService,
@@ -77,7 +75,7 @@ export class ApRendererService {
 		}
 
 		return {
-			id: `${this.config.url}/notes/${note.id}/activity`,
+			id: `${this.configLoaderService.data.url}/notes/${note.id}/activity`,
 			actor: this.userEntityService.genLocalUserUri(note.userId),
 			type: 'Announce',
 			published: note.createdAt.toISOString(),
@@ -100,7 +98,7 @@ export class ApRendererService {
 
 		return {
 			type: 'Block',
-			id: `${this.config.url}/blocks/${block.id}`,
+			id: `${this.configLoaderService.data.url}/blocks/${block.id}`,
 			actor: this.userEntityService.genLocalUserUri(block.blockerId),
 			object: block.blockee.uri,
 		};
@@ -109,7 +107,7 @@ export class ApRendererService {
 	@bindThis
 	public renderCreate(object: IObject, note: note): ICreate {
 		const activity: ICreate = {
-			id: `${this.config.url}/notes/${note.id}/activity`,
+			id: `${this.configLoaderService.data.url}/notes/${note.id}/activity`,
 			actor: this.userEntityService.genLocalUserUri(note.userId),
 			type: 'Create',
 			published: note.createdAt.toISOString(),
@@ -145,7 +143,7 @@ export class ApRendererService {
 	@bindThis
 	public renderEmoji(emoji: emoji): IApEmoji {
 		return {
-			id: `${this.config.url}/emojis/${emoji.name}`,
+			id: `${this.configLoaderService.data.url}/emojis/${emoji.name}`,
 			type: 'Emoji',
 			name: `:${emoji.name}:`,
 			updated: emoji.updatedAt != null ? emoji.updatedAt.toISOString() : new Date().toISOString(),
@@ -172,7 +170,7 @@ export class ApRendererService {
 	@bindThis
 	public renderFollowRelay(relay: relay, relayActor: LocalUser): IFollow {
 		return {
-			id: `${this.config.url}/activities/follow-relay/${relay.id}`,
+			id: `${this.configLoaderService.data.url}/activities/follow-relay/${relay.id}`,
 			type: 'Follow',
 			actor: this.userEntityService.genLocalUserUri(relayActor.id),
 			object: 'https://www.w3.org/ns/activitystreams#Public',
@@ -196,7 +194,7 @@ export class ApRendererService {
 		requestId?: string,
 	): IFollow {
 		return {
-			id: requestId ?? `${this.config.url}/follows/${follower.id}/${followee.id}`,
+			id: requestId ?? `${this.configLoaderService.data.url}/follows/${follower.id}/${followee.id}`,
 			type: 'Follow',
 			actor: this.userEntityService.getUserUri(follower),
 			object: this.userEntityService.getUserUri(followee),
@@ -207,7 +205,7 @@ export class ApRendererService {
 	public renderHashtag(tag: string): IApHashtag {
 		return {
 			type: 'Hashtag',
-			href: `${this.config.url}/tags/${encodeURIComponent(tag)}`,
+			href: `${this.configLoaderService.data.url}/tags/${encodeURIComponent(tag)}`,
 			name: `#${tag}`,
 		};
 	}
@@ -225,7 +223,7 @@ export class ApRendererService {
 	@bindThis
 	public renderKey(user: LocalUser, key: user_keypair, postfix?: string): IKey {
 		return {
-			id: `${this.config.url}/users/${user.id}${postfix ?? '/publickey'}`,
+			id: `${this.configLoaderService.data.url}/users/${user.id}${postfix ?? '/publickey'}`,
 			type: 'Key',
 			owner: this.userEntityService.genLocalUserUri(user.id),
 			publicKeyPem: createPublicKey(key.publicKey).export({
@@ -241,9 +239,9 @@ export class ApRendererService {
 
 		const object: ILike = {
 			type: 'Like',
-			id: `${this.config.url}/likes/${noteReaction.id}`,
-			actor: `${this.config.url}/users/${noteReaction.userId}`,
-			object: note.uri ? note.uri : `${this.config.url}/notes/${noteReaction.noteId}`,
+			id: `${this.configLoaderService.data.url}/likes/${noteReaction.id}`,
+			actor: `${this.configLoaderService.data.url}/users/${noteReaction.userId}`,
+			object: note.uri ? note.uri : `${this.configLoaderService.data.url}/notes/${noteReaction.noteId}`,
 			content: reaction,
 			_misskey_reaction: reaction,
 		};
@@ -275,7 +273,7 @@ export class ApRendererService {
 		const actor = this.userEntityService.getUserUri(src);
 		const target = this.userEntityService.getUserUri(dst);
 		return {
-			id: `${this.config.url}/moves/${src.id}/${dst.id}`,
+			id: `${this.configLoaderService.data.url}/moves/${src.id}/${dst.id}`,
 			actor,
 			type: 'Move',
 			object: actor,
@@ -310,7 +308,7 @@ export class ApRendererService {
 						if (dive) {
 							inReplyTo = await this.renderNote(inReplyToNote, false);
 						} else {
-							inReplyTo = `${this.config.url}/notes/${inReplyToNote.id}`;
+							inReplyTo = `${this.configLoaderService.data.url}/notes/${inReplyToNote.id}`;
 						}
 					}
 				}
@@ -325,7 +323,7 @@ export class ApRendererService {
 			const renote = await this.prismaService.client.note.findUnique({ where: { id: note.renoteId } });
 
 			if (renote) {
-				quote = renote.uri ? renote.uri : `${this.config.url}/notes/${renote.id}`;
+				quote = renote.uri ? renote.uri : `${this.configLoaderService.data.url}/notes/${renote.id}`;
 			}
 		}
 
@@ -403,7 +401,7 @@ export class ApRendererService {
 		} as const : {};
 
 		return {
-			id: `${this.config.url}/notes/${note.id}`,
+			id: `${this.configLoaderService.data.url}/notes/${note.id}`,
 			type: 'Note',
 			attributedTo,
 			summary: summary ?? undefined,
@@ -465,9 +463,9 @@ export class ApRendererService {
 			followers: `${id}/followers`,
 			following: `${id}/following`,
 			featured: `${id}/collections/featured`,
-			sharedInbox: `${this.config.url}/inbox`,
-			endpoints: { sharedInbox: `${this.config.url}/inbox` },
-			url: `${this.config.url}/@${user.username}`,
+			sharedInbox: `${this.configLoaderService.data.url}/inbox`,
+			endpoints: { sharedInbox: `${this.configLoaderService.data.url}/inbox` },
+			url: `${this.configLoaderService.data.url}/@${user.username}`,
 			preferredUsername: user.username,
 			name: user.name,
 			summary: profile.description ? this.mfmService.toHtml(mfm.parse(profile.description)) : null,
@@ -504,7 +502,7 @@ export class ApRendererService {
 	public renderQuestion(user: { id: user['id'] }, note: note, poll: poll): IQuestion {
 		return {
 			type: 'Question',
-			id: `${this.config.url}/questions/${note.id}`,
+			id: `${this.configLoaderService.data.url}/questions/${note.id}`,
 			actor: this.userEntityService.genLocalUserUri(user.id),
 			content: note.text ?? '',
 			[poll.multiple ? 'anyOf' : 'oneOf']: poll.choices.map((text, i) => ({
@@ -547,7 +545,7 @@ export class ApRendererService {
 
 	@bindThis
 	public renderUndo(object: string | IObject, user: { id: user['id'] }): IUndo {
-		const id = typeof object !== 'string' && typeof object.id === 'string' && object.id.startsWith(this.config.url) ? `${object.id}/undo` : undefined;
+		const id = typeof object !== 'string' && typeof object.id === 'string' && object.id.startsWith(this.configLoaderService.data.url) ? `${object.id}/undo` : undefined;
 
 		return {
 			type: 'Undo',
@@ -561,7 +559,7 @@ export class ApRendererService {
 	@bindThis
 	public renderUpdate(object: string | IObject, user: { id: user['id'] }): IUpdate {
 		return {
-			id: `${this.config.url}/users/${user.id}#updates/${new Date().getTime()}`,
+			id: `${this.configLoaderService.data.url}/users/${user.id}#updates/${new Date().getTime()}`,
 			actor: this.userEntityService.genLocalUserUri(user.id),
 			type: 'Update',
 			to: ['https://www.w3.org/ns/activitystreams#Public'],
@@ -573,13 +571,13 @@ export class ApRendererService {
 	@bindThis
 	public renderVote(user: { id: user['id'] }, vote: poll_vote, note: note, poll: poll, pollOwner: RemoteUser): ICreate {
 		return {
-			id: `${this.config.url}/users/${user.id}#votes/${vote.id}/activity`,
+			id: `${this.configLoaderService.data.url}/users/${user.id}#votes/${vote.id}/activity`,
 			actor: this.userEntityService.genLocalUserUri(user.id),
 			type: 'Create',
 			to: [pollOwner.uri],
 			published: new Date().toISOString(),
 			object: {
-				id: `${this.config.url}/users/${user.id}#votes/${vote.id}`,
+				id: `${this.configLoaderService.data.url}/users/${user.id}#votes/${vote.id}`,
 				type: 'Note',
 				attributedTo: this.userEntityService.genLocalUserUri(user.id),
 				to: [pollOwner.uri],
@@ -592,7 +590,7 @@ export class ApRendererService {
 	@bindThis
 	public addContext<T extends IObject>(x: T): AddContext<T> {
 		if (typeof x === 'object' && x.id == null) {
-			x.id = `${this.config.url}/${randomUUID()}`;
+			x.id = `${this.configLoaderService.data.url}/${randomUUID()}`;
 		}
 
 		return Object.assign({
@@ -634,7 +632,7 @@ export class ApRendererService {
 
 		const ldSignature = this.ldSignatureService.use();
 		ldSignature.debug = false;
-		activity = await ldSignature.signRsaSignature2017(activity, keypair.privateKey, `${this.config.url}/users/${user.id}#main-key`);
+		activity = await ldSignature.signRsaSignature2017(activity, keypair.privateKey, `${this.configLoaderService.data.url}/users/${user.id}#main-key`);
 
 		return activity;
 	}

@@ -1,25 +1,19 @@
 import { setTimeout } from 'node:timers/promises';
 import { Global, Module } from '@nestjs/common';
 import { NODE_ENV } from '@/env.js';
-import { DI } from '@/di-symbols.js';
-import { loadConfig } from '@/config.js';
 import { RedisService } from '@/core/RedisService.js';
 import { RedisPubService } from '@/core/RedisPubService.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
 import { MeiliSearchService } from '@/core/MeiliSearchService.js';
 import { TypeORMService as TypeORMService } from '@/core/TypeORMService.js';
-import type { Provider, OnApplicationShutdown } from '@nestjs/common';
-
-const $config: Provider = {
-	provide: DI.config,
-	useValue: loadConfig(),
-};
+import { ConfigLoaderService } from './ConfigLoaderService.js';
+import type { OnApplicationShutdown } from '@nestjs/common';
 
 @Global()
 @Module({
 	imports: [],
 	providers: [
-		$config,
+		ConfigLoaderService,
 		TypeORMService,
 		MeiliSearchService,
 		RedisService,
@@ -27,7 +21,7 @@ const $config: Provider = {
 		RedisSubService,
 	],
 	exports: [
-		$config,
+		ConfigLoaderService,
 		TypeORMService,
 		MeiliSearchService,
 		RedisService,

@@ -1,12 +1,11 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { noSuchApp_ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import type { Config } from '@/config.js';
-import { DI } from '@/di-symbols.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { ApiError } from '../../../error.js';
 
 const res = z.object({
@@ -32,8 +31,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
@@ -63,7 +61,7 @@ export default class extends Endpoint<
 
 			return {
 				token: doc.token,
-				url: `${this.config.authUrl}/${doc.token}`,
+				url: `${this.configLoaderService.data.authUrl}/${doc.token}`,
 			};
 		});
 	}

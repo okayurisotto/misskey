@@ -1,10 +1,8 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
 import { RelayService } from '@/core/RelayService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import NotesChart from '@/core/chart/charts/notes.js';
 import PerUserNotesChart from '@/core/chart/charts/per-user-notes.js';
 import InstanceChart from '@/core/chart/charts/instance.js';
@@ -17,14 +15,13 @@ import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { note, user } from '@prisma/client';
 
 @Injectable()
 export class NoteDeleteService {
 	constructor(
-		@Inject(DI.config)
-		private readonly config: Config,
-
+		private readonly configLoaderService: ConfigLoaderService,
 		private readonly userEntityService: UserEntityService,
 		private readonly noteEntityService: NoteEntityService,
 		private readonly globalEventService: GlobalEventService,
@@ -83,8 +80,8 @@ export class NoteDeleteService {
 				}
 
 				const content = this.apRendererService.addContext(renote
-					? this.apRendererService.renderUndo(this.apRendererService.renderAnnounce(renote.uri ?? `${this.config.url}/notes/${renote.id}`, note), user)
-					: this.apRendererService.renderDelete(this.apRendererService.renderTombstone(`${this.config.url}/notes/${note.id}`), user));
+					? this.apRendererService.renderUndo(this.apRendererService.renderAnnounce(renote.uri ?? `${this.configLoaderService.data.url}/notes/${renote.id}`, note), user)
+					: this.apRendererService.renderDelete(this.apRendererService.renderTombstone(`${this.configLoaderService.data.url}/notes/${note.id}`), user));
 
 				this.deliverToConcerned(user, note, content);
 			}
@@ -94,7 +91,7 @@ export class NoteDeleteService {
 			for (const cascadingNote of federatedLocalCascadingNotes) {
 				if (!cascadingNote.user) continue;
 				if (!this.userEntityService.isLocalUser(cascadingNote.user)) continue;
-				const content = this.apRendererService.addContext(this.apRendererService.renderDelete(this.apRendererService.renderTombstone(`${this.config.url}/notes/${cascadingNote.id}`), cascadingNote.user));
+				const content = this.apRendererService.addContext(this.apRendererService.renderDelete(this.apRendererService.renderTombstone(`${this.configLoaderService.data.url}/notes/${cascadingNote.id}`), cascadingNote.user));
 				this.deliverToConcerned(cascadingNote.user, cascadingNote, content);
 			}
 			//#endregion

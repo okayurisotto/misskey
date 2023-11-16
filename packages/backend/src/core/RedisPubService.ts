@@ -1,13 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 
 @Injectable()
 export class RedisPubService extends Redis implements OnApplicationShutdown {
-	constructor(@Inject(DI.config) config: Config) {
-		super(config.redisForPubsub);
+	constructor(configLoaderService: ConfigLoaderService) {
+		super(configLoaderService.data.redisForPubsub);
 	}
 
 	public onApplicationShutdown(): void {

@@ -1,19 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { Feed } from 'feed';
-import { DI } from '@/di-symbols.js';
-import type { Config } from '@/config.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { unique } from '@/misc/prelude/array.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import type { Acct } from '@/misc/acct.js';
+import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class FeedService {
 	constructor(
-		@Inject(DI.config)
-		private config: Config,
+		private configLoaderService: ConfigLoaderService,
 
 		private userEntityService: UserEntityService,
 		private driveFileEntityService: DriveFileEntityService,
@@ -40,13 +38,13 @@ export class FeedService {
 		if (user.user_profile === null) return null;
 
 		const author = {
-			link: `${this.config.url}/@${user.username}`,
+			link: `${this.configLoaderService.data.url}/@${user.username}`,
 			name: user.name ?? user.username,
 		};
 
 		const feed = new Feed({
 			id: author.link,
-			title: `${author.name} (@${user.username}@${this.config.host})`,
+			title: `${author.name} (@${user.username}@${this.configLoaderService.data.host})`,
 			updated: user.note[0].createdAt,
 			generator: 'Misskey',
 			description: `${user.notesCount} Notes, ${
@@ -83,7 +81,7 @@ export class FeedService {
 
 			feed.addItem({
 				title: `New note by ${author.name}`,
-				link: `${this.config.url}/notes/${note.id}`,
+				link: `${this.configLoaderService.data.url}/notes/${note.id}`,
 				date: note.createdAt,
 				description: note.cw ?? undefined,
 				content: note.text ?? undefined,
