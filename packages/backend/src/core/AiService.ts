@@ -1,14 +1,10 @@
 import * as fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import * as nsfw from 'nsfwjs';
 import si from 'systeminformation';
 import { Mutex } from 'async-mutex';
 import { bindThis } from '@/decorators.js';
-
-const _filename = fileURLToPath(import.meta.url);
-const _dirname = dirname(_filename);
+import { NSFW_MODEL_DIR } from '@/paths.js';
 
 const REQUIRED_CPU_FLAGS = ['avx2', 'fma'];
 let isSupportedCpu: undefined | boolean = undefined;
@@ -36,7 +32,7 @@ export class AiService {
 			if (this.model == null) {
 				await this.modelLoadMutex.runExclusive(async () => {
 					if (this.model == null) {
-						this.model = await nsfw.load(`file://${_dirname}/../../nsfw-model/`, { size: 299 });
+						this.model = await nsfw.load(`file://${NSFW_MODEL_DIR}/`, { size: 299 });
 					}
 				});
 			}

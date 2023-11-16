@@ -28,6 +28,12 @@ import type { drive_file } from '@prisma/client';
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
 
+/**
+ * @deprecated このようなパスは存在しない
+ *
+ * b75184ec8 によりバグるようになった。
+ * 現時点までこのバグが問題になっていないということはデッドコードである可能性が高い。
+ */
 const assets = `${_dirname}/../../server/file/assets/`;
 
 @Injectable()
@@ -57,6 +63,10 @@ export class FileServerService {
 			done();
 		});
 
+		/**
+		 * ?
+		 * （Initial commitからある用途不明なファイル）
+		 */
 		fastify.get('/files/app-default.jpg', (request, reply) => {
 			const file = fs.createReadStream(`${_dirname}/assets/dummy.png`);
 			reply.header('Content-Type', 'image/jpeg');

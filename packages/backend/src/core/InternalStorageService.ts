@@ -1,15 +1,9 @@
 import * as fs from 'node:fs';
 import * as Path from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { bindThis } from '@/decorators.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
-
-const _filename = fileURLToPath(import.meta.url);
-const _dirname = dirname(_filename);
-
-const path = Path.resolve(_dirname, '../../../../files');
+import { INTERNAL_STORAGE_DIR } from '@/paths.js';
 
 @Injectable()
 export class InternalStorageService {
@@ -19,7 +13,7 @@ export class InternalStorageService {
 
 	@bindThis
 	public resolvePath(key: string): string {
-		return Path.resolve(path, key);
+		return Path.resolve(INTERNAL_STORAGE_DIR, key);
 	}
 
 	@bindThis
@@ -29,14 +23,14 @@ export class InternalStorageService {
 
 	@bindThis
 	public saveFromPath(key: string, srcPath: string): string {
-		fs.mkdirSync(path, { recursive: true });
+		fs.mkdirSync(INTERNAL_STORAGE_DIR, { recursive: true });
 		fs.copyFileSync(srcPath, this.resolvePath(key));
 		return `${this.configLoaderService.data.url}/files/${key}`;
 	}
 
 	@bindThis
 	public saveFromBuffer(key: string, data: Buffer): string {
-		fs.mkdirSync(path, { recursive: true });
+		fs.mkdirSync(INTERNAL_STORAGE_DIR, { recursive: true });
 		fs.writeFileSync(this.resolvePath(key), data);
 		return `${this.configLoaderService.data.url}/files/${key}`;
 	}

@@ -1,12 +1,11 @@
 import * as fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
-import { dirname, resolve } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import * as yaml from 'js-yaml';
 import { z } from 'zod';
 import { pick } from 'omick';
-import { MISSKEY_CONFIG_YML, NODE_ENV, PORT } from '@/env.js';
+import { PORT } from '@/env.js';
 import { idGenerationMethods } from '@/const.js';
+import { CLIENT_MANIFEST_FILE, CONFIG_FILE, META_FILE } from './paths.js';
 
 const RedisOptionsSourceSchema = z.object({
 	host: z.string(),
@@ -113,29 +112,6 @@ const ClientManifestSchema = z.record(
 	}),
 );
 
-const _filename = fileURLToPath(import.meta.url);
-const _dirname = dirname(_filename);
-
-/** Path of configuration file */
-const configPath = ((): string => {
-	/** Path of configuration directory */
-	const dir = _dirname + '/../../../.config';
-
-	if (MISSKEY_CONFIG_YML !== undefined) {
-		return resolve(dir, MISSKEY_CONFIG_YML);
-	}
-
-	if (NODE_ENV === 'test') {
-		return resolve(dir, 'test.yml');
-	}
-
-	return resolve(dir, 'default.yml');
-})();
-const metaPath = resolve(_dirname + '/../../../built/meta.json');
-const clientManifestPath = resolve(
-	_dirname + '/../../../built/_vite_/manifest.json',
-);
-
 @Injectable()
 export class ConfigLoaderService {
 	public readonly data;
@@ -199,7 +175,7 @@ export class ConfigLoaderService {
 		const exists = fs.existsSync(path);
 
 		if (exists) {
-			const content = fs.readFileSync(clientManifestPath, 'utf-8');
+			const content = fs.readFileSync(CLIENT_MANIFEST_FILE, 'utf-8');
 			const data: unknown = JSON.parse(content);
 			const result = ClientManifestSchema.parse(data);
 			return {
@@ -215,10 +191,10 @@ export class ConfigLoaderService {
 	}
 
 	private loadConfig(): z.infer<typeof SourceSchema> & Mixin {
-		const config = this.loadConfigSource(configPath);
-		const meta = this.loadMeta(metaPath);
+		const config = this.loadConfigSource(CONFIG_FILE);
+		const meta = this.loadMeta(META_FILE);
 		const { exist: clientManifestExists, data: clientManifest } =
-			this.loadClientManifest(clientManifestPath);
+			this.loadClientManifest(CLIENT_MANIFEST_FILE);
 
 		const url = this.tryCreateUrl(config.url);
 
