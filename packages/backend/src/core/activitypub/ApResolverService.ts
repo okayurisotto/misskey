@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { InstanceActorService } from '@/core/InstanceActorService.js';
-import type { Config } from '@/config.js';
+import type { Config } from '@/ConfigLoaderService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { UtilityService } from '@/core/UtilityService.js';

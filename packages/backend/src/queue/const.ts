@@ -1,4 +1,4 @@
-import { Config } from '@/config.js';
+import type { Config } from '@/ConfigLoaderService.js';
 import type * as Bull from 'bullmq';
 
 export enum Queue {

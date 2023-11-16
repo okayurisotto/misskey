@@ -1,5 +1,5 @@
 import { generateOpenApiSpec as generateOpenApiSpec_ } from 'zod2spec';
-import type { Config } from '@/config.js';
+import type { Config } from '@/ConfigLoaderService.js';
 import endpoints from '../endpoints.js';
 import { errors as basicErrors } from './errors.js';
 import { models } from './models.js';
