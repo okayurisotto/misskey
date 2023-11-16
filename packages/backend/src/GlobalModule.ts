@@ -6,13 +6,21 @@ import { RedisPubService } from '@/core/RedisPubService.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
 import { MeiliSearchService } from '@/core/MeiliSearchService.js';
 import { TypeORMService as TypeORMService } from '@/core/TypeORMService.js';
+import { BootManagementService } from '@/boot/BootManagementService.js';
+import { CoreModule } from '@/core/CoreModule.js';
 import { ConfigLoaderService } from './ConfigLoaderService.js';
+import { DaemonModule } from './daemons/DaemonModule.js';
+import { ServerModule } from './server/ServerModule.js';
+import { QueueProcessorModule } from './queue/QueueProcessorModule.js';
+import { ClusterManagementService } from './boot/ClusterManagementService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 
 @Global()
 @Module({
-	imports: [],
+	imports: [CoreModule, ServerModule, DaemonModule, QueueProcessorModule],
 	providers: [
+		BootManagementService,
+		ClusterManagementService,
 		ConfigLoaderService,
 		TypeORMService,
 		MeiliSearchService,
@@ -21,6 +29,8 @@ import type { OnApplicationShutdown } from '@nestjs/common';
 		RedisSubService,
 	],
 	exports: [
+		BootManagementService,
+		ClusterManagementService,
 		ConfigLoaderService,
 		TypeORMService,
 		MeiliSearchService,

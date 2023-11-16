@@ -322,8 +322,9 @@ export class QueueProcessorService implements OnApplicationShutdown {
 	}
 
 	@bindThis
-	public async start(): Promise<void> {
-		await Promise.all([
+	public start(): void {
+		// TODO: `await`するとここで止まってしまう
+		Promise.all([
 			this.systemQueueWorker.run(),
 			this.dbQueueWorker.run(),
 			this.deliverQueueWorker.run(),

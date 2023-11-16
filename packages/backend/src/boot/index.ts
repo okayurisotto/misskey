@@ -4,43 +4,26 @@
 
 import cluster from 'node:cluster';
 import { EventEmitter } from 'node:events';
-import chalk from 'chalk';
+import { NestFactory } from '@nestjs/core';
 import Xev from 'xev';
+import { GlobalModule } from '@/GlobalModule.js';
+import { envOption } from '@/env.js';
 import Logger from '@/misc/logger.js';
-import { envOption } from '../env.js';
-import { initializeMasterProcess } from './initializeMasterProcess.js';
-import { initializeWorkerProcess } from './initializeWorkerProcess.js';
+import { NestLogger } from '@/misc/NestLogger.js';
 import { ProcessMessage } from './ProcessMessage.js';
+import { BootManagementService } from './BootManagementService.js';
 
 import 'reflect-metadata';
 
-process.title = `Misskey (${cluster.isPrimary ? 'master' : 'worker'})`;
+process.title = `Misskey (${
+	cluster.worker ? `worker[${cluster.worker.id}]` : 'primary'
+})`;
 
 Error.stackTraceLimit = Infinity;
 EventEmitter.defaultMaxListeners = 128;
 
 const logger = new Logger('core', 'cyan');
-const clusterLogger = logger.createSubLogger('cluster', 'orange');
 const ev = new Xev();
-
-//#region Events
-
-// Listen new workers
-cluster.on('fork', (worker) => {
-	clusterLogger.debug(`Process forked: [${worker.id}]`);
-});
-
-// Listen online workers
-cluster.on('online', (worker) => {
-	clusterLogger.debug(`Process is now online: [${worker.id}]`);
-});
-
-// Listen for dying workers
-cluster.on('exit', (worker) => {
-	// Replace the dead worker.
-	clusterLogger.error(chalk.red(`[${worker.id}] died :(`));
-	cluster.fork();
-});
 
 // Display detail of unhandled promise rejection
 process.on('unhandledRejection', (reason, promise) => {
@@ -64,18 +47,25 @@ process.on('exit', (code) => {
 	logger.info(`The process is going to exit with code ${code}`);
 });
 
-//#endregion
+const app = await NestFactory.createApplicationContext(GlobalModule, {
+	logger: new NestLogger(),
+});
+const bootManagementService = await app.resolve(BootManagementService);
 
-if (cluster.isPrimary || envOption.disableClustering) {
-	await initializeMasterProcess();
-
-	if (cluster.isPrimary) {
-		ev.mount();
-	}
+if (cluster.isPrimary) {
+	ev.mount();
 }
 
-if (cluster.isWorker || envOption.disableClustering) {
-	await initializeWorkerProcess();
+if (envOption.disableClustering) {
+	await bootManagementService.initializePrimary();
+	await bootManagementService.initializeWorker();
+} else {
+	if (cluster.isPrimary) {
+		await bootManagementService.spawnWorkers();
+		await bootManagementService.initializePrimary();
+	} else {
+		await bootManagementService.initializeWorker();
+	}
 }
 
 process.send?.(ProcessMessage.Ok);

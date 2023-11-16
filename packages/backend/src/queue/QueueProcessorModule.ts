@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { CoreModule } from '@/core/CoreModule.js';
-import { GlobalModule } from '@/GlobalModule.js';
 import { QueueLoggerService } from './QueueLoggerService.js';
 import { QueueProcessorService } from './QueueProcessorService.js';
 import { DeliverProcessorService } from './processors/DeliverProcessorService.js';
@@ -34,10 +33,7 @@ import { ExportFavoritesProcessorService } from './processors/ExportFavoritesPro
 import { RelationshipProcessorService } from './processors/RelationshipProcessorService.js';
 
 @Module({
-	imports: [
-		GlobalModule,
-		CoreModule,
-	],
+	imports: [CoreModule],
 	providers: [
 		QueueLoggerService,
 		TickChartsProcessorService,
@@ -71,8 +67,6 @@ import { RelationshipProcessorService } from './processors/RelationshipProcessor
 		AggregateRetentionProcessorService,
 		QueueProcessorService,
 	],
-	exports: [
-		QueueProcessorService,
-	],
+	exports: [QueueProcessorService],
 })
 export class QueueProcessorModule {}
