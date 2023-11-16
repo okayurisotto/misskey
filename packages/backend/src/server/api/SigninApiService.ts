@@ -6,7 +6,6 @@ import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { TwoFactorAuthenticationService } from '@/core/TwoFactorAuthenticationService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { RateLimiterService } from './RateLimiterService.js';
@@ -43,7 +42,6 @@ export class SigninApiService {
 	) {
 	}
 
-	@bindThis
 	public async signin(
 		request: FastifyRequest<{
 			Body: {

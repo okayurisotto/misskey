@@ -4,7 +4,6 @@ import multipart from '@fastify/multipart';
 import fastifyCookie from '@fastify/cookie';
 import { ModuleRef } from '@nestjs/core';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import endpoints from './endpoints.js';
@@ -29,7 +28,6 @@ export class ApiServerService {
 		//this.createServer = this.createServer.bind(this);
 	}
 
-	@bindThis
 	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		fastify.register(cors, {
 			origin: '*',

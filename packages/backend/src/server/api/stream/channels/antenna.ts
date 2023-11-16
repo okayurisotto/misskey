@@ -21,11 +21,11 @@ class AntennaChannel extends Channel {
 		//this.onEvent = this.onEvent.bind(this);
 	}
 
-	@bindThis
 	public async init(params: any): Promise<void> {
 		this.antennaId = params.antennaId as string;
 
 		// Subscribe stream
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.on(`antennaStream:${this.antennaId}`, this.onEvent);
 	}
 
@@ -49,9 +49,9 @@ class AntennaChannel extends Channel {
 		}
 	}
 
-	@bindThis
 	public override dispose(): void {
 		// Unsubscribe events
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.off(`antennaStream:${this.antennaId}`, this.onEvent);
 	}
 }
@@ -66,7 +66,6 @@ export class AntennaChannelService {
 	) {
 	}
 
-	@bindThis
 	public create(id: string, connection: Channel['connection']): AntennaChannel {
 		return new AntennaChannel(
 			this.noteEntityService,

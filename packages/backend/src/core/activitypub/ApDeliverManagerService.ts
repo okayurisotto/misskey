@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { QueueService } from '@/core/QueueService.js';
-import { bindThis } from '@/decorators.js';
 import type { IActivity } from '@/core/activitypub/type.js';
 import { ThinUser } from '@/queue/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -59,7 +58,6 @@ class DeliverManager {
 	/**
 	 * Add recipe for followers deliver
 	 */
-	@bindThis
 	public addFollowersRecipe(): void {
 		const deliver: IFollowersRecipe = {
 			type: 'Followers',
@@ -72,7 +70,6 @@ class DeliverManager {
 	 * Add recipe for direct deliver
 	 * @param to To
 	 */
-	@bindThis
 	public addDirectRecipe(to: RemoteUser): void {
 		const recipe: IDirectRecipe = {
 			type: 'Direct',
@@ -86,7 +83,6 @@ class DeliverManager {
 	 * Add recipe
 	 * @param recipe Recipe
 	 */
-	@bindThis
 	public addRecipe(recipe: IRecipe): void {
 		this.recipes.push(recipe);
 	}
@@ -94,7 +90,6 @@ class DeliverManager {
 	/**
 	 * Execute delivers
 	 */
-	@bindThis
 	public async execute(): Promise<void> {
 		// The value flags whether it is shared or not.
 		// key: inbox URL, value: whether it is sharedInbox
@@ -147,7 +142,6 @@ export class ApDeliverManagerService {
 	 * @param actor
 	 * @param activity Activity
 	 */
-	@bindThis
 	public async deliverToFollowers(actor: { id: LocalUser['id']; host: null; }, activity: IActivity): Promise<void> {
 		const manager = new DeliverManager(
 			this.prismaService,
@@ -165,7 +159,6 @@ export class ApDeliverManagerService {
 	 * @param activity Activity
 	 * @param to Target user
 	 */
-	@bindThis
 	public async deliverToUser(actor: { id: LocalUser['id']; host: null; }, activity: IActivity, to: RemoteUser): Promise<void> {
 		const manager = new DeliverManager(
 			this.prismaService,
@@ -177,7 +170,6 @@ export class ApDeliverManagerService {
 		await manager.execute();
 	}
 
-	@bindThis
 	public createDeliverManager(actor: { id: user['id']; host: null; }, activity: IActivity | null): DeliverManager {
 		return new DeliverManager(
 			this.prismaService,

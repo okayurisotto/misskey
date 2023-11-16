@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type Logger from '@/misc/logger.js';
-import { bindThis } from '@/decorators.js';
 import { UserMutingService } from '@/core/UserMutingService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
@@ -17,7 +16,6 @@ export class CheckExpiredMutingsProcessorService {
 		this.logger = this.queueLoggerService.logger.createSubLogger('check-expired-mutings');
 	}
 
-	@bindThis
 	public async process(): Promise<void> {
 		this.logger.info('Checking expired mutings...');
 

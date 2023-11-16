@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { NotificationService } from '@/core/NotificationService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type * as Bull from 'bullmq';
 import type { EndedPollNotificationJobData } from '../types.js';
@@ -12,7 +11,6 @@ export class EndedPollNotificationProcessorService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async process(
 		job: Bull.Job<EndedPollNotificationJobData>,
 	): Promise<void> {

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
@@ -41,7 +40,6 @@ export default class NotesChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	@bindThis
 	public async update(note: note, isAdditional: boolean): Promise<void> {
 		const prefix = note.userHost === null ? 'local' : 'remote';
 

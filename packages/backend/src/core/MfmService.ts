@@ -4,7 +4,6 @@ import * as parse5 from 'parse5';
 import { Window } from 'happy-dom';
 import { intersperse } from '@/misc/prelude/array.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
-import { bindThis } from '@/decorators.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import * as TreeAdapter from '../../node_modules/parse5/dist/tree-adapters/default.js';
 import type * as mfm from 'mfm-js';
@@ -20,7 +19,6 @@ export class MfmService {
 		private readonly configLoaderService: ConfigLoaderService,
 	) {}
 
-	@bindThis
 	public fromHtml(html_: string, hashtagNames?: string[]): string {
 		// some AP servers like Pixelfed use br tags as well as newlines
 		const html = html_.replace(/<br\s?\/?>\r?\n/gi, '\n');
@@ -226,7 +224,6 @@ export class MfmService {
 		}
 	}
 
-	@bindThis
 	public toHtml(nodes: mfm.MfmNode[] | null, mentionedRemoteUsers: IMentionedRemoteUsers = []): string | null {
 		if (nodes == null) {
 			return null;

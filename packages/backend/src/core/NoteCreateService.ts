@@ -34,7 +34,6 @@ import { AddContext, ApRendererService } from '@/core/activitypub/ApRendererServ
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
-import { bindThis } from '@/decorators.js';
 import { DB_MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -68,7 +67,6 @@ class NotificationManager {
 		this.queue = [];
 	}
 
-	@bindThis
 	public push(notifiee: LocalUser['id'], reason: NotificationType): void {
 		// 自分自身へは通知しない
 		if (this.notifier.id === notifiee) return;
@@ -88,7 +86,6 @@ class NotificationManager {
 		}
 	}
 
-	@bindThis
 	public async deliver(): Promise<void> {
 		for (const x of this.queue) {
 			// ミュート情報を取得
@@ -172,7 +169,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async create(user: {
 		id: user['id'];
 		username: user['username'];
@@ -310,7 +306,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		return note;
 	}
 
-	@bindThis
 	private async insertNote(
 		user: Pick<user, 'id' | 'host'>,
 		data: Option,
@@ -420,7 +415,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	private async postNoteCreated(
 		note: note,
 		user: {
@@ -675,7 +669,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		this.index(note);
 	}
 
-	@bindThis
 	private isSensitive(note: Option, sensitiveWord: string[]): boolean {
 		if (sensitiveWord.length > 0) {
 			const text = note.cw ?? note.text ?? '';
@@ -700,7 +693,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		return false;
 	}
 
-	@bindThis
 	private incRenoteCount(renote: note): void {
 		this.prismaService.client.note.update({
 			where: { id: renote.id },
@@ -711,7 +703,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	private async createMentionedEvents(mentionedUsers: MinimumUser[], note: note, nm: NotificationManager): Promise<void> {
 		for (const u of mentionedUsers.filter(u => this.userEntityService.isLocalUser(u))) {
 			const isThreadMuted = (await this.prismaService.client.note_thread_muting.count({
@@ -744,7 +735,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	private async saveReply(reply: note, note: note): Promise<void> {
 		await this.prismaService.client.note.update({
 			where: { id: reply.id },
@@ -752,7 +742,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	private async renderNoteOrRenoteActivity(data: Option, note: note): Promise<AddContext<IAnnounce | ICreate> | null> {
 		if (data.localOnly) return null;
 
@@ -763,14 +752,12 @@ export class NoteCreateService implements OnApplicationShutdown {
 		return this.apRendererService.addContext(content);
 	}
 
-	@bindThis
 	private index(note: note): void {
 		if (note.text == null && note.cw == null) return;
 
 		this.searchService.indexNote(note);
 	}
 
-	@bindThis
 	private async incNotesCountOfUser(user: { id: user['id']; }): Promise<void> {
 		await this.prismaService.client.user.update({
 			where: { id: user.id },
@@ -781,7 +768,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	private async extractMentionedUsers(user: { host: user['host']; }, tokens: mfm.MfmNode[]): Promise<user[]> {
 		if (tokens == null) return [];
 
@@ -798,12 +784,10 @@ export class NoteCreateService implements OnApplicationShutdown {
 		return mentionedUsers;
 	}
 
-	@bindThis
 	public dispose(): void {
 		this.#shutdownController.abort();
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

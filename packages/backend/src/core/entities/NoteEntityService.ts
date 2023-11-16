@@ -4,7 +4,6 @@ import { ModuleRef } from '@nestjs/core';
 import { z } from 'zod';
 import { nyaize } from '@/misc/nyaize.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import { bindThis } from '@/decorators.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
@@ -74,7 +73,6 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param meId       閲覧者を指定するID。
 	 * @returns          `mutable`なメソッドなため返り値はなし。
 	 */
-	@bindThis
 	private async hideNote(packedNote: z.infer<typeof NoteSchema>, meId: user['id'] | null): Promise<void> {
 		/** 隠すかどうか。隠す場合は`true`へ書き換えられる。 */
 		let hide = false;
@@ -137,7 +135,6 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param meId
 	 * @returns `meId`が`null`でなかった場合、自身の投票結果が返り値の`isVoted`に`true`として表される。
 	 */
-	@bindThis
 	private async populatePoll(note: note, meId: user['id'] | null): Promise<Poll> {
 		const poll = await this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: note.id } });
 		const choices = poll.choices.map(c => ({
@@ -189,7 +186,6 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param _hint_ その`note`にされたリアクションの情報を含めておくと早期`return`される場合がある。
 	 * @returns      リアクションが文字列（絵文字）もしくは文字列（カスタム絵文字の書式）として返される。自分がしたリアクションがなかった場合には`undefined`が返される。
 	 */
-	@bindThis
 	private async populateMyReaction(
 		note: note,
 		meId: user['id'],
@@ -235,7 +231,6 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param meId
 	 * @returns
 	 */
-	@bindThis
 	public async isVisibleForMe(note: note, meId: user['id'] | null): Promise<boolean> {
 		// This code must always be synchronized with the checks in generateVisibilityQuery.
 		// `visibility`が`'specified'` && 自分が指定されていない => 非表示
@@ -295,7 +290,6 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param packedFiles あらかじめpackされた`file`の`Map`。ここにないものはあとから取得され、追加される。
 	 * @returns           packされた`file`。取得できなかった`file`に関しては除かれるため、`fileIds`と要素数が合わないこともなくはないはず。
 	 */
-	@bindThis
 	public async packAttachedFiles(
 		fileIds: note['fileIds'],
 		packedFiles: Map<note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>,
@@ -323,7 +317,6 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param options._hint_
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: note['id'] | note,
 		me?: { id: user['id'] } | null | undefined,
@@ -466,7 +459,6 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param options
 	 * @returns
 	 */
-	@bindThis
 	public async packMany(
 		notes: (note & { renote?: note | null; reply?: note | null })[],
 		me?: { id: user['id'] } | null | undefined,
@@ -528,7 +520,6 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param notes
 	 * @returns
 	 */
-	@bindThis
 	public aggregateNoteEmojis(notes: (note & { renote?: (note & { user?: user }) | null; user?: user })[]): { name: string; host: string; }[] {
 		let emojis: ({ name: null; host: null; } | { name: string | undefined; host: string | null; })[] = [];
 
@@ -564,7 +555,6 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param excludeNoteId カウントしない`renote`のID。
 	 * @returns
 	 */
-	@bindThis
 	public async countSameRenotes(userId: string, renoteId: string, excludeNoteId: string | undefined): Promise<number> {
 		return await this.prismaService.client.note.count({
 			where: {

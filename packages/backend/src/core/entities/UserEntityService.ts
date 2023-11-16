@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import { USER_ACTIVE_THRESHOLD, USER_ONLINE_THRESHOLD } from '@/const.js';
 import { type LocalUser, type PartialLocalUser, type PartialRemoteUser, type RemoteUser } from '@/models/entities/User.js';
-import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import type { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
@@ -80,7 +79,6 @@ export class UserEntityService implements OnModuleInit {
 	 * @param targetId
 	 * @returns
 	 */
-	@bindThis
 	public async getRelation(
 		meId: user['id'],
 		targetId: user['id'],
@@ -124,7 +122,6 @@ export class UserEntityService implements OnModuleInit {
 	 * @param userId
 	 * @returns
 	 */
-	@bindThis
 	public async getHasUnreadAnnouncement(userId: user['id']): Promise<boolean> {
 		const count = await this.prismaService.client.announcement.count({
 			where: { announcement_read: { none: { userId: userId } } },
@@ -140,7 +137,6 @@ export class UserEntityService implements OnModuleInit {
 	 * @param userId
 	 * @returns
 	 */
-	@bindThis
 	public async getHasUnreadNotification(userId: user['id']): Promise<boolean> {
 		const latestReadNotificationId = await this.redisClient.get(`latestReadNotification:${userId}`);
 
@@ -163,7 +159,6 @@ export class UserEntityService implements OnModuleInit {
 	 * @param user
 	 * @returns
 	 */
-	@bindThis
 	public getOnlineStatus(user: user): 'unknown' | 'online' | 'active' | 'offline' {
 		if (user.hideOnlineStatus) return 'unknown';
 		if (user.lastActiveDate == null) return 'unknown';
@@ -181,7 +176,6 @@ export class UserEntityService implements OnModuleInit {
 	 * @param user
 	 * @returns
 	 */
-	@bindThis
 	public getIdenticonUrl(user: user): string {
 		return `${this.configLoaderService.data.url}/identicon/${user.username.toLowerCase()}@${user.host ?? this.configLoaderService.data.host}`;
 	}
@@ -192,7 +186,6 @@ export class UserEntityService implements OnModuleInit {
 	 * @param user
 	 * @returns
 	 */
-	@bindThis
 	public getUserUri(user: LocalUser | PartialLocalUser | RemoteUser | PartialRemoteUser): string {
 		if (this.isRemoteUser(user)) return user.uri;
 		return this.genLocalUserUri(user.id);
@@ -204,7 +197,6 @@ export class UserEntityService implements OnModuleInit {
 	 * @param userId
 	 * @returns
 	 */
-	@bindThis
 	public genLocalUserUri(userId: string): string {
 		return `${this.configLoaderService.data.url}/users/${userId}`;
 	}

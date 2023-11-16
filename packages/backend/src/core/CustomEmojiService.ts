@@ -3,7 +3,6 @@ import { fromEntries } from 'omick';
 import { IdService } from '@/core/IdService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { bindThis } from '@/decorators.js';
 import { MemoryKVCache, RedisSingleCache } from '@/misc/cache.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -51,7 +50,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async add(data: {
 		driveFile: drive_file;
 		name: string;
@@ -92,7 +90,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		return emoji;
 	}
 
-	@bindThis
 	public async update(id: emoji['id'], data: {
 		driveFile?: drive_file;
 		name?: string;
@@ -143,7 +140,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public async addAliasesBulk(ids: emoji['id'][], aliases: string[]): Promise<void> {
 		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
@@ -168,7 +164,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async setAliasesBulk(ids: emoji['id'][], aliases: string[]): Promise<void> {
 		await this.prismaService.client.emoji.updateMany({
 			where: { id: { in: ids } },
@@ -190,7 +185,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async removeAliasesBulk(ids: emoji['id'][], aliases: string[]): Promise<void> {
 		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
@@ -213,7 +207,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async setCategoryBulk(ids: emoji['id'][], category: string | null): Promise<void> {
 		await this.prismaService.client.emoji.updateMany({
 			where: { id: { in: ids } },
@@ -235,7 +228,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async setLicenseBulk(ids: emoji['id'][], license: string | null): Promise<void> {
 		await this.prismaService.client.emoji.updateMany({
 			where: { id: { in: ids } },
@@ -257,7 +249,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async delete(id: emoji['id']): Promise<void> {
 		const emoji = await this.prismaService.client.emoji.delete({ where: { id } });
 
@@ -268,7 +259,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async deleteBulk(ids: emoji['id'][]): Promise<void> {
 		const emojis = await this.prismaService.client.emoji.findMany({ where: { id: { in: ids } } });
 
@@ -285,7 +275,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	private normalizeHost(src: string | undefined, noteUserHost: string | null): string | null {
 		const host = ((): string | null => {
 			// .はローカルホスト (ここがマッチするのはリアクションのみ)
@@ -304,7 +293,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		return this.utilityService.toPunyNullable(host);
 	}
 
-	@bindThis
 	public parseEmojiStr(
 		emojiName: string,
 		noteUserHost: string | null,
@@ -326,7 +314,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	 * @param emojiNames ノートやユーザープロフィールに添付された、またはリアクションのカスタム絵文字名（`:`は含めない。リアクションでローカルホストの場合は`@.`を付ける（これはdecodeReactionで可能））
 	 * @param host       ノートやユーザープロフィールの所有者のホスト
 	 */
-	@bindThis
 	public async populateEmojis(emojiNames: string[], host: string | null): Promise<Record<string, string>> {
 		const parsedEmojiNames = emojiNames
 			.map((emojiName) => {
@@ -363,7 +350,6 @@ export class CustomEmojiService implements OnApplicationShutdown {
 	/**
 	 * 与えられた絵文字のリストをデータベースから取得し、キャッシュに追加します
 	 */
-	@bindThis
 	public async prefetchEmojis(emojis: { name: string; host: string | null; }[]): Promise<void> {
 		const notCachedEmojis = emojis.filter(emoji => this.cache.get(`${emoji.name} ${emoji.host}`) == null);
 		const emojisQuery: Prisma.emojiWhereInput[] = [];
@@ -383,12 +369,10 @@ export class CustomEmojiService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public dispose(): void {
 		this.cache.dispose();
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

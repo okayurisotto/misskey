@@ -4,7 +4,6 @@ import fastifyAccepts from '@fastify/accepts';
 import { escapeAttribute, escapeValue } from '@/misc/prelude/xml.js';
 import * as Acct from '@/misc/acct.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { NodeinfoServerService } from './NodeinfoServerService.js';
@@ -21,7 +20,6 @@ export class WellKnownServerService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		const XRD = (...x: { element: string, value?: string, attributes?: Record<string, string> }[]): string =>
 			`<?xml version="1.0" encoding="UTF-8"?><XRD xmlns="http://docs.oasis-open.org/ns/xri/xrd-1.0">${x.map(({ element, value, attributes }) =>

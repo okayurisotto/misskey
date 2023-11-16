@@ -1,5 +1,4 @@
 import cluster from 'node:cluster';
-import { bindThis } from '@/decorators.js';
 import { NODE_ENV, envOption } from '@/env.js';
 import {
 	LogBuilder,
@@ -38,7 +37,6 @@ export default class Logger {
 	 * @param contextName 作成するサブロガーにつける名前。ログに含まれるようになる。
 	 * @param contextColor `contextName`を出力ログに含めるときに装飾として使われる色
 	 */
-	@bindThis
 	public createSubLogger(contextName: string, contextColor?: KEYWORD): Logger {
 		const logger = new Logger(contextName, contextColor);
 		logger.parentLogger = this;
@@ -101,7 +99,6 @@ export default class Logger {
 	/**
 	 * 実行を継続できるが改善が必要な状況で使う。
 	 */
-	@bindThis
 	public warn(message: string, important = false): void {
 		this.log('warning', message, undefined, important);
 	}
@@ -109,7 +106,6 @@ export default class Logger {
 	/**
 	 * 何かに成功した状況で使う。
 	 */
-	@bindThis
 	public succ(message: string, important = false): void {
 		this.log('success', message, undefined, important);
 	}
@@ -118,7 +114,6 @@ export default class Logger {
 	 * 開発者に必要だが利用者に不要な情報を表示したい場面で使う。
 	 * `NODE_ENV`が`'production'`だった場合は基本的に表示されない。
 	 */
-	@bindThis
 	public debug(message: string, important = false): void {
 		if (NODE_ENV !== 'production' || envOption.verbose) {
 			this.log('debug', message, undefined, important);
@@ -129,7 +124,6 @@ export default class Logger {
 	 * 何らかの情報を表示したい場面で使う。
 	 * これより適したメソッドがある場合はそれを使うべき。
 	 */
-	@bindThis
 	public info(message: string, important = false): void {
 		this.log('info', message, undefined, important);
 	}

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { NODE_ENV } from '@/env.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import type { RelationshipJobData, ThinUser } from '@/queue/types.js';
@@ -47,7 +46,6 @@ export class AccountMoveService {
 	 *
 	 * After delivering Move activity, its local followers unfollow the old account and then follow the new one.
 	 */
-	@bindThis
 	public async moveFromLocal(
 		src: LocalUser,
 		dst: LocalUser | RemoteUser,
@@ -96,7 +94,6 @@ export class AccountMoveService {
 		return iObj;
 	}
 
-	@bindThis
 	public async postMoveProcess(src: user, dst: user): Promise<void> {
 		// Copy blockings and mutings, and update lists
 		try {
@@ -134,7 +131,6 @@ export class AccountMoveService {
 		await this.queueService.createFollowJob(followJobs);
 	}
 
-	@bindThis
 	public async copyBlocking(src: ThinUser, dst: ThinUser): Promise<void> {
 		// Followers shouldn't overlap with blockers, but the destination account, different from the blockee (i.e., old account), may have followed the local user before moving.
 		// So block the destination account here.
@@ -160,7 +156,6 @@ export class AccountMoveService {
 		// no need to unblock the old account because it may be still functional
 	}
 
-	@bindThis
 	public async copyMutings(src: ThinUser, dst: ThinUser): Promise<void> {
 		const dstMutings = await this.prismaService.client.muting.findMany({
 			where: { muteeId: dst.id, expiresAt: null },
@@ -210,7 +205,6 @@ export class AccountMoveService {
 	 * @param dst User (new account)
 	 * @returns {Promise<void>}
 	 */
-	@bindThis
 	public async updateLists(src: ThinUser, dst: user): Promise<void> {
 		const dstJoinings = await this.prismaService.client.user_list_joining.findMany({
 			where: { userId: dst.id },
@@ -257,7 +251,6 @@ export class AccountMoveService {
 		}
 	}
 
-	@bindThis
 	private async adjustFollowingCounts(localFollowerIds: string[], oldAccount: user): Promise<void> {
 		if (localFollowerIds.length === 0) return;
 
@@ -310,7 +303,6 @@ export class AccountMoveService {
 	 * @param instant checkがtrueであるユーザーが最初に見つかったら即座にreturnするかどうか
 	 * @returns {Promise<LocalUser | RemoteUser | null>}
 	 */
-	@bindThis
 	public async validateAlsoKnownAs(
 		dst_: LocalUser | RemoteUser,
 		check: (oldUser: LocalUser | RemoteUser | null, newUser: LocalUser | RemoteUser) => boolean | Promise<boolean> = (): boolean => true,

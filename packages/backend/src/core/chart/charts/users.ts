@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
@@ -43,7 +42,6 @@ export default class UsersChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	@bindThis
 	public async update(user: { id: user['id'], host: user['host'] }, isAdditional: boolean): Promise<void> {
 		const prefix = this.userEntityService.isLocalUser(user) ? 'local' : 'remote';
 

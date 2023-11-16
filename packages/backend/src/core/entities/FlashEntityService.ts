@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import { bindThis } from '@/decorators.js';
 import type { FlashSchema } from '@/models/zod/FlashSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -21,7 +20,6 @@ export class FlashEntityService {
 	 * @param me 渡された場合、返り値に`isLiked`が含まれるようになる。
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: flash['id'] | flash,
 		me?: { id: user['id'] } | null | undefined,

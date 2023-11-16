@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import type { IActivity } from '@/core/activitypub/type.js';
 import type { webhookEventTypes } from '@/models/entities/Webhook.js';
-import { bindThis } from '@/decorators.js';
 import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { DbQueue, DeliverQueue, EndedPollNotificationQueue, InboxQueue, ObjectStorageQueue, RelationshipQueue, SystemQueue, WebhookDeliverQueue } from './QueueModule.js';
@@ -63,7 +62,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public deliver(
 		user: ThinUser,
 		content: IActivity | null,
@@ -99,7 +97,6 @@ export class QueueService {
 	 * @param inboxes `Map<string, boolean>` / key: to (inbox url), value: isSharedInbox (whether it is sharedInbox)
 	 * @returns void
 	 */
-	@bindThis
 	public async deliverMany(
 		user: ThinUser,
 		content: IActivity | null,
@@ -130,7 +127,6 @@ export class QueueService {
 		return;
 	}
 
-	@bindThis
 	public inbox(
 		activity: IActivity,
 		signature: httpSignature.IParsedSignature,
@@ -150,7 +146,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createDeleteDriveFilesJob(user: ThinUser): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('deleteDriveFiles', {
 			user: { id: user.id },
@@ -160,7 +155,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createExportCustomEmojisJob(user: ThinUser): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('exportCustomEmojis', {
 			user: { id: user.id },
@@ -170,7 +164,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createExportNotesJob(user: ThinUser): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('exportNotes', {
 			user: { id: user.id },
@@ -180,7 +173,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createExportFavoritesJob(user: ThinUser): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('exportFavorites', {
 			user: { id: user.id },
@@ -190,7 +182,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createExportFollowingJob(
 		user: ThinUser,
 		excludeMuting = false,
@@ -206,7 +197,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createExportMuteJob(user: ThinUser): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('exportMuting', {
 			user: { id: user.id },
@@ -216,7 +206,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createExportBlockingJob(user: ThinUser): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('exportBlocking', {
 			user: { id: user.id },
@@ -226,7 +215,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createExportUserListsJob(user: ThinUser): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('exportUserLists', {
 			user: { id: user.id },
@@ -236,7 +224,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createExportAntennasJob(user: ThinUser): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('exportAntennas', {
 			user: { id: user.id },
@@ -246,7 +233,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createImportFollowingJob(user: ThinUser, fileId: drive_file['id']): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('importFollowing', {
 			user: { id: user.id },
@@ -257,13 +243,11 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createImportFollowingToDbJob(user: ThinUser, targets: string[]): Promise<Bull.Job<unknown>[]> {
 		const jobs = targets.map(rel => this.generateToDbJobData('importFollowingToDb', { user, target: rel }));
 		return this.dbQueue.addBulk(jobs);
 	}
 
-	@bindThis
 	public createImportMutingJob(user: ThinUser, fileId: drive_file['id']): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('importMuting', {
 			user: { id: user.id },
@@ -274,7 +258,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createImportBlockingJob(user: ThinUser, fileId: drive_file['id']): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('importBlocking', {
 			user: { id: user.id },
@@ -285,13 +268,11 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createImportBlockingToDbJob(user: ThinUser, targets: string[]): Promise<Bull.Job<unknown>[]> {
 		const jobs = targets.map(rel => this.generateToDbJobData('importBlockingToDb', { user, target: rel }));
 		return this.dbQueue.addBulk(jobs);
 	}
 
-	@bindThis
 	private generateToDbJobData<T extends 'importFollowingToDb' | 'importBlockingToDb', D extends DbJobData<T>>(name: T, data: D): {
 		name: string,
 		data: D,
@@ -307,7 +288,6 @@ export class QueueService {
 		};
 	}
 
-	@bindThis
 	public createImportUserListsJob(user: ThinUser, fileId: drive_file['id']): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('importUserLists', {
 			user: { id: user.id },
@@ -318,7 +298,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createImportCustomEmojisJob(user: ThinUser, fileId: drive_file['id']): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('importCustomEmojis', {
 			user: { id: user.id },
@@ -329,7 +308,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createImportAntennasJob(user: ThinUser, antenna: z.infer<typeof ExportedAntennaSchema>[]): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('importAntennas', {
 			user: { id: user.id },
@@ -340,7 +318,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createDeleteAccountJob(user: ThinUser, opts: { soft?: boolean; } = {}): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add('deleteAccount', {
 			user: { id: user.id },
@@ -351,7 +328,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createFollowJob(
 		followings: {
 			from: ThinUser,
@@ -364,7 +340,6 @@ export class QueueService {
 		return this.relationshipQueue.addBulk(jobs);
 	}
 
-	@bindThis
 	public createUnfollowJob(
 		followings: {
 			from: ThinUser,
@@ -376,7 +351,6 @@ export class QueueService {
 		return this.relationshipQueue.addBulk(jobs);
 	}
 
-	@bindThis
 	public createDelayedUnfollowJob(
 		followings: {
 			from: ThinUser,
@@ -389,7 +363,6 @@ export class QueueService {
 		return this.relationshipQueue.addBulk(jobs);
 	}
 
-	@bindThis
 	public createBlockJob(
 		blockings: {
 			from: ThinUser,
@@ -401,7 +374,6 @@ export class QueueService {
 		return this.relationshipQueue.addBulk(jobs);
 	}
 
-	@bindThis
 	public createUnblockJob(
 		blockings: {
 			from: ThinUser,
@@ -413,7 +385,6 @@ export class QueueService {
 		return this.relationshipQueue.addBulk(jobs);
 	}
 
-	@bindThis
 	private generateRelationshipJobData(
 		name: 'follow' | 'unfollow' | 'block' | 'unblock',
 		data: RelationshipJobData,
@@ -439,7 +410,6 @@ export class QueueService {
 		};
 	}
 
-	@bindThis
 	public createDeleteObjectStorageFileJob(key: string): Promise<Bull.Job<unknown>> {
 		return this.objectStorageQueue.add('deleteFile', {
 			key: key,
@@ -449,7 +419,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public createCleanRemoteFilesJob(): Promise<Bull.Job<unknown>> {
 		return this.objectStorageQueue.add('cleanRemoteFiles', {}, {
 			removeOnComplete: true,
@@ -457,7 +426,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public webhookDeliver(
 		webhook: webhook,
 		type: typeof webhookEventTypes[number],
@@ -484,7 +452,6 @@ export class QueueService {
 		});
 	}
 
-	@bindThis
 	public destroy(): void {
 		this.deliverQueue.once('cleaned', (jobs, status) => {
 			//deliverLogger.succ(`Cleaned ${jobs.length} ${status} jobs`);

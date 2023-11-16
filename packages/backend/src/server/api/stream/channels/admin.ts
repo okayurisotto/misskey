@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
 
 class AdminChannel extends Channel {
@@ -7,7 +6,6 @@ class AdminChannel extends Channel {
 	public static override shouldShare = true;
 	public static override requireCredential = true;
 
-	@bindThis
 	public async init(params: any): Promise<void> {
 		// Subscribe admin stream
 		this.subscriber.on(`adminStream:${this.user!.id}`, data => {
@@ -25,7 +23,6 @@ export class AdminChannelService {
 	) {
 	}
 
-	@bindThis
 	public create(id: string, connection: Channel['connection']): AdminChannel {
 		return new AdminChannel(
 			id,

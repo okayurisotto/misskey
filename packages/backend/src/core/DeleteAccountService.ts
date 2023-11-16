@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { QueueService } from '@/core/QueueService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -13,7 +12,6 @@ export class DeleteAccountService {
 		private readonly userSuspendService: UserSuspendService,
 	) {}
 
-	@bindThis
 	public async deleteAccount(user: Pick<user, 'id' | 'host'>): Promise<void> {
 		const isRoot = await this.prismaService.client.user
 			.count({

@@ -8,7 +8,6 @@ import * as nestedProperty from 'nested-property';
 import { EntitySchema, LessThan, Between } from 'typeorm';
 import { dateUTC, isTimeSame, isTimeBefore, subtractTime, addTime } from '@/misc/prelude/time.js';
 import type Logger from '@/misc/logger.js';
-import { bindThis } from '@/decorators.js';
 import type { Repository, DataSource } from 'typeorm';
 import { unique } from '@/misc/prelude/array.js';
 
@@ -251,7 +250,6 @@ export default abstract class Chart<T extends Schema> {
 		this.repositoryForDay = db.getRepository<{ id: number; group?: string | null; date: number; }>(day);
 	}
 
-	@bindThis
 	private convertRawRecord(x: RawRecord<T>): KVs<T> {
 		const kvs = {} as Record<string, number>;
 		for (const k of Object.keys(x).filter((k) => k.startsWith(COLUMN_PREFIX)) as (keyof Columns<T>)[]) {
@@ -260,7 +258,6 @@ export default abstract class Chart<T extends Schema> {
 		return kvs as KVs<T>;
 	}
 
-	@bindThis
 	private getNewLog(latest: KVs<T> | null): KVs<T> {
 		const log = {} as Record<keyof T, number>;
 		for (const [k, v] of Object.entries(this.schema) as ([keyof typeof this['schema'], this['schema'][string]])[]) {
@@ -273,7 +270,6 @@ export default abstract class Chart<T extends Schema> {
 		return log as KVs<T>;
 	}
 
-	@bindThis
 	private getLatestLog(group: string | null, span: 'hour' | 'day'): Promise<RawRecord<T> | null> {
 		const repository =
 			span === 'hour' ? this.repositoryForHour :
@@ -293,7 +289,6 @@ export default abstract class Chart<T extends Schema> {
 	/**
 	 * 現在(=今のHour or Day)のログをデータベースから探して、あればそれを返し、なければ作成して返します。
 	 */
-	@bindThis
 	private async claimCurrentLog(group: string | null, span: 'hour' | 'day'): Promise<RawRecord<T>> {
 		const [y, m, d, h] = Chart.getCurrentDate();
 
@@ -386,7 +381,6 @@ export default abstract class Chart<T extends Schema> {
 		});
 	}
 
-	@bindThis
 	public async save(): Promise<void> {
 		if (this.buffer.length === 0) {
 			this.logger.info(`${this.name}: Write skipped`);
@@ -505,7 +499,6 @@ export default abstract class Chart<T extends Schema> {
 					update(logHour, logDay))));
 	}
 
-	@bindThis
 	public async tick(major: boolean, group: string | null = null): Promise<void> {
 		const data = major ? await this.tickMajor(group) : await this.tickMinor(group);
 
@@ -541,12 +534,10 @@ export default abstract class Chart<T extends Schema> {
 			update(logHour, logDay));
 	}
 
-	@bindThis
 	public resync(group: string | null = null): Promise<void> {
 		return this.tick(true, group);
 	}
 
-	@bindThis
 	public async clean(): Promise<void> {
 		const current = dateUTC(Chart.getCurrentDate());
 
@@ -582,7 +573,6 @@ export default abstract class Chart<T extends Schema> {
 		]);
 	}
 
-	@bindThis
 	public async getChartRaw(span: 'hour' | 'day', amount: number, cursor: Date | null, group: string | null = null): Promise<ChartResult<T>> {
 		const [y, m, d, h, _m, _s, _ms] = cursor ? Chart.parseDate(subtractTime(addTime(cursor, 1, span), 1)) : Chart.getCurrentDate();
 		const [y2, m2, d2, h2] = cursor ? Chart.parseDate(addTime(cursor, 1, span)) : [] as never;
@@ -687,7 +677,6 @@ export default abstract class Chart<T extends Schema> {
 		return res;
 	}
 
-	@bindThis
 	public async getChart(span: 'hour' | 'day', amount: number, cursor: Date | null, group: string | null = null): Promise<Unflatten<ChartResult<T>>> {
 		const result = await this.getChartRaw(span, amount, cursor, group);
 		const object = {};

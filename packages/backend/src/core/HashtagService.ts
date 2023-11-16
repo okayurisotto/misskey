@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { IdService } from '@/core/IdService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -14,12 +13,10 @@ export class HashtagService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async updateHashtags(user: Pick<user, 'id' | 'host'>, tags: string[]): Promise<void> {
 		await Promise.all(tags.map((tag) => this.updateHashtag(user, tag)));
 	}
 
-	@bindThis
 	public async updateUsertags(user: Pick<user, 'id' | 'host' | 'tags'>, tags: string[]): Promise<void> {
 		await Promise.all([
 			...tags.map((tag) => this.updateHashtag(user, tag, true, true)),
@@ -27,7 +24,6 @@ export class HashtagService {
 		]);
 	}
 
-	@bindThis
 	public async updateHashtag(
 		user: Pick<user, 'id' | 'host'>,
 		tag: string,

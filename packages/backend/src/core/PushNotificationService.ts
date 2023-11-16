@@ -2,7 +2,6 @@ import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import push from 'web-push';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
 import { MetaService } from '@/core/MetaService.js';
-import { bindThis } from '@/decorators.js';
 import { RedisKVCache } from '@/misc/cache.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
@@ -68,7 +67,6 @@ export class PushNotificationService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async pushNotification<T extends keyof PushNotificationsTypes>(userId: string, type: T, body: PushNotificationsTypes[T]): Promise<void> {
 		const meta = await this.metaService.fetch();
 
@@ -123,12 +121,10 @@ export class PushNotificationService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public dispose(): void {
 		this.subscriptionsCache.dispose();
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

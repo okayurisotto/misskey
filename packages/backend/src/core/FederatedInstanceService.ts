@@ -2,7 +2,6 @@ import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { RedisKVCache } from '@/misc/cache.js';
 import { IdService } from '@/core/IdService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
 import type { instance } from '@prisma/client';
@@ -40,7 +39,6 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async fetch(host_: string): Promise<instance> {
 		const host = this.utilityService.toPuny(host_);
 
@@ -66,7 +64,6 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public async update(id: instance['id'], data: Partial<instance>): Promise<void> {
 		const result = await this.prismaService.client.instance.update({
 			where: { id },
@@ -76,12 +73,10 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 		this.federatedInstanceCache.set(result.host, result);
 	}
 
-	@bindThis
 	public dispose(): void {
 		this.federatedInstanceCache.dispose();
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

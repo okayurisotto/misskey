@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
+import { bindThis } from '@/decorators.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { webhook } from '@prisma/client';
 
@@ -15,11 +15,10 @@ export class WebhookService implements OnApplicationShutdown {
 		private readonly redisForSub: RedisSubService,
 		private readonly prismaService: PrismaService,
 	) {
-		//this.onMessage = this.onMessage.bind(this);
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.on('message', this.onMessage);
 	}
 
-	@bindThis
 	public async getActiveWebhooks(): Promise<webhook[]> {
 		if (!this.webhooksFetched) {
 			this.webhooks = await this.prismaService.client.webhook.findMany({
@@ -76,12 +75,11 @@ export class WebhookService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public dispose(): void {
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.off('message', this.onMessage);
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

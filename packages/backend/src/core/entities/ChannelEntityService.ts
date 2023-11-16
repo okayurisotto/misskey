@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import type { ChannelSchema } from '@/models/zod/ChannelSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { DriveFileEntityService } from './DriveFileEntityService.js';
@@ -23,7 +22,6 @@ export class ChannelEntityService {
 	 * @param detailed `true`だった場合、返り値に`pinnedNotes`が含まれるようになる。
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: channel['id'] | channel,
 		me?: { id: user['id'] } | null | undefined,

@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
+import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
 import { StreamMessages } from '../types.js';
 
@@ -23,10 +23,10 @@ class RoleTimelineChannel extends Channel {
 		//this.onNote = this.onNote.bind(this);
 	}
 
-	@bindThis
 	public async init(params: any): Promise<void> {
 		this.roleId = params.roleId as string;
 
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.on(`roleTimelineStream:${this.roleId}`, this.onEvent);
 	}
 
@@ -53,9 +53,9 @@ class RoleTimelineChannel extends Channel {
 		}
 	}
 
-	@bindThis
 	public override dispose(): void {
 		// Unsubscribe events
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.off(`roleTimelineStream:${this.roleId}`, this.onEvent);
 	}
 }
@@ -71,7 +71,6 @@ export class RoleTimelineChannelService {
 	) {
 	}
 
-	@bindThis
 	public create(id: string, connection: Channel['connection']): RoleTimelineChannel {
 		return new RoleTimelineChannel(
 			this.noteEntityService,

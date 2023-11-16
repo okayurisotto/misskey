@@ -2,7 +2,6 @@ import * as WebSocket from 'ws';
 import { z } from 'zod';
 import type { NoteReadService } from '@/core/NoteReadService.js';
 import type { NotificationService } from '@/core/NotificationService.js';
-import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { channelServiceNames, type ChannelServiceName, type ChannelsService } from './ChannelsService.js';
@@ -154,7 +153,6 @@ export default class Connection {
 		this.sendMessageToWs(data.type, data.body);
 	}
 
-	@bindThis
 	public cacheNote(note: z.infer<typeof NoteSchema>): void {
 		const add = (note: z.infer<typeof NoteSchema>): void => {
 			const existIndex = this.cachedNotes.findIndex(n => n.id === note.id);
@@ -251,7 +249,6 @@ export default class Connection {
 	/**
 	 * クライアントにメッセージ送信
 	 */
-	@bindThis
 	public sendMessageToWs(type: string, payload: unknown): void {
 		this.wsConnection.send(JSON.stringify({
 			type: type,
@@ -262,7 +259,6 @@ export default class Connection {
 	/**
 	 * チャンネルに接続
 	 */
-	@bindThis
 	public connectChannel(id: string, params: unknown, channel: ChannelServiceName, pong = false): void {
 		const channelService = this.channelsService.getChannelService(channel);
 
@@ -290,7 +286,6 @@ export default class Connection {
 	 * チャンネルから切断
 	 * @param id チャンネルコネクションID
 	 */
-	@bindThis
 	public disconnectChannel(id: string): void {
 		const channel = this.channels.find(c => c.id === id);
 

@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { pick } from 'omick';
 import type { AntennaSchema } from '@/models/zod/AntennaSchema.js';
-import { bindThis } from '@/decorators.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import type { antenna } from '@prisma/client';
 
@@ -14,7 +13,6 @@ export class AntennaEntityService {
 	 * `antenna`をpackする。
 	 * 現状、`hasUnreadNote`は常に`false`になる。
 	 */
-	@bindThis
 	public pack(
 		id: antenna['id'],
 		data: { antenna: EntityMap<'id', antenna> },

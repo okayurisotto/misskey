@@ -3,7 +3,6 @@ import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ProxyAccountService } from '@/core/ProxyAccountService.js';
-import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -23,7 +22,6 @@ export class UserListService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async push(target: user, list: user_list, me: user): Promise<void> {
 		const currentCount =
 			await this.prismaService.client.user_list_joining.count({

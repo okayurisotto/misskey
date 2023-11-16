@@ -19,7 +19,6 @@ import type { HashtagService } from '@/core/HashtagService.js';
 import { StatusError } from '@/misc/status-error.js';
 import type { UtilityService } from '@/core/UtilityService.js';
 import type { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import type { AccountMoveService } from '@/core/AccountMoveService.js';
@@ -107,7 +106,6 @@ export class ApPersonService implements OnModuleInit {
 	 * @param x Fetched object
 	 * @param uri Fetch target URI
 	 */
-	@bindThis
 	private validateActor(x: IObject, uri: string): IActor {
 		const expectHost = this.punyHost(uri);
 
@@ -170,7 +168,6 @@ export class ApPersonService implements OnModuleInit {
 	 *
 	 * Misskeyに対象のPersonが登録されていればそれを返し、登録がなければnullを返します。
 	 */
-	@bindThis
 	public async fetchPerson(uri: string): Promise<LocalUser | RemoteUser | null> {
 		const cached = this.cacheService.uriPersonCache.get(uri) as LocalUser | RemoteUser | null | undefined;
 		if (cached) return cached;
@@ -215,7 +212,6 @@ export class ApPersonService implements OnModuleInit {
 	/**
 	 * Personを作成します。
 	 */
-	@bindThis
 	public async createPerson(uri: string, resolver?: Resolver): Promise<RemoteUser> {
 		if (typeof uri !== 'string') throw new Error('uri is not string');
 
@@ -381,7 +377,6 @@ export class ApPersonService implements OnModuleInit {
 	 * @param hint Hint of Person object (この値が正当なPersonの場合、Remote resolveをせずに更新に利用します)
 	 * @param movePreventUris ここに指定されたURIがPersonのmovedToに指定されていたり10回より多く回っている場合これ以上アカウント移行を行わない（無限ループ防止）
 	 */
-	@bindThis
 	public async updatePerson(uri: string, resolver?: Resolver | null, hint?: IObject, movePreventUris: string[] = []): Promise<string | void> {
 		if (typeof uri !== 'string') throw new Error('uri is not string');
 
@@ -536,7 +531,6 @@ export class ApPersonService implements OnModuleInit {
 	 * Misskeyに対象のPersonが登録されていればそれを返し、そうでなければ
 	 * リモートサーバーからフェッチしてMisskeyに登録しそれを返します。
 	 */
-	@bindThis
 	public async resolvePerson(uri: string, resolver?: Resolver): Promise<LocalUser | RemoteUser> {
 		//#region このサーバーに既に登録されていたらそれを返す
 		const exist = await this.fetchPerson(uri);
@@ -549,7 +543,6 @@ export class ApPersonService implements OnModuleInit {
 		return await this.createPerson(uri, resolver);
 	}
 
-	@bindThis
 	// TODO: `attachments`が`IObject`だった場合、返り値が`[]`になるようだが構わないのか？
 	public analyzeAttachments(attachments: IObject | IObject[] | undefined): Field[] {
 		const fields: Field[] = [];
@@ -566,7 +559,6 @@ export class ApPersonService implements OnModuleInit {
 		return fields;
 	}
 
-	@bindThis
 	public async updateFeatured(userId: user['id'], resolver?: Resolver): Promise<void> {
 		const user = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: userId } });
 		if (!this.userEntityService.isRemoteUser(user)) return;
@@ -618,7 +610,6 @@ export class ApPersonService implements OnModuleInit {
 	 * @param src 移行元アカウント（リモートかつupdatePerson後である必要がある、というかこれ自体がupdatePersonで呼ばれる前提）
 	 * @param movePreventUris ここに列挙されたURIにsrc.movedToUriが含まれる場合、移行処理はしない（無限ループ防止）
 	 */
-	@bindThis
 	private async processRemoteMove(src: RemoteUser, movePreventUris: string[] = []): Promise<string> {
 		if (!src.movedToUri) return 'skip: no movedToUri';
 		if (src.uri === src.movedToUri) return 'skip: movedTo itself (src)'; // ？？？

@@ -4,7 +4,6 @@ import bcrypt from 'bcryptjs';
 import { genRsaKeyPair } from '@/misc/gen-key-pair.js';
 import { IdService } from '@/core/IdService.js';
 import generateNativeUserToken from '@/misc/generate-native-user-token.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from './PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -15,7 +14,6 @@ export class CreateSystemUserService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async createSystemUser(username: string): Promise<user> {
 		const password = randomUUID();
 		const salt = await bcrypt.genSalt(8);

@@ -17,7 +17,6 @@ import { InternalStorageService } from '@/core/InternalStorageService.js';
 import { contentDisposition } from '@/misc/content-disposition.js';
 import { FileInfoService } from '@/core/FileInfoService.js';
 import { LoggerService } from '@/core/LoggerService.js';
-import { bindThis } from '@/decorators.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { correctFilename } from '@/misc/correct-filename.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -56,7 +55,6 @@ export class FileServerService {
 		//this.createServer = this.createServer.bind(this);
 	}
 
-	@bindThis
 	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		fastify.addHook('onRequest', (request, reply, done) => {
 			reply.header('Content-Security-Policy', 'default-src \'none\'; img-src \'self\'; media-src \'self\'; style-src \'unsafe-inline\'');
@@ -94,7 +92,6 @@ export class FileServerService {
 		done();
 	}
 
-	@bindThis
 	private async errorHandler(request: FastifyRequest<{ Params?: { [x: string]: any }; Querystring?: { [x: string]: any }; }>, reply: FastifyReply, err?: any): Promise<undefined> {
 		this.logger.error(`${err}`);
 
@@ -113,7 +110,6 @@ export class FileServerService {
 		return;
 	}
 
-	@bindThis
 	private async sendDriveFile(request: FastifyRequest<{ Params: { key: string; } }>, reply: FastifyReply): Promise<Readable | Buffer | undefined> {
 		const key = request.params.key;
 		const file = await this.getFileFromKey(key).then();
@@ -216,7 +212,6 @@ export class FileServerService {
 		}
 	}
 
-	@bindThis
 	private async proxyHandler(request: FastifyRequest<{ Params: { url: string; }; Querystring: { url?: string; }; }>, reply: FastifyReply): Promise<Readable | Buffer | undefined> {
 		const url = 'url' in request.query ? request.query.url : 'https://' + request.params.url;
 
@@ -373,7 +368,6 @@ export class FileServerService {
 		}
 	}
 
-	@bindThis
 	private async getStreamAndTypeFromUrl(url: string): Promise<
 		{ state: 'remote'; fileRole?: 'thumbnail' | 'webpublic' | 'original'; file?: drive_file; mime: string; ext: string | null; path: string; cleanup: () => void; filename: string; }
 		| { state: 'stored_internal'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: drive_file; filename: string; mime: string; ext: string | null; path: string; }
@@ -390,7 +384,6 @@ export class FileServerService {
 		return await this.downloadAndDetectTypeFromUrl(url);
 	}
 
-	@bindThis
 	private async downloadAndDetectTypeFromUrl(url: string): Promise<
 		{ state: 'remote' ; mime: string; ext: string | null; path: string; cleanup: () => void; filename: string; }
 	> {
@@ -412,7 +405,6 @@ export class FileServerService {
 		}
 	}
 
-	@bindThis
 	private async getFileFromKey(key: string): Promise<
 		{ state: 'remote'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: drive_file; filename: string; url: string; mime: string; ext: string | null; path: string; cleanup: () => void; }
 		| { state: 'stored_internal'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: drive_file; filename: string; mime: string; ext: string | null; path: string; }

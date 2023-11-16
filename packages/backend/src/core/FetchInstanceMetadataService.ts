@@ -5,7 +5,6 @@ import tinycolor from 'tinycolor2';
 import type Logger from '@/misc/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
-import { bindThis } from '@/decorators.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { RedisService } from '@/core/RedisService.js';
 import type { DOMWindow } from 'jsdom';
@@ -43,18 +42,15 @@ export class FetchInstanceMetadataService {
 		this.logger = this.loggerService.getLogger('metadata', 'cyan');
 	}
 
-	@bindThis
 	public async tryLock(host: string): Promise<boolean> {
 		const mutex = await this.redisClient.set(`fetchInstanceMetadata:mutex:${host}`, '1', 'GET');
 		return mutex !== '1';
 	}
 
-	@bindThis
 	public unlock(host: string): Promise<'OK'> {
 		return this.redisClient.set(`fetchInstanceMetadata:mutex:${host}`, '0');
 	}
 
-	@bindThis
 	public async fetchInstanceMetadata(instance: instance, force = false): Promise<void> {
 		const host = instance.host;
 		// Acquire mutex to ensure no parallel runs
@@ -115,7 +111,6 @@ export class FetchInstanceMetadataService {
 		}
 	}
 
-	@bindThis
 	private async fetchNodeinfo(instance: instance): Promise<NodeInfo> {
 		this.logger.info(`Fetching nodeinfo of ${instance.host} ...`);
 
@@ -159,7 +154,6 @@ export class FetchInstanceMetadataService {
 		}
 	}
 
-	@bindThis
 	private async fetchDom(instance: instance): Promise<DOMWindow['document']> {
 		this.logger.info(`Fetching HTML of ${instance.host} ...`);
 
@@ -173,7 +167,6 @@ export class FetchInstanceMetadataService {
 		return doc;
 	}
 
-	@bindThis
 	private async fetchManifest(instance: instance): Promise<Record<string, unknown> | null> {
 		const url = 'https://' + instance.host;
 
@@ -184,7 +177,6 @@ export class FetchInstanceMetadataService {
 		return manifest;
 	}
 
-	@bindThis
 	private async fetchFaviconUrl(instance: instance, doc: DOMWindow['document'] | null): Promise<string | null> {
 		const url = 'https://' + instance.host;
 
@@ -210,7 +202,6 @@ export class FetchInstanceMetadataService {
 		return null;
 	}
 
-	@bindThis
 	private async fetchIconUrl(instance: instance, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
 		if (manifest && manifest['icons'] && manifest['icons'].length > 0 && manifest['icons'][0].src) {
 			const url = 'https://' + instance.host;
@@ -239,7 +230,6 @@ export class FetchInstanceMetadataService {
 		return null;
 	}
 
-	@bindThis
 	private async getThemeColor(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
 		const themeColor = info?.metadata?.themeColor ?? doc?.querySelector('meta[name="theme-color"]')?.getAttribute('content') ?? manifest?.['theme_color'];
 
@@ -251,7 +241,6 @@ export class FetchInstanceMetadataService {
 		return null;
 	}
 
-	@bindThis
 	private async getSiteName(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
 		if (info && info.metadata) {
 			if (typeof info.metadata.nodeName === 'string') {
@@ -276,7 +265,6 @@ export class FetchInstanceMetadataService {
 		return null;
 	}
 
-	@bindThis
 	private async getDescription(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
 		if (info && info.metadata) {
 			if (typeof info.metadata.nodeDescription === 'string') {

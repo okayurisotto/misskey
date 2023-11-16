@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import { bindThis } from '@/decorators.js';
 import type { InviteCodeSchema } from '@/models/zod/InviteCodeSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -21,7 +20,6 @@ export class InviteCodeEntityService {
 	 * @param me
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: registration_ticket['id'] | registration_ticket,
 		me?: { id: user['id'] } | null | undefined,

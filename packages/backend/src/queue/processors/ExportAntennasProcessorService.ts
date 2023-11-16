@@ -5,7 +5,6 @@ import { z } from 'zod';
 import { pick } from 'omick';
 import Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
-import { bindThis } from '@/decorators.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -28,7 +27,6 @@ export class ExportAntennasProcessorService {
 			this.queueLoggerService.logger.createSubLogger('export-antennas');
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DBExportAntennasData>): Promise<void> {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },

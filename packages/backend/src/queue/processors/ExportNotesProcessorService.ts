@@ -5,7 +5,6 @@ import { pick } from 'omick';
 import type Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
-import { bindThis } from '@/decorators.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { unique } from '@/misc/prelude/array.js';
@@ -27,7 +26,6 @@ export class ExportNotesProcessorService {
 			this.queueLoggerService.logger.createSubLogger('export-notes');
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DbJobDataWithUser>): Promise<void> {
 		this.logger.info(`Exporting notes of ${job.data.user.id} ...`);
 

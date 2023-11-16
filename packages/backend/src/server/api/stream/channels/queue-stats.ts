@@ -16,8 +16,8 @@ class QueueStatsChannel extends Channel {
 		//this.onMessage = this.onMessage.bind(this);
 	}
 
-	@bindThis
 	public async init(params: any): Promise<void> {
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		ev.addListener('queueStats', this.onStats);
 	}
 
@@ -26,7 +26,6 @@ class QueueStatsChannel extends Channel {
 		this.send('stats', stats);
 	}
 
-	@bindThis
 	public override onMessage(type: string, body: any): void {
 		switch (type) {
 			case 'requestLog':
@@ -41,8 +40,8 @@ class QueueStatsChannel extends Channel {
 		}
 	}
 
-	@bindThis
 	public override dispose(): void {
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		ev.removeListener('queueStats', this.onStats);
 	}
 }
@@ -56,7 +55,6 @@ export class QueueStatsChannelService {
 	) {
 	}
 
-	@bindThis
 	public create(id: string, connection: Channel['connection']): QueueStatsChannel {
 		return new QueueStatsChannel(
 			id,

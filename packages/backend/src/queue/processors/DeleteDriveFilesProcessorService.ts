@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
@@ -20,7 +19,6 @@ export class DeleteDriveFilesProcessorService {
 			this.queueLoggerService.logger.createSubLogger('delete-drive-files');
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DbJobDataWithUser>): Promise<void> {
 		this.logger.info(`Deleting drive files of ${job.data.user.id} ...`);
 

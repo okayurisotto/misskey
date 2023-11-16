@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import type { LocalUser } from '@/models/entities/User.js';
 import { MemorySingleCache } from '@/misc/cache.js';
 import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 
 const ACTOR_USERNAME = 'instance.actor' as const;
@@ -18,7 +17,6 @@ export class InstanceActorService {
 		this.cache = new MemorySingleCache<LocalUser>(Infinity);
 	}
 
-	@bindThis
 	public async getInstanceActor(): Promise<LocalUser> {
 		const cached = this.cache.get();
 		if (cached) return cached;

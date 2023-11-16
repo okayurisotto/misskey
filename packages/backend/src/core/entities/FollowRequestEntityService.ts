@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -20,7 +19,6 @@ export class FollowRequestEntityService {
 	 * @param me
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: follow_request['id'] | follow_request,
 		me?: { id: user['id'] } | null | undefined,

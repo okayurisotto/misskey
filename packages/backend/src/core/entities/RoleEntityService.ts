@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { fromEntries, toEntries } from 'omick';
-import { bindThis } from '@/decorators.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RoleSchema } from '@/models/zod/RoleSchema.js';
@@ -19,7 +18,6 @@ export class RoleEntityService {
 	 * @param src
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: role['id'] | role,
 	): Promise<z.infer<typeof RoleSchema>> {

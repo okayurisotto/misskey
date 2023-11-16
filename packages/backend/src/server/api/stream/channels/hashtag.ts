@@ -3,8 +3,8 @@ import { z } from 'zod';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
 
 class HashtagChannel extends Channel {
@@ -23,13 +23,13 @@ class HashtagChannel extends Channel {
 		//this.onNote = this.onNote.bind(this);
 	}
 
-	@bindThis
 	public async init(params: any): Promise<void> {
 		this.q = params.q;
 
 		if (this.q == null) return;
 
 		// Subscribe stream
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.on('notesStream', this.onNote);
 	}
 
@@ -58,9 +58,9 @@ class HashtagChannel extends Channel {
 		this.send('note', note);
 	}
 
-	@bindThis
 	public override dispose(): void {
 		// Unsubscribe events
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.off('notesStream', this.onNote);
 	}
 }
@@ -75,7 +75,6 @@ export class HashtagChannelService {
 	) {
 	}
 
-	@bindThis
 	public create(id: string, connection: Channel['connection']): HashtagChannel {
 		return new HashtagChannel(
 			this.noteEntityService,

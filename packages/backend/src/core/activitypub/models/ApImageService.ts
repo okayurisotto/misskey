@@ -5,7 +5,6 @@ import { truncate } from '@/misc/truncate.js';
 import { DB_MAX_IMAGE_COMMENT_LENGTH } from '@/const.js';
 import { DriveService } from '@/core/DriveService.js';
 import type Logger from '@/misc/logger.js';
-import { bindThis } from '@/decorators.js';
 import { checkHttps } from '@/misc/check-https.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApResolverService } from '../ApResolverService.js';
@@ -30,7 +29,6 @@ export class ApImageService {
 	/**
 	 * Imageを作成します。
 	 */
-	@bindThis
 	public async createImage(actor: RemoteUser, value: string | IObject): Promise<drive_file> {
 		// 投稿者が凍結されていたらスキップ
 		if (actor.isSuspended) {
@@ -84,7 +82,6 @@ export class ApImageService {
 	 * Misskeyに対象のImageが登録されていればそれを返し、そうでなければ
 	 * リモートサーバーからフェッチしてMisskeyに登録しそれを返します。
 	 */
-	@bindThis
 	public async resolveImage(actor: RemoteUser, value: string | IObject): Promise<drive_file> {
 		// TODO
 

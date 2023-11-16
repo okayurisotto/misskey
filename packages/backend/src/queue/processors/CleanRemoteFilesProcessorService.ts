@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
@@ -19,7 +18,6 @@ export class CleanRemoteFilesProcessorService {
 			this.queueLoggerService.logger.createSubLogger('clean-remote-files');
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<Record<string, unknown>>): Promise<void> {
 		this.logger.info('Deleting cached remote files...');
 

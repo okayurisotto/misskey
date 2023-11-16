@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { IPoll } from '@/models/entities/Poll.js';
 import type Logger from '@/misc/logger.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { isQuestion } from '../type.js';
@@ -24,7 +23,6 @@ export class ApQuestionService {
 		this.logger = this.apLoggerService.logger;
 	}
 
-	@bindThis
 	public async extractPollFromQuestion(source: string | IObject, resolver?: Resolver): Promise<IPoll> {
 		// eslint-disable-next-line no-param-reassign
 		if (resolver == null) resolver = this.apResolverService.createResolver();
@@ -52,7 +50,6 @@ export class ApQuestionService {
 	 * @param uri URI of AP Question object
 	 * @returns true if updated
 	 */
-	@bindThis
 	public async updateQuestion(value: string | IObject, resolver?: Resolver): Promise<boolean> {
 		const uri = typeof value === 'string' ? value : value.id;
 		if (uri == null) throw new Error('uri is null');

@@ -5,7 +5,6 @@ import { RelayService } from '@/core/RelayService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
-import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
@@ -30,7 +29,6 @@ export class NotePiningService {
 	 * @param user
 	 * @param noteId
 	 */
-	@bindThis
 	public async addPinned(user: { id: user['id']; host: user['host']; }, noteId: note['id']): Promise<void> {
 	// Fetch pinee
 		const note = await this.prismaService.client.note.findUnique({
@@ -74,7 +72,6 @@ export class NotePiningService {
 	 * @param user
 	 * @param noteId
 	 */
-	@bindThis
 	public async removePinned(user: { id: user['id']; host: user['host']; }, noteId: note['id']): Promise<void> {
 		// Fetch unpinee
 		const note = await this.prismaService.client.note.findUnique({
@@ -103,7 +100,6 @@ export class NotePiningService {
 		}
 	}
 
-	@bindThis
 	public async deliverPinnedChange(userId: user['id'], noteId: note['id'], isAddition: boolean): Promise<void> {
 		const user = await this.prismaService.client.user.findUnique({ where: { id: userId } });
 		if (user == null) throw new Error('user not found');

@@ -28,7 +28,6 @@ import { InternalStorageService } from '@/core/InternalStorageService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { FileInfoService } from '@/core/FileInfoService.js';
-import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { correctFilename } from '@/misc/correct-filename.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
@@ -124,7 +123,6 @@ export class DriveService {
 	 * @param hash Hash for original
 	 * @param size Size for original
 	 */
-	@bindThis
 	private async save(
 		file: Omit<drive_file, 'properties' | 'requestHeaders'> & { properties: { width?: number; height?: number; orientation?: number; avgColor?: string }; requestHeaders: Record<string, string> | null },
 		path: string,
@@ -273,7 +271,6 @@ export class DriveService {
 	 * @param type Content-Type for original
 	 * @param generateWeb Generate webpublic or not
 	 */
-	@bindThis
 	public async generateAlts(
 		path: string,
 		type: string,
@@ -382,7 +379,6 @@ export class DriveService {
 	/**
 	 * Upload to ObjectStorage
 	 */
-	@bindThis
 	private async upload(
 		key: string,
 		stream: fs.ReadStream | Buffer,
@@ -431,7 +427,6 @@ export class DriveService {
 	}
 
 	// Expire oldest file (without avatar or banner) of remote user
-	@bindThis
 	private async expireOldFile(user: RemoteUser, driveCapacity: number): Promise<void> {
 		const fileList = await this.prismaService.client.drive_file.findMany({
 			where: {
@@ -471,7 +466,6 @@ export class DriveService {
 	/**
 	 * Add file to drive
 	 */
-	@bindThis
 	public async addFile({
 		user,
 		path,
@@ -719,7 +713,6 @@ export class DriveService {
 		return file;
 	}
 
-	@bindThis
 	public async deleteFile(file: drive_file, isExpired = false): Promise<void> {
 		if (file.storedInternal) {
 			if (file.accessKey === null) throw new Error();
@@ -752,7 +745,6 @@ export class DriveService {
 		await this.deletePostProcess(file, isExpired);
 	}
 
-	@bindThis
 	public async deleteFileSync(file: drive_file, isExpired = false): Promise<void> {
 		if (file.storedInternal) {
 			if (file.accessKey === null) throw new Error();
@@ -797,7 +789,6 @@ export class DriveService {
 		await this.deletePostProcess(file, isExpired);
 	}
 
-	@bindThis
 	private async deletePostProcess(file: drive_file, isExpired = false): Promise<void> {
 		// リモートファイル期限切れ削除後は直リンクにする
 		if (isExpired && file.userHost !== null && file.uri != null) {
@@ -830,7 +821,6 @@ export class DriveService {
 		}
 	}
 
-	@bindThis
 	public async deleteObjectStorageFile(key: string): Promise<void> {
 		const meta = await this.metaService.fetch();
 		try {
@@ -852,7 +842,6 @@ export class DriveService {
 		}
 	}
 
-	@bindThis
 	public async uploadFromUrl({
 		url,
 		user,

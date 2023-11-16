@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import { bindThis } from '@/decorators.js';
 import type { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -23,7 +22,6 @@ export class GalleryPostEntityService {
 	 * @param me 渡された場合、返り値の`isLiked`が`boolean`になる。
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: gallery_post['id'] | gallery_post,
 		me?: { id: user['id'] } | null | undefined,

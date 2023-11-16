@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
 import Logger from '@/misc/logger.js';
-import { bindThis } from '@/decorators.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
 import { name, schema } from './entities/test.js';
@@ -33,7 +32,6 @@ export default class TestChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	@bindThis
 	public async increment(): Promise<void> {
 		this.total++;
 
@@ -43,7 +41,6 @@ export default class TestChart extends Chart<typeof schema> {
 		});
 	}
 
-	@bindThis
 	public async decrement(): Promise<void> {
 		this.total--;
 

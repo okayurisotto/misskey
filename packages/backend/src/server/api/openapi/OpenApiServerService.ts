@@ -1,6 +1,5 @@
 import { fileURLToPath } from 'node:url';
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { generateFullOpenApiSpec } from './gen-spec.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
@@ -14,7 +13,6 @@ export class OpenApiServerService {
 	) {
 	}
 
-	@bindThis
 	public createServer(fastify: FastifyInstance, _options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		fastify.get('/api-doc', async (_request, reply) => {
 			reply.header('Cache-Control', 'public, max-age=86400');

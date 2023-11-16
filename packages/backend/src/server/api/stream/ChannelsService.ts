@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { HybridTimelineChannelService } from './channels/hybrid-timeline.js';
 import { LocalTimelineChannelService } from './channels/local-timeline.js';
 import { HomeTimelineChannelService } from './channels/home-timeline.js';
@@ -89,7 +88,6 @@ export class ChannelsService {
 		};
 	}
 
-	@bindThis
 	public getChannelService<K extends ChannelServiceName>(
 		name: K,
 	): ChannelServices[K] {

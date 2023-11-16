@@ -3,7 +3,6 @@ import { IdService } from '@/core/IdService.js';
 import type { LocalUser } from '@/models/entities/User.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { SigninEntityService } from '@/core/entities/SigninEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
@@ -16,7 +15,6 @@ export class SigninService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public signin(request: FastifyRequest, reply: FastifyReply, user: LocalUser): { id: string; i: string | null } {
 		setImmediate(async () => {
 			// Append signin history

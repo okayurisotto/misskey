@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type {
 	AppIsAuthorizedOnlySchema,
@@ -17,7 +16,6 @@ export class AuthSessionEntityService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async pack(
 		src: auth_session,
 		me?: Pick<user, 'id'> | null | undefined,

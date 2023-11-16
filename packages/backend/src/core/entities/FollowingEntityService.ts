@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import { bindThis } from '@/decorators.js';
 import type { FollowingSchema } from '@/models/zod/FollowingSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -23,7 +22,6 @@ export class FollowingEntityService {
 	 * @param opts.populateFollower `true`だった場合、返り値に`follower`が含まれるようになる。
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: following['id'] | following,
 		me?: { id: user['id'] } | null | undefined,

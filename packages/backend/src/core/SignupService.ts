@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import bcrypt from 'bcryptjs';
 import { IdService } from '@/core/IdService.js';
 import generateUserToken from '@/misc/generate-native-user-token.js';
-import { bindThis } from '@/decorators.js';
 import UsersChart from '@/core/chart/charts/users.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { MetaService } from '@/core/MetaService.js';
@@ -21,7 +20,6 @@ export class SignupService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async signup(opts: {
 		username: user['username'];
 		password?: string | null;

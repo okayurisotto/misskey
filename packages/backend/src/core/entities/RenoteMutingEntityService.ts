@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import type { RenoteMutingSchema } from '@/models/zod/RenoteMutingSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -20,7 +19,6 @@ export class RenoteMutingEntityService {
 	 * @param me
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: renote_muting['id'] | renote_muting,
 		me?: { id: user['id'] } | null | undefined,

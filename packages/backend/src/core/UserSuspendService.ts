@@ -3,7 +3,6 @@ import { QueueService } from '@/core/QueueService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -17,7 +16,6 @@ export class UserSuspendService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async doPostSuspend(user: { id: user['id']; host: user['host'] }): Promise<void> {
 		this.globalEventService.publishInternalEvent('userChangeSuspendedState', { id: user.id, isSuspended: true });
 
@@ -48,7 +46,6 @@ export class UserSuspendService {
 		}
 	}
 
-	@bindThis
 	public async doPostUnsuspend(user: user): Promise<void> {
 		this.globalEventService.publishInternalEvent('userChangeSuspendedState', { id: user.id, isSuspended: false });
 

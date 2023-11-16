@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { MemoryKVCache, RedisKVCache } from '@/misc/cache.js';
 import type { LocalUser } from '@/models/entities/User.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
+import { bindThis } from '@/decorators.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { user, user_profile } from '@prisma/client';
 
@@ -163,6 +163,7 @@ export class CacheService implements OnApplicationShutdown {
 			fromRedisConverter: (value): Set<string> => new Set(JSON.parse(value)),
 		});
 
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.on('message', this.onMessage);
 	}
 
@@ -208,7 +209,6 @@ export class CacheService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public findUserById(userId: user['id']): Promise<user> {
 		return this.userByIdCache.fetch(
 			userId,
@@ -216,8 +216,8 @@ export class CacheService implements OnApplicationShutdown {
 		);
 	}
 
-	@bindThis
 	public dispose(): void {
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.off('message', this.onMessage);
 		this.userByIdCache.dispose();
 		this.localUserByNativeTokenCache.dispose();
@@ -232,7 +232,6 @@ export class CacheService implements OnApplicationShutdown {
 		this.userFollowingChannelsCache.dispose();
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

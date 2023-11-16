@@ -1,7 +1,6 @@
 import { promisify } from 'node:util';
 import { Injectable } from '@nestjs/common';
 import redisLock from 'redis-lock';
-import { bindThis } from '@/decorators.js';
 import { RedisService } from '@/core/RedisService.js';
 
 /**
@@ -25,12 +24,10 @@ export class AppLockService {
 	 * @param timeout Lock timeout (ms), The timeout releases previous lock.
 	 * @returns Unlock function
 	 */
-	@bindThis
 	public getApLock(uri: string, timeout = 30 * 1000): Promise<() => void> {
 		return this.lock(`ap-object:${uri}`, timeout);
 	}
 
-	@bindThis
 	public getChartInsertLock(lockKey: string, timeout = 30 * 1000): Promise<() => void> {
 		return this.lock(`chart-insert:${lockKey}`, timeout);
 	}

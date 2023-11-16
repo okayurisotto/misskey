@@ -10,7 +10,6 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { EmailService } from '@/core/EmailService.js';
 import { LocalUser } from '@/models/entities/User.js';
 import { FastifyReplyError } from '@/misc/fastify-reply-error.js';
-import { bindThis } from '@/decorators.js';
 import { L_CHARS, secureRndstr } from '@/misc/secure-rndstr.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
@@ -34,7 +33,6 @@ export class SignupApiService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async signup(
 		request: FastifyRequest<{
 			Body: {
@@ -203,7 +201,6 @@ export class SignupApiService {
 		}
 	}
 
-	@bindThis
 	public async signupPending(request: FastifyRequest<{ Body: { code: string; } }>, reply: FastifyReply): Promise<{ id: string; i: string | null }> {
 		const body = request.body;
 

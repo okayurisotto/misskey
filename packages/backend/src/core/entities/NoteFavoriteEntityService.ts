@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { NoteEntityService } from './NoteEntityService.js';
@@ -20,7 +19,6 @@ export class NoteFavoriteEntityService {
 	 * @param me
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: note_favorite['id'] | note_favorite,
 		me?: { id: user['id'] } | null | undefined,

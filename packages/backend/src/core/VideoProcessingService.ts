@@ -3,7 +3,6 @@ import FFmpeg from 'fluent-ffmpeg';
 import { ImageProcessingService } from '@/core/ImageProcessingService.js';
 import type { IImage } from '@/core/ImageProcessingService.js';
 import { createTempDir } from '@/misc/create-temp.js';
-import { bindThis } from '@/decorators.js';
 import { appendQuery, query } from '@/misc/prelude/url.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
@@ -15,7 +14,6 @@ export class VideoProcessingService {
 		private readonly imageProcessingService: ImageProcessingService,
 	) {}
 
-	@bindThis
 	public async generateVideoThumbnail(source: string): Promise<IImage> {
 		const [dir, cleanup] = await createTempDir();
 
@@ -40,7 +38,6 @@ export class VideoProcessingService {
 		}
 	}
 
-	@bindThis
 	public getExternalVideoThumbnailUrl(url: string): string | null {
 		if (this.configLoaderService.data.videoThumbnailGenerator == null) return null;
 

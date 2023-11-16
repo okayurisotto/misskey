@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -11,7 +10,6 @@ export class ModerationLogService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async insertModerationLog(
 		moderator: Pick<user, 'id'>,
 		type: string,

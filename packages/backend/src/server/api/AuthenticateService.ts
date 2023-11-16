@@ -3,7 +3,6 @@ import type { LocalUser } from '@/models/entities/User.js';
 import { MemoryKVCache } from '@/misc/cache.js';
 import { CacheService } from '@/core/CacheService.js';
 import isNativeToken from '@/misc/is-native-token.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { access_token, app } from '@prisma/client';
 
@@ -25,7 +24,6 @@ export class AuthenticateService implements OnApplicationShutdown {
 		this.appCache = new MemoryKVCache<app>(Infinity);
 	}
 
-	@bindThis
 	public async authenticate(token: string | null | undefined): Promise<[LocalUser | null, access_token | null]> {
 		if (token == null) {
 			return [null, null];
@@ -82,12 +80,10 @@ export class AuthenticateService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public dispose(): void {
 		this.appCache.dispose();
 	}
 
-	@bindThis
 	public onApplicationShutdown(signal?: string | undefined): void {
 		this.dispose();
 	}

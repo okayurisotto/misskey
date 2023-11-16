@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
 import { MetaService } from '@/core/MetaService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
@@ -141,12 +140,10 @@ export default class FederationChart extends Chart<typeof schema> {
 		};
 	}
 
-	@bindThis
 	public async deliverd(host: string, succeeded: boolean): Promise<void> {
 		this.commit(succeeded ? { 'deliveredInstances': [host] } : { 'stalled': [host] });
 	}
 
-	@bindThis
 	public async inbox(host: string): Promise<void> {
 		this.commit({ 'inboxInstances': [host] });
 	}

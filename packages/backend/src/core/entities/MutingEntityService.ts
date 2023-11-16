@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import type { MutingSchema } from '@/models/zod/MutingSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -20,7 +19,6 @@ export class MutingEntityService {
 	 * @param me
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: muting['id'] | muting,
 		me?: { id: user['id'] } | null | undefined,

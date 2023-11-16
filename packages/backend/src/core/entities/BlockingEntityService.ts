@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { pick } from 'omick';
-import { bindThis } from '@/decorators.js';
 import type { BlockingSchema } from '@/models/zod/BlockingSchema.js';
 import { UserEntityService } from './UserEntityService.js';
 import type z from 'zod';
@@ -17,7 +16,6 @@ export class BlockingEntityService {
 	 * @param me
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		blocking: blocking,
 		me?: { id: user['id'] } | null | undefined,

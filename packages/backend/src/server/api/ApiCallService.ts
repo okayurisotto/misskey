@@ -9,7 +9,6 @@ import type { LocalUser } from '@/models/entities/User.js';
 import type Logger from '@/misc/logger.js';
 import { MetaService } from '@/core/MetaService.js';
 import { createTemp } from '@/misc/create-temp.js';
-import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { handlePrismaError } from '@/misc/handlePrismaError.js';
@@ -83,7 +82,6 @@ export class ApiCallService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public handleRequest(
 		endpoint: IEndpoint & { exec: any },
 		request: FastifyRequest<{ Body: Record<string, unknown> | undefined, Querystring: Record<string, unknown> }>,
@@ -119,7 +117,6 @@ export class ApiCallService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async handleMultipartRequest(
 		endpoint: IEndpoint & { exec: any },
 		request: FastifyRequest<{ Body: Record<string, unknown>, Querystring: Record<string, unknown> }>,
@@ -168,7 +165,6 @@ export class ApiCallService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	private send(reply: FastifyReply, x?: any, y?: ApiError): void {
 		if (x == null) {
 			reply.code(204);
@@ -190,7 +186,6 @@ export class ApiCallService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	private async logIp(request: FastifyRequest, user: LocalUser): Promise<void> {
 		const meta = await this.metaService.fetch();
 		if (!meta.enableIpLogging) return;
@@ -217,7 +212,6 @@ export class ApiCallService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	private async call(
 		ep: IEndpoint & { exec: any },
 		user: LocalUser | null | undefined,
@@ -393,12 +387,10 @@ export class ApiCallService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public dispose(): void {
 		clearInterval(this.userIpHistoriesClearIntervalId);
 	}
 
-	@bindThis
 	public onApplicationShutdown(signal?: string | undefined): void {
 		this.dispose();
 	}

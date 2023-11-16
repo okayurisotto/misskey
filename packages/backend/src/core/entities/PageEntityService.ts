@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import { bindThis } from '@/decorators.js';
 import type { PageSchema } from '@/models/zod/PageSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PageContentSchema } from '@/models/zod/PageContentSchema.js';
@@ -25,7 +24,6 @@ export class PageEntityService {
 	 * @param me
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: page['id'] | page,
 		me?: { id: user['id'] } | null | undefined,

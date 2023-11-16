@@ -3,7 +3,6 @@ import Limiter from 'ratelimiter';
 import { NODE_ENV } from '@/env.js';
 import type Logger from '@/misc/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
-import { bindThis } from '@/decorators.js';
 import { RedisService } from '@/core/RedisService.js';
 import type { IEndpointMeta } from './endpoints.js';
 
@@ -20,7 +19,6 @@ export class RateLimiterService {
 		this.logger = this.loggerService.getLogger('limiter');
 	}
 
-	@bindThis
 	public limit(limitation: IEndpointMeta['limit'] & { key: NonNullable<string> }, actor: string, factor = 1): Promise<void> {
 		return new Promise<void>((ok, reject) => {
 			if (this.disabled) ok();

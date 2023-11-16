@@ -5,7 +5,6 @@ import { HttpRequestService } from '@/core/HttpRequestService.js';
 import type Logger from '@/misc/logger.js';
 import { query } from '@/misc/prelude/url.js';
 import { LoggerService } from '@/core/LoggerService.js';
-import { bindThis } from '@/decorators.js';
 import { ApiError } from '@/server/api/error.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
@@ -24,7 +23,6 @@ export class UrlPreviewService {
 		this.logger = this.loggerService.getLogger('url-preview');
 	}
 
-	@bindThis
 	private wrap(url?: string | null): string | null {
 		return url != null
 			? url.match(/^https?:\/\//)
@@ -36,7 +34,6 @@ export class UrlPreviewService {
 			: null;
 	}
 
-	@bindThis
 	public async handle(
 		request: FastifyRequest<{ Querystring: { url: string; lang?: string; } }>,
 		reply: FastifyReply,

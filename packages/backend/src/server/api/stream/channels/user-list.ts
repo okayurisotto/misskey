@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
 import type { z } from 'zod';
 import type { user } from '@prisma/client';
@@ -28,7 +28,6 @@ class UserListChannel extends Channel {
 		//this.onNote = this.onNote.bind(this);
 	}
 
-	@bindThis
 	public async init(params: any): Promise<void> {
 		this.listId = params.listId as string;
 
@@ -45,9 +44,11 @@ class UserListChannel extends Channel {
 		// Subscribe stream
 		this.subscriber.on(`userListStream:${this.listId}`, ({ type, body }) => this.send(type, body));
 
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.on('notesStream', this.onNote);
 
 		this.updateListUsers();
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.listUsersClock = setInterval(this.updateListUsers, 5000);
 	}
 
@@ -99,10 +100,10 @@ class UserListChannel extends Channel {
 		this.send('note', note);
 	}
 
-	@bindThis
 	public override dispose(): void {
 		// Unsubscribe events
 		this.subscriber.off(`userListStream:${this.listId}`, () => {});
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.off('notesStream', this.onNote);
 
 		clearInterval(this.listUsersClock);
@@ -120,7 +121,6 @@ export class UserListChannelService {
 	) {
 	}
 
-	@bindThis
 	public create(id: string, connection: Channel['connection']): UserListChannel {
 		return new UserListChannel(
 			this.noteEntityService,

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { bindThis } from '@/decorators.js';
 import type { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { OnModuleInit } from '@nestjs/common';
@@ -35,7 +34,6 @@ export class NoteReactionEntityService implements OnModuleInit {
 	 * @param options.withNote `true`だった場合、返り値に`note`が含まれるようになる
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: note_reaction['id'] | note_reaction,
 		me?: { id: user['id'] } | null | undefined,

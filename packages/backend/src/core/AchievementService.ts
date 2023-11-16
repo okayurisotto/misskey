@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { bindThis } from '@/decorators.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
@@ -95,7 +94,6 @@ export class AchievementService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async create(
 		userId: user['id'],
 		type: (typeof ACHIEVEMENT_TYPES)[number],

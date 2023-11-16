@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { FlashSchema } from '@/models/zod/FlashSchema.js';
 import { FlashEntityService } from './FlashEntityService.js';
@@ -20,7 +19,6 @@ export class FlashLikeEntityService {
 	 * @param me
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: flash_like['id'] | flash_like,
 		me?: { id: user['id'] } | null | undefined,

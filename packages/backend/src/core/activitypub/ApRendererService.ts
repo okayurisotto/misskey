@@ -8,7 +8,6 @@ import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { MfmService } from '@/core/MfmService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -35,7 +34,6 @@ export class ApRendererService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public renderAccept(object: string | IObject, user: { id: user['id']; host: null }): IAccept {
 		return {
 			type: 'Accept',
@@ -44,7 +42,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderAdd(user: LocalUser, target: string | IObject | undefined, object: string | IObject): IAdd {
 		return {
 			type: 'Add',
@@ -54,7 +51,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderAnnounce(object: string | IObject, note: note): IAnnounce {
 		const attributedTo = this.userEntityService.genLocalUserUri(note.userId);
 
@@ -90,7 +86,6 @@ export class ApRendererService {
 	 *
 	 * @param block The block to be rendered. The blockee relation must be loaded.
 	 */
-	@bindThis
 	public renderBlock(block: blocking & { blockee: user }): IBlock {
 		if (block.blockee.uri == null) {
 			throw new Error('renderBlock: missing blockee uri');
@@ -104,7 +99,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderCreate(object: IObject, note: note): ICreate {
 		const activity: ICreate = {
 			id: `${this.configLoaderService.data.url}/notes/${note.id}/activity`,
@@ -120,7 +114,6 @@ export class ApRendererService {
 		return activity;
 	}
 
-	@bindThis
 	public renderDelete(object: IObject | string, user: { id: user['id']; host: null }): IDelete {
 		return {
 			type: 'Delete',
@@ -130,7 +123,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderDocument(file: drive_file): IApDocument {
 		return {
 			type: 'Document',
@@ -140,7 +132,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderEmoji(emoji: emoji): IApEmoji {
 		return {
 			id: `${this.configLoaderService.data.url}/emojis/${emoji.name}`,
@@ -157,7 +148,6 @@ export class ApRendererService {
 	}
 
 	// to anonymise reporters, the reporting actor must be a system user
-	@bindThis
 	public renderFlag(user: LocalUser, object: IObject | string, content: string): IFlag {
 		return {
 			type: 'Flag',
@@ -167,7 +157,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderFollowRelay(relay: relay, relayActor: LocalUser): IFollow {
 		return {
 			id: `${this.configLoaderService.data.url}/activities/follow-relay/${relay.id}`,
@@ -181,13 +170,11 @@ export class ApRendererService {
 	 * Convert (local|remote)(Follower|Followee)ID to URL
 	 * @param id Follower|Followee ID
 	 */
-	@bindThis
 	public async renderFollowUser(id: user['id']): Promise<string> {
 		const user = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: id } }) as PartialLocalUser | PartialRemoteUser;
 		return this.userEntityService.getUserUri(user);
 	}
 
-	@bindThis
 	public renderFollow(
 		follower: PartialLocalUser | PartialRemoteUser,
 		followee: PartialLocalUser | PartialRemoteUser,
@@ -201,7 +188,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderHashtag(tag: string): IApHashtag {
 		return {
 			type: 'Hashtag',
@@ -210,7 +196,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderImage(file: drive_file): IApImage {
 		return {
 			type: 'Image',
@@ -220,7 +205,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderKey(user: LocalUser, key: user_keypair, postfix?: string): IKey {
 		return {
 			id: `${this.configLoaderService.data.url}/users/${user.id}${postfix ?? '/publickey'}`,
@@ -233,7 +217,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public async renderLike(noteReaction: note_reaction, note: { uri: string | null }): Promise<ILike> {
 		const reaction = noteReaction.reaction;
 
@@ -256,7 +239,6 @@ export class ApRendererService {
 		return object;
 	}
 
-	@bindThis
 	public renderMention(mention: PartialLocalUser | PartialRemoteUser): IApMention {
 		return {
 			type: 'Mention',
@@ -265,7 +247,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderMove(
 		src: PartialLocalUser | PartialRemoteUser,
 		dst: PartialLocalUser | PartialRemoteUser,
@@ -281,7 +262,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public async renderNote(note: note, dive = true): Promise<IPost> {
 		const getPromisedFiles = async (ids: string[]): Promise<drive_file[]> => {
 			if (ids.length === 0) return [];
@@ -424,7 +404,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public async renderPerson(user: LocalUser): Promise<any> {
 		const id = this.userEntityService.genLocalUserUri(user.id);
 		const isSystem = user.username.includes('.');
@@ -498,7 +477,6 @@ export class ApRendererService {
 		return person;
 	}
 
-	@bindThis
 	public renderQuestion(user: { id: user['id'] }, note: note, poll: poll): IQuestion {
 		return {
 			type: 'Question',
@@ -516,7 +494,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderReject(object: string | IObject, user: { id: user['id'] }): IReject {
 		return {
 			type: 'Reject',
@@ -525,7 +502,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderRemove(user: { id: user['id'] }, target: string | IObject | undefined, object: string | IObject): IRemove {
 		return {
 			type: 'Remove',
@@ -535,7 +511,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderTombstone(id: string): ITombstone {
 		return {
 			id,
@@ -543,7 +518,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderUndo(object: string | IObject, user: { id: user['id'] }): IUndo {
 		const id = typeof object !== 'string' && typeof object.id === 'string' && object.id.startsWith(this.configLoaderService.data.url) ? `${object.id}/undo` : undefined;
 
@@ -556,7 +530,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderUpdate(object: string | IObject, user: { id: user['id'] }): IUpdate {
 		return {
 			id: `${this.configLoaderService.data.url}/users/${user.id}#updates/${new Date().getTime()}`,
@@ -568,7 +541,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public renderVote(user: { id: user['id'] }, vote: poll_vote, note: note, poll: poll, pollOwner: RemoteUser): ICreate {
 		return {
 			id: `${this.configLoaderService.data.url}/users/${user.id}#votes/${vote.id}/activity`,
@@ -587,7 +559,6 @@ export class ApRendererService {
 		};
 	}
 
-	@bindThis
 	public addContext<T extends IObject>(x: T): AddContext<T> {
 		if (typeof x === 'object' && x.id == null) {
 			x.id = `${this.configLoaderService.data.url}/${randomUUID()}`;
@@ -626,7 +597,6 @@ export class ApRendererService {
 		}, x as T & { id: string });
 	}
 
-	@bindThis
 	public async attachLdSignature(activity: any, user: { id: user['id']; host: null; }): Promise<IActivity> {
 		const keypair = await this.userKeypairService.getUserKeypair(user.id);
 
@@ -646,7 +616,6 @@ export class ApRendererService {
 	 * @param prev URL of prev page (optional)
 	 * @param next URL of next page (optional)
 	 */
-	@bindThis
 	public renderOrderedCollectionPage(id: string, totalItems: any, orderedItems: any, partOf: string, prev?: string, next?: string): any {
 		const page: any = {
 			id,
@@ -670,7 +639,6 @@ export class ApRendererService {
 	 * @param last URL of last page (optional)
 	 * @param orderedItems attached objects (optional)
 	 */
-	@bindThis
 	public renderOrderedCollection(id: string, totalItems: number, first?: string, last?: string, orderedItems?: IObject[]): any {
 		const page: any = {
 			id,
@@ -685,7 +653,6 @@ export class ApRendererService {
 		return page;
 	}
 
-	@bindThis
 	private async getEmojis(names: string[]): Promise<emoji[]> {
 		if (names.length === 0) return [];
 

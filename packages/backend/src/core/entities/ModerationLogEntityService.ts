@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import type { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { moderation_log, user } from '@prisma/client';
@@ -15,7 +14,6 @@ export class ModerationLogEntityService {
 	 * @param log
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		log: moderation_log,
 		ext: { user: user },

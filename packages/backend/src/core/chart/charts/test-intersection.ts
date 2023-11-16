@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
 import Logger from '@/misc/logger.js';
-import { bindThis } from '@/decorators.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
 import { name, schema } from './entities/test-intersection.js';
@@ -29,14 +28,12 @@ export default class TestIntersectionChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	@bindThis
 	public async addA(key: string): Promise<void> {
 		await this.commit({
 			a: [key],
 		});
 	}
 
-	@bindThis
 	public async addB(key: string): Promise<void> {
 		await this.commit({
 			b: [key],

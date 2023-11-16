@@ -5,7 +5,6 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
-import { bindThis } from '@/decorators.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { note, user } from '@prisma/client';
@@ -23,7 +22,6 @@ export class PollService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async vote(user: user, note: note, choice: number): Promise<void> {
 		const poll = await this.prismaService.client.poll.findUnique({ where: { noteId: note.id } });
 
@@ -89,7 +87,6 @@ export class PollService {
 		});
 	}
 
-	@bindThis
 	public async deliverQuestionUpdate(noteId: note['id']): Promise<void> {
 		const note = await this.prismaService.client.note.findUnique({ where: { id: noteId } });
 		if (note == null) throw new Error('note not found');

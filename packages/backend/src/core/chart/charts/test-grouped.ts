@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
 import Logger from '@/misc/logger.js';
-import { bindThis } from '@/decorators.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
 import { name, schema } from './entities/test-grouped.js';
@@ -33,7 +32,6 @@ export default class TestGroupedChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	@bindThis
 	public async increment(group: string): Promise<void> {
 		if (this.total[group] == null) this.total[group] = 0;
 

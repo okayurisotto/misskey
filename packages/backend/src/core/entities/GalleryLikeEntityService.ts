@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { GalleryPostEntityService } from './GalleryPostEntityService.js';
@@ -20,7 +19,6 @@ export class GalleryLikeEntityService {
 	 * @param me
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: gallery_like['id'] | gallery_like,
 		me?: { id: user['id'] } | null | undefined,

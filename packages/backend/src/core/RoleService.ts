@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { MemoryKVCache, MemorySingleCache } from '@/misc/cache.js';
-import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { CacheService } from '@/core/CacheService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
@@ -14,6 +13,7 @@ import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.j
 import { RolePoliciesSchema, UserPoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 import { RedisService } from '@/core/RedisService.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
+import { bindThis } from '@/decorators.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { role, role_assignment, user } from '@prisma/client';
 
@@ -66,6 +66,7 @@ export class RoleService implements OnApplicationShutdown {
 		this.rolesCache = new MemorySingleCache<role[]>(1000 * 60 * 60 * 1);
 		this.roleAssignmentByUserIdCache = new MemoryKVCache<role_assignment[]>(1000 * 60 * 60 * 1);
 
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.on('message', this.onMessage);
 	}
 
@@ -134,7 +135,6 @@ export class RoleService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	private evalCond(user: user, value: z.infer<typeof RoleCondFormulaValueSchema>): boolean {
 		try {
 			switch (value.type) {
@@ -186,7 +186,6 @@ export class RoleService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public async getUserAssigns(userId: user['id']): Promise<role_assignment[]> {
 		const now = Date.now();
 		let assigns = await this.roleAssignmentByUserIdCache.fetch(
@@ -198,7 +197,6 @@ export class RoleService implements OnApplicationShutdown {
 		return assigns;
 	}
 
-	@bindThis
 	public async getUserRoles(userId: user['id']): Promise<role[]> {
 		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const assigns = await this.getUserAssigns(userId);
@@ -209,7 +207,6 @@ export class RoleService implements OnApplicationShutdown {
 	}
 
 	/** 指定ユーザーのバッジロール一覧取得 */
-	@bindThis
 	public async getUserBadgeRoles(userId: user['id']): Promise<role[]> {
 		const [user, badgeCondRoles] = await Promise.all([
 			this.prismaService.client.user.findUniqueOrThrow({
@@ -239,7 +236,6 @@ export class RoleService implements OnApplicationShutdown {
 		return [...assignedBadgeRoles, ...matchedBadgeCondRoles];
 	}
 
-	@bindThis
 	public async getUserPolicies(userId: user['id'] | null): Promise<RolePolicies> {
 		const meta = await this.metaService.fetch();
 		const basePolicies = {
@@ -290,19 +286,16 @@ export class RoleService implements OnApplicationShutdown {
 		};
 	}
 
-	@bindThis
 	public async isModerator(user: { id: user['id']; isRoot: user['isRoot'] } | null): Promise<boolean> {
 		if (user == null) return false;
 		return user.isRoot || (await this.getUserRoles(user.id)).some(r => r.isModerator || r.isAdministrator);
 	}
 
-	@bindThis
 	public async isAdministrator(user: { id: user['id']; isRoot: user['isRoot'] } | null): Promise<boolean> {
 		if (user == null) return false;
 		return user.isRoot || (await this.getUserRoles(user.id)).some(r => r.isAdministrator);
 	}
 
-	@bindThis
 	public async isExplorable(role: { id: role['id']} | null): Promise<boolean> {
 		if (role == null) return false;
 		const check = await this.prismaService.client.role.findUnique({ where: { id: role.id } });
@@ -310,7 +303,6 @@ export class RoleService implements OnApplicationShutdown {
 		return check.isExplorable;
 	}
 
-	@bindThis
 	public async getModeratorIds(includeAdmins = true): Promise<user['id'][]> {
 		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const moderatorRoles = includeAdmins ? roles.filter(r => r.isModerator || r.isAdministrator) : roles.filter(r => r.isModerator);
@@ -321,7 +313,6 @@ export class RoleService implements OnApplicationShutdown {
 		return assigns.map(a => a.userId);
 	}
 
-	@bindThis
 	public async getModerators(includeAdmins = true): Promise<user[]> {
 		const ids = await this.getModeratorIds(includeAdmins);
 		const users = ids.length > 0 ? await this.prismaService.client.user.findMany({
@@ -330,7 +321,6 @@ export class RoleService implements OnApplicationShutdown {
 		return users;
 	}
 
-	@bindThis
 	public async getAdministratorIds(): Promise<user['id'][]> {
 		const roles = await this.rolesCache.fetch(() => this.prismaService.client.role.findMany());
 		const administratorRoles = roles.filter(r => r.isAdministrator);
@@ -341,7 +331,6 @@ export class RoleService implements OnApplicationShutdown {
 		return assigns.map(a => a.userId);
 	}
 
-	@bindThis
 	public async getAdministrators(): Promise<user[]> {
 		const ids = await this.getAdministratorIds();
 		const users = ids.length > 0 ? await this.prismaService.client.user.findMany({
@@ -350,7 +339,6 @@ export class RoleService implements OnApplicationShutdown {
 		return users;
 	}
 
-	@bindThis
 	public async assign(userId: user['id'], roleId: role['id'], expiresAt: Date | null = null): Promise<void> {
 		const now = new Date();
 
@@ -396,7 +384,6 @@ export class RoleService implements OnApplicationShutdown {
 		this.globalEventService.publishInternalEvent('userRoleAssigned', created);
 	}
 
-	@bindThis
 	public async unassign(userId: user['id'], roleId: role['id']): Promise<void> {
 		const now = new Date();
 
@@ -425,7 +412,6 @@ export class RoleService implements OnApplicationShutdown {
 		this.globalEventService.publishInternalEvent('userRoleUnassigned', existing);
 	}
 
-	@bindThis
 	public async addNoteToRoleTimeline(note: z.infer<typeof NoteSchema>): Promise<void> {
 		const roles = await this.getUserRoles(note.userId);
 
@@ -444,13 +430,12 @@ export class RoleService implements OnApplicationShutdown {
 		redisPipeline.exec();
 	}
 
-	@bindThis
 	public dispose(): void {
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.off('message', this.onMessage);
 		this.roleAssignmentByUserIdCache.dispose();
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

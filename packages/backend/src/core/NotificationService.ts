@@ -1,7 +1,6 @@
 import { setTimeout } from 'node:timers/promises';
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import type { Notification } from '@/models/entities/Notification.js';
-import { bindThis } from '@/decorators.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PushNotificationService } from '@/core/PushNotificationService.js';
 import { NotificationEntityService } from '@/core/entities/NotificationEntityService.js';
@@ -27,7 +26,6 @@ export class NotificationService implements OnApplicationShutdown {
 	) {
 	}
 
-	@bindThis
 	public async readAllNotification(
 		userId: user['id'],
 		force = false,
@@ -50,13 +48,11 @@ export class NotificationService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	private postReadAllNotifications(userId: user['id']): void {
 		this.globalEventService.publishMainStream(userId, 'readAllNotifications');
 		this.pushNotificationService.pushNotification(userId, 'readAllNotifications', undefined);
 	}
 
-	@bindThis
 	public async createNotification(
 		notifieeId: user['id'],
 		type: Notification['type'],
@@ -115,7 +111,6 @@ export class NotificationService implements OnApplicationShutdown {
 
 	// TODO: locale ファイルをクライアント用とサーバー用で分けたい
 
-	@bindThis
 	private async emailNotificationFollow(userId: user['id'], follower: user): Promise<void> {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
@@ -127,7 +122,6 @@ export class NotificationService implements OnApplicationShutdown {
 		*/
 	}
 
-	@bindThis
 	private async emailNotificationReceiveFollowRequest(userId: user['id'], follower: user): Promise<void> {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
@@ -139,12 +133,10 @@ export class NotificationService implements OnApplicationShutdown {
 		*/
 	}
 
-	@bindThis
 	public dispose(): void {
 		this.#shutdownController.abort();
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

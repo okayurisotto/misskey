@@ -11,7 +11,6 @@ import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { SearchService } from '@/core/SearchService.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -129,7 +128,6 @@ export class NoteDeleteService {
 		});
 	}
 
-	@bindThis
 	private async findCascadingNotes(note: note): Promise<(note & { user: user | null })[]> {
 		const recursive = async (noteId: string): Promise<(note & { user: user | null })[]> => {
 			const replies = await this.prismaService.client.note.findMany({
@@ -153,7 +151,6 @@ export class NoteDeleteService {
 		return cascadingNotes;
 	}
 
-	@bindThis
 	private async getMentionedRemoteUsers(note: note): Promise<RemoteUser[]> {
 		const where = [];
 
@@ -173,7 +170,6 @@ export class NoteDeleteService {
 		return await this.prismaService.client.user.findMany({ where: { OR: where } }) as RemoteUser[];
 	}
 
-	@bindThis
 	private async deliverToConcerned(user: { id: LocalUser['id']; host: null; }, note: note, content: any): Promise<void> {
 		this.apDeliverManagerService.deliverToFollowers(user, content);
 		this.relayService.deliverToRelays(user, content);

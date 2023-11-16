@@ -5,7 +5,6 @@ import type Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
@@ -25,7 +24,6 @@ export class ExportBlockingProcessorService {
 			this.queueLoggerService.logger.createSubLogger('export-blocking');
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DbJobDataWithUser>): Promise<void> {
 		this.logger.info(`Exporting blocking of ${job.data.user.id} ...`);
 

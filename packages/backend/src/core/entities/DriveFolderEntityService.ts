@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import { bindThis } from '@/decorators.js';
 import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
@@ -17,7 +16,6 @@ export class DriveFolderEntityService {
 	 * @param options.detail `true`だった場合、`parent`が再帰的に解決される。
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: drive_folder['id'] | drive_folder,
 		options?: {

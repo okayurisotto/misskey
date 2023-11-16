@@ -5,7 +5,6 @@ import { Prisma } from '@prisma/client';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import Logger from '@/misc/logger.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
@@ -39,7 +38,6 @@ export class ImportAntennasProcessorService {
 			this.queueLoggerService.logger.createSubLogger('import-antennas');
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DBAntennaImportJobData>): Promise<void> {
 		const now = new Date();
 

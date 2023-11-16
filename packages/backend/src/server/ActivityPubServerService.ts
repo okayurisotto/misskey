@@ -11,7 +11,6 @@ import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { IActivity } from '@/core/activitypub/type.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -38,7 +37,6 @@ export class ActivityPubServerService {
 		//this.createServer = this.createServer.bind(this);
 	}
 
-	@bindThis
 	private setResponseType(request: FastifyRequest, reply: FastifyReply): void {
 		const accept = request.accepts().type([ACTIVITY_JSON, LD_JSON]);
 		if (accept === LD_JSON) {
@@ -52,7 +50,6 @@ export class ActivityPubServerService {
 	 * Pack Create<Note> or Announce Activity
 	 * @param note Note
 	 */
-	@bindThis
 	private async packActivity(note: note): Promise<any> {
 		if (note.renoteId && note.text == null && !note.hasPoll && (note.fileIds == null || note.fileIds.length === 0)) {
 			const renote = await this.prismaService.client.note.findUniqueOrThrow({ where: { id: note.renoteId } });
@@ -62,7 +59,6 @@ export class ActivityPubServerService {
 		return this.apRendererService.renderCreate(await this.apRendererService.renderNote(note, false), note);
 	}
 
-	@bindThis
 	private inbox(request: FastifyRequest, reply: FastifyReply): void {
 		let signature;
 
@@ -79,7 +75,6 @@ export class ActivityPubServerService {
 		reply.code(202);
 	}
 
-	@bindThis
 	private async followers(
 		request: FastifyRequest<{ Params: { user: string; }; Querystring: { cursor?: string; page?: string; }; }>,
 		reply: FastifyReply,
@@ -173,7 +168,6 @@ export class ActivityPubServerService {
 		}
 	}
 
-	@bindThis
 	private async following(
 		request: FastifyRequest<{ Params: { user: string; }; Querystring: { cursor?: string; page?: string; }; }>,
 		reply: FastifyReply,
@@ -267,7 +261,6 @@ export class ActivityPubServerService {
 		}
 	}
 
-	@bindThis
 	private async featured(request: FastifyRequest<{ Params: { user: string; }; }>, reply: FastifyReply): Promise<any> {
 		const userId = request.params.user;
 
@@ -306,7 +299,6 @@ export class ActivityPubServerService {
 		return (this.apRendererService.addContext(rendered));
 	}
 
-	@bindThis
 	private async outbox(
 		request: FastifyRequest<{
 			Params: { user: string; };
@@ -401,7 +393,6 @@ export class ActivityPubServerService {
 		}
 	}
 
-	@bindThis
 	private async userInfo(request: FastifyRequest, reply: FastifyReply, user: user | null): Promise<any> {
 		if (user == null) {
 			reply.code(404);
@@ -413,7 +404,6 @@ export class ActivityPubServerService {
 		return (this.apRendererService.addContext(await this.apRendererService.renderPerson(user as LocalUser)));
 	}
 
-	@bindThis
 	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		// addConstraintStrategy の型定義がおかしいため
 		(fastify.addConstraintStrategy as any)({

@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import promiseLimit from 'promise-limit';
 import { toArray, unique } from '@/misc/prelude/array.js';
-import { bindThis } from '@/decorators.js';
 import { isMention } from '../type.js';
 import { Resolver } from '../ApResolverService.js';
 import { ApPersonService } from './ApPersonService.js';
@@ -15,7 +14,6 @@ export class ApMentionService {
 	) {
 	}
 
-	@bindThis
 	public async extractApMentions(tags: IObject | IObject[] | null | undefined, resolver: Resolver): Promise<user[]> {
 		const hrefs = unique(this.extractApMentionObjects(tags).map(x => x.href));
 
@@ -27,7 +25,6 @@ export class ApMentionService {
 		return mentionedUsers;
 	}
 
-	@bindThis
 	public extractApMentionObjects(tags: IObject | IObject[] | null | undefined): IApMention[] {
 		if (tags == null) return [];
 		return toArray(tags).filter(isMention);

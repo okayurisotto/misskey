@@ -3,10 +3,10 @@ import { z } from 'zod';
 import { NODE_ENV } from '@/env.js';
 import { Meta } from '@/models/entities/Meta.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { bindThis } from '@/decorators.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
+import { bindThis } from '@/decorators.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { meta } from '@prisma/client';
 
@@ -31,6 +31,7 @@ export class MetaService implements OnApplicationShutdown {
 			}, 1000 * 60 * 5);
 		}
 
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.on('message', this.onMessage);
 	}
 
@@ -51,7 +52,6 @@ export class MetaService implements OnApplicationShutdown {
 		}
 	}
 
-	@bindThis
 	public async fetch(noCache = false): Promise<meta> {
 		if (!noCache && this.cache) return this.cache;
 
@@ -86,7 +86,6 @@ export class MetaService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async update(data: Partial<meta>): Promise<Meta> {
 		const updated = await this.db.transaction(async transactionalEntityManager => {
 			const metas = await transactionalEntityManager.find(Meta, {
@@ -123,13 +122,12 @@ export class MetaService implements OnApplicationShutdown {
 		return updated;
 	}
 
-	@bindThis
 	public dispose(): void {
 		clearInterval(this.intervalId);
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.off('message', this.onMessage);
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

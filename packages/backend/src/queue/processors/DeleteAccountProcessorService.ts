@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import type Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { EmailService } from '@/core/EmailService.js';
-import { bindThis } from '@/decorators.js';
 import { SearchService } from '@/core/SearchService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
@@ -47,7 +46,6 @@ export class DeleteAccountProcessorService {
 		);
 	}
 
-	@bindThis
 	public async process(
 		job: Bull.Job<DbUserDeleteJobData>,
 	): Promise<string | void> {

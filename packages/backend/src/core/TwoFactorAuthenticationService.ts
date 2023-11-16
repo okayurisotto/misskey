@@ -1,7 +1,6 @@
 import * as crypto from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import jsrsasign from 'jsrsasign';
-import { bindThis } from '@/decorators.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 const ECC_PRELUDE = Buffer.from([0x04]);
@@ -123,7 +122,6 @@ export class TwoFactorAuthenticationService {
 		private readonly configLoaderService: ConfigLoaderService,
 	) {}
 
-	@bindThis
 	public hash(data: Buffer): Buffer {
 		return crypto
 			.createHash('sha256')
@@ -131,7 +129,6 @@ export class TwoFactorAuthenticationService {
 			.digest();
 	}
 
-	@bindThis
 	public verifySignin({
 		publicKey,
 		authenticatorData,
@@ -169,7 +166,6 @@ export class TwoFactorAuthenticationService {
 			.verify(PEMString(publicKey), signature);
 	}
 
-	@bindThis
 	public getProcedures(): {
 		none: {                verify(opts: { publicKey: Map<number, Buffer>; }): VerifyResult };
 		'android-key': {       verify(opts: VerifyOptions): VerifyResult                       };

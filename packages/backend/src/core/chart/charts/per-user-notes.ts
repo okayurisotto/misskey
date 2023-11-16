@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
@@ -39,7 +38,6 @@ export default class PerUserNotesChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	@bindThis
 	public update(user: { id: user['id'] }, note: note, isAdditional: boolean): void {
 		this.commit({
 			'total': isAdditional ? 1 : -1,

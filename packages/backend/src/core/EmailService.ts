@@ -4,7 +4,6 @@ import { validate as validateEmail } from 'deep-email-validator';
 import { MetaService } from '@/core/MetaService.js';
 import type Logger from '@/misc/logger.js';
 import { LoggerService } from '@/core/LoggerService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
@@ -22,7 +21,6 @@ export class EmailService {
 		this.logger = this.loggerService.getLogger('email');
 	}
 
-	@bindThis
 	public async sendEmail(to: string, subject: string, html: string, text: string): Promise<void> {
 		const meta = await this.metaService.fetch(true);
 
@@ -141,7 +139,6 @@ export class EmailService {
 		}
 	}
 
-	@bindThis
 	public async validateEmailForAccount(emailAddress: string): Promise<{
 		available: boolean;
 		reason: null | 'used' | 'format' | 'disposable' | 'mx' | 'smtp';

@@ -13,7 +13,6 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { MetaService } from '@/core/MetaService.js';
-import { bindThis } from '@/decorators.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
@@ -75,7 +74,6 @@ export class ReactionService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async create(user: { id: user['id']; host: user['host']; isBot: user['isBot'] }, note: note, _reaction?: string | null): Promise<void> {
 		// Check blocking
 		if (note.userId !== user.id) {
@@ -257,7 +255,6 @@ export class ReactionService {
 		//#endregion
 	}
 
-	@bindThis
 	public async delete(user: { id: user['id']; host: user['host']; isBot: user['isBot']; }, note: note): Promise<void> {
 		// if already unreacted
 		const exist = await this.prismaService.client.note_reaction.findUnique({
@@ -321,7 +318,6 @@ export class ReactionService {
 		//#endregion
 	}
 
-	@bindThis
 	public convertLegacyReactions(reactions: Record<string, number>): Record<string, number> {
 		const _reactions = {} as Record<string, number>;
 
@@ -352,7 +348,6 @@ export class ReactionService {
 		return _reactions2;
 	}
 
-	@bindThis
 	public normalize(reaction: string | null): string {
 		if (reaction == null) return FALLBACK;
 
@@ -372,7 +367,6 @@ export class ReactionService {
 		return FALLBACK;
 	}
 
-	@bindThis
 	public decodeReaction(str: string): DecodedReaction {
 		const custom = str.match(decodeCustomEmojiRegexp);
 
@@ -394,7 +388,6 @@ export class ReactionService {
 		};
 	}
 
-	@bindThis
 	public convertLegacyReaction(reaction_: string): string {
 		const reaction = this.decodeReaction(reaction_).reaction;
 		if (Object.keys(legacies).includes(reaction)) return legacies[reaction];

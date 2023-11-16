@@ -5,7 +5,6 @@ import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { UserMutingService } from '@/core/UserMutingService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
@@ -27,7 +26,6 @@ export class ImportMutingProcessorService {
 			this.queueLoggerService.logger.createSubLogger('import-muting');
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		this.logger.info(`Importing muting of ${job.data.user.id} ...`);
 

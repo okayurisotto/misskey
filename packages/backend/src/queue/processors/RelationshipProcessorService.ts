@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
-import { bindThis } from '@/decorators.js';
 import type Logger from '@/misc/logger.js';
 import { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -22,14 +21,12 @@ export class RelationshipProcessorService {
 		this.logger = this.queueLoggerService.logger.createSubLogger('follow-block');
 	}
 
-	@bindThis
 	public async processFollow(job: Bull.Job<RelationshipJobData>): Promise<string> {
 		this.logger.info(`${job.data.from.id} is trying to follow ${job.data.to.id}`);
 		await this.userFollowingService.follow(job.data.from, job.data.to, job.data.requestId, job.data.silent);
 		return 'ok';
 	}
 
-	@bindThis
 	public async processUnfollow(job: Bull.Job<RelationshipJobData>): Promise<string> {
 		this.logger.info(`${job.data.from.id} is trying to unfollow ${job.data.to.id}`);
 		const [follower, followee] = await Promise.all([
@@ -40,7 +37,6 @@ export class RelationshipProcessorService {
 		return 'ok';
 	}
 
-	@bindThis
 	public async processBlock(job: Bull.Job<RelationshipJobData>): Promise<string> {
 		this.logger.info(`${job.data.from.id} is trying to block ${job.data.to.id}`);
 		const [blockee, blocker] = await Promise.all([
@@ -51,7 +47,6 @@ export class RelationshipProcessorService {
 		return 'ok';
 	}
 
-	@bindThis
 	public async processUnblock(job: Bull.Job<RelationshipJobData>): Promise<string> {
 		this.logger.info(`${job.data.from.id} is trying to unblock ${job.data.to.id}`);
 		const [blockee, blocker] = await Promise.all([

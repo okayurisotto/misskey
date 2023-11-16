@@ -8,7 +8,6 @@ import type Logger from '@/misc/logger.js';
 import { DriveService } from '@/core/DriveService.js';
 import { createTemp, createTempDir } from '@/misc/create-temp.js';
 import { DownloadService } from '@/core/DownloadService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
@@ -32,7 +31,6 @@ export class ExportCustomEmojisProcessorService {
 		);
 	}
 
-	@bindThis
 	public async process(job: Bull.Job): Promise<void> {
 		this.logger.info('Exporting custom emojis ...');
 

@@ -1,7 +1,6 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import * as Bull from 'bullmq';
 import type Logger from '@/misc/logger.js';
-import { bindThis } from '@/decorators.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { WebhookDeliverProcessorService } from './processors/WebhookDeliverProcessorService.js';
 import { EndedPollNotificationProcessorService } from './processors/EndedPollNotificationProcessorService.js';
@@ -321,7 +320,6 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		//#endregion
 	}
 
-	@bindThis
 	public start(): void {
 		// TODO: `await`するとここで止まってしまう
 		Promise.all([
@@ -336,7 +334,6 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		]);
 	}
 
-	@bindThis
 	public async stop(): Promise<void> {
 		await Promise.all([
 			this.systemQueueWorker.close(),
@@ -350,7 +347,6 @@ export class QueueProcessorService implements OnApplicationShutdown {
 		]);
 	}
 
-	@bindThis
 	public async onApplicationShutdown(signal?: string | undefined): Promise<void> {
 		await this.stop();
 	}

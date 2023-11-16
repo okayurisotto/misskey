@@ -1,5 +1,4 @@
 import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -101,7 +100,6 @@ export class SearchService implements OnApplicationBootstrap {
 		}
 	}
 
-	@bindThis
 	public async indexNote(note: note): Promise<void> {
 		if (note.text == null && note.cw == null) return;
 		if (!['home', 'public'].includes(note.visibility)) return;
@@ -139,7 +137,6 @@ export class SearchService implements OnApplicationBootstrap {
 		);
 	}
 
-	@bindThis
 	public async unindexNote(note: note): Promise<void> {
 		if (!['home', 'public'].includes(note.visibility)) return;
 		if (this.meilisearchNoteIndex === null) return;
@@ -147,7 +144,6 @@ export class SearchService implements OnApplicationBootstrap {
 		await this.meilisearchNoteIndex.deleteDocument(note.id);
 	}
 
-	@bindThis
 	public async searchNote(
 		q: string,
 		me: user | null,

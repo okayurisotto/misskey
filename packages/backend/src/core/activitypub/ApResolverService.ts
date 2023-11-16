@@ -5,7 +5,6 @@ import type { Config } from '@/ConfigLoaderService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { isCollectionOrOrderedCollection } from './type.js';
@@ -34,12 +33,10 @@ export class Resolver {
 		this.history = new Set();
 	}
 
-	@bindThis
 	public getHistory(): string[] {
 		return Array.from(this.history);
 	}
 
-	@bindThis
 	public async resolveCollection(value: string | IObject): Promise<ICollection | IOrderedCollection> {
 		const collection = typeof value === 'string'
 			? await this.resolve(value)
@@ -52,7 +49,6 @@ export class Resolver {
 		}
 	}
 
-	@bindThis
 	public async resolve(value: string | IObject): Promise<IObject> {
 		if (typeof value !== 'string') {
 			return value;
@@ -106,7 +102,6 @@ export class Resolver {
 		return object;
 	}
 
-	@bindThis
 	private resolveLocal(url: string): Promise<IObject> {
 		const parsed = this.apDbResolverService.parseUri(url);
 		if (!parsed.local) throw new Error('resolveLocal: not local');
@@ -164,7 +159,6 @@ export class ApResolverService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public createResolver(): Resolver {
 		return new Resolver(
 			this.configLoaderService.data,

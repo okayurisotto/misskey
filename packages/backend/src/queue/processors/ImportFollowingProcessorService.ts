@@ -4,7 +4,6 @@ import * as Acct from '@/misc/acct.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { bindThis } from '@/decorators.js';
 import { QueueService } from '@/core/QueueService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
@@ -27,7 +26,6 @@ export class ImportFollowingProcessorService {
 			this.queueLoggerService.logger.createSubLogger('import-following');
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		this.logger.info(`Importing following of ${job.data.user.id} ...`);
 
@@ -51,7 +49,6 @@ export class ImportFollowingProcessorService {
 		this.logger.succ('Import jobs created');
 	}
 
-	@bindThis
 	public async processDb(
 		job: Bull.Job<DbUserImportToDbJobData>,
 	): Promise<void> {

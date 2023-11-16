@@ -3,7 +3,6 @@ import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { RelayService } from '@/core/RelayService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { user } from '@prisma/client';
 
@@ -17,7 +16,6 @@ export class AccountUpdateService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async publishToFollowers(userId: user['id']): Promise<void> {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: userId },

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { pick } from 'omick';
-import { bindThis } from '@/decorators.js';
 import type { UserListSchema } from '@/models/zod/UserListSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import type { z } from 'zod';
@@ -8,7 +7,6 @@ import type { user_list, user_list_joining } from '@prisma/client';
 
 @Injectable()
 export class UserListEntityService {
-	@bindThis
 	public pack(
 		id: user_list['id'],
 		data: {

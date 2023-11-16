@@ -13,7 +13,6 @@ import { WebhookService } from '@/core/WebhookService.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
-import { bindThis } from '@/decorators.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { CacheService } from '@/core/CacheService.js';
@@ -69,7 +68,6 @@ export class UserFollowingService implements OnModuleInit {
 		this.userBlockingService = this.moduleRef.get('UserBlockingService');
 	}
 
-	@bindThis
 	public async follow(_follower: { id: user['id'] }, _followee: { id: user['id'] }, requestId?: string, silent = false): Promise<void> {
 		const [follower, followee] = await Promise.all([
 			this.prismaService.client.user.findUniqueOrThrow({ where: { id: _follower.id } }),
@@ -159,7 +157,6 @@ export class UserFollowingService implements OnModuleInit {
 		}
 	}
 
-	@bindThis
 	private async insertFollowingDoc(
 		followee: {
 			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox']
@@ -309,7 +306,6 @@ export class UserFollowingService implements OnModuleInit {
 		}
 	}
 
-	@bindThis
 	public async unfollow(
 		follower: {
 			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
@@ -369,7 +365,6 @@ export class UserFollowingService implements OnModuleInit {
 		}
 	}
 
-	@bindThis
 	private async decrementFollowing(
 		follower: user,
 		followee: user,
@@ -447,7 +442,6 @@ export class UserFollowingService implements OnModuleInit {
 		}
 	}
 
-	@bindThis
 	public async createFollowRequest(
 		follower: {
 			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
@@ -506,7 +500,6 @@ export class UserFollowingService implements OnModuleInit {
 		}
 	}
 
-	@bindThis
 	public async cancelFollowRequest(
 		followee: {
 			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']
@@ -547,7 +540,6 @@ export class UserFollowingService implements OnModuleInit {
 		this.userEntityService.packDetailedMe(followee.id).then(packed => this.globalEventService.publishMainStream(followee.id, 'meUpdated', packed));
 	}
 
-	@bindThis
 	public async acceptFollowRequest(
 		followee: {
 			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
@@ -577,7 +569,6 @@ export class UserFollowingService implements OnModuleInit {
 		this.userEntityService.packDetailedMe(followee.id).then(packed => this.globalEventService.publishMainStream(followee.id, 'meUpdated', packed));
 	}
 
-	@bindThis
 	public async acceptAllFollowRequests(
 		user: {
 			id: user['id']; host: user['host']; uri: user['host']; inbox: user['inbox']; sharedInbox: user['sharedInbox'];
@@ -598,7 +589,6 @@ export class UserFollowingService implements OnModuleInit {
 	/**
 	 * API following/request/reject
 	 */
-	@bindThis
 	public async rejectFollowRequest(user: Local, follower: Both): Promise<void> {
 		if (this.userEntityService.isRemoteUser(follower)) {
 			await this.deliverReject(user, follower);
@@ -614,7 +604,6 @@ export class UserFollowingService implements OnModuleInit {
 	/**
 	 * API following/reject
 	 */
-	@bindThis
 	public async rejectFollow(user: Local, follower: Both): Promise<void> {
 		if (this.userEntityService.isRemoteUser(follower)) {
 			await this.deliverReject(user, follower);
@@ -630,7 +619,6 @@ export class UserFollowingService implements OnModuleInit {
 	/**
 	 * AP Reject/Follow
 	 */
-	@bindThis
 	public async remoteReject(actor: Remote, follower: Local): Promise<void> {
 		await this.removeFollowRequest(actor, follower);
 		await this.removeFollow(actor, follower);
@@ -640,7 +628,6 @@ export class UserFollowingService implements OnModuleInit {
 	/**
 	 * Remove follow request record
 	 */
-	@bindThis
 	private async removeFollowRequest(followee: Both, follower: Both): Promise<void> {
 		const request = await this.prismaService.client.follow_request.findUnique({
 			where: {
@@ -659,7 +646,6 @@ export class UserFollowingService implements OnModuleInit {
 	/**
 	 * Remove follow record
 	 */
-	@bindThis
 	private async removeFollow(followee: Both, follower: Both): Promise<void> {
 		const following = await this.prismaService.client.following.findUnique({
 			include: {
@@ -684,7 +670,6 @@ export class UserFollowingService implements OnModuleInit {
 	/**
 	 * Deliver Reject to remote
 	 */
-	@bindThis
 	private async deliverReject(followee: Local, follower: Remote): Promise<void> {
 		const request = await this.prismaService.client.follow_request.findUnique({
 			where: {
@@ -702,7 +687,6 @@ export class UserFollowingService implements OnModuleInit {
 	/**
 	 * Publish unfollow to local
 	 */
-	@bindThis
 	private async publishUnfollow(followee: Both, follower: Local): Promise<void> {
 		const packedFollowee = await this.userEntityService.packDetailed(followee.id, follower);
 

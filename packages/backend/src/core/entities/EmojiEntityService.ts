@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { bindThis } from '@/decorators.js';
 import type { EmojiSimpleSchema } from '@/models/zod/EmojiSimpleSchema.js';
 import type { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
@@ -8,7 +7,6 @@ import type { emoji } from '@prisma/client';
 
 @Injectable()
 export class EmojiEntityService {
-	@bindThis
 	public packSimple(
 		id: emoji['id'],
 		data: { emoji: EntityMap<'id', emoji> },
@@ -28,7 +26,6 @@ export class EmojiEntityService {
 		};
 	}
 
-	@bindThis
 	public packDetailed(
 		id: emoji['id'],
 		data: { emoji: EntityMap<'id', emoji> },

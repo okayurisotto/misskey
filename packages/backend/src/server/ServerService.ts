@@ -12,7 +12,6 @@ import * as Acct from '@/misc/acct.js';
 import { genIdenticon } from '@/misc/gen-identicon.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { LoggerService } from '@/core/LoggerService.js';
-import { bindThis } from '@/decorators.js';
 import { MetaService } from '@/core/MetaService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ProcessMessage } from '@/boot/ProcessMessage.js';
@@ -53,7 +52,6 @@ export class ServerService implements OnApplicationShutdown {
 		this.logger = this.loggerService.getLogger('server', 'gray');
 	}
 
-	@bindThis
 	public async launch(): Promise<void> {
 		const fastify = Fastify({
 			trustProxy: true,

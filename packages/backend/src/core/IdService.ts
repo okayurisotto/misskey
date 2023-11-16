@@ -4,7 +4,6 @@ import { genAid, parseAid } from '@/misc/id/aid.js';
 import { genMeid, parseMeid } from '@/misc/id/meid.js';
 import { genMeidg, parseMeidg } from '@/misc/id/meidg.js';
 import { genObjectId, parseObjectId } from '@/misc/id/object-id.js';
-import { bindThis } from '@/decorators.js';
 import { parseUlid } from '@/misc/id/ulid.js';
 import { idGenerationMethods } from '@/const.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
@@ -17,7 +16,6 @@ export class IdService {
 		this.method = configLoaderService.data.id;
 	}
 
-	@bindThis
 	public genId(date_?: Date): string {
 		const date = ((): Date => {
 			if (date_ === undefined) return new Date();
@@ -35,7 +33,6 @@ export class IdService {
 		}
 	}
 
-	@bindThis
 	public parse(id: string): { date: Date; } {
 		switch (this.method) {
 			case 'aid': return parseAid(id);

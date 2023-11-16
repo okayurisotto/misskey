@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
-import { bindThis } from '@/decorators.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
@@ -29,21 +28,18 @@ export default class ApRequestChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	@bindThis
 	public async deliverSucc(): Promise<void> {
 		await this.commit({
 			'deliverSucceeded': 1,
 		});
 	}
 
-	@bindThis
 	public async deliverFail(): Promise<void> {
 		await this.commit({
 			'deliverFailed': 1,
 		});
 	}
 
-	@bindThis
 	public async inbox(): Promise<void> {
 		await this.commit({
 			'inboxReceived': 1,

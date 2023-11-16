@@ -8,7 +8,6 @@ import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { createTempDir } from '@/misc/create-temp.js';
 import { DriveService } from '@/core/DriveService.js';
 import { DownloadService } from '@/core/DownloadService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { unique } from '@/misc/prelude/array.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
@@ -59,7 +58,6 @@ export class ImportCustomEmojisProcessorService {
 		);
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		this.logger.info('Importing custom emojis ...');
 

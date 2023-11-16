@@ -4,7 +4,6 @@ import { MetaService } from '@/core/MetaService.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { MemorySingleCache } from '@/misc/cache.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { bindThis } from '@/decorators.js';
 import NotesChart from '@/core/chart/charts/notes.js';
 import UsersChart from '@/core/chart/charts/users.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
@@ -76,7 +75,6 @@ export class NodeinfoServerService {
 		//this.createServer = this.createServer.bind(this);
 	}
 
-	@bindThis
 	public getLinks(): { rel: string; href: string; }[] {
 		return [/* (awaiting release) {
 			rel: 'http://nodeinfo.diaspora.software/ns/schema/2.1',
@@ -87,7 +85,6 @@ export class NodeinfoServerService {
 			}];
 	}
 
-	@bindThis
 	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		const nodeinfo2 = async (): Promise<NodeInfo2> => {
 			const now = Date.now();

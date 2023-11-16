@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import * as WebSocket from 'ws';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { NotificationService } from '@/core/NotificationService.js';
-import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { LocalUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -30,7 +29,6 @@ export class StreamingApiServerService {
 		private readonly redisForSub: RedisSubService,
 	) {}
 
-	@bindThis
 	public attach(server: http.Server): void {
 		this.#wss = new WebSocket.WebSocketServer({
 			noServer: true,
@@ -159,7 +157,6 @@ export class StreamingApiServerService {
 		}, 1000 * 60);
 	}
 
-	@bindThis
 	public detach(): Promise<void> {
 		if (this.#cleanConnectionsIntervalId) {
 			clearInterval(this.#cleanConnectionsIntervalId);

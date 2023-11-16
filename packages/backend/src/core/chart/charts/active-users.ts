@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
-import { bindThis } from '@/decorators.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
@@ -34,7 +33,6 @@ export default class ActiveUsersChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	@bindThis
 	public async read(user: { id: user['id'], host: null, createdAt: user['createdAt'] }): Promise<void> {
 		await this.commit({
 			'read': [user.id],
@@ -47,7 +45,6 @@ export default class ActiveUsersChart extends Chart<typeof schema> {
 		});
 	}
 
-	@bindThis
 	public async write(user: { id: user['id'], host: null, createdAt: user['createdAt'] }): Promise<void> {
 		await this.commit({
 			'write': [user.id],

@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
-import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { muting, user } from '@prisma/client';
@@ -13,7 +12,6 @@ export class UserMutingService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	@bindThis
 	public async mute(user: user, target: user, expiresAt: Date | null = null): Promise<void> {
 		await this.prismaService.client.muting.create({
 			data: {
@@ -28,7 +26,6 @@ export class UserMutingService {
 		this.cacheService.userMutingsCache.refresh(user.id);
 	}
 
-	@bindThis
 	public async unmute(mutings: muting[]): Promise<void> {
 		if (mutings.length === 0) return;
 

@@ -8,7 +8,6 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { LoggerService } from '@/core/LoggerService.js';
 import { WebhookService } from '@/core/WebhookService.js';
-import { bindThis } from '@/decorators.js';
 import { CacheService } from '@/core/CacheService.js';
 import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -41,7 +40,6 @@ export class UserBlockingService implements OnModuleInit {
 		this.userFollowingService = this.moduleRef.get('UserFollowingService');
 	}
 
-	@bindThis
 	public async block(blocker: user, blockee: user, silent = false): Promise<void> {
 		await Promise.all([
 			this.cancelRequest(blocker, blockee, silent),
@@ -77,7 +75,6 @@ export class UserBlockingService implements OnModuleInit {
 		}
 	}
 
-	@bindThis
 	private async cancelRequest(follower: user, followee: user, silent = false): Promise<void> {
 		const request = await this.prismaService.client.follow_request.findUnique({
 			where: {
@@ -132,7 +129,6 @@ export class UserBlockingService implements OnModuleInit {
 		}
 	}
 
-	@bindThis
 	private async removeFromList(listOwner: user, user: user): Promise<void> {
 		await this.prismaService.client.user_list_joining.deleteMany({
 			where: {
@@ -142,7 +138,6 @@ export class UserBlockingService implements OnModuleInit {
 		});
 	}
 
-	@bindThis
 	public async unblock(blocker: user, blockee: user): Promise<void> {
 		const blocking_ = await this.prismaService.client.blocking.findUnique({
 			where: {
@@ -183,7 +178,6 @@ export class UserBlockingService implements OnModuleInit {
 		}
 	}
 
-	@bindThis
 	public async checkBlocked(blockerId: user['id'], blockeeId: user['id']): Promise<boolean> {
 		return (await this.cacheService.userBlockingCache.fetch(blockerId)).has(blockeeId);
 	}

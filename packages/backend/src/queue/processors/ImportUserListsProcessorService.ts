@@ -8,7 +8,6 @@ import { DownloadService } from '@/core/DownloadService.js';
 import { UserListService } from '@/core/UserListService.js';
 import { IdService } from '@/core/IdService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { unique } from '@/misc/prelude/array.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
@@ -52,7 +51,6 @@ export class ImportUserListsProcessorService {
 			this.queueLoggerService.logger.createSubLogger('import-user-lists');
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		const now = new Date();
 

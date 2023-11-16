@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { bindThis } from '@/decorators.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
 import type { z } from 'zod';
 
@@ -22,11 +22,11 @@ class ChannelChannel extends Channel {
 		//this.onNote = this.onNote.bind(this);
 	}
 
-	@bindThis
 	public async init(params: any): Promise<void> {
 		this.channelId = params.channelId as string;
 
 		// Subscribe stream
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.on('notesStream', this.onNote);
 	}
 
@@ -59,9 +59,9 @@ class ChannelChannel extends Channel {
 		this.send('note', note);
 	}
 
-	@bindThis
 	public override dispose(): void {
 		// Unsubscribe events
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.off('notesStream', this.onNote);
 	}
 }
@@ -76,7 +76,6 @@ export class ChannelChannelService {
 	) {
 	}
 
-	@bindThis
 	public create(id: string, connection: Channel['connection']): ChannelChannel {
 		return new ChannelChannel(
 			this.noteEntityService,

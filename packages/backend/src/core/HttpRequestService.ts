@@ -6,8 +6,8 @@ import fetch from 'node-fetch';
 import { HttpProxyAgent, HttpsProxyAgent } from 'hpagent';
 import { Injectable } from '@nestjs/common';
 import { StatusError } from '@/misc/status-error.js';
-import { bindThis } from '@/decorators.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { bindThis } from '@/decorators.js';
 import type { Response } from 'node-fetch';
 import type { URL } from 'node:url';
 
@@ -45,12 +45,14 @@ export class HttpRequestService {
 		this.http = new http.Agent({
 			keepAlive: true,
 			keepAliveMsecs: 30 * 1000,
+			// eslint-disable-next-line @typescript-eslint/unbound-method
 			lookup: cache.lookup as unknown as net.LookupFunction,
 		});
 
 		this.https = new https.Agent({
 			keepAlive: true,
 			keepAliveMsecs: 30 * 1000,
+			// eslint-disable-next-line @typescript-eslint/unbound-method
 			lookup: cache.lookup as unknown as net.LookupFunction,
 		});
 

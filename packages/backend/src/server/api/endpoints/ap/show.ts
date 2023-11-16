@@ -13,7 +13,6 @@ import { ApNoteService } from '@/core/activitypub/models/ApNoteService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { bindThis } from '@/decorators.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { ApiError } from '../../error.js';
@@ -70,7 +69,6 @@ export default class extends Endpoint<
 	/***
 	 * URIからUserかNoteを解決する
 	 */
-	@bindThis
 	private async fetchAny(
 		uri: string,
 		me: LocalUser | null | undefined,
@@ -123,7 +121,6 @@ export default class extends Endpoint<
 		);
 	}
 
-	@bindThis
 	private async mergePack(
 		me: LocalUser | null | undefined,
 		user: user | null | undefined,

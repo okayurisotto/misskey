@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
-import { bindThis } from '@/decorators.js';
 import type { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
@@ -21,7 +20,6 @@ export class ClipEntityService {
 	 * @param me  渡された場合、返り値の`isFavorited`が`undefined`でなくなる。
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: clip['id'] | clip,
 		me?: { id: user['id'] } | null | undefined,

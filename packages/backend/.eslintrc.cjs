@@ -61,7 +61,7 @@ module.exports = {
 		'@typescript-eslint/require-await': ['warn'], // TODO
 		'@typescript-eslint/restrict-plus-operands': ['warn'], // TODO
 		'@typescript-eslint/restrict-template-expressions': ['warn'], // TODO
-		'@typescript-eslint/unbound-method': ['warn'], // TODO
+		'@typescript-eslint/unbound-method': ['error'], // TODO
 
 		/* import */
 		'import/no-default-export': ['warn'],

@@ -23,7 +23,6 @@ import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityServi
 import { ClipEntityService } from '@/core/entities/ClipEntityService.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
 import { deepClone } from '@/misc/clone.js';
-import { bindThis } from '@/decorators.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -98,7 +97,6 @@ export class ClientServerService {
 		@Inject('queue:webhookDeliver') public webhookDeliverQueue: WebhookDeliverQueue,
 	) {}
 
-	@bindThis
 	private async manifestHandler(reply: FastifyReply): Promise<Manifest> {
 		const res = deepClone(manifest);
 
@@ -112,7 +110,6 @@ export class ClientServerService {
 		return (res);
 	}
 
-	@bindThis
 	private generateCommonPugData(meta: meta): CommonPugData {
 		return {
 			instanceName: meta.name ?? 'Misskey',
@@ -124,7 +121,6 @@ export class ClientServerService {
 		};
 	}
 
-	@bindThis
 	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
 		fastify.register(fastifyCookie, {});
 

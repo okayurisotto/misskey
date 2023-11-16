@@ -1,6 +1,5 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { RedisKVCache } from '@/misc/cache.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
 import type { user_keypair, user } from '@prisma/client';
@@ -27,17 +26,14 @@ export class UserKeypairService implements OnApplicationShutdown {
 		});
 	}
 
-	@bindThis
 	public async getUserKeypair(userId: user['id']): Promise<user_keypair> {
 		return await this.cache.fetch(userId);
 	}
 
-	@bindThis
 	public dispose(): void {
 		this.cache.dispose();
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

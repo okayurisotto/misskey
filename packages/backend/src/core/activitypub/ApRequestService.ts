@@ -4,7 +4,6 @@ import { Injectable } from '@nestjs/common';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { LoggerService } from '@/core/LoggerService.js';
-import { bindThis } from '@/decorators.js';
 import type Logger from '@/misc/logger.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { user } from '@prisma/client';
@@ -137,7 +136,6 @@ export class ApRequestService {
 		this.logger = this.loggerService?.getLogger('ap-request'); // なぜか TypeError: Cannot read properties of undefined (reading 'getLogger') と言われる
 	}
 
-	@bindThis
 	public async signedPost(user: { id: user['id'] }, url: string, object: unknown): Promise<void> {
 		const body = JSON.stringify(object);
 
@@ -166,7 +164,6 @@ export class ApRequestService {
 	 * @param user http-signature user
 	 * @param url URL to fetch
 	 */
-	@bindThis
 	public async signedGet(url: string, user: { id: user['id'] }): Promise<unknown> {
 		const keypair = await this.userKeypairService.getUserKeypair(user.id);
 

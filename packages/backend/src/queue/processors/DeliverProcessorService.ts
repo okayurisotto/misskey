@@ -10,7 +10,6 @@ import ApRequestChart from '@/core/chart/charts/ap-request.js';
 import FederationChart from '@/core/chart/charts/federation.js';
 import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { DeliverJobData } from '../types.js';
 import type { instance } from '@prisma/client';
@@ -33,7 +32,6 @@ export class DeliverProcessorService {
 		this.suspendedHostsCache = new MemorySingleCache<instance[]>(1000 * 60 * 60);
 	}
 
-	@bindThis
 	public async process(job: Bull.Job<DeliverJobData>): Promise<string> {
 		const { host } = new URL(job.data.to);
 

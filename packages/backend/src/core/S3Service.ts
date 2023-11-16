@@ -6,7 +6,6 @@ import { DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Upload } from '@aws-sdk/lib-storage';
 import { NodeHttpHandler, NodeHttpHandlerOptions } from '@aws-sdk/node-http-handler';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
-import { bindThis } from '@/decorators.js';
 import type { AbortMultipartUploadCommandOutput, CompleteMultipartUploadCommandOutput, DeleteObjectCommandInput, DeleteObjectCommandOutput, PutObjectCommandInput } from '@aws-sdk/client-s3';
 import type { meta } from '@prisma/client';
 
@@ -14,7 +13,6 @@ import type { meta } from '@prisma/client';
 export class S3Service {
 	constructor(private readonly httpRequestService: HttpRequestService) {}
 
-	@bindThis
 	public getS3Client(meta: meta): S3Client {
 		const u = meta.objectStorageEndpoint
 			? `${meta.objectStorageUseSSL ? 'https' : 'http'}://${meta.objectStorageEndpoint}`
@@ -41,7 +39,6 @@ export class S3Service {
 		});
 	}
 
-	@bindThis
 	public async upload(
 		meta: meta,
 		input: PutObjectCommandInput,
@@ -56,7 +53,6 @@ export class S3Service {
 		}).done();
 	}
 
-	@bindThis
 	public async delete(meta: meta, input: DeleteObjectCommandInput): Promise<DeleteObjectCommandOutput> {
 		const client = this.getS3Client(meta);
 		return await client.send(new DeleteObjectCommand(input));

@@ -5,9 +5,9 @@ import { isUserRelated } from '@/misc/is-user-related.js';
 import { isInstanceMuted } from '@/misc/is-instance-muted.js';
 import { MetaService } from '@/core/MetaService.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
 
 class HybridTimelineChannel extends Channel {
@@ -28,7 +28,6 @@ class HybridTimelineChannel extends Channel {
 		//this.onNote = this.onNote.bind(this);
 	}
 
-	@bindThis
 	public async init(params: any): Promise<void> {
 		const policies = await this.roleService.getUserPolicies(this.user ? this.user.id : null);
 		if (!policies.ltlAvailable) return;
@@ -36,6 +35,7 @@ class HybridTimelineChannel extends Channel {
 		this.withReplies = params.withReplies as boolean;
 
 		// Subscribe events
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.on('notesStream', this.onNote);
 	}
 
@@ -104,9 +104,9 @@ class HybridTimelineChannel extends Channel {
 		this.send('note', note);
 	}
 
-	@bindThis
 	public override dispose(): void {
 		// Unsubscribe events
+		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.subscriber.off('notesStream', this.onNote);
 	}
 }
@@ -123,7 +123,6 @@ export class HybridTimelineChannelService {
 	) {
 	}
 
-	@bindThis
 	public create(id: string, connection: Channel['connection']): HybridTimelineChannel {
 		return new HybridTimelineChannel(
 			this.metaService,

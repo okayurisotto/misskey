@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import type { Notification } from '@/models/entities/Notification.js';
-import { bindThis } from '@/decorators.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { notificationTypes } from '@/types.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
@@ -48,7 +47,6 @@ export class NotificationEntityService implements OnModuleInit {
 	 * @param hint
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		notification: Notification,
 		meId: user['id'],
@@ -113,7 +111,6 @@ export class NotificationEntityService implements OnModuleInit {
 	 * @param meId
 	 * @returns
 	 */
-	@bindThis
 	public async packMany(
 		notifications: Notification[],
 		meId: user['id'],

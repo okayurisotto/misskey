@@ -1,7 +1,6 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import { MemoryKVCache } from '@/misc/cache.js';
 import { CacheService } from '@/core/CacheService.js';
-import { bindThis } from '@/decorators.js';
 import { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
@@ -42,7 +41,6 @@ export class ApDbResolverService implements OnApplicationShutdown {
 		this.publicKeyByUserIdCache = new MemoryKVCache<user_publickey | null>(Infinity);
 	}
 
-	@bindThis
 	public parseUri(value: string | IObject): UriParseResult {
 		const separator = '/';
 
@@ -61,7 +59,6 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	/**
 	 * AP Note => Misskey Note in DB
 	 */
-	@bindThis
 	public async getNoteFromApId(value: string | IObject): Promise<note | null> {
 		const parsed = this.parseUri(value);
 
@@ -81,7 +78,6 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	/**
 	 * AP Person => Misskey User in DB
 	 */
-	@bindThis
 	public async getUserFromApId(value: string | IObject): Promise<LocalUser | RemoteUser | null> {
 		const parsed = this.parseUri(value);
 
@@ -103,7 +99,6 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	/**
 	 * AP KeyId => Misskey User and Key
 	 */
-	@bindThis
 	public async getAuthUserFromKeyId(keyId: string): Promise<{
 		user: RemoteUser;
 		key: user_publickey;
@@ -133,7 +128,6 @@ export class ApDbResolverService implements OnApplicationShutdown {
 	/**
 	 * AP Actor id => Misskey User and Key
 	 */
-	@bindThis
 	public async getAuthUserFromApId(uri: string): Promise<{
 		user: RemoteUser;
 		key: user_publickey | null;
@@ -152,13 +146,11 @@ export class ApDbResolverService implements OnApplicationShutdown {
 		};
 	}
 
-	@bindThis
 	public dispose(): void {
 		this.publicKeyCache.dispose();
 		this.publicKeyByUserIdCache.dispose();
 	}
 
-	@bindThis
 	public onApplicationShutdown(): void {
 		this.dispose();
 	}

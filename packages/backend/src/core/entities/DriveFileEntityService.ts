@@ -3,7 +3,6 @@ import { z } from 'zod';
 import { appendQuery, query } from '@/misc/prelude/url.js';
 import { deepClone } from '@/misc/clone.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
-import { bindThis } from '@/decorators.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -48,7 +47,6 @@ export class DriveFileEntityService {
 	 * @param name ファイル名
 	 * @returns
 	 */
-	@bindThis
 	public validateFileName(name: string): boolean {
 		if (name.trim().length === 0) return false;
 		if (name.length > 200) return false;
@@ -68,7 +66,6 @@ export class DriveFileEntityService {
 	 * @param file
 	 * @returns
 	 */
-	@bindThis
 	public getPublicProperties(file: drive_file): z.infer<typeof DriveFilePropertiesSchema> {
 		const properties = DriveFilePropertiesSchema.parse(file.properties);
 
@@ -91,7 +88,6 @@ export class DriveFileEntityService {
 	 * @param mode
 	 * @returns
 	 */
-	@bindThis
 	private getProxiedUrl(url: string, mode?: 'static' | 'avatar'): string {
 		return appendQuery(
 			`${this.configLoaderService.data.mediaProxy}/${mode ?? 'image'}.webp`,
@@ -108,7 +104,6 @@ export class DriveFileEntityService {
 	 * @param file
 	 * @returns 動画でも画像でもなかった場合などは`null`が返される。
 	 */
-	@bindThis
 	public getThumbnailUrl(file: drive_file): string | null {
 		// 動画ファイル
 		if (file.type.startsWith('video')) {
@@ -138,7 +133,6 @@ export class DriveFileEntityService {
 		return null;
 	}
 
-	@bindThis
 	public getPublicUrl(file: drive_file, mode?: 'avatar'): string {
 		// リモートのファイル && 外部のメディアプロキシを経由する設定になっている
 		if (file.uri !== null && file.userHost !== null && this.configLoaderService.data.externalMediaProxyEnabled) {
@@ -171,7 +165,6 @@ export class DriveFileEntityService {
 	 * @param user
 	 * @returns
 	 */
-	@bindThis
 	public async calcDriveUsageOf(user: user['id'] | { id: user['id'] }): Promise<number> {
 		const id = typeof user === 'object' ? user.id : user;
 
@@ -190,7 +183,6 @@ export class DriveFileEntityService {
 	 * @param host
 	 * @returns
 	 */
-	@bindThis
 	public async calcDriveUsageOfHost(host: string): Promise<number> {
 		const { _sum: { size } } = await this.prismaService.client.drive_file.aggregate({
 			where: {
@@ -208,7 +200,6 @@ export class DriveFileEntityService {
 	 *
 	 * @returns
 	 */
-	@bindThis
 	public async calcDriveUsageOfLocal(): Promise<number> {
 		const { _sum: { size } } = await this.prismaService.client.drive_file.aggregate({
 			where: {
@@ -226,7 +217,6 @@ export class DriveFileEntityService {
 	 *
 	 * @returns
 	 */
-	@bindThis
 	public async calcDriveUsageOfRemote(): Promise<number> {
 		const { _sum: { size } } = await this.prismaService.client.drive_file.aggregate({
 			where: {
@@ -248,7 +238,6 @@ export class DriveFileEntityService {
 	 * @param options.withUser `true`だった場合、返り値に`user`が含まれるようになる場合がある。
 	 * @returns
 	 */
-	@bindThis
 	public async pack(
 		src: drive_file['id'] | drive_file,
 		options?: PackOptions,
@@ -303,7 +292,6 @@ export class DriveFileEntityService {
 	 * @param options
 	 * @returns
 	 */
-	@bindThis
 	public async packMany(
 		files: drive_file[],
 		options?: PackOptions,
@@ -319,7 +307,6 @@ export class DriveFileEntityService {
 	 * @param options
 	 * @returns
 	 */
-	@bindThis
 	public async packManyByIdsMap(
 		fileIds: drive_file['id'][],
 		options?: PackOptions,
@@ -346,7 +333,6 @@ export class DriveFileEntityService {
 	 * @param options
 	 * @returns
 	 */
-	@bindThis
 	public async packManyByIds(
 		fileIds: drive_file['id'][],
 		options?: PackOptions,

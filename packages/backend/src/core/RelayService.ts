@@ -6,7 +6,6 @@ import { QueueService } from '@/core/QueueService.js';
 import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { deepClone } from '@/misc/clone.js';
-import { bindThis } from '@/decorators.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { relay, user } from '@prisma/client';
 
@@ -26,7 +25,6 @@ export class RelayService {
 		this.relaysCache = new MemorySingleCache<relay[]>(1000 * 60 * 10);
 	}
 
-	@bindThis
 	private async getRelayActor(): Promise<LocalUser> {
 		const user = await this.prismaService.client.user.findFirst({
 			where: {
@@ -41,7 +39,6 @@ export class RelayService {
 		return created as LocalUser;
 	}
 
-	@bindThis
 	public async addRelay(inbox: string): Promise<relay> {
 		const relay = await this.prismaService.client.relay.create({
 			data: {
@@ -59,7 +56,6 @@ export class RelayService {
 		return relay;
 	}
 
-	@bindThis
 	public async removeRelay(inbox: string): Promise<void> {
 		const relay = await this.prismaService.client.relay.findUnique({
 			where: { inbox },
@@ -78,13 +74,11 @@ export class RelayService {
 		await this.prismaService.client.relay.delete({ where: { id: relay.id } });
 	}
 
-	@bindThis
 	public async listRelay(): Promise<relay[]> {
 		const relays = await this.prismaService.client.relay.findMany();
 		return relays;
 	}
 
-	@bindThis
 	public async relayAccepted(id: string): Promise<string> {
 		await this.prismaService.client.relay.update({
 			where: { id },
@@ -94,7 +88,6 @@ export class RelayService {
 		return 'relayAccepted';
 	}
 
-	@bindThis
 	public async relayRejected(id: string): Promise<string> {
 		await this.prismaService.client.relay.update({
 			where: { id },
@@ -104,7 +97,6 @@ export class RelayService {
 		return 'relayRejected';
 	}
 
-	@bindThis
 	public async deliverToRelays(user: { id: user['id']; host: null; }, activity: any): Promise<void> {
 		if (activity == null) return;
 

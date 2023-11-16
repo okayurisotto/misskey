@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { pick } from 'omick';
 import { MetaService } from '@/core/MetaService.js';
-import { bindThis } from '@/decorators.js';
 import type { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
 import type { FederationInstanceLiteSchema } from '@/models/zod/FederationInstanceLiteSchema.js';
 import { UtilityService } from '../UtilityService.js';
@@ -26,7 +25,6 @@ export class InstanceEntityService {
 		]);
 	}
 
-	@bindThis
 	public async pack(instance: instance): Promise<z.infer<typeof FederationInstanceSchema>> {
 		const meta = await this.metaService.fetch();
 		return {
