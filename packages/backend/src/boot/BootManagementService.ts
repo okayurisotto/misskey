@@ -1,3 +1,4 @@
+import cluster from 'node:cluster';
 import { Injectable } from '@nestjs/common';
 import { ChartManagementService } from '@/core/chart/ChartManagementService.js';
 import { JanitorService } from '@/daemons/JanitorService.js';
@@ -26,26 +27,48 @@ export class BootManagementService {
 		private readonly queueStatsService: QueueStatsService,
 		private readonly serverService: ServerService,
 		private readonly serverStatsService: ServerStatsService,
-	) {}
+	) {
+		process.on('uncaughtException', (err) => {
+			this.logger.error(err);
+			console.trace(err);
+		});
+
+		process.on('unhandledRejection', (reason, promise) => {
+			if (!envOption.quiet) {
+				console.dir(reason, promise);
+			}
+		});
+
+		process.on('exit', (code) => {
+			this.logger.info(`The process is going to exit with code ${code}`);
+		});
+	}
 
 	private async startServer(): Promise<void> {
-		await this.serverService.launch();
+		await Promise.all([
+			//
+			this.serverService.launch(),
+			...(NODE_ENV !== 'test'
+				? [
+						this.chartManagementService.start(),
+						this.janitorService.start(),
+						this.queueStatsService.start(),
+						this.serverStatsService.start(),
+				  ]
+				: []),
+		]);
 
-		if (NODE_ENV !== 'test') {
-			await Promise.all([
-				this.chartManagementService.start(),
-				this.janitorService.start(),
-				this.queueStatsService.start(),
-				this.serverStatsService.start(),
-			]);
+		if (this.configLoaderService.data.socket) {
+			this.logger.succ(
+				`Now listening on socket ${this.configLoaderService.data.socket} on ${this.configLoaderService.data.url}`,
+				true,
+			);
+		} else {
+			this.logger.succ(
+				`Now listening on port ${this.configLoaderService.data.port} on ${this.configLoaderService.data.url}`,
+				true,
+			);
 		}
-
-		this.logger.succ(
-			this.configLoaderService.data.socket
-				? `Now listening on socket ${this.configLoaderService.data.socket} on ${this.configLoaderService.data.url}`
-				: `Now listening on port ${this.configLoaderService.data.port} on ${this.configLoaderService.data.url}`,
-			true,
-		);
 	}
 
 	private startJobQueue(): void {
@@ -53,11 +76,8 @@ export class BootManagementService {
 		this.chartManagementService.start();
 	}
 
-	public async initializePrimary(): Promise<void> {
-		this.bootMessageService.showGreetingMessage(this.logger);
-		this.bootMessageService.showEnvironment(this.logger);
-		await this.bootMessageService.showMachineInfo(this.logger);
-		this.bootMessageService.showNodejsVersion(this.logger);
+	private async initializePrimary(): Promise<void> {
+		await this.bootMessageService.show(this.logger);
 
 		if (envOption.onlyServer) {
 			await this.startServer();
@@ -70,7 +90,7 @@ export class BootManagementService {
 		this.logger.succ('Misskey initialized');
 	}
 
-	public async initializeWorker(): Promise<void> {
+	private async initializeWorker(): Promise<void> {
 		if (envOption.onlyServer) {
 			await this.startServer();
 		} else if (envOption.onlyQueue) {
@@ -82,8 +102,20 @@ export class BootManagementService {
 		process.send?.(ProcessMessage.Ready);
 	}
 
-	public async spawnWorkers(): Promise<void> {
+	private async spawnWorkers(): Promise<void> {
 		const limit = this.configLoaderService.data.clusterLimit;
 		await this.clusterManagementService.spawnWorkers(limit);
+	}
+
+	public async boot(): Promise<void> {
+		if (envOption.disableClustering) {
+			await Promise.all([this.initializePrimary(), this.initializeWorker()]);
+		} else {
+			if (cluster.isPrimary) {
+				await Promise.all([this.initializePrimary(), this.spawnWorkers()]);
+			} else {
+				await this.initializeWorker();
+			}
+		}
 	}
 }

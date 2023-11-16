@@ -43,7 +43,7 @@ export class BootMessageService {
 		);
 	}
 
-	public showGreetingMessage(logger: Logger): void {
+	private showGreetingMessage(logger: Logger): void {
 		this.configLoaderService.data.version;
 
 		if (!envOption.quiet) this.showLogo();
@@ -52,7 +52,7 @@ export class BootMessageService {
 		logger.info(`Misskey v${this.configLoaderService.data.version}`, true);
 	}
 
-	public showEnvironment(parentLogger: Logger): void {
+	private showEnvironment(parentLogger: Logger): void {
 		const logger = parentLogger.createSubLogger('env');
 
 		if (NODE_ENV === undefined) {
@@ -67,7 +67,7 @@ export class BootMessageService {
 		}
 	}
 
-	public async showMachineInfo(parentLogger: Logger): Promise<void> {
+	private async showMachineInfo(parentLogger: Logger): Promise<void> {
 		const logger = parentLogger.createSubLogger('machine');
 
 		logger.debug(`Hostname: ${os.hostname()}`);
@@ -81,8 +81,15 @@ export class BootMessageService {
 		logger.debug(`MEM: ${totalmem}GB (available: ${availmem}GB)`);
 	}
 
-	public showNodejsVersion(parentLogger: Logger): void {
+	private showNodejsVersion(parentLogger: Logger): void {
 		const nodejsLogger = parentLogger.createSubLogger('nodejs');
 		nodejsLogger.info(`Version ${process.version} detected.`);
+	}
+
+	public async show(logger: Logger): Promise<void> {
+		this.showGreetingMessage(logger);
+		this.showEnvironment(logger);
+		await this.showMachineInfo(logger);
+		this.showNodejsVersion(logger);
 	}
 }
