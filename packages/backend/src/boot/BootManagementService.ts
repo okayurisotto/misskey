@@ -9,17 +9,15 @@ import { QueueProcessorService } from '@/queue/QueueProcessorService.js';
 import { ServerService } from '@/server/ServerService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { ProcessMessage } from './ProcessMessage.js';
-import { showEnvironment } from './showEnvironment.js';
-import { showGreetingMessage } from './showGreetingMessage.js';
-import { showMachineInfo } from './showMachineInfo.js';
-import { showNodejsVersion } from './showNodejsVersion.js';
 import { ClusterManagementService } from './ClusterManagementService.js';
+import { BootMessageService } from './BootMessageService.js';
 
 @Injectable()
 export class BootManagementService {
 	private readonly logger = new Logger('boot', 'magenta');
 
 	constructor(
+		private readonly bootMessageService: BootMessageService,
 		private readonly chartManagementService: ChartManagementService,
 		private readonly clusterManagementService: ClusterManagementService,
 		private readonly configLoaderService: ConfigLoaderService,
@@ -56,10 +54,10 @@ export class BootManagementService {
 	}
 
 	public async initializePrimary(): Promise<void> {
-		showGreetingMessage(this.logger);
-		showEnvironment(this.logger);
-		await showMachineInfo(this.logger);
-		showNodejsVersion(this.logger);
+		this.bootMessageService.showGreetingMessage(this.logger);
+		this.bootMessageService.showEnvironment(this.logger);
+		await this.bootMessageService.showMachineInfo(this.logger);
+		this.bootMessageService.showNodejsVersion(this.logger);
 
 		if (envOption.onlyServer) {
 			await this.startServer();

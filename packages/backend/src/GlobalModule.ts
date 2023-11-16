@@ -13,6 +13,7 @@ import { DaemonModule } from './daemons/DaemonModule.js';
 import { ServerModule } from './server/ServerModule.js';
 import { QueueProcessorModule } from './queue/QueueProcessorModule.js';
 import { ClusterManagementService } from './boot/ClusterManagementService.js';
+import { BootMessageService } from './boot/BootMessageService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 
 @Global()
@@ -20,6 +21,7 @@ import type { OnApplicationShutdown } from '@nestjs/common';
 	imports: [CoreModule, ServerModule, DaemonModule, QueueProcessorModule],
 	providers: [
 		BootManagementService,
+		BootMessageService,
 		ClusterManagementService,
 		ConfigLoaderService,
 		TypeORMService,
@@ -30,6 +32,7 @@ import type { OnApplicationShutdown } from '@nestjs/common';
 	],
 	exports: [
 		BootManagementService,
+		BootMessageService,
 		ClusterManagementService,
 		ConfigLoaderService,
 		TypeORMService,
