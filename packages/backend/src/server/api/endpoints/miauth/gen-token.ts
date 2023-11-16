@@ -60,7 +60,7 @@ export default class extends Endpoint<
 
 			return {
 				token: accessToken,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

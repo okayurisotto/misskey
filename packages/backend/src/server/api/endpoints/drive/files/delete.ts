@@ -14,7 +14,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'write:drive',
 	description: 'Delete an existing drive file.',
-	errors: {noSuchFile:noSuchFile______,accessDenied:accessDenied___},
+	errors: { noSuchFile: noSuchFile______, accessDenied: accessDenied___ },
 } as const;
 
 export const paramDef = z.object({

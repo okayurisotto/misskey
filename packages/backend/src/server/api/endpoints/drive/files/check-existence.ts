@@ -35,7 +35,7 @@ export default class extends Endpoint<
 					take: 1,
 				})) > 0;
 
-			return exist satisfies z.infer<typeof res>;
+			return exist;
 		});
 	}
 }

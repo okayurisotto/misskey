@@ -2,7 +2,19 @@ import { z } from 'zod';
 import RE2 from 're2';
 import * as mfm from 'mfm-js';
 import { Injectable } from '@nestjs/common';
-import { noSuchAvatar, noSuchBanner, avatarNotAnImage, bannerNotAnImage, noSuchPage, invalidRegexp, tooManyMutedWords, noSuchUser____________, uriNull_, forbiddenToSetYourself, restrictedByRole_ } from '@/server/api/errors.js';
+import {
+	noSuchAvatar,
+	noSuchBanner,
+	avatarNotAnImage,
+	bannerNotAnImage,
+	noSuchPage,
+	invalidRegexp,
+	tooManyMutedWords,
+	noSuchUser____________,
+	uriNull_,
+	forbiddenToSetYourself,
+	restrictedByRole_,
+} from '@/server/api/errors.js';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
 import { extractHashtags } from '@/misc/extract-hashtags.js';
 import * as Acct from '@/misc/acct.js';
@@ -38,7 +50,19 @@ export const meta = {
 	tags: ['account'],
 	requireCredential: true,
 	kind: 'write:account',
-	errors: {noSuchAvatar:noSuchAvatar,noSuchBanner:noSuchBanner,avatarNotAnImage:avatarNotAnImage,bannerNotAnImage:bannerNotAnImage,noSuchPage:noSuchPage,invalidRegexp:invalidRegexp,tooManyMutedWords:tooManyMutedWords,noSuchUser:noSuchUser____________,uriNull:uriNull_,forbiddenToSetYourself:forbiddenToSetYourself,restrictedByRole:restrictedByRole_},
+	errors: {
+		noSuchAvatar: noSuchAvatar,
+		noSuchBanner: noSuchBanner,
+		avatarNotAnImage: avatarNotAnImage,
+		bannerNotAnImage: bannerNotAnImage,
+		noSuchPage: noSuchPage,
+		invalidRegexp: invalidRegexp,
+		tooManyMutedWords: tooManyMutedWords,
+		noSuchUser: noSuchUser____________,
+		uriNull: uriNull_,
+		forbiddenToSetYourself: forbiddenToSetYourself,
+		restrictedByRole: restrictedByRole_,
+	},
 	res,
 } as const;
 
@@ -370,10 +394,9 @@ export default class extends Endpoint<
 				});
 			}
 
-			const iObj = await this.userEntityService.packDetailedMe(
-				user.id,
-				{ includeSecrets: isSecure },
-			);
+			const iObj = await this.userEntityService.packDetailedMe(user.id, {
+				includeSecrets: isSecure,
+			});
 
 			const updatedProfile =
 				await this.prismaService.client.user_profile.findUniqueOrThrow({
@@ -393,7 +416,7 @@ export default class extends Endpoint<
 			// フォロワーにUpdateを配信
 			this.accountUpdateService.publishToFollowers(user.id);
 
-			return iObj satisfies z.infer<typeof res>;
+			return iObj;
 		});
 	}
 }

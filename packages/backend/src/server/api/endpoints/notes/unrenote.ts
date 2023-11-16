@@ -18,7 +18,7 @@ export const meta = {
 		max: 300,
 		minInterval: ms('1sec'),
 	},
-	errors: {noSuchNote:noSuchNote___________________},
+	errors: { noSuchNote: noSuchNote___________________ },
 } as const;
 
 export const paramDef = z.object({

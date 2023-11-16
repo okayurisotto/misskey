@@ -29,7 +29,7 @@ export default class extends Endpoint<
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const exist = await this.prismaService.client.user.count({
 				where: {
 					host: null,
@@ -50,7 +50,7 @@ export default class extends Endpoint<
 
 			return {
 				available: exist === 0 && exist2 === 0 && !isPreserved,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

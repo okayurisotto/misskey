@@ -44,9 +44,9 @@ export default class extends Endpoint<
 					take: ps.limit,
 				});
 
-			return (await Promise.all(
+			return await Promise.all(
 				followings.map((x) => this.channelEntityService.pack(x.followeeId, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

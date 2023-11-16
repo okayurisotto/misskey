@@ -20,7 +20,7 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 10,
 	},
-	errors: {noSuchFolder:noSuchFolder_},
+	errors: { noSuchFolder: noSuchFolder_ },
 	res,
 } as const;
 
@@ -79,7 +79,7 @@ export default class extends Endpoint<
 				folderObj,
 			);
 
-			return folderObj satisfies z.infer<typeof res>;
+			return folderObj;
 		});
 	}
 }

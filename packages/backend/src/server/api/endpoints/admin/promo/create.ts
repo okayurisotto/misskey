@@ -11,7 +11,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {noSuchNote:noSuchNote,alreadyPromoted:alreadyPromoted},
+	errors: { noSuchNote: noSuchNote, alreadyPromoted: alreadyPromoted },
 } as const;
 
 export const paramDef = z.object({

@@ -9,7 +9,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-	errors: {noSuchEmoji:noSuchEmoji_},
+	errors: { noSuchEmoji: noSuchEmoji_ },
 } as const;
 
 export const paramDef = z.object({

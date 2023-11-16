@@ -45,9 +45,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				posts.map((post) => this.galleryPostEntityService.pack(post, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

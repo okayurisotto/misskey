@@ -13,7 +13,7 @@ export const meta = {
 	tags: ['flashs'],
 	requireCredential: false,
 	res,
-	errors: {noSuchFlash:noSuchFlash__},
+	errors: { noSuchFlash: noSuchFlash__ },
 } as const;
 
 export const paramDef = z.object({
@@ -40,9 +40,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchFlash);
 			}
 
-			return (await this.flashEntityService.pack(flash, me)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.flashEntityService.pack(flash, me);
 		});
 	}
 }

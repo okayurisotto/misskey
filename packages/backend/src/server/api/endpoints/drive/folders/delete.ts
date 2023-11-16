@@ -11,7 +11,10 @@ export const meta = {
 	tags: ['drive'],
 	requireCredential: true,
 	kind: 'write:drive',
-	errors: {noSuchFolder:noSuchFolder__,hasChildFilesOrFolders:hasChildFilesOrFolders},
+	errors: {
+		noSuchFolder: noSuchFolder__,
+		hasChildFilesOrFolders: hasChildFilesOrFolders,
+	},
 } as const;
 
 export const paramDef = z.object({

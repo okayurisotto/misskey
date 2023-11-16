@@ -1,7 +1,12 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
-import { noSuchFile__________, unexpectedFileType, tooBigFile, emptyFile_ } from '@/server/api/errors.js';
+import {
+	noSuchFile__________,
+	unexpectedFileType,
+	tooBigFile,
+	emptyFile_,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueueService } from '@/core/QueueService.js';
 import { AccountMoveService } from '@/core/AccountMoveService.js';
@@ -17,7 +22,12 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 1,
 	},
-	errors: {noSuchFile:noSuchFile__________,unexpectedFileType:unexpectedFileType,tooBigFile:tooBigFile,emptyFile:emptyFile_},
+	errors: {
+		noSuchFile: noSuchFile__________,
+		unexpectedFileType: unexpectedFileType,
+		tooBigFile: tooBigFile,
+		emptyFile: emptyFile_,
+	},
 } as const;
 
 export const paramDef = z.object({

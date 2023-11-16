@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchFolder____, noSuchParentFolder, recursiveNesting } from '@/server/api/errors.js';
+import {
+	noSuchFolder____,
+	noSuchParentFolder,
+	recursiveNesting,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DriveFolderEntityService } from '@/core/entities/DriveFolderEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -14,7 +18,11 @@ export const meta = {
 	tags: ['drive'],
 	requireCredential: true,
 	kind: 'write:drive',
-	errors: {noSuchFolder:noSuchFolder____,noSuchParentFolder:noSuchParentFolder,recursiveNesting:recursiveNesting},
+	errors: {
+		noSuchFolder: noSuchFolder____,
+		noSuchParentFolder: noSuchParentFolder,
+		recursiveNesting: recursiveNesting,
+	},
 	res,
 } as const;
 
@@ -117,7 +125,7 @@ export default class extends Endpoint<
 				folderObj,
 			);
 
-			return folderObj satisfies z.infer<typeof res>;
+			return folderObj;
 		});
 	}
 }

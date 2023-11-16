@@ -2,7 +2,10 @@ import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import { defineOpenApiSpec } from 'zod2spec';
-import { noSuchFile_______________, nameAlreadyExists } from '@/server/api/errors.js';
+import {
+	noSuchFile_______________,
+	nameAlreadyExists,
+} from '@/server/api/errors.js';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
@@ -23,7 +26,10 @@ export const meta = {
 		max: 10,
 	},
 	res,
-	errors: {noSuchFile:noSuchFile_______________,nameAlreadyExists:nameAlreadyExists},
+	errors: {
+		noSuchFile: noSuchFile_______________,
+		nameAlreadyExists: nameAlreadyExists,
+	},
 } as const;
 
 export const paramDef = z.object({
@@ -103,9 +109,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await this.pageEntityService.pack(page)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.pageEntityService.pack(page);
 		});
 	}
 }

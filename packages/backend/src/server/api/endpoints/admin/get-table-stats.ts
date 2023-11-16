@@ -53,7 +53,7 @@ export default class extends Endpoint<
 					return acc;
 				}, {});
 
-			return sizes satisfies z.infer<typeof res>;
+			return sizes;
 		});
 	}
 }

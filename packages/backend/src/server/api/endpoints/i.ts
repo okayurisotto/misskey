@@ -55,10 +55,9 @@ export default class extends Endpoint<
 				userProfile.loggedInDates = [...userProfile.loggedInDates, today];
 			}
 
-			return await this.userEntityService.packDetailedMe(
-				userProfile.user,
-				{ includeSecrets: isSecure },
-			);
+			return await this.userEntityService.packDetailedMe(userProfile.user, {
+				includeSecrets: isSecure,
+			});
 		});
 	}
 }

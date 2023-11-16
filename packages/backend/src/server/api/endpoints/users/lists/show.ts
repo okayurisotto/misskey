@@ -84,7 +84,7 @@ export default class extends Endpoint<
 					user_list_joining: new EntityMap('id', userList.user_list_joining),
 				}),
 				...additionalProperties,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

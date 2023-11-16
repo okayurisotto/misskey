@@ -32,9 +32,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			return {
-				count,
-			} satisfies z.infer<typeof res>;
+			return { count };
 		});
 	}
 }

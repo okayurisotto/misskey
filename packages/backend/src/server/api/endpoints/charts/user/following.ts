@@ -52,13 +52,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private perUserFollowingChart: PerUserFollowingChart) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			return await this.perUserFollowingChart.getChart(
 				ps.span,
 				ps.limit,
 				ps.offset ? new Date(ps.offset) : null,
 				ps.userId,
-			) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

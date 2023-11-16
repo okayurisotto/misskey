@@ -1,6 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchRole___, noSuchUser_, notAssigned, accessDenied_ } from '@/server/api/errors.js';
+import {
+	noSuchRole___,
+	noSuchUser_,
+	notAssigned,
+	accessDenied_,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ApiError } from '@/server/api/error.js';
 import { RoleService } from '@/core/RoleService.js';
@@ -11,7 +16,12 @@ export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {noSuchRole:noSuchRole___,noSuchUser:noSuchUser_,notAssigned:notAssigned,accessDenied:accessDenied_},
+	errors: {
+		noSuchRole: noSuchRole___,
+		noSuchUser: noSuchUser_,
+		notAssigned: notAssigned,
+		accessDenied: accessDenied_,
+	},
 } as const;
 
 export const paramDef = z.object({

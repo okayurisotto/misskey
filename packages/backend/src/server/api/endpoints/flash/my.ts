@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FlashEntityService } from '@/core/entities/FlashEntityService.js';
 import { FlashSchema } from '@/models/zod/FlashSchema.js';
-import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -42,9 +42,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				flashs.map((flash) => this.flashEntityService.pack(flash)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

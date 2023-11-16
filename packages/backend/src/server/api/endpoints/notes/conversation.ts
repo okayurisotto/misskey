@@ -15,7 +15,7 @@ export const meta = {
 	tags: ['notes'],
 	requireCredential: false,
 	res,
-	errors: {noSuchNote:noSuchNote______},
+	errors: { noSuchNote: noSuchNote______ },
 } as const;
 
 export const paramDef = z.object({
@@ -71,10 +71,7 @@ export default class extends Endpoint<
 				await get(note.replyId);
 			}
 
-			return (await this.noteEntityService.packMany(
-				conversation,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.noteEntityService.packMany(conversation, me);
 		});
 	}
 }

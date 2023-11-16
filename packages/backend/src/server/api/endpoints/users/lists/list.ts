@@ -69,11 +69,11 @@ export default class extends Endpoint<
 				),
 			};
 
-			return (await Promise.all(
+			return await Promise.all(
 				userLists.map((userList) =>
 					this.userListEntityService.pack(userList.id, data),
 				),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

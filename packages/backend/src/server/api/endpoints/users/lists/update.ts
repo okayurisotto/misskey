@@ -51,7 +51,7 @@ export default class extends Endpoint<
 				return this.userListEntityService.pack(ps.listId, {
 					user_list: new EntityMap('id', [updated]),
 					user_list_joining: new EntityMap('id', updated.user_list_joining),
-				}) satisfies z.infer<typeof res>;
+				});
 			} catch (e) {
 				if (e instanceof Prisma.PrismaClientKnownRequestError) {
 					if (e.code === 'P2025') {

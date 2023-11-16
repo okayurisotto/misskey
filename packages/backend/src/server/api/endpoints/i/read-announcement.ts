@@ -13,7 +13,7 @@ export const meta = {
 	tags: ['account'],
 	requireCredential: true,
 	kind: 'write:account',
-	errors: {noSuchAnnouncement:noSuchAnnouncement__},
+	errors: { noSuchAnnouncement: noSuchAnnouncement__ },
 } as const;
 
 export const paramDef = z.object({

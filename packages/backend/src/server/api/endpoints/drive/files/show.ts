@@ -17,7 +17,7 @@ export const meta = {
 	kind: 'read:drive',
 	description: 'Show the properties of a drive file.',
 	res,
-	errors: {noSuchFile:noSuchFile_______,accessDenied:accessDenied____},
+	errors: { noSuchFile: noSuchFile_______, accessDenied: accessDenied____ },
 } as const;
 
 export const paramDef = z.union([
@@ -64,11 +64,11 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.accessDenied);
 			}
 
-			return (await this.driveFileEntityService.pack(file, {
+			return await this.driveFileEntityService.pack(file, {
 				detail: true,
 				withUser: true,
 				self: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

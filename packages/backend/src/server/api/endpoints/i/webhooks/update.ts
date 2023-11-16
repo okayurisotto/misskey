@@ -12,7 +12,7 @@ export const meta = {
 	tags: ['webhooks'],
 	requireCredential: true,
 	kind: 'write:account',
-	errors: {noSuchWebhook:noSuchWebhook__},
+	errors: { noSuchWebhook: noSuchWebhook__ },
 } as const;
 
 export const paramDef = z.object({

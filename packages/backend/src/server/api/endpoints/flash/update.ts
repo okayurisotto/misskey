@@ -16,7 +16,7 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 300,
 	},
-	errors: {noSuchFlash:noSuchFlash____,accessDenied:accessDenied_______},
+	errors: { noSuchFlash: noSuchFlash____, accessDenied: accessDenied_______ },
 } as const;
 
 export const paramDef = z.object({

@@ -11,7 +11,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:channels',
-	errors: {noSuchChannel:noSuchChannel_____},
+	errors: { noSuchChannel: noSuchChannel_____ },
 } as const;
 
 export const paramDef = z.object({

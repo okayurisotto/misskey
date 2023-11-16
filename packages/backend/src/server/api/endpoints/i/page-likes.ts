@@ -48,9 +48,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				likes.map((like) => this.pageLikeEntityService.pack(like, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

@@ -21,7 +21,7 @@ export const meta = {
 	tags: ['notes'],
 	requireCredential: false,
 	res,
-	errors: {noSuchNote:noSuchNote__________________},
+	errors: { noSuchNote: noSuchNote__________________ },
 } as const;
 
 export const paramDef = z.object({
@@ -97,7 +97,7 @@ export default class extends Endpoint<
 			return {
 				sourceLang: json.translations[0].detected_source_language,
 				text: json.translations[0].text,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

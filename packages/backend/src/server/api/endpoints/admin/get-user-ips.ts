@@ -32,7 +32,7 @@ export default class extends Endpoint<
 			return ips.map((x) => ({
 				ip: x.ip,
 				createdAt: x.createdAt.toISOString(),
-			})) satisfies z.infer<typeof res>;
+			}));
 		});
 	}
 }

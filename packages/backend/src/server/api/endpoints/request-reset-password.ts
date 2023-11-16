@@ -1,4 +1,3 @@
-import {  } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -17,7 +16,6 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 3,
 	},
-	errors: {},
 } as const;
 
 export const paramDef = z.object({
@@ -39,7 +37,7 @@ export default class extends Endpoint<
 		private readonly emailService: EmailService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const user = await this.prismaService.client.user.findFirst({
 				where: {
 					usernameLower: ps.username.toLowerCase(),

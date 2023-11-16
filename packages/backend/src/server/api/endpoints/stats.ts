@@ -58,7 +58,7 @@ export default class extends Endpoint<
 				instances,
 				driveUsageLocal: 0,
 				driveUsageRemote: 0,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

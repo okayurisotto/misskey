@@ -33,8 +33,8 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor() {
-		super(meta, paramDef, async (ps, me) => {
-			return ps satisfies z.infer<typeof res>;
+		super(meta, paramDef, async (ps) => {
+			return ps;
 		});
 	}
 }

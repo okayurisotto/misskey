@@ -8,7 +8,7 @@ import { ApiError } from '../../../error.js';
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	errors: {noSuchKey:noSuchKey___},
+	errors: { noSuchKey: noSuchKey___ },
 } as const;
 
 export const paramDef = z.object({

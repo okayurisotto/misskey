@@ -18,7 +18,7 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 10,
 	},
-	errors: {noSuchNote:noSuchNote________________},
+	errors: { noSuchNote: noSuchNote________________ },
 } as const;
 
 export const paramDef = z.object({

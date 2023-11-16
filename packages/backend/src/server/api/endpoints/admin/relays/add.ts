@@ -16,7 +16,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {invalidUrl:invalidUrl},
+	errors: { invalidUrl: invalidUrl },
 	res,
 } as const;
 

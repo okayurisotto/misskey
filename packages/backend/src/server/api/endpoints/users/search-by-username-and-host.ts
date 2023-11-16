@@ -53,7 +53,8 @@ export default class extends Endpoint<
 						  }
 						: {},
 					'host' in ps && ps.host !== null
-						? ps.host === this.configLoaderService.data.hostname || ps.host === '.'
+						? ps.host === this.configLoaderService.data.hostname ||
+						  ps.host === '.'
 							? { host: null }
 							: { host: { startsWith: ps.host.toLowerCase() } }
 						: {},

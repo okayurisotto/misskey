@@ -1,4 +1,3 @@
-import {  } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
@@ -13,7 +12,6 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 30,
 	},
-	errors: {},
 	res,
 } as const;
 

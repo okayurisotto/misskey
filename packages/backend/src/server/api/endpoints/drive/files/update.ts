@@ -1,6 +1,12 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { invalidFileName_, noSuchFile________, accessDenied_____, noSuchFolder, restrictedByRole } from '@/server/api/errors.js';
+import {
+	invalidFileName_,
+	noSuchFile________,
+	accessDenied_____,
+	noSuchFolder,
+	restrictedByRole,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
@@ -16,7 +22,13 @@ export const meta = {
 	requireCredential: true,
 	kind: 'write:drive',
 	description: 'Update the properties of a drive file.',
-	errors: {invalidFileName:invalidFileName_,noSuchFile:noSuchFile________,accessDenied:accessDenied_____,noSuchFolder:noSuchFolder,restrictedByRole:restrictedByRole},
+	errors: {
+		invalidFileName: invalidFileName_,
+		noSuchFile: noSuchFile________,
+		accessDenied: accessDenied_____,
+		noSuchFolder: noSuchFolder,
+		restrictedByRole: restrictedByRole,
+	},
 	res,
 } as const;
 
@@ -77,12 +89,13 @@ export default class extends Endpoint<
 				if (ps.folderId === null) {
 					file.folderId = null;
 				} else {
-					const folder = await this.prismaService.client.drive_folder.findUnique({
-						where: {
-							id: ps.folderId,
-							userId: me.id,
-						},
-					});
+					const folder =
+						await this.prismaService.client.drive_folder.findUnique({
+							where: {
+								id: ps.folderId,
+								userId: me.id,
+							},
+						});
 
 					if (folder == null) {
 						throw new ApiError(meta.errors.noSuchFolder);
@@ -109,7 +122,7 @@ export default class extends Endpoint<
 			// Publish fileUpdated event
 			this.globalEventService.publishDriveStream(me.id, 'fileUpdated', fileObj);
 
-			return fileObj satisfies z.infer<typeof res>;
+			return fileObj;
 		});
 	}
 }

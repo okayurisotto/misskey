@@ -37,7 +37,7 @@ export default class extends Endpoint<
 		private readonly driveService: DriveService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const emoji = await this.prismaService.client.emoji.findUnique({
 				where: { id: ps.emojiId },
 			});

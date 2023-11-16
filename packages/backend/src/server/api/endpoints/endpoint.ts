@@ -25,9 +25,9 @@ export default class extends Endpoint<
 	constructor() {
 		super(meta, paramDef, async (ps) => {
 			const ep = endpoints.find((x) => x.name === ps.endpoint);
-			if (ep == null) return null satisfies z.infer<typeof res>;
+			if (ep == null) return null;
 			const spec = generateOpenApiSpec([])(ep.params);
-			return { spec } satisfies z.infer<typeof res>;
+			return { spec };
 		});
 	}
 }

@@ -12,7 +12,7 @@ export const meta = {
 	tags: ['antennas'],
 	requireCredential: true,
 	kind: 'write:account',
-	errors: {noSuchAntenna:noSuchAntenna},
+	errors: { noSuchAntenna: noSuchAntenna },
 } as const;
 
 export const paramDef = z.object({ antennaId: MisskeyIdSchema });

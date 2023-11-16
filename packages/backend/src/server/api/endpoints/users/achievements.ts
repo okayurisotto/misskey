@@ -22,13 +22,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private readonly prismaService: PrismaService) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const profile =
 				await this.prismaService.client.user_profile.findUniqueOrThrow({
 					where: { userId: ps.userId },
 				});
 
-			return profile.achievements satisfies z.infer<typeof res>;
+			return profile.achievements;
 		});
 	}
 }

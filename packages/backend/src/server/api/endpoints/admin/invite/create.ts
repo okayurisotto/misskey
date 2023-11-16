@@ -57,9 +57,9 @@ export default class extends Endpoint<
 					where: { id: { in: ticketdata.map((ticket) => ticket.id) } },
 				});
 
-			return (await Promise.all(
+			return await Promise.all(
 				tickets.map((ticket) => this.inviteCodeEntityService.pack(ticket, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

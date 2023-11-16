@@ -11,7 +11,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'write:account',
 	description: 'Delete an existing list of users.',
-	errors: {noSuchList:noSuchList__},
+	errors: { noSuchList: noSuchList__ },
 } as const;
 
 export const paramDef = z.object({

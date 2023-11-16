@@ -14,7 +14,7 @@ export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,
 	requireAdmin: true,
-	errors: {noSuchRole:noSuchRole____},
+	errors: { noSuchRole: noSuchRole____ },
 } as const;
 
 export const paramDef = z.object({

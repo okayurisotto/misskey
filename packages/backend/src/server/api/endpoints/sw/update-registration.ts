@@ -15,7 +15,7 @@ export const meta = {
 	requireCredential: true,
 	description: 'Update push notification registration.',
 	res,
-	errors: {noSuchRegistration:noSuchRegistration},
+	errors: { noSuchRegistration: noSuchRegistration },
 } as const;
 
 export const paramDef = z.object({
@@ -57,7 +57,7 @@ export default class extends Endpoint<
 				userId: swSubscription.userId,
 				endpoint: swSubscription.endpoint,
 				sendReadMessage: swSubscription.sendReadMessage,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

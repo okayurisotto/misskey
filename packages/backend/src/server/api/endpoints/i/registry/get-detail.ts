@@ -13,7 +13,7 @@ export const meta = {
 	requireCredential: true,
 	secure: true,
 	res,
-	errors: {noSuchKey:noSuchKey_},
+	errors: { noSuchKey: noSuchKey_ },
 } as const;
 
 export const paramDef = z.object({
@@ -46,7 +46,7 @@ export default class extends Endpoint<
 			return {
 				updatedAt: item.updatedAt,
 				value: item.value,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

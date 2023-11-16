@@ -1,4 +1,3 @@
-import {  } from '@/server/api/errors.js';
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -8,7 +7,6 @@ export const meta = {
 	tags: ['notifications'],
 	requireCredential: true,
 	kind: 'write:notifications',
-	errors: {},
 } as const;
 
 export const paramDef = z.object({

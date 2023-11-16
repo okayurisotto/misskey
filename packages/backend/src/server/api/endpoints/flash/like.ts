@@ -12,7 +12,11 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:flash-likes',
-	errors: {noSuchFlash:noSuchFlash_,yourFlash:yourFlash,alreadyLiked:alreadyLiked},
+	errors: {
+		noSuchFlash: noSuchFlash_,
+		yourFlash: yourFlash,
+		alreadyLiked: alreadyLiked,
+	},
 } as const;
 
 export const paramDef = z.object({

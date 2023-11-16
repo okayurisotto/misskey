@@ -102,7 +102,7 @@ export default class extends Endpoint<
 				})),
 			);
 
-			return repliesObj satisfies z.infer<typeof res>;
+			return repliesObj;
 		});
 	}
 }

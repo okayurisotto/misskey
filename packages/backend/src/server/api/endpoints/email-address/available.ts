@@ -25,10 +25,8 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private emailService: EmailService) {
-		super(meta, paramDef, async (ps, me) => {
-			return (await this.emailService.validateEmailForAccount(
-				ps.emailAddress,
-			)) satisfies z.infer<typeof res>;
+		super(meta, paramDef, async (ps) => {
+			return await this.emailService.validateEmailForAccount(ps.emailAddress);
 		});
 	}
 }

@@ -34,7 +34,7 @@ export default class extends Endpoint<
 				res_.push(item.scope);
 			}
 
-			return res_ satisfies z.infer<typeof res>;
+			return res_;
 		});
 	}
 }

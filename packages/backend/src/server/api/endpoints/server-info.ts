@@ -52,7 +52,7 @@ export default class extends Endpoint<
 						total: 0,
 						used: 0,
 					},
-				} satisfies z.infer<typeof res>;
+				};
 			}
 
 			const memStats = await si.mem();
@@ -71,7 +71,7 @@ export default class extends Endpoint<
 					total: fsStats[0].size,
 					used: fsStats[0].used,
 				},
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

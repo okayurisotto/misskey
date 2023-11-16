@@ -26,10 +26,8 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(
-		private httpRequestService: HttpRequestService,
-	) {
-		super(meta, paramDef, async (ps, me) => {
+	constructor(private httpRequestService: HttpRequestService) {
+		super(meta, paramDef, async (ps) => {
 			const res_ = await this.httpRequestService.send(ps.url, {
 				method: 'GET',
 				headers: {
@@ -40,7 +38,7 @@ export default class extends Endpoint<
 
 			const text = await res_.text();
 
-			return (await rssParser.parseString(text)) satisfies z.infer<typeof res>;
+			return await rssParser.parseString(text);
 		});
 	}
 }

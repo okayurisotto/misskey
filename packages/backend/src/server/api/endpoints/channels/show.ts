@@ -13,7 +13,7 @@ export const meta = {
 	tags: ['channels'],
 	requireCredential: false,
 	res,
-	errors: {noSuchChannel:noSuchChannel__},
+	errors: { noSuchChannel: noSuchChannel__ },
 } as const;
 
 export const paramDef = z.object({
@@ -40,11 +40,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			return (await this.channelEntityService.pack(
-				channel,
-				me,
-				true,
-			)) satisfies z.infer<typeof res>;
+			return await this.channelEntityService.pack(channel, me, true);
 		});
 	}
 }

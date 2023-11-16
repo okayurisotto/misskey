@@ -71,7 +71,12 @@ export default class extends Endpoint<
 			if (clientData.type !== 'webauthn.create') {
 				throw new Error('not a creation attestation');
 			}
-			if (clientData.origin !== this.configLoaderService.data.scheme + '://' + this.configLoaderService.data.host) {
+			if (
+				clientData.origin !==
+				this.configLoaderService.data.scheme +
+					'://' +
+					this.configLoaderService.data.host
+			) {
 				throw new Error('origin mismatch');
 			}
 
@@ -173,13 +178,15 @@ export default class extends Endpoint<
 			this.globalEventService.publishMainStream(
 				me.id,
 				'meUpdated',
-				await this.userEntityService.packDetailedMe(me.id, { includeSecrets: true }),
+				await this.userEntityService.packDetailedMe(me.id, {
+					includeSecrets: true,
+				}),
 			);
 
 			return {
 				id: credentialIdString,
 				name: ps.name,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

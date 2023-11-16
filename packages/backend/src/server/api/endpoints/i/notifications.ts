@@ -138,10 +138,10 @@ export default class extends Endpoint<
 				this.noteReadService.read(me.id, notes);
 			}
 
-			return (await this.notificationEntityService.packMany(
+			return await this.notificationEntityService.packMany(
 				notifications,
 				me.id,
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

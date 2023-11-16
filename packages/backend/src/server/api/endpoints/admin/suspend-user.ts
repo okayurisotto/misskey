@@ -4,7 +4,6 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { RelationshipJobData } from '@/queue/types.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
-import { bindThis } from '@/decorators.js';
 import { RoleService } from '@/core/RoleService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';

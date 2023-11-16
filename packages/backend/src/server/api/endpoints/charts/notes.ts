@@ -49,12 +49,12 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private notesChart: NotesChart) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			return await this.notesChart.getChart(
 				ps.span,
 				ps.limit,
 				ps.offset ? new Date(ps.offset) : null,
-			) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

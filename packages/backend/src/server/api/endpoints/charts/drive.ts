@@ -39,12 +39,12 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private driveChart: DriveChart) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			return await this.driveChart.getChart(
 				ps.span,
 				ps.limit,
 				ps.offset ? new Date(ps.offset) : null,
-			) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

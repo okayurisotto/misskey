@@ -40,7 +40,7 @@ export default class extends Endpoint<
 			return {
 				capacity: 1024 * 1024 * policies.driveCapacityMb,
 				usage: usage,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

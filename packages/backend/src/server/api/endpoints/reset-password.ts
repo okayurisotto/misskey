@@ -1,4 +1,3 @@
-import {  } from '@/server/api/errors.js';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { Injectable } from '@nestjs/common';
@@ -9,7 +8,6 @@ export const meta = {
 	tags: ['reset password'],
 	requireCredential: false,
 	description: 'Complete the password reset that was previously requested.',
-	errors: {},
 } as const;
 
 export const paramDef = z.object({
@@ -25,7 +23,7 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(private readonly prismaService: PrismaService) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const req =
 				await this.prismaService.client.password_reset_request.findUniqueOrThrow(
 					{ where: { token: ps.token } },

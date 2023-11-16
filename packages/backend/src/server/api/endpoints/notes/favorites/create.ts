@@ -19,7 +19,10 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 20,
 	},
-	errors: {noSuchNote:noSuchNote________,alreadyFavorited:alreadyFavorited_},
+	errors: {
+		noSuchNote: noSuchNote________,
+		alreadyFavorited: alreadyFavorited_,
+	},
 } as const;
 
 export const paramDef = z.object({

@@ -48,9 +48,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				requests.map((req) => this.followRequestEntityService.pack(req)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

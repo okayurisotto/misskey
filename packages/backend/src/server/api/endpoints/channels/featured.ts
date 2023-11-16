@@ -35,9 +35,9 @@ export default class extends Endpoint<
 				take: 10,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				channels.map((x) => this.channelEntityService.pack(x, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

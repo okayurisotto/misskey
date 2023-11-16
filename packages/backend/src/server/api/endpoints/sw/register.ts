@@ -79,7 +79,7 @@ export default class extends Endpoint<
 				userId: me.id,
 				endpoint: ps.endpoint,
 				sendReadMessage: ps.sendReadMessage,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

@@ -78,7 +78,7 @@ export default class extends Endpoint<
 			return {
 				challengeId,
 				challenge,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

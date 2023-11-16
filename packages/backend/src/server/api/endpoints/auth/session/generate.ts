@@ -16,7 +16,7 @@ export const meta = {
 	tags: ['auth'],
 	requireCredential: false,
 	res,
-	errors: {noSuchApp:noSuchApp_},
+	errors: { noSuchApp: noSuchApp_ },
 } as const;
 
 export const paramDef = z.object({

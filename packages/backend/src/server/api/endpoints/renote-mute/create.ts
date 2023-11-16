@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
-import { noSuchUser_______________, muteeIsYourself__, alreadyMuting_ } from '@/server/api/errors.js';
+import {
+	noSuchUser_______________,
+	muteeIsYourself__,
+	alreadyMuting_,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
 import { GetterService } from '@/server/api/GetterService.js';
@@ -18,7 +22,11 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 20,
 	},
-	errors: {noSuchUser:noSuchUser_______________,muteeIsYourself:muteeIsYourself__,alreadyMuting:alreadyMuting_},
+	errors: {
+		noSuchUser: noSuchUser_______________,
+		muteeIsYourself: muteeIsYourself__,
+		alreadyMuting: alreadyMuting_,
+	},
 } as const;
 
 export const paramDef = z.object({

@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { PageSchema } from '@/models/zod/PageSchema.js';
-import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -43,9 +43,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				pages.map((page) => this.pageEntityService.pack(page)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

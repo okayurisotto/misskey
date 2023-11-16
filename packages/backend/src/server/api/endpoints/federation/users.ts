@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
-import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 

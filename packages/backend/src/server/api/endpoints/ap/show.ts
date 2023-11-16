@@ -32,7 +32,7 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 30,
 	},
-	errors: {noSuchObject:noSuchObject},
+	errors: { noSuchObject: noSuchObject },
 	res,
 } as const;
 
@@ -149,6 +149,6 @@ export default class extends Endpoint<
 			}
 		}
 
-		return null satisfies z.infer<typeof res>;
+		return null;
 	}
 }

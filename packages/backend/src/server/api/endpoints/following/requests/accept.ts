@@ -11,7 +11,7 @@ export const meta = {
 	tags: ['following', 'account'],
 	requireCredential: true,
 	kind: 'write:following',
-	errors: {noSuchUser:noSuchUser_______,noFollowRequest:noFollowRequest},
+	errors: { noSuchUser: noSuchUser_______, noFollowRequest: noFollowRequest },
 } as const;
 
 export const paramDef = z.object({

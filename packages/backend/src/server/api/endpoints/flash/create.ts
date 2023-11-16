@@ -1,4 +1,3 @@
-import {  } from '@/server/api/errors.js';
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
@@ -17,7 +16,6 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 10,
 	},
-	errors: {},
 	res,
 } as const;
 
@@ -54,9 +52,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await this.flashEntityService.pack(flash)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.flashEntityService.pack(flash);
 		});
 	}
 }

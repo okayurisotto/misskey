@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { drive_file } from '@prisma/client';
-import { noSuchEmoji__, noSuchFile__, sameNameEmojiExists } from '@/server/api/errors.js';
+import {
+	noSuchEmoji__,
+	noSuchFile__,
+	sameNameEmojiExists,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
@@ -12,7 +16,11 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireRolePolicy: 'canManageCustomEmojis',
-	errors: {noSuchEmoji:noSuchEmoji__,noSuchFile:noSuchFile__,sameNameEmojiExists:sameNameEmojiExists},
+	errors: {
+		noSuchEmoji: noSuchEmoji__,
+		noSuchFile: noSuchFile__,
+		sameNameEmojiExists: sameNameEmojiExists,
+	},
 } as const;
 
 export const paramDef = z.object({

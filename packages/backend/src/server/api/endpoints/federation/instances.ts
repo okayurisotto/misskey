@@ -42,7 +42,7 @@ export default class extends Endpoint<
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const where_blocked =
 				await (async (): Promise<Prisma.instanceWhereInput> => {
 					if (ps.blocked == null) return {};
@@ -156,9 +156,9 @@ export default class extends Endpoint<
 				skip: ps.offset,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				instances.map((instance) => this.instanceEntityService.pack(instance)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

@@ -62,9 +62,9 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await this.noteEntityService.packMany(notes, me, {
+			return await this.noteEntityService.packMany(notes, me, {
 				detail: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

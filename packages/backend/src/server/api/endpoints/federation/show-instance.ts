@@ -29,14 +29,12 @@ export default class extends Endpoint<
 		private readonly instanceEntityService: InstanceEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const instance = await this.prismaService.client.instance.findUnique({
 				where: { host: this.utilityService.toPuny(ps.host) },
 			});
 
-			return (
-				instance ? await this.instanceEntityService.pack(instance) : null
-			) satisfies z.infer<typeof res>;
+			return instance ? await this.instanceEntityService.pack(instance) : null;
 		});
 	}
 }

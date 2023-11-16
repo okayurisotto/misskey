@@ -8,7 +8,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 
 export const meta = {
 	requireCredential: true,
-	errors: {noSuchList:noSuchList_______,notFavorited:notFavorited__},
+	errors: { noSuchList: noSuchList_______, notFavorited: notFavorited__ },
 } as const;
 
 export const paramDef = z.object({

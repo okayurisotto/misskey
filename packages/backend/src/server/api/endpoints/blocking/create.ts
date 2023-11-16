@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
-import { noSuchUser__, blockeeIsYourself, alreadyBlocking } from '@/server/api/errors.js';
+import {
+	noSuchUser__,
+	blockeeIsYourself,
+	alreadyBlocking,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserBlockingService } from '@/core/UserBlockingService.js';
@@ -19,7 +23,11 @@ export const meta = {
 	},
 	requireCredential: true,
 	kind: 'write:blocks',
-	errors: {noSuchUser:noSuchUser__,blockeeIsYourself:blockeeIsYourself,alreadyBlocking:alreadyBlocking},
+	errors: {
+		noSuchUser: noSuchUser__,
+		blockeeIsYourself: blockeeIsYourself,
+		alreadyBlocking: alreadyBlocking,
+	},
 	res,
 } as const;
 

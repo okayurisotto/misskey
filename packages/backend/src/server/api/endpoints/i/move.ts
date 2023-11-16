@@ -1,7 +1,14 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
-import { destinationAccountForbids, rootForbidden, noSuchUser___________, uriNull, localUriNull, alreadyMoved } from '@/server/api/errors.js';
+import {
+	destinationAccountForbids,
+	rootForbidden,
+	noSuchUser___________,
+	uriNull,
+	localUriNull,
+	alreadyMoved,
+} from '@/server/api/errors.js';
 
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ApiError } from '@/server/api/error.js';
@@ -26,7 +33,14 @@ export const meta = {
 		max: 5,
 	},
 	res,
-	errors: {destinationAccountForbids:destinationAccountForbids,rootForbidden:rootForbidden,noSuchUser:noSuchUser___________,uriNull:uriNull,localUriNull:localUriNull,alreadyMoved:alreadyMoved},
+	errors: {
+		destinationAccountForbids: destinationAccountForbids,
+		rootForbidden: rootForbidden,
+		noSuchUser: noSuchUser___________,
+		uriNull: uriNull,
+		localUriNull: localUriNull,
+		alreadyMoved: alreadyMoved,
+	},
 } as const;
 
 export const paramDef = z.object({
@@ -92,7 +106,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.destinationAccountForbids);
 			}
 
-			return await this.accountMoveService.moveFromLocal(me, moveTo) satisfies z.infer<typeof res>;
+			return await this.accountMoveService.moveFromLocal(me, moveTo);
 		});
 	}
 }

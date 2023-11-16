@@ -15,7 +15,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'write:account',
 	res,
-	errors: {tooManyWebhooks:tooManyWebhooks},
+	errors: { tooManyWebhooks: tooManyWebhooks },
 } as const;
 
 export const paramDef = z.object({
@@ -66,7 +66,7 @@ export default class extends Endpoint<
 
 			this.globalEventService.publishInternalEvent('webhookCreated', webhook);
 
-			return webhook satisfies z.infer<typeof res>;
+			return webhook;
 		});
 	}
 }

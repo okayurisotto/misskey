@@ -127,7 +127,7 @@ export default class extends Endpoint<
 			return this.userListEntityService.pack(result.id, {
 				user_list: new EntityMap('id', [result]),
 				user_list_joining: new EntityMap('id', result.user_list_joining),
-			}) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

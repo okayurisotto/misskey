@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
-import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -59,10 +59,10 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await this.driveFileEntityService.packMany(files, {
+			return await this.driveFileEntityService.packMany(files, {
 				detail: false,
 				self: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

@@ -11,7 +11,7 @@ const res = z.object({});
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	errors: {noSuchKey:noSuchKey,accessDenied:accessDenied________},
+	errors: { noSuchKey: noSuchKey, accessDenied: accessDenied________ },
 	res,
 } as const;
 
@@ -54,10 +54,12 @@ export default class extends Endpoint<
 			this.globalEventService.publishMainStream(
 				me.id,
 				'meUpdated',
-				await this.userEntityService.packDetailedMe(me.id, { includeSecrets: true }),
+				await this.userEntityService.packDetailedMe(me.id, {
+					includeSecrets: true,
+				}),
 			);
 
-			return {} satisfies z.infer<typeof res>;
+			return {};
 		});
 	}
 }

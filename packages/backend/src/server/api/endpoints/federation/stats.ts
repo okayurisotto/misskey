@@ -35,7 +35,7 @@ export default class extends Endpoint<
 		private readonly instanceEntityService: InstanceEntityService,
 		private readonly prismaService: PrismaService,
 	) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			const [topSubInstances, topPubInstances, allSubCount, allPubCount] =
 				await Promise.all([
 					this.prismaService.client.instance.findMany({
@@ -83,7 +83,7 @@ export default class extends Endpoint<
 				otherFollowersCount: Math.max(0, allSubCount - gotSubCount),
 				topPubInstances: result.topPubInstances,
 				otherFollowingCount: Math.max(0, allPubCount - gotPubCount),
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

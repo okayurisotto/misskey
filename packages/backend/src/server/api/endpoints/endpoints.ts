@@ -21,7 +21,7 @@ export default class extends Endpoint<
 > {
 	constructor() {
 		super(meta, paramDef, async () => {
-			return endpoints.map((x) => x.name) satisfies z.infer<typeof res>;
+			return endpoints.map((x) => x.name);
 		});
 	}
 }

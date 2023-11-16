@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchApp__, noSuchSession__, pendingSession } from '@/server/api/errors.js';
+import {
+	noSuchApp__,
+	noSuchSession__,
+	pendingSession,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
@@ -15,7 +19,11 @@ export const meta = {
 	tags: ['auth'],
 	requireCredential: false,
 	res,
-	errors: {noSuchApp:noSuchApp__,noSuchSession:noSuchSession__,pendingSession:pendingSession},
+	errors: {
+		noSuchApp: noSuchApp__,
+		noSuchSession: noSuchSession__,
+		pendingSession: pendingSession,
+	},
 } as const;
 
 export const paramDef = z.object({

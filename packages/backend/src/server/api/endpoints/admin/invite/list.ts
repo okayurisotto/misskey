@@ -67,9 +67,9 @@ export default class extends Endpoint<
 					skip: ps.offset,
 				});
 
-			return (await Promise.all(
+			return await Promise.all(
 				tickets.map((ticket) => this.inviteCodeEntityService.pack(ticket)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

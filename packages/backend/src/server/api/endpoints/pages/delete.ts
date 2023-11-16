@@ -10,7 +10,7 @@ export const meta = {
 	tags: ['pages'],
 	requireCredential: true,
 	kind: 'write:pages',
-	errors: {noSuchPage:noSuchPage__,accessDenied:accessDenied___________},
+	errors: { noSuchPage: noSuchPage__, accessDenied: accessDenied___________ },
 } as const;
 
 export const paramDef = z.object({

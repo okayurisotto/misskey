@@ -47,7 +47,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				accts
 					.map((acct) => {
 						const user = users.find((user) => {
@@ -59,7 +59,7 @@ export default class extends Endpoint<
 						return user;
 					})
 					.map((user) => this.userEntityService.packDetailed(user, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

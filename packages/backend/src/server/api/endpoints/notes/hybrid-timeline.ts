@@ -7,7 +7,7 @@ import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { IdService } from '@/core/IdService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
-import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { ApiError } from '../../error.js';
@@ -135,10 +135,7 @@ export default class extends Endpoint<
 				this.activeUsersChart.read(me);
 			});
 
-			return (await this.noteEntityService.packMany(
-				timeline,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.noteEntityService.packMany(timeline, me);
 		});
 	}
 }

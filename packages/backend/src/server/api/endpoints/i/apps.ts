@@ -56,7 +56,7 @@ export default class extends Endpoint<
 				include: { app: true },
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				tokens.map((token) => ({
 					id: token.id,
 					name: token.name ?? token.app?.name,
@@ -64,7 +64,7 @@ export default class extends Endpoint<
 					lastUsedAt: token.lastUsedAt,
 					permission: token.permission,
 				})),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

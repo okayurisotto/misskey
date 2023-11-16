@@ -17,7 +17,7 @@ export const meta = {
 		max: 60,
 		minInterval: ms('3sec'),
 	},
-	errors: {noSuchNote:noSuchNote_____________,notReacted:notReacted},
+	errors: { noSuchNote: noSuchNote_____________, notReacted: notReacted },
 } as const;
 
 export const paramDef = z.object({

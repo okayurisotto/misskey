@@ -46,7 +46,7 @@ export default class extends Endpoint<
 			return {
 				remaining:
 					count !== null ? Math.max(0, policies.inviteLimit - count) : null,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

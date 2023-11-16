@@ -46,7 +46,7 @@ export default class extends Endpoint<
 				};
 			}
 
-			return null satisfies z.infer<typeof res>;
+			return null;
 		});
 	}
 }

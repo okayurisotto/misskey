@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchUser________________, muteeIsYourself___, notMuting_ } from '@/server/api/errors.js';
+import {
+	noSuchUser________________,
+	muteeIsYourself___,
+	notMuting_,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
@@ -11,7 +15,11 @@ export const meta = {
 	tags: ['account'],
 	requireCredential: true,
 	kind: 'write:mutes',
-	errors: {noSuchUser:noSuchUser________________,muteeIsYourself:muteeIsYourself___,notMuting:notMuting_},
+	errors: {
+		noSuchUser: noSuchUser________________,
+		muteeIsYourself: muteeIsYourself___,
+		notMuting: notMuting_,
+	},
 } as const;
 
 export const paramDef = z.object({

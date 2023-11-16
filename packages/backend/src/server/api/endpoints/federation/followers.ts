@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FollowingEntityService } from '@/core/entities/FollowingEntityService.js';
 import { FollowingSchema } from '@/models/zod/FollowingSchema.js';
-import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
+import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
@@ -45,13 +45,13 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				followings.map((following) =>
 					this.followingEntityService.pack(following, me, {
 						populateFollowee: true,
 					}),
 				),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

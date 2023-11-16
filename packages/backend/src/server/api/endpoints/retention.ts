@@ -27,7 +27,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private readonly prismaService: PrismaService) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async () => {
 			const records =
 				await this.prismaService.client.retention_aggregation.findMany({
 					orderBy: { id: 'desc' },
@@ -38,7 +38,7 @@ export default class extends Endpoint<
 				createdAt: record.createdAt.toISOString(),
 				users: record.usersCount,
 				data: record.data,
-			})) satisfies z.infer<typeof res>;
+			}));
 		});
 	}
 }

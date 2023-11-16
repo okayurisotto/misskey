@@ -21,7 +21,7 @@ export const meta = {
 		max: 10,
 	},
 	res,
-	errors: {noSuchFile:noSuchFile___},
+	errors: { noSuchFile: noSuchFile___ },
 } as const;
 
 export const paramDef = z.object({
@@ -70,10 +70,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await this.channelEntityService.pack(
-				channel,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.channelEntityService.pack(channel, me);
 		});
 	}
 }

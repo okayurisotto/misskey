@@ -40,11 +40,11 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				files.map((file) =>
 					this.driveFileEntityService.pack(file, { self: true }),
 				),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

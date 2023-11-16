@@ -12,7 +12,7 @@ export const meta = {
 	tags: ['role', 'users'],
 	requireCredential: false,
 	res,
-	errors: {noSuchRole:noSuchRole_______},
+	errors: { noSuchRole: noSuchRole_______ },
 } as const;
 
 export const paramDef = z.object({
@@ -42,9 +42,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchRole);
 			}
 
-			return (await this.roleEntityService.pack(role)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.roleEntityService.pack(role);
 		});
 	}
 }

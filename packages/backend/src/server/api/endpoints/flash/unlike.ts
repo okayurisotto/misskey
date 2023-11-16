@@ -11,7 +11,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:flash-likes',
-	errors: {noSuchFlash:noSuchFlash___,notLiked:notLiked},
+	errors: { noSuchFlash: noSuchFlash___, notLiked: notLiked },
 } as const;
 
 export const paramDef = z.object({

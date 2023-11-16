@@ -11,7 +11,7 @@ import { ApiError } from '../../error.js';
 export const meta = {
 	tags: ['notes'],
 	requireCredential: true,
-	errors: {noSuchNote:noSuchNote____________________},
+	errors: { noSuchNote: noSuchNote____________________ },
 } as const;
 
 export const paramDef = z.object({

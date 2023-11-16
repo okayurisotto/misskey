@@ -60,11 +60,11 @@ export default class extends Endpoint<
 				orderBy: { id: 'desc' },
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				reactions.map((reaction) =>
 					this.noteReactionEntityService.pack(reaction, me),
 				),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

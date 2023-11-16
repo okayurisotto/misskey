@@ -12,7 +12,7 @@ export const meta = {
 	tags: ['auth'],
 	requireCredential: true,
 	secure: true,
-	errors: {noSuchSession:noSuchSession},
+	errors: { noSuchSession: noSuchSession },
 } as const;
 
 export const paramDef = z.object({

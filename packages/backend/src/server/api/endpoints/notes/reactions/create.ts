@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchNote____________, alreadyReacted, youHaveBeenBlocked__ } from '@/server/api/errors.js';
+import {
+	noSuchNote____________,
+	alreadyReacted,
+	youHaveBeenBlocked__,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { ReactionService } from '@/core/ReactionService.js';
@@ -12,7 +16,11 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:reactions',
-	errors: {noSuchNote:noSuchNote____________,alreadyReacted:alreadyReacted,youHaveBeenBlocked:youHaveBeenBlocked__},
+	errors: {
+		noSuchNote: noSuchNote____________,
+		alreadyReacted: alreadyReacted,
+		youHaveBeenBlocked: youHaveBeenBlocked__,
+	},
 } as const;
 
 export const paramDef = z.object({

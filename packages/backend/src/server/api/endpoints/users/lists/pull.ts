@@ -1,6 +1,9 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchList____, noSuchUser______________________ } from '@/server/api/errors.js';
+import {
+	noSuchList____,
+	noSuchUser______________________,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GetterService } from '@/server/api/GetterService.js';
@@ -15,7 +18,10 @@ export const meta = {
 	prohibitMoved: true,
 	kind: 'write:account',
 	description: 'Remove a user from a list.',
-	errors: {noSuchList:noSuchList____,noSuchUser:noSuchUser______________________},
+	errors: {
+		noSuchList: noSuchList____,
+		noSuchUser: noSuchUser______________________,
+	},
 } as const;
 
 export const paramDef = z.object({

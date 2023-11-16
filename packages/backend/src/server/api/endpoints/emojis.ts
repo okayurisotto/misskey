@@ -44,7 +44,7 @@ export default class extends Endpoint<
 				emojis: emojis.map((emoji) =>
 					this.emojiEntityService.packSimple(emoji.id, data),
 				),
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

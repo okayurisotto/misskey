@@ -39,9 +39,9 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				folders.map((folder) => this.driveFolderEntityService.pack(folder)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

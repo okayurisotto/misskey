@@ -31,7 +31,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			return items.map((x) => x.key) satisfies z.infer<typeof res>;
+			return items.map((x) => x.key);
 		});
 	}
 }

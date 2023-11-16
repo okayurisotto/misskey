@@ -28,7 +28,7 @@ export default class extends Endpoint<
 				count: await this.prismaService.client.muted_note.count({
 					where: { userId: me.id, reason: 'word' },
 				}),
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

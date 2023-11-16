@@ -22,9 +22,7 @@ export default class extends Endpoint<
 > {
 	constructor() {
 		super(meta, paramDef, async () => {
-			return {
-				pong: Date.now(),
-			} satisfies z.infer<typeof res>;
+			return { pong: Date.now() };
 		});
 	}
 }

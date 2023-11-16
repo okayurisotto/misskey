@@ -66,13 +66,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(private instanceChart: InstanceChart) {
-		super(meta, paramDef, async (ps, me) => {
+		super(meta, paramDef, async (ps) => {
 			return await this.instanceChart.getChart(
 				ps.span,
 				ps.limit,
 				ps.offset ? new Date(ps.offset) : null,
 				ps.host,
-			) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

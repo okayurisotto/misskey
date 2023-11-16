@@ -1,7 +1,13 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import ms from 'ms';
-import { noSuchList_____, noSuchUser_______________________, alreadyAdded_, youHaveBeenBlocked____, tooManyUsers_ } from '@/server/api/errors.js';
+import {
+	noSuchList_____,
+	noSuchUser_______________________,
+	alreadyAdded_,
+	youHaveBeenBlocked____,
+	tooManyUsers_,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserListService } from '@/core/UserListService.js';
@@ -19,7 +25,13 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 30,
 	},
-	errors: {noSuchList:noSuchList_____,noSuchUser:noSuchUser_______________________,alreadyAdded:alreadyAdded_,youHaveBeenBlocked:youHaveBeenBlocked____,tooManyUsers:tooManyUsers_},
+	errors: {
+		noSuchList: noSuchList_____,
+		noSuchUser: noSuchUser_______________________,
+		alreadyAdded: alreadyAdded_,
+		youHaveBeenBlocked: youHaveBeenBlocked____,
+		tooManyUsers: tooManyUsers_,
+	},
 } as const;
 
 export const paramDef = z.object({

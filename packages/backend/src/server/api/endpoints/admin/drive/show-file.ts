@@ -48,7 +48,7 @@ export const meta = {
 	tags: ['admin'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {noSuchFile:noSuchFile},
+	errors: { noSuchFile: noSuchFile },
 	res,
 } as const;
 

@@ -38,9 +38,9 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await this.driveFileEntityService.packMany(files, {
+			return await this.driveFileEntityService.packMany(files, {
 				self: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

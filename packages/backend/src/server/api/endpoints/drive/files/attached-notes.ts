@@ -15,7 +15,7 @@ export const meta = {
 	kind: 'read:drive',
 	description: 'Find the notes to which the given file is attached.',
 	res,
-	errors: {noSuchFile:noSuchFile_____},
+	errors: { noSuchFile: noSuchFile_____ },
 } as const;
 
 export const paramDef = z.object({
@@ -50,9 +50,9 @@ export default class extends Endpoint<
 				where: { fileIds: { has: file.id } },
 			});
 
-			return (await this.noteEntityService.packMany(notes, me, {
+			return await this.noteEntityService.packMany(notes, me, {
 				detail: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

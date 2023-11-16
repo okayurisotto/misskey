@@ -47,9 +47,9 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				clips.map((clip) => this.clipEntityService.pack(clip, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

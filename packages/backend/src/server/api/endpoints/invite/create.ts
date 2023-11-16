@@ -16,7 +16,7 @@ export const meta = {
 	tags: ['meta'],
 	requireCredential: true,
 	requireRolePolicy: 'canInvite',
-	errors: {exceededCreateLimit:exceededCreateLimit},
+	errors: { exceededCreateLimit: exceededCreateLimit },
 	res,
 } as const;
 
@@ -71,10 +71,7 @@ export default class extends Endpoint<
 				},
 			);
 
-			return (await this.inviteCodeEntityService.pack(
-				ticket,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.inviteCodeEntityService.pack(ticket, me);
 		});
 	}
 }

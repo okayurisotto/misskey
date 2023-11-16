@@ -21,7 +21,7 @@ export const meta = {
 		max: 3,
 	},
 	res,
-	errors: {incorrectPassword:incorrectPassword,unavailable:unavailable},
+	errors: { incorrectPassword: incorrectPassword, unavailable: unavailable },
 } as const;
 
 export const paramDef = z.object({
@@ -73,7 +73,9 @@ export default class extends Endpoint<
 				},
 			});
 
-			const iObj = await this.userEntityService.packDetailedMe(me.id, { includeSecrets: true });
+			const iObj = await this.userEntityService.packDetailedMe(me.id, {
+				includeSecrets: true,
+			});
 
 			// Publish meUpdated event
 			this.globalEventService.publishMainStream(me.id, 'meUpdated', iObj);
@@ -96,7 +98,7 @@ export default class extends Endpoint<
 				);
 			}
 
-			return iObj satisfies z.infer<typeof res>;
+			return iObj;
 		});
 	}
 }

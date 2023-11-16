@@ -127,7 +127,9 @@ export default class extends Endpoint<
 				skip: ps.offset,
 			});
 
-			return await Promise.all(users.map((user) => this.userEntityService.packDetailed(user, me)));
+			return await Promise.all(
+				users.map((user) => this.userEntityService.packDetailed(user, me)),
+			);
 		});
 	}
 }

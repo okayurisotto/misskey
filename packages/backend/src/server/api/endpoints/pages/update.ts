@@ -2,7 +2,12 @@ import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import { defineOpenApiSpec } from 'zod2spec';
-import { noSuchPage______, accessDenied____________, noSuchFile________________, nameAlreadyExists_ } from '@/server/api/errors.js';
+import {
+	noSuchPage______,
+	accessDenied____________,
+	noSuchFile________________,
+	nameAlreadyExists_,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -18,7 +23,12 @@ export const meta = {
 		duration: ms('1hour'),
 		max: 300,
 	},
-	errors: {noSuchPage:noSuchPage______,accessDenied:accessDenied____________,noSuchFile:noSuchFile________________,nameAlreadyExists:nameAlreadyExists_},
+	errors: {
+		noSuchPage: noSuchPage______,
+		accessDenied: accessDenied____________,
+		noSuchFile: noSuchFile________________,
+		nameAlreadyExists: nameAlreadyExists_,
+	},
 } as const;
 
 export const paramDef = z.object({

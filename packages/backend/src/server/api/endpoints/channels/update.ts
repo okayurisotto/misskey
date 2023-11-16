@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchChannel______, accessDenied__, noSuchFile____ } from '@/server/api/errors.js';
+import {
+	noSuchChannel______,
+	accessDenied__,
+	noSuchFile____,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
 import { RoleService } from '@/core/RoleService.js';
@@ -15,7 +19,11 @@ export const meta = {
 	requireCredential: true,
 	kind: 'write:channels',
 	res,
-	errors: {noSuchChannel:noSuchChannel______,accessDenied:accessDenied__,noSuchFile:noSuchFile____},
+	errors: {
+		noSuchChannel: noSuchChannel______,
+		accessDenied: accessDenied__,
+		noSuchFile: noSuchFile____,
+	},
 } as const;
 
 export const paramDef = z.object({
@@ -83,10 +91,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await this.channelEntityService.pack(
-				channel.id,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.channelEntityService.pack(channel.id, me);
 		});
 	}
 }

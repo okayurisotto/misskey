@@ -1,7 +1,10 @@
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import z from 'zod';
-import { noSuchNote_______, accessDenied__________ } from '@/server/api/errors.js';
+import {
+	noSuchNote_______,
+	accessDenied__________,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteDeleteService } from '@/core/NoteDeleteService.js';
 import { GetterService } from '@/server/api/GetterService.js';
@@ -20,7 +23,10 @@ export const meta = {
 		max: 300,
 		minInterval: ms('1sec'),
 	},
-	errors: {noSuchNote:noSuchNote_______,accessDenied:accessDenied__________},
+	errors: {
+		noSuchNote: noSuchNote_______,
+		accessDenied: accessDenied__________,
+	},
 } as const;
 
 export const paramDef = z.object({ noteId: MisskeyIdSchema });
@@ -51,12 +57,12 @@ export default class extends Endpoint<
 			}
 
 			// この操作を行うのが投稿者とは限らない(例えばモデレーター)ため
-			(await this.noteDeleteService.delete(
+			await this.noteDeleteService.delete(
 				await this.prismaService.client.user.findUniqueOrThrow({
 					where: { id: note.userId },
 				}),
 				note,
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

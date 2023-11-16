@@ -34,7 +34,7 @@ export default class extends Endpoint<
 				.array(z.object({ tablename: z.string(), indexname: z.string() }))
 				.parse(result);
 
-			return stats satisfies z.infer<typeof res>;
+			return stats;
 		});
 	}
 }

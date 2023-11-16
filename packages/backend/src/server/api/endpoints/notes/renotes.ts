@@ -69,10 +69,7 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await this.noteEntityService.packMany(
-				renotes,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.noteEntityService.packMany(renotes, me);
 		});
 	}
 }

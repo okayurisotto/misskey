@@ -11,7 +11,7 @@ export const meta = {
 	tags: ['notes', 'favorites'],
 	requireCredential: true,
 	kind: 'write:favorites',
-	errors: {noSuchNote:noSuchNote_________,notFavorited:notFavorited_},
+	errors: { noSuchNote: noSuchNote_________, notFavorited: notFavorited_ },
 } as const;
 
 export const paramDef = z.object({

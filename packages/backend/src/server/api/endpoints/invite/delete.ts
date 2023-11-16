@@ -1,6 +1,10 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchCode, cantDelete, accessDenied_________ } from '@/server/api/errors.js';
+import {
+	noSuchCode,
+	cantDelete,
+	accessDenied_________,
+} from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
@@ -11,7 +15,11 @@ export const meta = {
 	tags: ['meta'],
 	requireCredential: true,
 	requireRolePolicy: 'canInvite',
-	errors: {noSuchCode:noSuchCode,cantDelete:cantDelete,accessDenied:accessDenied_________},
+	errors: {
+		noSuchCode: noSuchCode,
+		cantDelete: cantDelete,
+		accessDenied: accessDenied_________,
+	},
 } as const;
 
 export const paramDef = z.object({

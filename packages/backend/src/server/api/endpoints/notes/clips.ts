@@ -14,7 +14,7 @@ export const meta = {
 	tags: ['clips', 'notes'],
 	requireCredential: false,
 	res,
-	errors: {noSuchNote:noSuchNote_____},
+	errors: { noSuchNote: noSuchNote_____ },
 } as const;
 
 export const paramDef = z.object({
@@ -51,9 +51,9 @@ export default class extends Endpoint<
 				},
 			});
 
-			return (await Promise.all(
+			return await Promise.all(
 				clips.map((clip) => this.clipEntityService.pack(clip, me)),
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

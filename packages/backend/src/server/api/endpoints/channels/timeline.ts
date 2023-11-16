@@ -124,10 +124,7 @@ export default class extends Endpoint<
 
 			if (me) this.activeUsersChart.read(me);
 
-			return (await this.noteEntityService.packMany(
-				timeline,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.noteEntityService.packMany(timeline, me);
 		});
 	}
 }

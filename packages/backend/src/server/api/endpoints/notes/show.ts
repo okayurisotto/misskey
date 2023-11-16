@@ -13,7 +13,7 @@ export const meta = {
 	tags: ['notes'],
 	requireCredential: false,
 	res,
-	errors: {noSuchNote:noSuchNote_______________},
+	errors: { noSuchNote: noSuchNote_______________ },
 } as const;
 
 export const paramDef = z.object({ noteId: MisskeyIdSchema });
@@ -37,9 +37,9 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			return (await this.noteEntityService.pack(note, me, {
+			return await this.noteEntityService.pack(note, me, {
 				detail: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

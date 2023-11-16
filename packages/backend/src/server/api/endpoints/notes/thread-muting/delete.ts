@@ -11,7 +11,7 @@ export const meta = {
 	tags: ['notes'],
 	requireCredential: true,
 	kind: 'write:account',
-	errors: {noSuchNote:noSuchNote_________________},
+	errors: { noSuchNote: noSuchNote_________________ },
 } as const;
 
 export const paramDef = z.object({

@@ -14,7 +14,7 @@ export const meta = {
 	tags: ['pages'],
 	requireCredential: false,
 	res,
-	errors: {noSuchPage:noSuchPage____},
+	errors: { noSuchPage: noSuchPage____ },
 } as const;
 
 export const paramDef = z.union([
@@ -68,9 +68,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchPage);
 			}
 
-			return (await this.pageEntityService.pack(page, me)) satisfies z.infer<
-				typeof res
-			>;
+			return await this.pageEntityService.pack(page, me);
 		});
 	}
 }

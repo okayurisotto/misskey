@@ -26,7 +26,7 @@ export default class extends Endpoint<
 				where: { userId: me.id },
 			});
 
-			return webhooks satisfies z.infer<typeof res>;
+			return webhooks;
 		});
 	}
 }

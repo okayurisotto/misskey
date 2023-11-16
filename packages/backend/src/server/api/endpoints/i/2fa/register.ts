@@ -73,7 +73,7 @@ export default class extends Endpoint<
 				secret: secret.base32,
 				label: me.username,
 				issuer: this.configLoaderService.data.host,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

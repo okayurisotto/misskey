@@ -14,7 +14,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'read:drive',
 	res,
-	errors: {noSuchFolder:noSuchFolder___},
+	errors: { noSuchFolder: noSuchFolder___ },
 } as const;
 
 export const paramDef = z.object({
@@ -45,9 +45,9 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchFolder);
 			}
 
-			return (await this.driveFolderEntityService.pack(folder, {
+			return await this.driveFolderEntityService.pack(folder, {
 				detail: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

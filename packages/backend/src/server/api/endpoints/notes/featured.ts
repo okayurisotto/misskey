@@ -62,10 +62,10 @@ export default class extends Endpoint<
 					new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
 			);
 
-			return (await this.noteEntityService.packMany(
+			return await this.noteEntityService.packMany(
 				notes.slice(ps.offset, ps.offset + ps.limit),
 				me,
-			)) satisfies z.infer<typeof res>;
+			);
 		});
 	}
 }

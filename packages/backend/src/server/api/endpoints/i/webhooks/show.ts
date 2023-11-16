@@ -12,7 +12,7 @@ export const meta = {
 	requireCredential: true,
 	kind: 'read:account',
 	res,
-	errors: {noSuchWebhook:noSuchWebhook_},
+	errors: { noSuchWebhook: noSuchWebhook_ },
 } as const;
 
 export const paramDef = z.object({
@@ -39,7 +39,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchWebhook);
 			}
 
-			return webhook satisfies z.infer<typeof res>;
+			return webhook;
 		});
 	}
 }

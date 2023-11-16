@@ -11,7 +11,7 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:page-likes',
-	errors: {noSuchPage:noSuchPage_____,notLiked:notLiked__},
+	errors: { noSuchPage: noSuchPage_____, notLiked: notLiked__ },
 } as const;
 
 export const paramDef = z.object({

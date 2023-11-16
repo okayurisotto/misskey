@@ -94,10 +94,7 @@ export default class extends Endpoint<
 				})
 			).sort((a, b) => (a.id > b.id ? -1 : 1));
 
-			return (await this.noteEntityService.packMany(
-				notes,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.noteEntityService.packMany(notes, me);
 		});
 	}
 }

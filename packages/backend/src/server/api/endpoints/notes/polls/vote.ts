@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { noSuchNote__________, noPoll, invalidChoice, alreadyVoted, alreadyExpired, youHaveBeenBlocked_ } from '@/server/api/errors.js';
+import {
+	noSuchNote__________,
+	noPoll,
+	invalidChoice,
+	alreadyVoted,
+	alreadyExpired,
+	youHaveBeenBlocked_,
+} from '@/server/api/errors.js';
 import type { RemoteUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -19,7 +26,14 @@ export const meta = {
 	requireCredential: true,
 	prohibitMoved: true,
 	kind: 'write:votes',
-	errors: {noSuchNote:noSuchNote__________,noPoll:noPoll,invalidChoice:invalidChoice,alreadyVoted:alreadyVoted,alreadyExpired:alreadyExpired,youHaveBeenBlocked:youHaveBeenBlocked_},
+	errors: {
+		noSuchNote: noSuchNote__________,
+		noPoll: noPoll,
+		invalidChoice: invalidChoice,
+		alreadyVoted: alreadyVoted,
+		alreadyExpired: alreadyExpired,
+		youHaveBeenBlocked: youHaveBeenBlocked_,
+	},
 } as const;
 
 export const paramDef = z.object({

@@ -51,7 +51,7 @@ export default class extends Endpoint<
 			return {
 				isFavorited: favorite !== 0,
 				isMutedThread: threadMuting !== 0,
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

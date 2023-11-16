@@ -85,10 +85,10 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await this.driveFileEntityService.packMany(files, {
+			return await this.driveFileEntityService.packMany(files, {
 				detail: false,
 				self: true,
-			})) satisfies z.infer<typeof res>;
+			});
 		});
 	}
 }

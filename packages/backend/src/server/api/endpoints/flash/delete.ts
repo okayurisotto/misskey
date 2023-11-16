@@ -10,7 +10,7 @@ export const meta = {
 	tags: ['flashs'],
 	requireCredential: true,
 	kind: 'write:flash',
-	errors: {noSuchFlash:noSuchFlash,accessDenied:accessDenied______},
+	errors: { noSuchFlash: noSuchFlash, accessDenied: accessDenied______ },
 } as const;
 
 export const paramDef = z.object({

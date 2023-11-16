@@ -10,7 +10,7 @@ import { ApiError } from '../../../error.js';
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	errors: {noKey:noKey},
+	errors: { noKey: noKey },
 } as const;
 
 export const paramDef = z.object({
@@ -56,7 +56,9 @@ export default class extends Endpoint<
 			this.globalEventService.publishMainStream(
 				me.id,
 				'meUpdated',
-				await this.userEntityService.packDetailedMe(me.id, { includeSecrets: true }),
+				await this.userEntityService.packDetailedMe(me.id, {
+					includeSecrets: true,
+				}),
 			);
 		});
 	}

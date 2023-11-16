@@ -15,20 +15,22 @@ export const meta = {
 	tags: ['notes', 'lists'],
 	requireCredential: true,
 	res,
-	errors: {noSuchList:noSuchList},
+	errors: { noSuchList: noSuchList },
 } as const;
 
-export const paramDef = z.object({
-	listId: MisskeyIdSchema,
-	limit: limit({ max: 100, default: 10 }),
-	includeMyRenotes: z.boolean().default(true),
-	includeRenotedMyNotes: z.boolean().default(true),
-	includeLocalRenotes: z.boolean().default(true),
-	withFiles: z
-		.boolean()
-		.default(false)
-		.describe('Only show notes that have attached files.'),
-}).merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
+export const paramDef = z
+	.object({
+		listId: MisskeyIdSchema,
+		limit: limit({ max: 100, default: 10 }),
+		includeMyRenotes: z.boolean().default(true),
+		includeRenotedMyNotes: z.boolean().default(true),
+		includeLocalRenotes: z.boolean().default(true),
+		withFiles: z
+			.boolean()
+			.default(false)
+			.describe('Only show notes that have attached files.'),
+	})
+	.merge(PaginationSchema.pick({ sinceId: true, untilId: true }));
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -107,10 +109,7 @@ export default class extends Endpoint<
 
 			this.activeUsersChart.read(me);
 
-			return (await this.noteEntityService.packMany(
-				timeline,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.noteEntityService.packMany(timeline, me);
 		});
 	}
 }

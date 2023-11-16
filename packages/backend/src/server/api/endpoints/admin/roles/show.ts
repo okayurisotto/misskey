@@ -13,7 +13,7 @@ export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,
 	requireModerator: true,
-	errors: {noSuchRole:noSuchRole__},
+	errors: { noSuchRole: noSuchRole__ },
 	res,
 } as const;
 

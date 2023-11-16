@@ -1,7 +1,16 @@
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import z from 'zod';
-import { noSuchRenoteTarget, cannotReRenote, noSuchReplyTarget, cannotReplyToPureRenote, cannotCreateAlreadyExpiredPoll, noSuchChannel_______, youHaveBeenBlocked, noSuchFile______________ } from '@/server/api/errors.js';
+import {
+	noSuchRenoteTarget,
+	cannotReRenote,
+	noSuchReplyTarget,
+	cannotReplyToPureRenote,
+	cannotCreateAlreadyExpiredPoll,
+	noSuchChannel_______,
+	youHaveBeenBlocked,
+	noSuchFile______________,
+} from '@/server/api/errors.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
@@ -23,7 +32,16 @@ export const meta = {
 	},
 	kind: 'write:notes',
 	res,
-	errors: {noSuchRenoteTarget:noSuchRenoteTarget,cannotReRenote:cannotReRenote,noSuchReplyTarget:noSuchReplyTarget,cannotReplyToPureRenote:cannotReplyToPureRenote,cannotCreateAlreadyExpiredPoll:cannotCreateAlreadyExpiredPoll,noSuchChannel:noSuchChannel_______,youHaveBeenBlocked:youHaveBeenBlocked,noSuchFile:noSuchFile______________},
+	errors: {
+		noSuchRenoteTarget: noSuchRenoteTarget,
+		cannotReRenote: cannotReRenote,
+		noSuchReplyTarget: noSuchReplyTarget,
+		cannotReplyToPureRenote: cannotReplyToPureRenote,
+		cannotCreateAlreadyExpiredPoll: cannotCreateAlreadyExpiredPoll,
+		noSuchChannel: noSuchChannel_______,
+		youHaveBeenBlocked: youHaveBeenBlocked,
+		noSuchFile: noSuchFile______________,
+	},
 } as const;
 
 const paramDef_fileIds = uniqueItems(z.array(MisskeyIdSchema).min(1).max(16));
@@ -233,7 +251,7 @@ export default class extends Endpoint<
 
 			return {
 				createdNote: await this.noteEntityService.pack(note, me),
-			} satisfies z.infer<typeof res>;
+			};
 		});
 	}
 }

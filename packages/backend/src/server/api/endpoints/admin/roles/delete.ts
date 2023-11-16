@@ -12,7 +12,7 @@ export const meta = {
 	tags: ['admin', 'role'],
 	requireCredential: true,
 	requireAdmin: true,
-	errors: {noSuchRole:noSuchRole_},
+	errors: { noSuchRole: noSuchRole_ },
 } as const;
 
 export const paramDef = z.object({

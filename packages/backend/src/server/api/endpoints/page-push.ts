@@ -11,7 +11,7 @@ import { ApiError } from '../error.js';
 export const meta = {
 	requireCredential: true,
 	secure: true,
-	errors: {noSuchPage:noSuchPage_},
+	errors: { noSuchPage: noSuchPage_ },
 } as const;
 
 export const paramDef = z.object({
@@ -45,7 +45,9 @@ export default class extends Endpoint<
 				event: ps.event,
 				var: ps.var,
 				userId: me.id,
-				user: await this.userEntityService.packDetailed(me.id, { id: page.userId }),
+				user: await this.userEntityService.packDetailed(me.id, {
+					id: page.userId,
+				}),
 			});
 		});
 	}

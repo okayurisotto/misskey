@@ -1,7 +1,11 @@
 import { z } from 'zod';
 import ms from 'ms';
 import { Injectable } from '@nestjs/common';
-import { invalidFileName, inappropriate, noFreeSpace } from '@/server/api/errors.js';
+import {
+	invalidFileName,
+	inappropriate,
+	noFreeSpace,
+} from '@/server/api/errors.js';
 import { DB_MAX_IMAGE_COMMENT_LENGTH } from '@/const.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
@@ -25,7 +29,11 @@ export const meta = {
 	kind: 'write:drive',
 	description: 'Upload a new drive file.',
 	res,
-	errors: {invalidFileName:invalidFileName,inappropriate:inappropriate,noFreeSpace:noFreeSpace},
+	errors: {
+		invalidFileName: invalidFileName,
+		inappropriate: inappropriate,
+		noFreeSpace: noFreeSpace,
+	},
 } as const;
 
 export const paramDef = z.object({
@@ -77,9 +85,9 @@ export default class extends Endpoint<
 					requestIp: instance.enableIpLogging ? ip : null,
 					requestHeaders: instance.enableIpLogging ? headers : null,
 				});
-				return (await this.driveFileEntityService.pack(driveFile, {
+				return await this.driveFileEntityService.pack(driveFile, {
 					self: true,
-				})) satisfies z.infer<typeof res>;
+				});
 			} catch (err) {
 				if (err instanceof Error || typeof err === 'string') {
 					console.error(err);

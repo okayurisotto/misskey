@@ -57,10 +57,7 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return (await this.noteEntityService.packMany(
-				timeline,
-				me,
-			)) satisfies z.infer<typeof res>;
+			return await this.noteEntityService.packMany(timeline, me);
 		});
 	}
 }
