@@ -29,7 +29,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private apRequestChart: ApRequestChart) {
+	constructor(private readonly apRequestChart: ApRequestChart) {
 		super(meta, paramDef, async (ps) => {
 			return await this.apRequestChart.getChart(
 				ps.span,

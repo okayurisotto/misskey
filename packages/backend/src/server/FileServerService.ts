@@ -38,10 +38,10 @@ const assets = `${_dirname}/../../server/file/assets/`;
 
 @Injectable()
 export class FileServerService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly fileInfoService: FileInfoService,
 		private readonly downloadService: DownloadService,

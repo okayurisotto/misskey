@@ -7,7 +7,7 @@ import type { user_keypair, user } from '@prisma/client';
 
 @Injectable()
 export class UserKeypairService implements OnApplicationShutdown {
-	private cache: RedisKVCache<user_keypair>;
+	private readonly cache: RedisKVCache<user_keypair>;
 
 	constructor(
 		private readonly redisClient: RedisService,

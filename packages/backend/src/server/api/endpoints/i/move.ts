@@ -55,12 +55,12 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private remoteUserResolveService: RemoteUserResolveService,
-		private apiLoggerService: ApiLoggerService,
-		private accountMoveService: AccountMoveService,
-		private getterService: GetterService,
-		private apPersonService: ApPersonService,
-		private userEntityService: UserEntityService,
+		private readonly remoteUserResolveService: RemoteUserResolveService,
+		private readonly apiLoggerService: ApiLoggerService,
+		private readonly accountMoveService: AccountMoveService,
+		private readonly getterService: GetterService,
+		private readonly apPersonService: ApPersonService,
+		private readonly userEntityService: UserEntityService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// check parameter

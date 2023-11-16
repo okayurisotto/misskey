@@ -2,13 +2,13 @@ import * as Redis from 'ioredis';
 import { bindThis } from '@/decorators.js';
 
 export class RedisKVCache<T> {
-	private redisClient: Redis.Redis;
-	private name: string;
-	private lifetime: number;
-	private memoryCache: MemoryKVCache<T>;
-	private fetcher: (key: string) => Promise<T>;
-	private toRedisConverter: (value: T) => string;
-	private fromRedisConverter: (value: string) => T | undefined;
+	private readonly redisClient: Redis.Redis;
+	private readonly name: string;
+	private readonly lifetime: number;
+	private readonly memoryCache: MemoryKVCache<T>;
+	private readonly fetcher: (key: string) => Promise<T>;
+	private readonly toRedisConverter: (value: T) => string;
+	private readonly fromRedisConverter: (value: string) => T | undefined;
 
 	constructor(redisClient: RedisKVCache<T>['redisClient'], name: RedisKVCache<T>['name'], opts: {
 		lifetime: RedisKVCache<T>['lifetime'];
@@ -96,13 +96,13 @@ export class RedisKVCache<T> {
 }
 
 export class RedisSingleCache<T> {
-	private redisClient: Redis.Redis;
-	private name: string;
-	private lifetime: number;
-	private memoryCache: MemorySingleCache<T>;
-	private fetcher: () => Promise<T>;
-	private toRedisConverter: (value: T) => string;
-	private fromRedisConverter: (value: string) => T | undefined;
+	private readonly redisClient: Redis.Redis;
+	private readonly name: string;
+	private readonly lifetime: number;
+	private readonly memoryCache: MemorySingleCache<T>;
+	private readonly fetcher: () => Promise<T>;
+	private readonly toRedisConverter: (value: T) => string;
+	private readonly fromRedisConverter: (value: string) => T | undefined;
 
 	constructor(redisClient: RedisSingleCache<T>['redisClient'], name: RedisSingleCache<T>['name'], opts: {
 		lifetime: RedisSingleCache<T>['lifetime'];
@@ -187,10 +187,10 @@ function nothingToDo<T, V = T>(value: T): V {
 
 export class MemoryKVCache<T, V = T> {
 	public cache: Map<string, { date: number; value: V; }>;
-	private lifetime: number;
-	private gcIntervalHandle: NodeJS.Timer;
-	private toMapConverter: (value: T) => V;
-	private fromMapConverter: (cached: V) => T | undefined;
+	private readonly lifetime: number;
+	private readonly gcIntervalHandle: NodeJS.Timer;
+	private readonly toMapConverter: (value: T) => V;
+	private readonly fromMapConverter: (cached: V) => T | undefined;
 
 	constructor(lifetime: MemoryKVCache<never>['lifetime'], options: {
 		toMapConverter: (value: T) => V;
@@ -306,7 +306,7 @@ export class MemoryKVCache<T, V = T> {
 export class MemorySingleCache<T> {
 	private cachedAt: number | null = null;
 	private value: T | undefined;
-	private lifetime: number;
+	private readonly lifetime: number;
 
 	constructor(lifetime: MemorySingleCache<never>['lifetime']) {
 		this.lifetime = lifetime;

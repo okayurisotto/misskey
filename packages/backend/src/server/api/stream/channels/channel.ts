@@ -13,7 +13,7 @@ class ChannelChannel extends Channel {
 	private channelId: string;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -72,7 +72,7 @@ export class ChannelChannelService {
 	public readonly requireCredential = ChannelChannel.requireCredential;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 	) {
 	}
 

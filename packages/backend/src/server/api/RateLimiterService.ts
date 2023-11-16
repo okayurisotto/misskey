@@ -9,19 +9,15 @@ import type { IEndpointMeta } from './endpoints.js';
 
 @Injectable()
 export class RateLimiterService {
-	private logger: Logger;
-	private disabled = false;
+	private readonly logger: Logger;
+	private readonly disabled = NODE_ENV !== 'production';
 
 	constructor(
-		private redisClient: RedisService,
+		private readonly redisClient: RedisService,
 
-		private loggerService: LoggerService,
+		private readonly loggerService: LoggerService,
 	) {
 		this.logger = this.loggerService.getLogger('limiter');
-
-		if (NODE_ENV !== 'production') {
-			this.disabled = true;
-		}
 	}
 
 	@bindThis

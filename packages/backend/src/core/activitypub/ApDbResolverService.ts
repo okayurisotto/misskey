@@ -28,8 +28,8 @@ export type UriParseResult = {
 
 @Injectable()
 export class ApDbResolverService implements OnApplicationShutdown {
-	private publicKeyCache: MemoryKVCache<user_publickey | null>;
-	private publicKeyByUserIdCache: MemoryKVCache<user_publickey | null>;
+	private readonly publicKeyCache: MemoryKVCache<user_publickey | null>;
+	private readonly publicKeyByUserIdCache: MemoryKVCache<user_publickey | null>;
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,

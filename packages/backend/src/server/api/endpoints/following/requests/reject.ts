@@ -26,8 +26,8 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private getterService: GetterService,
-		private userFollowingService: UserFollowingService,
+		private readonly getterService: GetterService,
+		private readonly userFollowingService: UserFollowingService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch follower

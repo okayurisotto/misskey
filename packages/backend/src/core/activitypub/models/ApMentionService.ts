@@ -11,7 +11,7 @@ import type { user } from '@prisma/client';
 @Injectable()
 export class ApMentionService {
 	constructor(
-		private apPersonService: ApPersonService,
+		private readonly apPersonService: ApPersonService,
 	) {
 	}
 

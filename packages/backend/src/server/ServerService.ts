@@ -34,7 +34,7 @@ export class ServerService implements OnApplicationShutdown {
 	private fastify: FastifyInstance | null = null;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly metaService: MetaService,
 		private readonly userEntityService: UserEntityService,

@@ -120,7 +120,7 @@ type VerifyResult = {
 @Injectable()
 export class TwoFactorAuthenticationService {
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 	) {}
 
 	@bindThis

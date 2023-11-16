@@ -18,7 +18,7 @@ import type { z } from 'zod';
 
 @Injectable()
 export class UserBlockingService implements OnModuleInit {
-	private logger: Logger;
+	private readonly logger: Logger;
 	private userFollowingService: UserFollowingService;
 
 	constructor(

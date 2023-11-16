@@ -11,11 +11,11 @@ import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 @Injectable()
 export class FeedService {
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
-		private userEntityService: UserEntityService,
-		private driveFileEntityService: DriveFileEntityService,
-		private prismaService: PrismaService,
+		private readonly userEntityService: UserEntityService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly prismaService: PrismaService,
 	) {}
 
 	public async packFeed(acct: Acct): Promise<Feed | null> {

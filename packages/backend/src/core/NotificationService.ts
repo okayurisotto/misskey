@@ -13,7 +13,7 @@ import type { user } from '@prisma/client';
 
 @Injectable()
 export class NotificationService implements OnApplicationShutdown {
-	#shutdownController = new AbortController();
+	readonly #shutdownController = new AbortController();
 
 	constructor(
 		private readonly redisClient: RedisService,

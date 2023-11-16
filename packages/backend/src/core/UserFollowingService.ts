@@ -45,9 +45,9 @@ export class UserFollowingService implements OnModuleInit {
 	private userBlockingService: UserBlockingService;
 
 	constructor(
-		private moduleRef: ModuleRef,
+		private readonly moduleRef: ModuleRef,
 
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly cacheService: CacheService,
 		private readonly userEntityService: UserEntityService,

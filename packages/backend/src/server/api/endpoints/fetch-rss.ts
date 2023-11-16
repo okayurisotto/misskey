@@ -26,7 +26,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private httpRequestService: HttpRequestService) {
+	constructor(private readonly httpRequestService: HttpRequestService) {
 		super(meta, paramDef, async (ps) => {
 			const res_ = await this.httpRequestService.send(ps.url, {
 				method: 'GET',

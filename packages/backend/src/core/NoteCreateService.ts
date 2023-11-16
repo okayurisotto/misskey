@@ -50,15 +50,15 @@ const mutedWordsCache = new MemorySingleCache<{ userId: user_profile['userId']; 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
 class NotificationManager {
-	private notifier: { id: user['id']; };
-	private note: note;
-	private queue: {
+	private readonly notifier: { id: user['id']; };
+	private readonly note: note;
+	private readonly queue: {
 		target: LocalUser['id'];
 		reason: NotificationType;
 	}[];
 
 	constructor(
-		private notificationService: NotificationService,
+		private readonly notificationService: NotificationService,
 		private readonly prismaService: PrismaService,
 		notifier: { id: user['id']; },
 		note: note,
@@ -140,7 +140,7 @@ type Option = {
 
 @Injectable()
 export class NoteCreateService implements OnApplicationShutdown {
-	#shutdownController = new AbortController();
+	readonly #shutdownController = new AbortController();
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,

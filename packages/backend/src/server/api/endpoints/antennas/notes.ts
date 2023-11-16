@@ -37,7 +37,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private redisClient: RedisService,
+		private readonly redisClient: RedisService,
 
 		private readonly idService: IdService,
 		private readonly noteEntityService: NoteEntityService,

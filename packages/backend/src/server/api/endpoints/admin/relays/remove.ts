@@ -20,7 +20,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(private relayService: RelayService) {
+	constructor(private readonly relayService: RelayService) {
 		super(meta, paramDef, async (ps) => {
 			await this.relayService.removeRelay(ps.inbox);
 		});

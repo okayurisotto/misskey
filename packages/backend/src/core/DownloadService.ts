@@ -17,12 +17,12 @@ import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class DownloadService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
-		private httpRequestService: HttpRequestService,
-		private loggerService: LoggerService,
+		private readonly configLoaderService: ConfigLoaderService,
+		private readonly httpRequestService: HttpRequestService,
+		private readonly loggerService: LoggerService,
 	) {
 		this.logger = this.loggerService.getLogger('download');
 	}

@@ -25,7 +25,7 @@ const LD_JSON = 'application/ld+json; profile="https://www.w3.org/ns/activitystr
 @Injectable()
 export class ActivityPubServerService {
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly utilityService: UtilityService,
 		private readonly userEntityService: UserEntityService,

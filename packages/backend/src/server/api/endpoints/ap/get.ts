@@ -26,7 +26,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private apResolverService: ApResolverService) {
+	constructor(private readonly apResolverService: ApResolverService) {
 		super(meta, paramDef, async (ps) => {
 			const resolver = this.apResolverService.createResolver();
 			return await resolver.resolve(ps.uri);

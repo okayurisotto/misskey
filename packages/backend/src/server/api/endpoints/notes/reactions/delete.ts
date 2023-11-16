@@ -32,8 +32,8 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private getterService: GetterService,
-		private reactionService: ReactionService,
+		private readonly getterService: GetterService,
+		private readonly reactionService: ReactionService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {

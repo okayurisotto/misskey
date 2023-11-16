@@ -15,7 +15,7 @@ import type { drive_file } from '@prisma/client';
 
 @Injectable()
 export class ApImageService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
 		private readonly metaService: MetaService,

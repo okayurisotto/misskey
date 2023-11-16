@@ -14,7 +14,7 @@ class HashtagChannel extends Channel {
 	private q: string[][];
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -71,7 +71,7 @@ export class HashtagChannelService {
 	public readonly requireCredential = HashtagChannel.requireCredential;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 	) {
 	}
 

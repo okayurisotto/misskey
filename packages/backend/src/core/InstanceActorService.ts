@@ -9,7 +9,7 @@ const ACTOR_USERNAME = 'instance.actor' as const;
 
 @Injectable()
 export class InstanceActorService {
-	private cache: MemorySingleCache<LocalUser>;
+	private readonly cache: MemorySingleCache<LocalUser>;
 
 	constructor(
 		private readonly createSystemUserService: CreateSystemUserService,

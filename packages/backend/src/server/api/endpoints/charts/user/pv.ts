@@ -35,7 +35,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private perUserPvChart: PerUserPvChart) {
+	constructor(private readonly perUserPvChart: PerUserPvChart) {
 		super(meta, paramDef, async (ps) => {
 			return await this.perUserPvChart.getChart(
 				ps.span,

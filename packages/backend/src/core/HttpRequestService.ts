@@ -16,12 +16,12 @@ export class HttpRequestService {
 	/**
 	 * Get http non-proxy agent
 	 */
-	private http: http.Agent;
+	private readonly http: http.Agent;
 
 	/**
 	 * Get https non-proxy agent
 	 */
-	private https: https.Agent;
+	private readonly https: https.Agent;
 
 	/**
 	 * Get http proxy or non-proxy agent

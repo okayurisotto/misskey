@@ -22,7 +22,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(private achievementService: AchievementService) {
+	constructor(private readonly achievementService: AchievementService) {
 		super(meta, paramDef, async (ps, me) => {
 			await this.achievementService.create(me.id, ps.name);
 		});

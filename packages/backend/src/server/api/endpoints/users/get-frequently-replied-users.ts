@@ -37,9 +37,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private userEntityService: UserEntityService,
-		private getterService: GetterService,
-		private prismaService: PrismaService,
+		private readonly userEntityService: UserEntityService,
+		private readonly getterService: GetterService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Lookup user

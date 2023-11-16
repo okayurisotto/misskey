@@ -11,14 +11,14 @@ import type { WebhookDeliverJobData } from '../types.js';
 
 @Injectable()
 export class WebhookDeliverProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
-		private httpRequestService: HttpRequestService,
-		private queueLoggerService: QueueLoggerService,
-		private prismaService: PrismaService,
+		private readonly httpRequestService: HttpRequestService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('webhook');
 	}

@@ -13,7 +13,7 @@ import type { DbUserImportJobData, DbUserImportToDbJobData } from '../types.js';
 
 @Injectable()
 export class ImportFollowingProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
 		private readonly queueService: QueueService,

@@ -23,7 +23,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(private customEmojiService: CustomEmojiService) {
+	constructor(private readonly customEmojiService: CustomEmojiService) {
 		super(meta, paramDef, async (ps) => {
 			await this.customEmojiService.delete(ps.id);
 		});

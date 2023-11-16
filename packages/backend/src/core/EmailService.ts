@@ -11,7 +11,7 @@ import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 
 @Injectable()
 export class EmailService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,

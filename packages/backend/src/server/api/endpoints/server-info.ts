@@ -36,7 +36,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private metaService: MetaService) {
+	constructor(private readonly metaService: MetaService) {
 		super(meta, paramDef, async () => {
 			if (!(await this.metaService.fetch()).enableServerMachineStats) {
 				return {

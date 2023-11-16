@@ -45,8 +45,8 @@ export const DEFAULT_POLICIES = {
 
 @Injectable()
 export class RoleService implements OnApplicationShutdown {
-	private rolesCache: MemorySingleCache<role[]>;
-	private roleAssignmentByUserIdCache: MemoryKVCache<role_assignment[]>;
+	private readonly rolesCache: MemorySingleCache<role[]>;
+	private readonly roleAssignmentByUserIdCache: MemoryKVCache<role_assignment[]>;
 
 	public static AlreadyAssignedError = class extends Error {};
 	public static NotAssignedError = class extends Error {};

@@ -17,11 +17,11 @@ const parseEmojiStrRegexp = /^(\w+)(?:@([\w.-]+))?$/;
 
 @Injectable()
 export class CustomEmojiService implements OnApplicationShutdown {
-	private cache: MemoryKVCache<emoji | null>;
+	private readonly cache: MemoryKVCache<emoji | null>;
 	public localEmojisCache: RedisSingleCache<Map<string, emoji>>;
 
 	constructor(
-		private redisClient: RedisService,
+		private readonly redisClient: RedisService,
 
 		private readonly utilityService: UtilityService,
 		private readonly idService: IdService,

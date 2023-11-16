@@ -8,13 +8,13 @@ import { QueueLoggerService } from '../QueueLoggerService.js';
 
 @Injectable()
 export class ResyncChartsProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private notesChart: NotesChart,
-		private usersChart: UsersChart,
-		private driveChart: DriveChart,
-		private queueLoggerService: QueueLoggerService,
+		private readonly notesChart: NotesChart,
+		private readonly usersChart: UsersChart,
+		private readonly driveChart: DriveChart,
+		private readonly queueLoggerService: QueueLoggerService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('resync-charts');
 	}

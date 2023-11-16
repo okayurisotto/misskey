@@ -48,14 +48,14 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private utilityService: UtilityService,
-		private userEntityService: UserEntityService,
-		private noteEntityService: NoteEntityService,
-		private metaService: MetaService,
-		private apResolverService: ApResolverService,
-		private apDbResolverService: ApDbResolverService,
-		private apPersonService: ApPersonService,
-		private apNoteService: ApNoteService,
+		private readonly utilityService: UtilityService,
+		private readonly userEntityService: UserEntityService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly metaService: MetaService,
+		private readonly apResolverService: ApResolverService,
+		private readonly apDbResolverService: ApDbResolverService,
+		private readonly apPersonService: ApPersonService,
+		private readonly apNoteService: ApNoteService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const object = await this.fetchAny(ps.uri, me);

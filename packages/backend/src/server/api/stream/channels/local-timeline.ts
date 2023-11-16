@@ -16,9 +16,9 @@ class LocalTimelineChannel extends Channel {
 	private withReplies: boolean;
 
 	constructor(
-		private metaService: MetaService,
-		private roleService: RoleService,
-		private noteEntityService: NoteEntityService,
+		private readonly metaService: MetaService,
+		private readonly roleService: RoleService,
+		private readonly noteEntityService: NoteEntityService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -96,9 +96,9 @@ export class LocalTimelineChannelService {
 	public readonly requireCredential = LocalTimelineChannel.requireCredential;
 
 	constructor(
-		private metaService: MetaService,
-		private roleService: RoleService,
-		private noteEntityService: NoteEntityService,
+		private readonly metaService: MetaService,
+		private readonly roleService: RoleService,
+		private readonly noteEntityService: NoteEntityService,
 	) {
 	}
 

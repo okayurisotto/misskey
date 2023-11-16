@@ -31,7 +31,7 @@ import type { emoji, drive_file, note } from '@prisma/client';
 
 @Injectable()
 export class ApNoteService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,

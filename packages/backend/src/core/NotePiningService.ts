@@ -14,7 +14,7 @@ import type { note, user } from '@prisma/client';
 @Injectable()
 export class NotePiningService {
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 		private readonly userEntityService: UserEntityService,
 		private readonly idService: IdService,
 		private readonly roleService: RoleService,

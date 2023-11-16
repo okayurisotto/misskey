@@ -32,7 +32,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly prismaService: PrismaService,
 	) {

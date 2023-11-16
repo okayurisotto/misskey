@@ -14,7 +14,7 @@ class LdSignature {
 	public loderTimeout = 5000;
 
 	constructor(
-		private httpRequestService: HttpRequestService,
+		private readonly httpRequestService: HttpRequestService,
 	) {
 	}
 
@@ -151,7 +151,7 @@ class LdSignature {
 @Injectable()
 export class LdSignatureService {
 	constructor(
-		private httpRequestService: HttpRequestService,
+		private readonly httpRequestService: HttpRequestService,
 	) {
 	}
 

@@ -11,7 +11,7 @@ class MainChannel extends Channel {
 	public static override requireCredential = true;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -64,7 +64,7 @@ export class MainChannelService {
 	public readonly requireCredential = MainChannel.requireCredential;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 	) {
 	}
 

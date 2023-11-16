@@ -15,7 +15,7 @@ class HomeTimelineChannel extends Channel {
 	private withReplies: boolean;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -105,7 +105,7 @@ export class HomeTimelineChannelService {
 	public readonly requireCredential = HomeTimelineChannel.requireCredential;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 	) {
 	}
 

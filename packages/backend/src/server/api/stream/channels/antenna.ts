@@ -12,7 +12,7 @@ class AntennaChannel extends Channel {
 	private antennaId: string;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -62,7 +62,7 @@ export class AntennaChannelService {
 	public readonly requireCredential = AntennaChannel.requireCredential;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityService,
 	) {
 	}
 

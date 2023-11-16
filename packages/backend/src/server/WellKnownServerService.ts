@@ -14,7 +14,7 @@ import type { Prisma, user } from '@prisma/client';
 @Injectable()
 export class WellKnownServerService {
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly nodeinfoServerService: NodeinfoServerService,
 		private readonly userEntityService: UserEntityService,

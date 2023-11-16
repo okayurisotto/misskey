@@ -18,7 +18,7 @@ const INTERVAL = 1000 * 60 * 20;
 
 @Injectable()
 export class ChartManagementService implements OnApplicationShutdown {
-	private charts;
+	private readonly charts;
 	private saveIntervalId: NodeJS.Timer;
 
 	constructor(

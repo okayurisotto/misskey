@@ -31,10 +31,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private noteEntityService: NoteEntityService,
-		private noteReadService: NoteReadService,
-		private prismaService: PrismaService,
-		private prismaQueryService: PrismaQueryService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly noteReadService: NoteReadService,
+		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({

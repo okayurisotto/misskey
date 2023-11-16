@@ -16,9 +16,9 @@ import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 @Injectable()
 export class ApiServerService {
 	constructor(
-		private moduleRef: ModuleRef,
+		private readonly moduleRef: ModuleRef,
 
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly apiCallService: ApiCallService,

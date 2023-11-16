@@ -27,9 +27,9 @@ const isDirect = (recipe: IRecipe): recipe is IDirectRecipe =>
 	recipe.type === 'Direct';
 
 class DeliverManager {
-	private actor: ThinUser;
-	private activity: IActivity | null;
-	private recipes: IRecipe[] = [];
+	private readonly actor: ThinUser;
+	private readonly activity: IActivity | null;
+	private readonly recipes: IRecipe[] = [];
 
 	/**
 	 * Constructor
@@ -39,8 +39,8 @@ class DeliverManager {
 	 * @param activity Activity to deliver
 	 */
 	constructor(
-		private prismaService: PrismaService,
-		private queueService: QueueService,
+		private readonly prismaService: PrismaService,
+		private readonly queueService: QueueService,
 
 		actor: { id: user['id']; host: null; },
 		activity: IActivity | null,

@@ -38,7 +38,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private driveChart: DriveChart) {
+	constructor(private readonly driveChart: DriveChart) {
 		super(meta, paramDef, async (ps) => {
 			return await this.driveChart.getChart(
 				ps.span,

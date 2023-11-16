@@ -17,17 +17,17 @@ import type { access_token } from '@prisma/client';
 @Injectable()
 export class StreamingApiServerService {
 	#wss: WebSocket.WebSocketServer;
-	#connections = new Map<WebSocket.WebSocket, number>();
+	readonly #connections = new Map<WebSocket.WebSocket, number>();
 	#cleanConnectionsIntervalId: NodeJS.Timeout | null = null;
 
 	constructor(
-		private cacheService: CacheService,
-		private noteReadService: NoteReadService,
-		private authenticateService: AuthenticateService,
-		private channelsService: ChannelsService,
-		private notificationService: NotificationService,
-		private prismaService: PrismaService,
-		private redisForSub: RedisSubService,
+		private readonly cacheService: CacheService,
+		private readonly noteReadService: NoteReadService,
+		private readonly authenticateService: AuthenticateService,
+		private readonly channelsService: ChannelsService,
+		private readonly notificationService: NotificationService,
+		private readonly prismaService: PrismaService,
+		private readonly redisForSub: RedisSubService,
 	) {}
 
 	@bindThis

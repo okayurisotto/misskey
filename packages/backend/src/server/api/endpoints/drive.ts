@@ -27,9 +27,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private metaService: MetaService,
-		private driveFileEntityService: DriveFileEntityService,
-		private roleService: RoleService,
+		private readonly metaService: MetaService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly roleService: RoleService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const { policies, usage } = await awaitAll({

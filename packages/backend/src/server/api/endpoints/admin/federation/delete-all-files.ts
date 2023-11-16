@@ -22,8 +22,8 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private driveService: DriveService,
-		private prismaService: PrismaService,
+		private readonly driveService: DriveService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
 			const files = await this.prismaService.client.drive_file.findMany({

@@ -35,10 +35,10 @@ import type { IAccept, IAdd, IAnnounce, IBlock, ICreate, IDelete, IFlag, IFollow
 
 @Injectable()
 export class ApInboxService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly userEntityService: UserEntityService,
 		private readonly noteEntityService: NoteEntityService,

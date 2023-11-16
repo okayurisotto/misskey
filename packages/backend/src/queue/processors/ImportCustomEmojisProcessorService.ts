@@ -45,14 +45,14 @@ export const ExportedCustomEmojisMetaSchema = z.object({
 
 @Injectable()
 export class ImportCustomEmojisProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private customEmojiService: CustomEmojiService,
-		private driveService: DriveService,
-		private downloadService: DownloadService,
-		private queueLoggerService: QueueLoggerService,
-		private prismaService: PrismaService,
+		private readonly customEmojiService: CustomEmojiService,
+		private readonly driveService: DriveService,
+		private readonly downloadService: DownloadService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger(
 			'import-custom-emojis',

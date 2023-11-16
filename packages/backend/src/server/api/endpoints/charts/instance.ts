@@ -65,7 +65,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private instanceChart: InstanceChart) {
+	constructor(private readonly instanceChart: InstanceChart) {
 		super(meta, paramDef, async (ps) => {
 			return await this.instanceChart.getChart(
 				ps.span,

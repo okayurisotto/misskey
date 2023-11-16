@@ -14,7 +14,7 @@ const ACTOR_USERNAME = 'relay.actor' as const;
 
 @Injectable()
 export class RelayService {
-	private relaysCache: MemorySingleCache<relay[]>;
+	private readonly relaysCache: MemorySingleCache<relay[]>;
 
 	constructor(
 		private readonly idService: IdService,

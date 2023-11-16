@@ -29,8 +29,8 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private clipEntityService: ClipEntityService,
-		private prismaService: PrismaService,
+		private readonly clipEntityService: ClipEntityService,
+		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const clip = await this.prismaService.client.clip.findUnique({

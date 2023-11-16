@@ -22,8 +22,8 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private getterService: GetterService,
-		private apPersonService: ApPersonService,
+		private readonly getterService: GetterService,
+		private readonly apPersonService: ApPersonService,
 	) {
 		super(meta, paramDef, async (ps) => {
 			const user = await this.getterService.getRemoteUser(ps.userId);

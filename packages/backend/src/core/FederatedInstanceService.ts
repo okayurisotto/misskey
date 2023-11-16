@@ -12,7 +12,7 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 	public federatedInstanceCache: RedisKVCache<instance | null>;
 
 	constructor(
-		private redisClient: RedisService,
+		private readonly redisClient: RedisService,
 
 		private readonly utilityService: UtilityService,
 		private readonly idService: IdService,

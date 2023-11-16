@@ -18,7 +18,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(private queueService: QueueService) {
+	constructor(private readonly queueService: QueueService) {
 		super(meta, paramDef, async () => {
 			await this.queueService.createCleanRemoteFilesJob();
 		});

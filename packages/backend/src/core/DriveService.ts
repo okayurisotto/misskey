@@ -86,9 +86,9 @@ const FilePropertiesSchema = z.object({
 
 @Injectable()
 export class DriveService {
-	private registerLogger: Logger;
-	private downloaderLogger: Logger;
-	private deleteLogger: Logger;
+	private readonly registerLogger: Logger;
+	private readonly downloaderLogger: Logger;
+	private readonly deleteLogger: Logger;
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,

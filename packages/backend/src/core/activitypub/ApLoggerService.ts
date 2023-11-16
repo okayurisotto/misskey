@@ -7,7 +7,7 @@ export class ApLoggerService {
 	public logger: Logger;
 
 	constructor(
-		private remoteLoggerService: RemoteLoggerService,
+		private readonly remoteLoggerService: RemoteLoggerService,
 	) {
 		this.logger = this.remoteLoggerService.logger.createSubLogger('ap', 'magenta');
 	}

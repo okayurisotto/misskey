@@ -16,7 +16,7 @@ export class AuthenticationError extends Error {
 
 @Injectable()
 export class AuthenticateService implements OnApplicationShutdown {
-	private appCache: MemoryKVCache<app>;
+	private readonly appCache: MemoryKVCache<app>;
 
 	constructor(
 		private readonly cacheService: CacheService,

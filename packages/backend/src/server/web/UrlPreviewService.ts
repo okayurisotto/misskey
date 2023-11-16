@@ -12,14 +12,14 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 
 @Injectable()
 export class UrlPreviewService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
-		private metaService: MetaService,
-		private httpRequestService: HttpRequestService,
-		private loggerService: LoggerService,
+		private readonly metaService: MetaService,
+		private readonly httpRequestService: HttpRequestService,
+		private readonly loggerService: LoggerService,
 	) {
 		this.logger = this.loggerService.getLogger('url-preview');
 	}

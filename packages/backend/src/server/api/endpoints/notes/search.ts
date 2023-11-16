@@ -39,9 +39,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private noteEntityService: NoteEntityService,
-		private searchService: SearchService,
-		private roleService: RoleService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly searchService: SearchService,
+		private readonly roleService: RoleService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const policies = await this.roleService.getUserPolicies(

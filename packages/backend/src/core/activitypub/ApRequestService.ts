@@ -124,14 +124,14 @@ export class ApRequestCreator {
 
 @Injectable()
 export class ApRequestService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
-		private userKeypairService: UserKeypairService,
-		private httpRequestService: HttpRequestService,
-		private loggerService: LoggerService,
+		private readonly userKeypairService: UserKeypairService,
+		private readonly httpRequestService: HttpRequestService,
+		private readonly loggerService: LoggerService,
 	) {
 		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
 		this.logger = this.loggerService?.getLogger('ap-request'); // なぜか TypeError: Cannot read properties of undefined (reading 'getLogger') と言われる

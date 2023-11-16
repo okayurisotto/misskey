@@ -22,7 +22,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(private emailService: EmailService) {
+	constructor(private readonly emailService: EmailService) {
 		super(meta, paramDef, async (ps) => {
 			await this.emailService.sendEmail(ps.to, ps.subject, ps.text, ps.text);
 		});

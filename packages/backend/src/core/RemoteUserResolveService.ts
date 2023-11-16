@@ -14,10 +14,10 @@ import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class RemoteUserResolveService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly utilityService: UtilityService,
 		private readonly webfingerService: WebfingerService,

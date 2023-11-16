@@ -13,8 +13,8 @@ class RoleTimelineChannel extends Channel {
 	private roleId: string;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
-		private roleservice: RoleService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly roleservice: RoleService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -66,8 +66,8 @@ export class RoleTimelineChannelService {
 	public readonly requireCredential = RoleTimelineChannel.requireCredential;
 
 	constructor(
-		private noteEntityService: NoteEntityService,
-		private roleservice: RoleService,
+		private readonly noteEntityService: NoteEntityService,
+		private readonly roleservice: RoleService,
 	) {
 	}
 

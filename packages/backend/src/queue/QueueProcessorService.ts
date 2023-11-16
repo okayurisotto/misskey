@@ -63,49 +63,49 @@ function getJobInfo(job: Bull.Job | undefined, increment = false): string {
 
 @Injectable()
 export class QueueProcessorService implements OnApplicationShutdown {
-	private logger: Logger;
-	private systemQueueWorker: Bull.Worker;
-	private dbQueueWorker: Bull.Worker;
-	private deliverQueueWorker: Bull.Worker;
-	private inboxQueueWorker: Bull.Worker;
-	private webhookDeliverQueueWorker: Bull.Worker;
-	private relationshipQueueWorker: Bull.Worker;
-	private objectStorageQueueWorker: Bull.Worker;
-	private endedPollNotificationQueueWorker: Bull.Worker;
+	private readonly logger: Logger;
+	private readonly systemQueueWorker: Bull.Worker;
+	private readonly dbQueueWorker: Bull.Worker;
+	private readonly deliverQueueWorker: Bull.Worker;
+	private readonly inboxQueueWorker: Bull.Worker;
+	private readonly webhookDeliverQueueWorker: Bull.Worker;
+	private readonly relationshipQueueWorker: Bull.Worker;
+	private readonly objectStorageQueueWorker: Bull.Worker;
+	private readonly endedPollNotificationQueueWorker: Bull.Worker;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
-		private queueLoggerService: QueueLoggerService,
-		private webhookDeliverProcessorService: WebhookDeliverProcessorService,
-		private endedPollNotificationProcessorService: EndedPollNotificationProcessorService,
-		private deliverProcessorService: DeliverProcessorService,
-		private inboxProcessorService: InboxProcessorService,
-		private deleteDriveFilesProcessorService: DeleteDriveFilesProcessorService,
-		private exportCustomEmojisProcessorService: ExportCustomEmojisProcessorService,
-		private exportNotesProcessorService: ExportNotesProcessorService,
-		private exportFavoritesProcessorService: ExportFavoritesProcessorService,
-		private exportFollowingProcessorService: ExportFollowingProcessorService,
-		private exportMutingProcessorService: ExportMutingProcessorService,
-		private exportBlockingProcessorService: ExportBlockingProcessorService,
-		private exportUserListsProcessorService: ExportUserListsProcessorService,
-		private exportAntennasProcessorService: ExportAntennasProcessorService,
-		private importFollowingProcessorService: ImportFollowingProcessorService,
-		private importMutingProcessorService: ImportMutingProcessorService,
-		private importBlockingProcessorService: ImportBlockingProcessorService,
-		private importUserListsProcessorService: ImportUserListsProcessorService,
-		private importCustomEmojisProcessorService: ImportCustomEmojisProcessorService,
-		private importAntennasProcessorService: ImportAntennasProcessorService,
-		private deleteAccountProcessorService: DeleteAccountProcessorService,
-		private deleteFileProcessorService: DeleteFileProcessorService,
-		private cleanRemoteFilesProcessorService: CleanRemoteFilesProcessorService,
-		private relationshipProcessorService: RelationshipProcessorService,
-		private tickChartsProcessorService: TickChartsProcessorService,
-		private resyncChartsProcessorService: ResyncChartsProcessorService,
-		private cleanChartsProcessorService: CleanChartsProcessorService,
-		private aggregateRetentionProcessorService: AggregateRetentionProcessorService,
-		private checkExpiredMutingsProcessorService: CheckExpiredMutingsProcessorService,
-		private cleanProcessorService: CleanProcessorService,
+		private readonly queueLoggerService: QueueLoggerService,
+		private readonly webhookDeliverProcessorService: WebhookDeliverProcessorService,
+		private readonly endedPollNotificationProcessorService: EndedPollNotificationProcessorService,
+		private readonly deliverProcessorService: DeliverProcessorService,
+		private readonly inboxProcessorService: InboxProcessorService,
+		private readonly deleteDriveFilesProcessorService: DeleteDriveFilesProcessorService,
+		private readonly exportCustomEmojisProcessorService: ExportCustomEmojisProcessorService,
+		private readonly exportNotesProcessorService: ExportNotesProcessorService,
+		private readonly exportFavoritesProcessorService: ExportFavoritesProcessorService,
+		private readonly exportFollowingProcessorService: ExportFollowingProcessorService,
+		private readonly exportMutingProcessorService: ExportMutingProcessorService,
+		private readonly exportBlockingProcessorService: ExportBlockingProcessorService,
+		private readonly exportUserListsProcessorService: ExportUserListsProcessorService,
+		private readonly exportAntennasProcessorService: ExportAntennasProcessorService,
+		private readonly importFollowingProcessorService: ImportFollowingProcessorService,
+		private readonly importMutingProcessorService: ImportMutingProcessorService,
+		private readonly importBlockingProcessorService: ImportBlockingProcessorService,
+		private readonly importUserListsProcessorService: ImportUserListsProcessorService,
+		private readonly importCustomEmojisProcessorService: ImportCustomEmojisProcessorService,
+		private readonly importAntennasProcessorService: ImportAntennasProcessorService,
+		private readonly deleteAccountProcessorService: DeleteAccountProcessorService,
+		private readonly deleteFileProcessorService: DeleteFileProcessorService,
+		private readonly cleanRemoteFilesProcessorService: CleanRemoteFilesProcessorService,
+		private readonly relationshipProcessorService: RelationshipProcessorService,
+		private readonly tickChartsProcessorService: TickChartsProcessorService,
+		private readonly resyncChartsProcessorService: ResyncChartsProcessorService,
+		private readonly cleanChartsProcessorService: CleanChartsProcessorService,
+		private readonly aggregateRetentionProcessorService: AggregateRetentionProcessorService,
+		private readonly checkExpiredMutingsProcessorService: CheckExpiredMutingsProcessorService,
+		private readonly cleanProcessorService: CleanProcessorService,
 	) {
 		this.logger = this.queueLoggerService.logger;
 

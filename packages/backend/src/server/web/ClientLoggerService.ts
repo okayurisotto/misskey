@@ -7,7 +7,7 @@ export class ClientLoggerService {
 	public logger: Logger;
 
 	constructor(
-		private loggerService: LoggerService,
+		private readonly loggerService: LoggerService,
 	) {
 		this.logger = this.loggerService.getLogger('client');
 	}

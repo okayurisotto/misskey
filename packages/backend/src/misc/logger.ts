@@ -15,7 +15,7 @@ import type { KEYWORD } from 'color-convert/conversions.js';
  */
 // eslint-disable-next-line import/no-default-export
 export default class Logger {
-	private context: LoggerContext;
+	private readonly context: LoggerContext;
 	private parentLogger: Logger | null = null;
 
 	/**

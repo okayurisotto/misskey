@@ -9,7 +9,7 @@ import type { note } from '@prisma/client';
 @Injectable()
 export class ApMfmService {
 	constructor(
-		private mfmService: MfmService,
+		private readonly mfmService: MfmService,
 	) {
 	}
 

@@ -29,7 +29,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private perUserReactionsChart: PerUserReactionsChart) {
+	constructor(private readonly perUserReactionsChart: PerUserReactionsChart) {
 		super(meta, paramDef, async (ps) => {
 			return await this.perUserReactionsChart.getChart(
 				ps.span,

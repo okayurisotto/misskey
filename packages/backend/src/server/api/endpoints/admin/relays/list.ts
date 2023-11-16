@@ -29,7 +29,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private relayService: RelayService) {
+	constructor(private readonly relayService: RelayService) {
 		super(meta, paramDef, async () => {
 			return await this.relayService.listRelay();
 		});

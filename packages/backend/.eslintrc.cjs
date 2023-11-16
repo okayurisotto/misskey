@@ -57,6 +57,7 @@ module.exports = {
 		'@typescript-eslint/no-unused-vars': ['warn'], // TODO
 		'@typescript-eslint/no-var-requires': ['error'],
 		'@typescript-eslint/prefer-nullish-coalescing': ['warn'],
+		'@typescript-eslint/prefer-readonly': ['error'],
 		'@typescript-eslint/require-await': ['warn'], // TODO
 		'@typescript-eslint/restrict-plus-operands': ['warn'], // TODO
 		'@typescript-eslint/restrict-template-expressions': ['warn'], // TODO

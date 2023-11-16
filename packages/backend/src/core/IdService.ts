@@ -11,7 +11,7 @@ import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class IdService {
-	private method: (typeof idGenerationMethods)[number];
+	private readonly method: (typeof idGenerationMethods)[number];
 
 	constructor(configLoaderService: ConfigLoaderService) {
 		this.method = configLoaderService.data.id;

@@ -10,7 +10,7 @@ import type { note, user } from '@prisma/client';
 
 @Injectable()
 export class NoteReadService implements OnApplicationShutdown {
-	#shutdownController = new AbortController();
+	readonly #shutdownController = new AbortController();
 
 	constructor(
 		private readonly idService: IdService,

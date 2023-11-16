@@ -10,7 +10,7 @@ const staticAssets = fileURLToPath(new URL('../../../../assets/', import.meta.ur
 @Injectable()
 export class OpenApiServerService {
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 	) {
 	}
 

@@ -24,21 +24,21 @@ import type { user_publickey } from '@prisma/client';
 
 @Injectable()
 export class InboxProcessorService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
-		private utilityService: UtilityService,
-		private metaService: MetaService,
-		private apInboxService: ApInboxService,
-		private federatedInstanceService: FederatedInstanceService,
-		private fetchInstanceMetadataService: FetchInstanceMetadataService,
-		private ldSignatureService: LdSignatureService,
-		private apPersonService: ApPersonService,
-		private apDbResolverService: ApDbResolverService,
-		private instanceChart: InstanceChart,
-		private apRequestChart: ApRequestChart,
-		private federationChart: FederationChart,
-		private queueLoggerService: QueueLoggerService,
+		private readonly utilityService: UtilityService,
+		private readonly metaService: MetaService,
+		private readonly apInboxService: ApInboxService,
+		private readonly federatedInstanceService: FederatedInstanceService,
+		private readonly fetchInstanceMetadataService: FetchInstanceMetadataService,
+		private readonly ldSignatureService: LdSignatureService,
+		private readonly apPersonService: ApPersonService,
+		private readonly apDbResolverService: ApDbResolverService,
+		private readonly instanceChart: InstanceChart,
+		private readonly apRequestChart: ApRequestChart,
+		private readonly federationChart: FederationChart,
+		private readonly queueLoggerService: QueueLoggerService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('inbox');
 	}

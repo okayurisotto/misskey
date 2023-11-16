@@ -13,7 +13,7 @@ import type { meta } from '@prisma/client';
 @Injectable()
 export class MetaService implements OnApplicationShutdown {
 	private cache: meta | undefined;
-	private intervalId: NodeJS.Timer;
+	private readonly intervalId: NodeJS.Timer;
 
 	constructor(
 		private readonly db: TypeORMService,

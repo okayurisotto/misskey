@@ -111,11 +111,11 @@ export function getJsonSchema<S extends Schema>(schema: S): ToJsonSchema<Unflatt
  */
 // eslint-disable-next-line import/no-default-export
 export default abstract class Chart<T extends Schema> {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	public schema: T;
 
-	private name: string;
+	private readonly name: string;
 	private buffer: {
 		diff: Commit<T>;
 		group: string | null;
@@ -123,8 +123,8 @@ export default abstract class Chart<T extends Schema> {
 	// ↓にしたいけどfindOneとかで型エラーになる
 	//private repositoryForHour: Repository<RawRecord<T>>;
 	//private repositoryForDay: Repository<RawRecord<T>>;
-	private repositoryForHour: Repository<{ id: number; group?: string | null; date: number; }>;
-	private repositoryForDay: Repository<{ id: number; group?: string | null; date: number; }>;
+	private readonly repositoryForHour: Repository<{ id: number; group?: string | null; date: number; }>;
+	private readonly repositoryForDay: Repository<{ id: number; group?: string | null; date: number; }>;
 
 	/**
 	 * 1日に一回程度実行されれば良いような計算処理を入れる(主にCASCADE削除などアプリケーション側で感知できない変動によるズレの修正用)
@@ -231,7 +231,7 @@ export default abstract class Chart<T extends Schema> {
 		};
 	}
 
-	private lock: (key: string) => Promise<() => void>;
+	private readonly lock: (key: string) => Promise<() => void>;
 
 	constructor(
 		db: DataSource,

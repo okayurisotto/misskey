@@ -12,7 +12,7 @@ import type { IObject, IQuestion } from '../type.js';
 
 @Injectable()
 export class ApQuestionService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,

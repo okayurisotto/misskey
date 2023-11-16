@@ -45,12 +45,12 @@ function truncateBody<T extends keyof PushNotificationsTypes>(type: T, body: Pus
 
 @Injectable()
 export class PushNotificationService implements OnApplicationShutdown {
-	private subscriptionsCache: RedisKVCache<sw_subscription[]>;
+	private readonly subscriptionsCache: RedisKVCache<sw_subscription[]>;
 
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
-		private redisClient: RedisService,
+		private readonly redisClient: RedisService,
 
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,

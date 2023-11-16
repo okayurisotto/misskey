@@ -27,7 +27,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private galleryPostEntityService: GalleryPostEntityService,
+		private readonly galleryPostEntityService: GalleryPostEntityService,
 		private readonly prismaService: PrismaService,
 		private readonly prismaQueryService: PrismaQueryService,
 	) {

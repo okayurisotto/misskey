@@ -32,7 +32,7 @@ type NodeInfo = {
 
 @Injectable()
 export class FetchInstanceMetadataService {
-	private logger: Logger;
+	private readonly logger: Logger;
 
 	constructor(
 		private readonly httpRequestService: HttpRequestService,

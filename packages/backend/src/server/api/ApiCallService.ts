@@ -30,9 +30,9 @@ const accessDenied = {
 
 @Injectable()
 export class ApiCallService implements OnApplicationShutdown {
-	private logger: Logger;
-	private userIpHistories: Map<user['id'], Set<string>>;
-	private userIpHistoriesClearIntervalId: NodeJS.Timer;
+	private readonly logger: Logger;
+	private readonly userIpHistories: Map<user['id'], Set<string>>;
+	private readonly userIpHistoriesClearIntervalId: NodeJS.Timer;
 
 	constructor(
 		private readonly metaService: MetaService,

@@ -26,7 +26,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private userEntityService: UserEntityService) {
+	constructor(private readonly userEntityService: UserEntityService) {
 		super(meta, paramDef, async (ps, me) => {
 			if (Array.isArray(ps.userId)) {
 				return await Promise.all(

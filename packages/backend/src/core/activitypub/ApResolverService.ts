@@ -15,11 +15,11 @@ import { ApRequestService } from './ApRequestService.js';
 import type { IObject, ICollection, IOrderedCollection } from './type.js';
 
 export class Resolver {
-	private history: Set<string>;
+	private readonly history: Set<string>;
 	private user?: LocalUser;
 
 	constructor(
-		private config: Config,
+		private readonly config: Config,
 
 		private readonly utilityService: UtilityService,
 		private readonly instanceActorService: InstanceActorService,
@@ -152,7 +152,7 @@ export class Resolver {
 @Injectable()
 export class ApResolverService {
 	constructor(
-		private configLoaderService: ConfigLoaderService,
+		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly utilityService: UtilityService,
 		private readonly instanceActorService: InstanceActorService,

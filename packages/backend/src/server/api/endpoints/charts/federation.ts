@@ -34,7 +34,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	typeof res
 > {
-	constructor(private federationChart: FederationChart) {
+	constructor(private readonly federationChart: FederationChart) {
 		super(meta, paramDef, async (ps) => {
 			return await this.federationChart.getChart(
 				ps.span,

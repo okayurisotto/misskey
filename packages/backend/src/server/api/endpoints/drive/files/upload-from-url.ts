@@ -37,9 +37,9 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private driveFileEntityService: DriveFileEntityService,
-		private driveService: DriveService,
-		private globalEventService: GlobalEventService,
+		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly driveService: DriveService,
+		private readonly globalEventService: GlobalEventService,
 	) {
 		super(meta, paramDef, async (ps, user, _1, _2, _3, ip, headers) => {
 			this.driveService

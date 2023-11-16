@@ -22,7 +22,7 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(private notificationService: NotificationService) {
+	constructor(private readonly notificationService: NotificationService) {
 		super(meta, paramDef, async (ps, user, token) => {
 			this.notificationService.createNotification(user.id, 'app', {
 				appAccessTokenId: token ? token.id : null,
