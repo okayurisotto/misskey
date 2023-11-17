@@ -9,7 +9,6 @@
 		"start": "node ./built/boot/index.js",
 		"start:test": "cross-env NODE_ENV=test node ./built/boot/index.js",
 		"migrate": "typeorm migration:run -d ormconfig.js",
-		"check:connect": "node ./check_connect.js",
 		"build": "swc src -d built -D",
 		"watch": "swc src -d built -D -w",
 		"typecheck": "tsc --noEmit",
