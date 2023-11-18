@@ -13,11 +13,11 @@ import type { user, user_profile } from '@prisma/client';
 @Injectable()
 export class SignupService {
 	constructor(
-		private readonly utilityService: UtilityService,
 		private readonly idService: IdService,
 		private readonly metaService: MetaService,
-		private readonly usersChart: UsersChart,
 		private readonly prismaService: PrismaService,
+		private readonly usersChart: UsersChart,
+		private readonly utilityService: UtilityService,
 	) {}
 
 	public async signup(opts: {
@@ -26,7 +26,7 @@ export class SignupService {
 		passwordHash?: user_profile['password'] | null;
 		host?: string | null;
 		ignorePreservedUsernames?: boolean;
-	}): Promise<{ account: user; secret: string; }> {
+	}): Promise<{ account: user; secret: string }> {
 		const { username, password, passwordHash, host } = opts;
 		let hash = passwordHash;
 
@@ -50,87 +50,108 @@ export class SignupService {
 		const secret = generateUserToken();
 
 		// Check username duplication
-		if ((await this.prismaService.client.user.count({ where: { usernameLower: username.toLowerCase(), host: null }, take: 1 })) > 0) {
+		if (
+			(await this.prismaService.client.user.count({
+				where: { usernameLower: username.toLowerCase(), host: null },
+				take: 1,
+			})) > 0
+		) {
 			throw new Error('DUPLICATED_USERNAME');
 		}
 
 		// Check deleted username duplication
-		if ((await this.prismaService.client.used_username.count({ where: { username: username.toLowerCase() }, take: 1 })) > 0) {
+		if (
+			(await this.prismaService.client.used_username.count({
+				where: { username: username.toLowerCase() },
+				take: 1,
+			})) > 0
+		) {
 			throw new Error('USED_USERNAME');
 		}
 
-		const isTheFirstUser = (await this.prismaService.client.user.count({ where: { host: null } })) === 0;
+		const isTheFirstUser =
+			(await this.prismaService.client.user.count({
+				where: { host: null },
+			})) === 0;
 
 		if (!opts.ignorePreservedUsernames && !isTheFirstUser) {
 			const instance = await this.metaService.fetch(true);
-			const isPreserved = instance.preservedUsernames.map(x => x.toLowerCase()).includes(username.toLowerCase());
+			const isPreserved = instance.preservedUsernames
+				.map((x) => x.toLowerCase())
+				.includes(username.toLowerCase());
 			if (isPreserved) {
 				throw new Error('USED_USERNAME');
 			}
 		}
 
 		const keyPair = await new Promise<string[]>((res, rej) =>
-			generateKeyPair('rsa', {
-				modulusLength: 2048,
-				publicKeyEncoding: {
-					type: 'spki',
-					format: 'pem',
-				},
-				privateKeyEncoding: {
-					type: 'pkcs8',
-					format: 'pem',
-					cipher: undefined,
-					passphrase: undefined,
-				},
-			}, (err, publicKey, privateKey) =>
-				err ? rej(err) : res([publicKey, privateKey]),
-			));
-
-		const account = await this.prismaService.client.$transaction(async (client) => {
-			const exist = await client.user.findFirst({
-				where: {
-					usernameLower: username.toLowerCase(),
-					host: null,
-				},
-			});
-
-			if (exist) throw new Error('the username is already used');
-
-			const account = await client.user.create({
-				data: {
-					id: this.idService.genId(),
-					createdAt: new Date(),
-					username: username,
-					usernameLower: username.toLowerCase(),
-					host: this.utilityService.toPunyNullable(host),
-					token: secret,
-					isRoot: isTheFirstUser,
-
-					user_keypair: {
-						create: {
-							publicKey: keyPair[0],
-							privateKey: keyPair[1],
-						},
+			generateKeyPair(
+				'rsa',
+				{
+					modulusLength: 2048,
+					publicKeyEncoding: {
+						type: 'spki',
+						format: 'pem',
 					},
-
-					user_profile: {
-						create: {
-							autoAcceptFollowed: true,
-							password: hash,
-						},
+					privateKeyEncoding: {
+						type: 'pkcs8',
+						format: 'pem',
+						cipher: undefined,
+						passphrase: undefined,
 					},
 				},
-			});
+				(err, publicKey, privateKey) =>
+					err ? rej(err) : res([publicKey, privateKey]),
+			),
+		);
 
-			await client.used_username.create({
-				data: {
-					createdAt: new Date(),
-					username: username.toLowerCase(),
-				},
-			});
+		const account = await this.prismaService.client.$transaction(
+			async (client) => {
+				const exist = await client.user.findFirst({
+					where: {
+						usernameLower: username.toLowerCase(),
+						host: null,
+					},
+				});
 
-			return account;
-		});
+				if (exist) throw new Error('the username is already used');
+
+				const account = await client.user.create({
+					data: {
+						id: this.idService.genId(),
+						createdAt: new Date(),
+						username: username,
+						usernameLower: username.toLowerCase(),
+						host: this.utilityService.toPunyNullable(host),
+						token: secret,
+						isRoot: isTheFirstUser,
+
+						user_keypair: {
+							create: {
+								publicKey: keyPair[0],
+								privateKey: keyPair[1],
+							},
+						},
+
+						user_profile: {
+							create: {
+								autoAcceptFollowed: true,
+								password: hash,
+							},
+						},
+					},
+				});
+
+				await client.used_username.create({
+					data: {
+						createdAt: new Date(),
+						username: username.toLowerCase(),
+					},
+				});
+
+				return account;
+			},
+		);
 
 		this.usersChart.update(account, true);
 

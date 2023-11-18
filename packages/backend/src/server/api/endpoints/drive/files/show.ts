@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { noSuchFile_______, accessDenied____ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
+import { DriveFileEntityPackService } from '@/core/entities/DriveFileEntityPackService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
@@ -33,7 +33,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityPackService: DriveFileEntityPackService,
 		private readonly roleService: RoleService,
 		private readonly prismaService: PrismaService,
 	) {
@@ -64,7 +64,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.accessDenied);
 			}
 
-			return await this.driveFileEntityService.pack(file, {
+			return await this.driveFileEntityPackService.pack(file, {
 				detail: true,
 				withUser: true,
 				self: true,

@@ -2,17 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { UserEntityService } from './UserEntityService.js';
-import { DriveFileEntityService } from './DriveFileEntityService.js';
+import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
+import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
 import type { gallery_post, user } from '@prisma/client';
 
 @Injectable()
 export class GalleryPostEntityService {
 	constructor(
-		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityPackService: DriveFileEntityPackService,
 		private readonly prismaService: PrismaService,
-		private readonly userEntityService: UserEntityService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
 
 	/**
@@ -27,14 +27,16 @@ export class GalleryPostEntityService {
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof GalleryPostSchema>> {
 		const meId = me ? me.id : null;
-		const post = await this.prismaService.client.gallery_post.findUniqueOrThrow({
-			where: { id: typeof src === 'string' ? src : src.id },
-			include: { user: true },
-		});
+		const post = await this.prismaService.client.gallery_post.findUniqueOrThrow(
+			{
+				where: { id: typeof src === 'string' ? src : src.id },
+				include: { user: true },
+			},
+		);
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.packLite(post.user),
-			files: () => this.driveFileEntityService.packManyByIds(post.fileIds),
+			user: () => this.userEntityPackLiteService.packLite(post.user),
+			files: () => this.driveFileEntityPackService.packManyByIds(post.fileIds),
 			isLiked: async () =>
 				meId
 					? (await this.prismaService.client.gallery_like.count({

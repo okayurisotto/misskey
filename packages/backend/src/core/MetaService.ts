@@ -23,12 +23,15 @@ export class MetaService implements OnApplicationShutdown {
 		//this.onMessage = this.onMessage.bind(this);
 
 		if (NODE_ENV !== 'test') {
-			this.intervalId = setInterval(() => {
-				this.fetch(true).then(meta => {
-					// fetch内でもセットしてるけど仕様変更の可能性もあるため一応
-					this.cache = meta;
-				});
-			}, 1000 * 60 * 5);
+			this.intervalId = setInterval(
+				() => {
+					this.fetch(true).then((meta) => {
+						// fetch内でもセットしてるけど仕様変更の可能性もあるため一応
+						this.cache = meta;
+					});
+				},
+				1000 * 60 * 5,
+			);
 		}
 
 		// eslint-disable-next-line @typescript-eslint/unbound-method
@@ -40,7 +43,8 @@ export class MetaService implements OnApplicationShutdown {
 		const obj = JSON.parse(data);
 
 		if (obj.channel === 'internal') {
-			const { type, body } = obj.message as StreamMessages['internal']['payload'];
+			const { type, body } =
+				obj.message as StreamMessages['internal']['payload'];
 			switch (type) {
 				case 'metaUpdated': {
 					this.cache = body;
@@ -55,7 +59,7 @@ export class MetaService implements OnApplicationShutdown {
 	public async fetch(noCache = false): Promise<meta> {
 		if (!noCache && this.cache) return this.cache;
 
-		return await this.db.transaction(async transactionalEntityManager => {
+		return await this.db.transaction(async (transactionalEntityManager) => {
 			// 過去のバグでレコードが複数出来てしまっている可能性があるので新しいIDを優先する
 			const metas = await transactionalEntityManager.find(Meta, {
 				order: {
@@ -78,7 +82,9 @@ export class MetaService implements OnApplicationShutdown {
 						},
 						['id'],
 					)
-					.then((x) => transactionalEntityManager.findOneByOrFail(Meta, x.identifiers[0]));
+					.then((x) =>
+						transactionalEntityManager.findOneByOrFail(Meta, x.identifiers[0]),
+					);
 
 				this.cache = saved;
 				return saved;
@@ -87,35 +93,43 @@ export class MetaService implements OnApplicationShutdown {
 	}
 
 	public async update(data: Partial<meta>): Promise<Meta> {
-		const updated = await this.db.transaction(async transactionalEntityManager => {
-			const metas = await transactionalEntityManager.find(Meta, {
-				order: {
-					id: 'DESC',
-				},
-			});
-
-			const meta = metas[0];
-
-			if (meta) {
-				await transactionalEntityManager.update(Meta, meta.id, {
-					...data,
-					policies: z.record(z.string(), z.any()).optional().parse(data.policies),
-				});
-
+		const updated = await this.db.transaction(
+			async (transactionalEntityManager) => {
 				const metas = await transactionalEntityManager.find(Meta, {
 					order: {
 						id: 'DESC',
 					},
 				});
 
-				return metas[0];
-			} else {
-				return await transactionalEntityManager.save(Meta, {
-					...data,
-					policies: z.record(z.string(), z.any()).optional().parse(data.policies),
-				});
-			}
-		});
+				const meta = metas[0];
+
+				if (meta) {
+					await transactionalEntityManager.update(Meta, meta.id, {
+						...data,
+						policies: z
+							.record(z.string(), z.any())
+							.optional()
+							.parse(data.policies),
+					});
+
+					const metas = await transactionalEntityManager.find(Meta, {
+						order: {
+							id: 'DESC',
+						},
+					});
+
+					return metas[0];
+				} else {
+					return await transactionalEntityManager.save(Meta, {
+						...data,
+						policies: z
+							.record(z.string(), z.any())
+							.optional()
+							.parse(data.policies),
+					});
+				}
+			},
+		);
 
 		this.globalEventService.publishInternalEvent('metaUpdated', updated);
 

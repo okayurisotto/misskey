@@ -1,11 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ProxyAccountService } from '@/core/ProxyAccountService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
+import { UserEntityPackLiteService } from './entities/UserEntityPackLiteService.js';
 import type { user, user_list } from '@prisma/client';
 
 @Injectable()
@@ -13,13 +14,14 @@ export class UserListService {
 	public static TooManyUsersError = class extends Error {};
 
 	constructor(
-		private readonly userEntityService: UserEntityService,
 		private readonly idService: IdService,
 		private readonly roleService: RoleService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly proxyAccountService: ProxyAccountService,
 		private readonly queueService: QueueService,
 		private readonly prismaService: PrismaService,
+		private readonly userEntityUtilService: UserEntityUtilService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
 
 	public async push(target: user, list: user_list, me: user): Promise<void> {
@@ -45,11 +47,11 @@ export class UserListService {
 		this.globalEventService.publishUserListStream(
 			list.id,
 			'userAdded',
-			await this.userEntityService.packLite(target),
+			await this.userEntityPackLiteService.packLite(target),
 		);
 
 		// このインスタンス内にそのリモートユーザーをフォローしているユーザーがいなかった場合、投稿を受け取るためにダミーのユーザーがフォローしたということにする
-		if (this.userEntityService.isRemoteUser(target)) {
+		if (this.userEntityUtilService.isRemoteUser(target)) {
 			const proxy = await this.proxyAccountService.fetch();
 			if (proxy) {
 				await this.queueService.createFollowJob([

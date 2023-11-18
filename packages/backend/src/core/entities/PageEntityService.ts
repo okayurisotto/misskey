@@ -5,16 +5,16 @@ import type { PageSchema } from '@/models/zod/PageSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PageContentSchema } from '@/models/zod/PageContentSchema.js';
 import { isNotNull } from '@/misc/is-not-null.js';
-import { UserEntityService } from './UserEntityService.js';
-import { DriveFileEntityService } from './DriveFileEntityService.js';
+import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
+import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { drive_file, page, user } from '@prisma/client';
 
 @Injectable()
 export class PageEntityService {
 	constructor(
-		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityPackService: DriveFileEntityPackService,
 		private readonly prismaService: PrismaService,
-		private readonly userEntityService: UserEntityService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
 
 	/**
@@ -60,13 +60,13 @@ export class PageEntityService {
 		const attachedFiles = collectFiles(content, page.userId);
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.packLite(page.user),
+			user: () => this.userEntityPackLiteService.packLite(page.user),
 			eyeCatchingImage: () =>
 				page.eyeCatchingImageId
-					? this.driveFileEntityService.pack(page.eyeCatchingImageId)
+					? this.driveFileEntityPackService.pack(page.eyeCatchingImageId)
 					: Promise.resolve(null),
 			attachedFiles: async () =>
-				this.driveFileEntityService.packMany(
+				this.driveFileEntityPackService.packMany(
 					(await Promise.all(attachedFiles)).filter(isNotNull),
 				),
 			isLiked: async () =>

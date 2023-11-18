@@ -16,11 +16,11 @@ export class RelayService {
 	private readonly relaysCache: MemorySingleCache<relay[]>;
 
 	constructor(
-		private readonly idService: IdService,
-		private readonly queueService: QueueService,
-		private readonly createSystemUserService: CreateSystemUserService,
 		private readonly apRendererService: ApRendererService,
+		private readonly createSystemUserService: CreateSystemUserService,
+		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
+		private readonly queueService: QueueService,
 	) {
 		this.relaysCache = new MemorySingleCache<relay[]>(1000 * 60 * 10);
 	}
@@ -35,7 +35,8 @@ export class RelayService {
 
 		if (user) return user as LocalUser;
 
-		const created = await this.createSystemUserService.createSystemUser(ACTOR_USERNAME);
+		const created =
+			await this.createSystemUserService.createSystemUser(ACTOR_USERNAME);
 		return created as LocalUser;
 	}
 
@@ -49,7 +50,10 @@ export class RelayService {
 		});
 
 		const relayActor = await this.getRelayActor();
-		const follow = await this.apRendererService.renderFollowRelay(relay, relayActor);
+		const follow = await this.apRendererService.renderFollowRelay(
+			relay,
+			relayActor,
+		);
 		const activity = this.apRendererService.addContext(follow);
 		this.queueService.deliver(relayActor, activity, relay.inbox, false);
 
@@ -97,12 +101,17 @@ export class RelayService {
 		return 'relayRejected';
 	}
 
-	public async deliverToRelays(user: { id: user['id']; host: null; }, activity: any): Promise<void> {
+	public async deliverToRelays(
+		user: { id: user['id']; host: null },
+		activity: any,
+	): Promise<void> {
 		if (activity == null) return;
 
-		const relays = await this.relaysCache.fetch(() => this.prismaService.client.relay.findMany({
-			where: { status: 'accepted' },
-		}));
+		const relays = await this.relaysCache.fetch(() =>
+			this.prismaService.client.relay.findMany({
+				where: { status: 'accepted' },
+			}),
+		);
 		if (relays.length === 0) return;
 
 		const copy = deepClone(activity);

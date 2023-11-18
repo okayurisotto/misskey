@@ -23,9 +23,12 @@ export class MutingEntityService {
 		src: muting['id'] | muting,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof MutingSchema>> {
-		const muting = typeof src === 'object'
+		const muting =
+			typeof src === 'object'
 				? src
-				: await this.prismaService.client.muting.findUniqueOrThrow({ where: { id: src } });
+				: await this.prismaService.client.muting.findUniqueOrThrow({
+						where: { id: src },
+				  });
 
 		return {
 			id: muting.id,

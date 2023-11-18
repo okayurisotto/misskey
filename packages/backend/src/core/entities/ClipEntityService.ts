@@ -2,15 +2,15 @@ import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { UserEntityService } from './UserEntityService.js';
+import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
 import type { clip, user } from '@prisma/client';
 
 @Injectable()
 export class ClipEntityService {
 	constructor(
-		private readonly userEntityService: UserEntityService,
 		private readonly prismaService: PrismaService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
 
 	/**
@@ -31,15 +31,17 @@ export class ClipEntityService {
 		});
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.packLite(clip.user),
+			user: () => this.userEntityPackLiteService.packLite(clip.user),
 			favoritedCount: () =>
-				this.prismaService.client.clip_favorite.count({ where: { clipId: clip.id } }),
+				this.prismaService.client.clip_favorite.count({
+					where: { clipId: clip.id },
+				}),
 			isFavorited: async () =>
 				meId
 					? (await this.prismaService.client.clip_favorite.count({
-						where: { clipId: clip.id, userId: meId },
-						take: 1,
-					})) > 0
+							where: { clipId: clip.id, userId: meId },
+							take: 1,
+					  })) > 0
 					: undefined,
 		});
 

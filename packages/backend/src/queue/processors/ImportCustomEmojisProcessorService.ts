@@ -4,12 +4,12 @@ import { ZipReader } from 'slacc';
 import { z } from 'zod';
 import { pick } from 'omick';
 import type Logger from '@/misc/logger.js';
-import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { createTempDir } from '@/misc/create-temp.js';
-import { DriveService } from '@/core/DriveService.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { unique } from '@/misc/prelude/array.js';
+import { DriveFileAddService } from '@/core/DriveFileAddService.js';
+import { CustomEmojiAddService } from '@/core/CustomEmojiAddService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbUserImportJobData } from '../types.js';
@@ -47,11 +47,11 @@ export class ImportCustomEmojisProcessorService {
 	private readonly logger: Logger;
 
 	constructor(
-		private readonly customEmojiService: CustomEmojiService,
-		private readonly driveService: DriveService,
+		private readonly customEmojiAddService: CustomEmojiAddService,
 		private readonly downloadService: DownloadService,
-		private readonly queueLoggerService: QueueLoggerService,
+		private readonly driveFileAddService: DriveFileAddService,
 		private readonly prismaService: PrismaService,
+		private readonly queueLoggerService: QueueLoggerService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger(
 			'import-custom-emojis',
@@ -105,14 +105,14 @@ export class ImportCustomEmojisProcessorService {
 			// 画像をドライブに追加した上でそれをカスタム絵文字として登録
 			await Promise.all(
 				meta.emojis.map(async (record) => {
-					const driveFile = await this.driveService.addFile({
+					const driveFile = await this.driveFileAddService.add({
 						user: null,
 						path: outputPath + '/' + record.fileName,
 						name: record.fileName,
 						force: true,
 					});
 
-					await this.customEmojiService.add({
+					await this.customEmojiAddService.add({
 						...pick(record.emoji, [
 							'name',
 							'category',

@@ -22,7 +22,13 @@ export default class ActiveUsersChart extends Chart<typeof schema> {
 		appLockService: AppLockService,
 		chartLoggerService: ChartLoggerService,
 	) {
-		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema);
+		super(
+			db,
+			(k) => appLockService.getChartInsertLock(k),
+			chartLoggerService.logger,
+			name,
+			schema,
+		);
 	}
 
 	protected async tickMajor(): Promise<Partial<KVs<typeof schema>>> {
@@ -33,21 +39,35 @@ export default class ActiveUsersChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	public async read(user: { id: user['id'], host: null, createdAt: user['createdAt'] }): Promise<void> {
+	public async read(user: {
+		id: user['id'];
+		host: null;
+		createdAt: user['createdAt'];
+	}): Promise<void> {
 		await this.commit({
-			'read': [user.id],
-			'registeredWithinWeek': (Date.now() - user.createdAt.getTime() < week) ? [user.id] : [],
-			'registeredWithinMonth': (Date.now() - user.createdAt.getTime() < month) ? [user.id] : [],
-			'registeredWithinYear': (Date.now() - user.createdAt.getTime() < year) ? [user.id] : [],
-			'registeredOutsideWeek': (Date.now() - user.createdAt.getTime() > week) ? [user.id] : [],
-			'registeredOutsideMonth': (Date.now() - user.createdAt.getTime() > month) ? [user.id] : [],
-			'registeredOutsideYear': (Date.now() - user.createdAt.getTime() > year) ? [user.id] : [],
+			read: [user.id],
+			registeredWithinWeek:
+				Date.now() - user.createdAt.getTime() < week ? [user.id] : [],
+			registeredWithinMonth:
+				Date.now() - user.createdAt.getTime() < month ? [user.id] : [],
+			registeredWithinYear:
+				Date.now() - user.createdAt.getTime() < year ? [user.id] : [],
+			registeredOutsideWeek:
+				Date.now() - user.createdAt.getTime() > week ? [user.id] : [],
+			registeredOutsideMonth:
+				Date.now() - user.createdAt.getTime() > month ? [user.id] : [],
+			registeredOutsideYear:
+				Date.now() - user.createdAt.getTime() > year ? [user.id] : [],
 		});
 	}
 
-	public async write(user: { id: user['id'], host: null, createdAt: user['createdAt'] }): Promise<void> {
+	public async write(user: {
+		id: user['id'];
+		host: null;
+		createdAt: user['createdAt'];
+	}): Promise<void> {
 		await this.commit({
-			'write': [user.id],
+			write: [user.id],
 		});
 	}
 }

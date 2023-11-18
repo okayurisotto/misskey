@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { CustomEmojiAliasService } from '@/core/CustomEmojiAliasService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -22,9 +22,11 @@ export default class extends Endpoint<
 	typeof paramDef,
 	z.ZodType<void>
 > {
-	constructor(private readonly customEmojiService: CustomEmojiService) {
+	constructor(
+		private readonly customEmojiAliasService: CustomEmojiAliasService,
+	) {
 		super(meta, paramDef, async (ps) => {
-			await this.customEmojiService.setAliasesBulk(ps.ids, ps.aliases);
+			await this.customEmojiAliasService.setBulk(ps.ids, ps.aliases);
 		});
 	}
 }

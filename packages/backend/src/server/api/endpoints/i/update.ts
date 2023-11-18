@@ -24,13 +24,11 @@ import { langmap } from '@/misc/langmap.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { AccountUpdateService } from '@/core/AccountUpdateService.js';
 import { HashtagService } from '@/core/HashtagService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { CacheService } from '@/core/CacheService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import {
 	BirthdaySchema,
 	DescriptionSchema,
@@ -41,6 +39,9 @@ import {
 } from '@/models/zod/misc.js';
 import { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserFollowRequestAcceptAllService } from '@/core/UserFollowRequestAcceptAllService.js';
+import { DriveFilePublicUrlGenerationService } from '@/core/entities/DriveFilePublicUrlGenerationService.js';
+import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 import { ApiLoggerService } from '../../ApiLoggerService.js';
 import { ApiError } from '../../error.js';
 import type { Prisma, user } from '@prisma/client';
@@ -120,17 +121,18 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly userEntityService: UserEntityService,
-		private readonly driveFileEntityService: DriveFileEntityService,
-		private readonly globalEventService: GlobalEventService,
-		private readonly userFollowingService: UserFollowingService,
 		private readonly accountUpdateService: AccountUpdateService,
-		private readonly remoteUserResolveService: RemoteUserResolveService,
 		private readonly apiLoggerService: ApiLoggerService,
-		private readonly hashtagService: HashtagService,
-		private readonly roleService: RoleService,
 		private readonly cacheService: CacheService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly hashtagService: HashtagService,
 		private readonly prismaService: PrismaService,
+		private readonly remoteUserResolveService: RemoteUserResolveService,
+		private readonly roleService: RoleService,
+		private readonly userEntityService: UserEntityService,
+		private readonly userFollowRequestAcceptAllService: UserFollowRequestAcceptAllService,
+		private readonly driveFilePublicUrlGenerationService: DriveFilePublicUrlGenerationService,
+		private readonly userEntityUtilService: UserEntityUtilService,
 	) {
 		super(meta, paramDef, async (ps, _user, token) => {
 			const user = await this.prismaService.client.user.findUniqueOrThrow({
@@ -245,7 +247,7 @@ export default class extends Endpoint<
 				}
 
 				updates.avatarId = avatar.id;
-				updates.avatarUrl = this.driveFileEntityService.getPublicUrl(
+				updates.avatarUrl = this.driveFilePublicUrlGenerationService.generate(
 					avatar,
 					'avatar',
 				);
@@ -269,7 +271,8 @@ export default class extends Endpoint<
 				}
 
 				updates.bannerId = banner.id;
-				updates.bannerUrl = this.driveFileEntityService.getPublicUrl(banner);
+				updates.bannerUrl =
+					this.driveFilePublicUrlGenerationService.generate(banner);
 				updates.bannerBlurhash = banner.blurhash;
 			} else if (ps.bannerId === null) {
 				updates.bannerId = null;
@@ -334,7 +337,7 @@ export default class extends Endpoint<
 						throw new ApiError(meta.errors.forbiddenToSetYourself);
 					}
 
-					const toUrl = this.userEntityService.getUserUri(knownAs);
+					const toUrl = this.userEntityUtilService.getUserUri(knownAs);
 					if (!toUrl) throw new ApiError(meta.errors.uriNull);
 
 					newAlsoKnownAs.add(toUrl);
@@ -383,7 +386,7 @@ export default class extends Endpoint<
 			}
 			if (Object.keys(updates).includes('alsoKnownAs')) {
 				this.cacheService.uriPersonCache.set(
-					this.userEntityService.genLocalUserUri(user.id),
+					this.userEntityUtilService.genLocalUserUri(user.id),
 					{ ...user, ...updates },
 				);
 			}
@@ -410,7 +413,7 @@ export default class extends Endpoint<
 
 			// 鍵垢を解除したとき、溜まっていたフォローリクエストがあるならすべて承認
 			if (user.isLocked && ps.isLocked === false) {
-				this.userFollowingService.acceptAllFollowRequests(user);
+				this.userFollowRequestAcceptAllService.acceptAll(user);
 			}
 
 			// フォロワーにUpdateを配信

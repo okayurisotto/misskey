@@ -6,7 +6,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { RoleSchema } from '@/models/zod/RoleSchema.js';
 import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
 import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
-import type { role, user } from '@prisma/client';
+import type { role } from '@prisma/client';
 
 @Injectable()
 export class RoleEntityService {

@@ -15,9 +15,7 @@ const urlRegexFull = /^https?:\/\/[\w/:%#@$&?!()[\]~.,=+-]+$/;
 
 @Injectable()
 export class MfmService {
-	constructor(
-		private readonly configLoaderService: ConfigLoaderService,
-	) {}
+	constructor(private readonly configLoaderService: ConfigLoaderService) {}
 
 	public fromHtml(html_: string, hashtagNames?: string[]): string {
 		// some AP servers like Pixelfed use br tags as well as newlines
@@ -39,7 +37,7 @@ export class MfmService {
 			if (node.nodeName === 'br') return '\n';
 
 			if (node.childNodes) {
-				return node.childNodes.map(n => getText(n)).join('');
+				return node.childNodes.map((n) => getText(n)).join('');
 			}
 
 			return '';
@@ -68,28 +66,34 @@ export class MfmService {
 					break;
 				}
 
-				case 'a':
-				{
+				case 'a': {
 					const txt = getText(node);
-					const rel = node.attrs.find(x => x.name === 'rel');
-					const href = node.attrs.find(x => x.name === 'href');
+					const rel = node.attrs.find((x) => x.name === 'rel');
+					const href = node.attrs.find((x) => x.name === 'href');
 
 					// ハッシュタグ
-					if (hashtagNames && href && hashtagNames.map(x => x.toLowerCase()).includes(txt.toLowerCase())) {
+					if (
+						hashtagNames &&
+						href &&
+						hashtagNames.map((x) => x.toLowerCase()).includes(txt.toLowerCase())
+					) {
 						text += txt;
-					// メンション
-					} else if (txt.startsWith('@') && !(rel && rel.value.startsWith('me '))) {
+						// メンション
+					} else if (
+						txt.startsWith('@') &&
+						!(rel && rel.value.startsWith('me '))
+					) {
 						const part = txt.split('@');
 
 						if (part.length === 2 && href) {
 							//#region ホスト名部分が省略されているので復元する
-							const acct = `${txt}@${(new URL(href.value)).hostname}`;
+							const acct = `${txt}@${new URL(href.value).hostname}`;
 							text += acct;
 							//#endregion
 						} else if (part.length === 3) {
 							text += txt;
 						}
-					// その他
+						// その他
 					} else {
 						const generateLink = (): string => {
 							if (!href && !txt) {
@@ -98,15 +102,19 @@ export class MfmService {
 							if (!href) {
 								return txt;
 							}
-							if (!txt || txt === href.value) {	// #6383: Missing text node
+							if (!txt || txt === href.value) {
+								// #6383: Missing text node
 								if (href.value.match(urlRegexFull)) {
 									return href.value;
 								} else {
 									return `<${href.value}>`;
 								}
 							}
-							if (href.value.match(urlRegex) && !href.value.match(urlRegexFull)) {
-								return `[${txt}](<${href.value}>)`;	// #6846
+							if (
+								href.value.match(urlRegex) &&
+								!href.value.match(urlRegexFull)
+							) {
+								return `[${txt}](<${href.value}>)`; // #6846
 							} else {
 								return `[${txt}](${href.value})`;
 							}
@@ -117,8 +125,7 @@ export class MfmService {
 					break;
 				}
 
-				case 'h1':
-				{
+				case 'h1': {
 					text += '【';
 					appendChildren(node.childNodes);
 					text += '】\n';
@@ -126,16 +133,14 @@ export class MfmService {
 				}
 
 				case 'b':
-				case 'strong':
-				{
+				case 'strong': {
 					text += '**';
 					appendChildren(node.childNodes);
 					text += '**';
 					break;
 				}
 
-				case 'small':
-				{
+				case 'small': {
 					text += '<small>';
 					appendChildren(node.childNodes);
 					text += '</small>';
@@ -143,8 +148,7 @@ export class MfmService {
 				}
 
 				case 's':
-				case 'del':
-				{
+				case 'del': {
 					text += '~~';
 					appendChildren(node.childNodes);
 					text += '~~';
@@ -152,8 +156,7 @@ export class MfmService {
 				}
 
 				case 'i':
-				case 'em':
-				{
+				case 'em': {
 					text += '<i>';
 					appendChildren(node.childNodes);
 					text += '</i>';
@@ -162,7 +165,10 @@ export class MfmService {
 
 				// block code (<pre><code>)
 				case 'pre': {
-					if (node.childNodes.length === 1 && node.childNodes[0].nodeName === 'code') {
+					if (
+						node.childNodes.length === 1 &&
+						node.childNodes[0].nodeName === 'code'
+					) {
 						text += '\n```\n';
 						text += getText(node.childNodes[0]);
 						text += '\n```\n';
@@ -194,8 +200,7 @@ export class MfmService {
 				case 'h3':
 				case 'h4':
 				case 'h5':
-				case 'h6':
-				{
+				case 'h6': {
 					text += '\n\n';
 					appendChildren(node.childNodes);
 					break;
@@ -208,15 +213,14 @@ export class MfmService {
 				case 'article':
 				case 'li':
 				case 'dt':
-				case 'dd':
-				{
+				case 'dd': {
 					text += '\n';
 					appendChildren(node.childNodes);
 					break;
 				}
 
-				default:	// includes inline elements
-				{
+				default: {
+					// includes inline elements
 					appendChildren(node.childNodes);
 					break;
 				}
@@ -224,7 +228,10 @@ export class MfmService {
 		}
 	}
 
-	public toHtml(nodes: mfm.MfmNode[] | null, mentionedRemoteUsers: IMentionedRemoteUsers = []): string | null {
+	public toHtml(
+		nodes: mfm.MfmNode[] | null,
+		mentionedRemoteUsers: IMentionedRemoteUsers = [],
+	): string | null {
 		if (nodes == null) {
 			return null;
 		}
@@ -235,13 +242,15 @@ export class MfmService {
 
 		function appendChildren(children: mfm.MfmNode[], targetElement: any): void {
 			if (children) {
-				for (const child of children.map(x => (handlers as any)[x.type](x))) {
+				for (const child of children.map((x) => (handlers as any)[x.type](x))) {
 					targetElement.appendChild(child);
 				}
 			}
 		}
 
-		const handlers: { [K in mfm.MfmNode['type']]: (node: mfm.NodeType<K>) => any } = {
+		const handlers: {
+			[K in mfm.MfmNode['type']]: (node: mfm.NodeType<K>) => any;
+		} = {
 			bold: (node) => {
 				const el = doc.createElement('b');
 				appendChildren(node.children, el);
@@ -296,7 +305,10 @@ export class MfmService {
 
 			hashtag: (node) => {
 				const a = doc.createElement('a');
-				a.setAttribute('href', `${this.configLoaderService.data.url}/tags/${node.props.hashtag}`);
+				a.setAttribute(
+					'href',
+					`${this.configLoaderService.data.url}/tags/${node.props.hashtag}`,
+				);
 				a.textContent = `#${node.props.hashtag}`;
 				a.setAttribute('rel', 'tag');
 				return a;
@@ -330,8 +342,18 @@ export class MfmService {
 			mention: (node) => {
 				const a = doc.createElement('a');
 				const { username, host, acct } = node.props;
-				const remoteUserInfo = mentionedRemoteUsers.find(remoteUser => remoteUser.username === username && remoteUser.host === host);
-				a.setAttribute('href', remoteUserInfo ? (remoteUserInfo.url ? remoteUserInfo.url : remoteUserInfo.uri) : `${this.configLoaderService.data.url}/${acct}`);
+				const remoteUserInfo = mentionedRemoteUsers.find(
+					(remoteUser) =>
+						remoteUser.username === username && remoteUser.host === host,
+				);
+				a.setAttribute(
+					'href',
+					remoteUserInfo
+						? remoteUserInfo.url
+							? remoteUserInfo.url
+							: remoteUserInfo.uri
+						: `${this.configLoaderService.data.url}/${acct}`,
+				);
 				a.className = 'u-url mention';
 				a.textContent = acct;
 				return a;
@@ -345,7 +367,9 @@ export class MfmService {
 
 			text: (node) => {
 				const el = doc.createElement('span');
-				const nodes = node.props.text.split(/\r\n|\r|\n/).map(x => doc.createTextNode(x));
+				const nodes = node.props.text
+					.split(/\r\n|\r|\n/)
+					.map((x) => doc.createTextNode(x));
 
 				for (const x of intersperse<any | 'br'>('br', nodes)) {
 					el.appendChild(x === 'br' ? doc.createElement('br') : x);
@@ -363,7 +387,10 @@ export class MfmService {
 
 			search: (node) => {
 				const a = doc.createElement('a');
-				a.setAttribute('href', `https://www.google.com/search?q=${node.props.query}`);
+				a.setAttribute(
+					'href',
+					`https://www.google.com/search?q=${node.props.query}`,
+				);
 				a.textContent = node.props.content;
 				return a;
 			},

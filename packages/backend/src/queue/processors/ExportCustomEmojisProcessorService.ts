@@ -5,11 +5,11 @@ import mime from 'mime-types';
 import archiver from 'archiver';
 import { z } from 'zod';
 import type Logger from '@/misc/logger.js';
-import { DriveService } from '@/core/DriveService.js';
 import { createTemp, createTempDir } from '@/misc/create-temp.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { DriveFileAddService } from '@/core/DriveFileAddService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { ExportedCustomEmojisMetaSchema } from './ImportCustomEmojisProcessorService.js';
@@ -20,11 +20,10 @@ export class ExportCustomEmojisProcessorService {
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
-
-		private readonly driveService: DriveService,
 		private readonly downloadService: DownloadService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
+		private readonly driveFileAddService: DriveFileAddService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger(
 			'export-custom-emojis',
@@ -138,7 +137,7 @@ export class ExportCustomEmojisProcessorService {
 					'custom-emojis-' +
 					dateFormat(new Date(), 'yyyy-MM-dd-HH-mm-ss') +
 					'.zip';
-				const driveFile = await this.driveService.addFile({
+				const driveFile = await this.driveFileAddService.add({
 					user,
 					path: archivePath,
 					name: fileName,

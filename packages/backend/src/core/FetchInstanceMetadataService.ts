@@ -43,7 +43,11 @@ export class FetchInstanceMetadataService {
 	}
 
 	public async tryLock(host: string): Promise<boolean> {
-		const mutex = await this.redisClient.set(`fetchInstanceMetadata:mutex:${host}`, '1', 'GET');
+		const mutex = await this.redisClient.set(
+			`fetchInstanceMetadata:mutex:${host}`,
+			'1',
+			'GET',
+		);
 		return mutex !== '1';
 	}
 
@@ -51,15 +55,22 @@ export class FetchInstanceMetadataService {
 		return this.redisClient.set(`fetchInstanceMetadata:mutex:${host}`, '0');
 	}
 
-	public async fetchInstanceMetadata(instance: instance, force = false): Promise<void> {
+	public async fetchInstanceMetadata(
+		instance: instance,
+		force = false,
+	): Promise<void> {
 		const host = instance.host;
 		// Acquire mutex to ensure no parallel runs
-		if (!await this.tryLock(host)) return;
+		if (!(await this.tryLock(host))) return;
 		try {
 			if (!force) {
 				const _instance = await this.federatedInstanceService.fetch(host);
 				const now = Date.now();
-				if (_instance && _instance.infoUpdatedAt && (now - _instance.infoUpdatedAt.getTime() < 1000 * 60 * 60 * 24)) {
+				if (
+					_instance &&
+					_instance.infoUpdatedAt &&
+					now - _instance.infoUpdatedAt.getTime() < 1000 * 60 * 60 * 24
+				) {
 					// unlock at the finally caluse
 					return;
 				}
@@ -88,16 +99,29 @@ export class FetchInstanceMetadataService {
 			};
 
 			if (info) {
-				updates['softwareName'] = typeof info.software?.name === 'string' ? info.software.name.toLowerCase() : '?';
+				updates['softwareName'] =
+					typeof info.software?.name === 'string'
+						? info.software.name.toLowerCase()
+						: '?';
 				updates['softwareVersion'] = info.software?.version;
 				updates['openRegistrations'] = info.openRegistrations;
-				updates['maintainerName'] = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.name ?? null) : null : null;
-				updates['maintainerEmail'] = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.email ?? null) : null : null;
+				updates['maintainerName'] = info.metadata
+					? info.metadata.maintainer
+						? info.metadata.maintainer.name ?? null
+						: null
+					: null;
+				updates['maintainerEmail'] = info.metadata
+					? info.metadata.maintainer
+						? info.metadata.maintainer.email ?? null
+						: null
+					: null;
 			}
 
 			if (name) updates['name'] = name;
 			if (description) updates['description'] = description;
-			if (icon || favicon) updates['iconUrl'] = (icon && !icon.includes('data:image/png;base64')) ? icon : favicon;
+			if (icon || favicon)
+				updates['iconUrl'] =
+					icon && !icon.includes('data:image/png;base64') ? icon : favicon;
 			if (favicon) updates['faviconUrl'] = favicon;
 			if (themeColor) updates['themeColor'] = themeColor;
 
@@ -115,14 +139,15 @@ export class FetchInstanceMetadataService {
 		this.logger.info(`Fetching nodeinfo of ${instance.host} ...`);
 
 		try {
-			const wellknown = await this.httpRequestService.getJson('https://' + instance.host + '/.well-known/nodeinfo')
-				.catch(err => {
+			const wellknown = (await this.httpRequestService
+				.getJson('https://' + instance.host + '/.well-known/nodeinfo')
+				.catch((err) => {
 					if (err.statusCode === 404) {
 						throw new Error('No nodeinfo provided');
 					} else {
 						throw err.statusCode ?? err.message;
 					}
-				}) as Record<string, unknown>;
+				})) as Record<string, unknown>;
 
 			if (wellknown['links'] == null || !Array.isArray(wellknown['links'])) {
 				throw new Error('No wellknown links');
@@ -130,17 +155,27 @@ export class FetchInstanceMetadataService {
 
 			const links: unknown[] = wellknown['links'];
 
-			const lnik1_0 = links.find(link => link.rel === 'http://nodeinfo.diaspora.software/ns/schema/1.0');
-			const lnik2_0 = links.find(link => link.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.0');
-			const lnik2_1 = links.find(link => link.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.1');
+			const lnik1_0 = links.find(
+				(link) =>
+					link.rel === 'http://nodeinfo.diaspora.software/ns/schema/1.0',
+			);
+			const lnik2_0 = links.find(
+				(link) =>
+					link.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.0',
+			);
+			const lnik2_1 = links.find(
+				(link) =>
+					link.rel === 'http://nodeinfo.diaspora.software/ns/schema/2.1',
+			);
 			const link = lnik2_1 ?? lnik2_0 ?? lnik1_0;
 
 			if (link == null) {
 				throw new Error('No nodeinfo link provided');
 			}
 
-			const info = await this.httpRequestService.getJson(link.href)
-				.catch(err => {
+			const info = await this.httpRequestService
+				.getJson(link.href)
+				.catch((err) => {
 					throw err.statusCode ?? err.message;
 				});
 
@@ -167,33 +202,45 @@ export class FetchInstanceMetadataService {
 		return doc;
 	}
 
-	private async fetchManifest(instance: instance): Promise<Record<string, unknown> | null> {
+	private async fetchManifest(
+		instance: instance,
+	): Promise<Record<string, unknown> | null> {
 		const url = 'https://' + instance.host;
 
 		const manifestUrl = url + '/manifest.json';
 
-		const manifest: Record<string, unknown> = await this.httpRequestService.getJson(manifestUrl);
+		const manifest: Record<string, unknown> =
+			await this.httpRequestService.getJson(manifestUrl);
 
 		return manifest;
 	}
 
-	private async fetchFaviconUrl(instance: instance, doc: DOMWindow['document'] | null): Promise<string | null> {
+	private async fetchFaviconUrl(
+		instance: instance,
+		doc: DOMWindow['document'] | null,
+	): Promise<string | null> {
 		const url = 'https://' + instance.host;
 
 		if (doc) {
 			// https://github.com/misskey-dev/misskey/pull/8220#issuecomment-1025104043
-			const href = Array.from(doc.getElementsByTagName('link')).reverse().find(link => link.relList.contains('icon'))?.href;
+			const href = Array.from(doc.getElementsByTagName('link'))
+				.reverse()
+				.find((link) => link.relList.contains('icon'))?.href;
 
 			if (href) {
-				return (new URL(href, url)).href;
+				return new URL(href, url).href;
 			}
 		}
 
 		const faviconUrl = url + '/favicon.ico';
 
-		const favicon = await this.httpRequestService.send(faviconUrl, {
-			method: 'HEAD',
-		}, { throwErrorWhenResponseNotOk: false });
+		const favicon = await this.httpRequestService.send(
+			faviconUrl,
+			{
+				method: 'HEAD',
+			},
+			{ throwErrorWhenResponseNotOk: false },
+		);
 
 		if (favicon.ok) {
 			return faviconUrl;
@@ -202,10 +249,19 @@ export class FetchInstanceMetadataService {
 		return null;
 	}
 
-	private async fetchIconUrl(instance: instance, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
-		if (manifest && manifest['icons'] && manifest['icons'].length > 0 && manifest['icons'][0].src) {
+	private async fetchIconUrl(
+		instance: instance,
+		doc: DOMWindow['document'] | null,
+		manifest: Record<string, unknown> | null,
+	): Promise<string | null> {
+		if (
+			manifest &&
+			manifest['icons'] &&
+			manifest['icons'].length > 0 &&
+			manifest['icons'][0].src
+		) {
 			const url = 'https://' + instance.host;
-			return (new URL(manifest['icons'][0].src, url)).href;
+			return new URL(manifest['icons'][0].src, url).href;
 		}
 
 		if (doc) {
@@ -214,24 +270,31 @@ export class FetchInstanceMetadataService {
 			// https://github.com/misskey-dev/misskey/pull/8220#issuecomment-1025104043
 			const links = Array.from(doc.getElementsByTagName('link')).reverse();
 			// https://github.com/misskey-dev/misskey/pull/8220/files/0ec4eba22a914e31b86874f12448f88b3e58dd5a#r796487559
-			const href =
-				[
-					links.find(link => link.relList.contains('apple-touch-icon-precomposed'))?.href,
-					links.find(link => link.relList.contains('apple-touch-icon'))?.href,
-					links.find(link => link.relList.contains('icon'))?.href,
-				]
-					.find(href => href);
+			const href = [
+				links.find((link) =>
+					link.relList.contains('apple-touch-icon-precomposed'),
+				)?.href,
+				links.find((link) => link.relList.contains('apple-touch-icon'))?.href,
+				links.find((link) => link.relList.contains('icon'))?.href,
+			].find((href) => href);
 
 			if (href) {
-				return (new URL(href, url)).href;
+				return new URL(href, url).href;
 			}
 		}
 
 		return null;
 	}
 
-	private async getThemeColor(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
-		const themeColor = info?.metadata?.themeColor ?? doc?.querySelector('meta[name="theme-color"]')?.getAttribute('content') ?? manifest?.['theme_color'];
+	private async getThemeColor(
+		info: NodeInfo | null,
+		doc: DOMWindow['document'] | null,
+		manifest: Record<string, unknown> | null,
+	): Promise<string | null> {
+		const themeColor =
+			info?.metadata?.themeColor ??
+			doc?.querySelector('meta[name="theme-color"]')?.getAttribute('content') ??
+			manifest?.['theme_color'];
 
 		if (themeColor) {
 			const color = new tinycolor(themeColor);
@@ -241,7 +304,11 @@ export class FetchInstanceMetadataService {
 		return null;
 	}
 
-	private async getSiteName(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
+	private async getSiteName(
+		info: NodeInfo | null,
+		doc: DOMWindow['document'] | null,
+		manifest: Record<string, unknown> | null,
+	): Promise<string | null> {
 		if (info && info.metadata) {
 			if (typeof info.metadata.nodeName === 'string') {
 				return info.metadata.nodeName;
@@ -251,7 +318,9 @@ export class FetchInstanceMetadataService {
 		}
 
 		if (doc) {
-			const og = doc.querySelector('meta[property="og:title"]')?.getAttribute('content');
+			const og = doc
+				.querySelector('meta[property="og:title"]')
+				?.getAttribute('content');
 
 			if (og) {
 				return og;
@@ -265,7 +334,11 @@ export class FetchInstanceMetadataService {
 		return null;
 	}
 
-	private async getDescription(info: NodeInfo | null, doc: DOMWindow['document'] | null, manifest: Record<string, unknown> | null): Promise<string | null> {
+	private async getDescription(
+		info: NodeInfo | null,
+		doc: DOMWindow['document'] | null,
+		manifest: Record<string, unknown> | null,
+	): Promise<string | null> {
 		if (info && info.metadata) {
 			if (typeof info.metadata.nodeDescription === 'string') {
 				return info.metadata.nodeDescription;
@@ -275,12 +348,16 @@ export class FetchInstanceMetadataService {
 		}
 
 		if (doc) {
-			const meta = doc.querySelector('meta[name="description"]')?.getAttribute('content');
+			const meta = doc
+				.querySelector('meta[name="description"]')
+				?.getAttribute('content');
 			if (meta) {
 				return meta;
 			}
 
-			const og = doc.querySelector('meta[property="og:description"]')?.getAttribute('content');
+			const og = doc
+				.querySelector('meta[property="og:description"]')
+				?.getAttribute('content');
 			if (og) {
 				return og;
 			}

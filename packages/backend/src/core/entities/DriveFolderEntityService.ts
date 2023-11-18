@@ -19,7 +19,7 @@ export class DriveFolderEntityService {
 	public async pack(
 		src: drive_folder['id'] | drive_folder,
 		options?: {
-			detail: boolean
+			detail: boolean;
 		},
 	): Promise<z.infer<typeof DriveFolderSchema>> {
 		const opts = {
@@ -27,24 +27,40 @@ export class DriveFolderEntityService {
 			...options,
 		};
 
-		const folder = typeof src === 'object'
-			? src
-			: await this.prismaService.client.drive_folder.findUniqueOrThrow({ where: { id: src } });
+		const folder =
+			typeof src === 'object'
+				? src
+				: await this.prismaService.client.drive_folder.findUniqueOrThrow({
+						where: { id: src },
+				  });
 
-		const getDetail = async (): Promise<Record<string, never> | { foldersCount: number; filesCount: number; parent?: z.infer<typeof DriveFolderSchema> }> => {
+		const getDetail = async (): Promise<
+			| Record<string, never>
+			| {
+					foldersCount: number;
+					filesCount: number;
+					parent?: z.infer<typeof DriveFolderSchema>;
+			  }
+		> => {
 			if (!opts.detail) return {};
 
 			const result = await awaitAll({
 				foldersCount: () =>
-					this.prismaService.client.drive_folder.count({ where: { parentId: folder.id } }),
+					this.prismaService.client.drive_folder.count({
+						where: { parentId: folder.id },
+					}),
 				filesCount: () =>
-					this.prismaService.client.drive_file.count({ where: { folderId: folder.id } }),
+					this.prismaService.client.drive_file.count({
+						where: { folderId: folder.id },
+					}),
 			});
 
 			return {
 				foldersCount: result.foldersCount,
 				filesCount: result.filesCount,
-				...(folder.parentId ? { parent: await this.pack(folder.parentId, { detail: true }) } : {}),
+				...(folder.parentId
+					? { parent: await this.pack(folder.parentId, { detail: true }) }
+					: {}),
 			};
 		};
 
@@ -53,7 +69,7 @@ export class DriveFolderEntityService {
 			createdAt: folder.createdAt.toISOString(),
 			name: folder.name,
 			parentId: folder.parentId,
-			...await getDetail(),
+			...(await getDetail()),
 		};
 	}
 }

@@ -18,7 +18,14 @@ export default class PerUserPvChart extends Chart<typeof schema> {
 		appLockService: AppLockService,
 		chartLoggerService: ChartLoggerService,
 	) {
-		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
+		super(
+			db,
+			(k) => appLockService.getChartInsertLock(k),
+			chartLoggerService.logger,
+			name,
+			schema,
+			true,
+		);
 	}
 
 	protected async tickMajor(): Promise<Partial<KVs<typeof schema>>> {
@@ -29,17 +36,29 @@ export default class PerUserPvChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	public async commitByUser(user: { id: user['id'] }, key: string): Promise<void> {
-		await this.commit({
-			'upv.user': [key],
-			'pv.user': 1,
-		}, user.id);
+	public async commitByUser(
+		user: { id: user['id'] },
+		key: string,
+	): Promise<void> {
+		await this.commit(
+			{
+				'upv.user': [key],
+				'pv.user': 1,
+			},
+			user.id,
+		);
 	}
 
-	public async commitByVisitor(user: { id: user['id'] }, key: string): Promise<void> {
-		await this.commit({
-			'upv.visitor': [key],
-			'pv.visitor': 1,
-		}, user.id);
+	public async commitByVisitor(
+		user: { id: user['id'] },
+		key: string,
+	): Promise<void> {
+		await this.commit(
+			{
+				'upv.visitor': [key],
+				'pv.visitor': 1,
+			},
+			user.id,
+		);
 	}
 }

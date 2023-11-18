@@ -9,9 +9,9 @@ import {
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { QueueService } from '@/core/QueueService.js';
-import { AccountMoveService } from '@/core/AccountMoveService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { AlsoKnownAsValidationService } from '@/core/AlsoKnownAsValidationService.js';
 import { ApiError } from '../../error.js';
 
 export const meta = {
@@ -43,8 +43,8 @@ export default class extends Endpoint<
 > {
 	constructor(
 		private readonly queueService: QueueService,
-		private readonly accountMoveService: AccountMoveService,
 		private readonly prismaService: PrismaService,
+		private readonly alsoKnownAsValidationService: AlsoKnownAsValidationService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const file = await this.prismaService.client.drive_file.findUnique({
@@ -55,7 +55,7 @@ export default class extends Endpoint<
 			//if (!file.type.endsWith('/csv')) throw new ApiError(meta.errors.unexpectedFileType);
 			if (file.size === 0) throw new ApiError(meta.errors.emptyFile);
 
-			const checkMoving = await this.accountMoveService.validateAlsoKnownAs(
+			const checkMoving = await this.alsoKnownAsValidationService.validate(
 				me,
 				(old, src) =>
 					!!src.movedAt &&

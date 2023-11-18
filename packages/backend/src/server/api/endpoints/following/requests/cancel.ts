@@ -6,11 +6,11 @@ import {
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GetterService } from '@/server/api/GetterService.js';
-import { UserFollowingService } from '@/core/UserFollowingService.js';
+import { UserFollowRequestCancelService } from '@/core/UserFollowRequestCancelService.js';
 import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
 import { ApiError } from '../../../error.js';
 
 const res = UserLiteSchema;
@@ -37,9 +37,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly userEntityService: UserEntityService,
 		private readonly getterService: GetterService,
-		private readonly userFollowingService: UserFollowingService,
+		private readonly userFollowRequestCancelService: UserFollowRequestCancelService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch followee
@@ -53,7 +53,7 @@ export default class extends Endpoint<
 				});
 
 			try {
-				await this.userFollowingService.cancelFollowRequest(followee, me);
+				await this.userFollowRequestCancelService.cancel(followee, me);
 			} catch (err) {
 				if (err instanceof IdentifiableError) {
 					if (err.id === '17447091-ce07-46dd-b331-c1fd4f15b1e7') {
@@ -63,7 +63,7 @@ export default class extends Endpoint<
 				throw err;
 			}
 
-			return await this.userEntityService.packLite(followee);
+			return await this.userEntityPackLiteService.packLite(followee);
 		});
 	}
 }

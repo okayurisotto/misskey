@@ -7,7 +7,7 @@ import {
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
-import { ReactionService } from '@/core/ReactionService.js';
+import { ReactionCreateService } from '@/core/ReactionCreateService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { ApiError } from '../../../error.js';
 
@@ -37,7 +37,7 @@ export default class extends Endpoint<
 > {
 	constructor(
 		private readonly getterService: GetterService,
-		private readonly reactionService: ReactionService,
+		private readonly reactionService: ReactionCreateService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {

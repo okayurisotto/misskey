@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { isUserRelated } from '@/misc/is-user-related.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
 import type { StreamMessages } from '../types.js';
@@ -12,7 +12,7 @@ class AntennaChannel extends Channel {
 	private antennaId: string;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -62,7 +62,7 @@ export class AntennaChannelService {
 	public readonly requireCredential = AntennaChannel.requireCredential;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 	) {
 	}
 

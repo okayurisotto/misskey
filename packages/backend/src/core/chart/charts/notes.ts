@@ -21,13 +21,21 @@ export default class NotesChart extends Chart<typeof schema> {
 
 		private readonly prismaService: PrismaService,
 	) {
-		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema);
+		super(
+			db,
+			(k) => appLockService.getChartInsertLock(k),
+			chartLoggerService.logger,
+			name,
+			schema,
+		);
 	}
 
 	protected async tickMajor(): Promise<Partial<KVs<typeof schema>>> {
 		const [localCount, remoteCount] = await Promise.all([
 			this.prismaService.client.note.count({ where: { userHost: null } }),
-			this.prismaService.client.note.count({ where: { userHost: { not: null } } }),
+			this.prismaService.client.note.count({
+				where: { userHost: { not: null } },
+			}),
 		]);
 
 		return {
@@ -47,10 +55,18 @@ export default class NotesChart extends Chart<typeof schema> {
 			[`${prefix}.total`]: isAdditional ? 1 : -1,
 			[`${prefix}.inc`]: isAdditional ? 1 : 0,
 			[`${prefix}.dec`]: isAdditional ? 0 : 1,
-			[`${prefix}.diffs.normal`]: note.replyId == null && note.renoteId == null ? (isAdditional ? 1 : -1) : 0,
-			[`${prefix}.diffs.renote`]: note.renoteId != null ? (isAdditional ? 1 : -1) : 0,
-			[`${prefix}.diffs.reply`]: note.replyId != null ? (isAdditional ? 1 : -1) : 0,
-			[`${prefix}.diffs.withFile`]: note.fileIds.length > 0 ? (isAdditional ? 1 : -1) : 0,
+			[`${prefix}.diffs.normal`]:
+				note.replyId == null && note.renoteId == null
+					? isAdditional
+						? 1
+						: -1
+					: 0,
+			[`${prefix}.diffs.renote`]:
+				note.renoteId != null ? (isAdditional ? 1 : -1) : 0,
+			[`${prefix}.diffs.reply`]:
+				note.replyId != null ? (isAdditional ? 1 : -1) : 0,
+			[`${prefix}.diffs.withFile`]:
+				note.fileIds.length > 0 ? (isAdditional ? 1 : -1) : 0,
 		});
 	}
 }

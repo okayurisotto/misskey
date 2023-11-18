@@ -13,6 +13,8 @@ export class ProxyAccountService {
 	public async fetch(): Promise<LocalUser | null> {
 		const meta = await this.metaService.fetch();
 		if (meta.proxyAccountId == null) return null;
-		return await this.prismaService.client.user.findUniqueOrThrow({ where: { id: meta.proxyAccountId } }) as LocalUser;
+		return (await this.prismaService.client.user.findUniqueOrThrow({
+			where: { id: meta.proxyAccountId },
+		})) as LocalUser;
 	}
 }

@@ -24,23 +24,35 @@ export class IdService {
 		})();
 
 		switch (this.method) {
-			case 'aid': return genAid(date);
-			case 'meid': return genMeid(date);
-			case 'meidg': return genMeidg(date);
-			case 'ulid': return ulid(date.getTime());
-			case 'objectid': return genObjectId(date);
-			default: throw new Error('unrecognized id generation method');
+			case 'aid':
+				return genAid(date);
+			case 'meid':
+				return genMeid(date);
+			case 'meidg':
+				return genMeidg(date);
+			case 'ulid':
+				return ulid(date.getTime());
+			case 'objectid':
+				return genObjectId(date);
+			default:
+				throw new Error('unrecognized id generation method');
 		}
 	}
 
-	public parse(id: string): { date: Date; } {
+	public parse(id: string): { date: Date } {
 		switch (this.method) {
-			case 'aid': return parseAid(id);
-			case 'objectid': return parseObjectId(id);
-			case 'meid': return parseMeid(id);
-			case 'meidg': return parseMeidg(id);
-			case 'ulid': return parseUlid(id);
-			default: throw new Error('unrecognized id generation method');
+			case 'aid':
+				return parseAid(id);
+			case 'objectid':
+				return parseObjectId(id);
+			case 'meid':
+				return parseMeid(id);
+			case 'meidg':
+				return parseMeidg(id);
+			case 'ulid':
+				return parseUlid(id);
+			default:
+				throw new Error('unrecognized id generation method');
 		}
 	}
 }

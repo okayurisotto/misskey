@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import type Logger from '@/misc/logger.js';
-import { DriveService } from '@/core/DriveService.js';
 import { EmailService } from '@/core/EmailService.js';
 import { SearchService } from '@/core/SearchService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { DriveFileDeleteService } from '@/core/DriveFileDeleteService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbUserDeleteJobData } from '../types.js';
@@ -14,11 +14,11 @@ export class DeleteAccountProcessorService {
 	private readonly logger: Logger;
 
 	constructor(
-		private readonly driveService: DriveService,
 		private readonly emailService: EmailService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly searchService: SearchService,
 		private readonly prismaService: PrismaService,
+		private readonly driveFileDeleteService: DriveFileDeleteService,
 	) {
 		this.logger =
 			this.queueLoggerService.logger.createSubLogger('delete-account');
@@ -41,7 +41,7 @@ export class DeleteAccountProcessorService {
 	async deleteFiles(files: drive_file[]): Promise<void> {
 		await Promise.all(
 			files.map(async (file) => {
-				await this.driveService.deleteFileSync(file);
+				await this.driveFileDeleteService.delete(file);
 			}),
 		);
 	}

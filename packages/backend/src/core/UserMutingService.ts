@@ -12,7 +12,11 @@ export class UserMutingService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	public async mute(user: user, target: user, expiresAt: Date | null = null): Promise<void> {
+	public async mute(
+		user: user,
+		target: user,
+		expiresAt: Date | null = null,
+	): Promise<void> {
 		await this.prismaService.client.muting.create({
 			data: {
 				id: this.idService.genId(),
@@ -31,11 +35,11 @@ export class UserMutingService {
 
 		await this.prismaService.client.muting.deleteMany({
 			where: {
-				id: { in: mutings.map(m => m.id) },
-			}
+				id: { in: mutings.map((m) => m.id) },
+			},
 		});
 
-		const muterIds = [...new Set(mutings.map(m => m.muterId))];
+		const muterIds = [...new Set(mutings.map((m) => m.muterId))];
 		for (const muterId of muterIds) {
 			this.cacheService.userMutingsCache.refresh(muterId);
 		}

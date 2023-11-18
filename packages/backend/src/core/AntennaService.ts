@@ -18,11 +18,11 @@ export class AntennaService implements OnApplicationShutdown {
 	private antennas: antenna[] = [];
 
 	constructor(
-		private readonly redisClient: RedisService,
-		private readonly utilityService: UtilityService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
+		private readonly redisClient: RedisService,
 		private readonly redisForSub: RedisSubService,
+		private readonly utilityService: UtilityService,
 	) {
 		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.on('message', this.onRedisMessage);
@@ -33,7 +33,8 @@ export class AntennaService implements OnApplicationShutdown {
 		const obj = JSON.parse(data);
 
 		if (obj.channel === 'internal') {
-			const { type, body } = obj.message as StreamMessages['internal']['payload'];
+			const { type, body } =
+				obj.message as StreamMessages['internal']['payload'];
 			switch (type) {
 				case 'antennaCreated':
 					this.antennas.push({
@@ -43,14 +44,14 @@ export class AntennaService implements OnApplicationShutdown {
 					});
 					break;
 				case 'antennaUpdated':
-					this.antennas[this.antennas.findIndex(a => a.id === body.id)] = {
+					this.antennas[this.antennas.findIndex((a) => a.id === body.id)] = {
 						...body,
 						createdAt: new Date(body.createdAt),
 						lastUsedAt: new Date(body.lastUsedAt),
 					};
 					break;
 				case 'antennaDeleted':
-					this.antennas = this.antennas.filter(a => a.id !== body.id);
+					this.antennas = this.antennas.filter((a) => a.id !== body.id);
 					break;
 				default:
 					break;
@@ -63,17 +64,29 @@ export class AntennaService implements OnApplicationShutdown {
 		noteUser: { id: user['id']; username: string; host: string | null },
 	): Promise<void> {
 		const antennas = await this.getAntennas();
-		const antennasWithMatchResult = await Promise.all(antennas.map(antenna => this.checkHitAntenna(antenna, note, noteUser).then(hit => [antenna, hit] as const)));
-		const matchedAntennas = antennasWithMatchResult.filter(([, hit]) => hit).map(([antenna]) => antenna);
+		const antennasWithMatchResult = await Promise.all(
+			antennas.map((antenna) =>
+				this.checkHitAntenna(antenna, note, noteUser).then(
+					(hit) => [antenna, hit] as const,
+				),
+			),
+		);
+		const matchedAntennas = antennasWithMatchResult
+			.filter(([, hit]) => hit)
+			.map(([antenna]) => antenna);
 
 		const redisPipeline = this.redisClient.pipeline();
 
 		for (const antenna of matchedAntennas) {
 			redisPipeline.xadd(
 				`antennaTimeline:${antenna.id}`,
-				'MAXLEN', '~', '200',
+				'MAXLEN',
+				'~',
+				'200',
 				'*',
-				'note', note.id);
+				'note',
+				note.id,
+			);
 
 			this.globalEventService.publishAntennaStream(antenna.id, 'note', note);
 		}
@@ -85,7 +98,7 @@ export class AntennaService implements OnApplicationShutdown {
 
 	public async checkHitAntenna(
 		antenna: antenna,
-		note: (note | z.infer<typeof NoteSchema>),
+		note: note | z.infer<typeof NoteSchema>,
 		noteUser: { id: user['id']; username: string; host: string | null },
 	): Promise<boolean> {
 		if (note.visibility === 'specified') return false;
@@ -98,55 +111,72 @@ export class AntennaService implements OnApplicationShutdown {
 		} else if (antenna.src === 'list') {
 			if (antenna.userListId === null) throw new Error();
 
-			const listUsers = (await this.prismaService.client.user_list_joining.findMany({
-				where: { userListId: antenna.userListId },
-			})).map(x => x.userId);
+			const listUsers = (
+				await this.prismaService.client.user_list_joining.findMany({
+					where: { userListId: antenna.userListId },
+				})
+			).map((x) => x.userId);
 
 			if (!listUsers.includes(note.userId)) return false;
 		} else if (antenna.src === 'users') {
-			const accts = antenna.users.map(x => {
+			const accts = antenna.users.map((x) => {
 				const { username, host } = Acct.parse(x);
-				return this.utilityService.getFullApAccount(username, host).toLowerCase();
+				return this.utilityService
+					.getFullApAccount(username, host)
+					.toLowerCase();
 			});
-			if (!accts.includes(this.utilityService.getFullApAccount(noteUser.username, noteUser.host).toLowerCase())) return false;
+			if (
+				!accts.includes(
+					this.utilityService
+						.getFullApAccount(noteUser.username, noteUser.host)
+						.toLowerCase(),
+				)
+			)
+				return false;
 		}
 
-		const keywords = z.array(z.array(z.string())).parse(antenna.keywords)
+		const keywords = z
+			.array(z.array(z.string()))
+			.parse(antenna.keywords)
 			// Clean up
-			.map(xs => xs.filter(x => x !== ''))
-			.filter(xs => xs.length > 0);
+			.map((xs) => xs.filter((x) => x !== ''))
+			.filter((xs) => xs.length > 0);
 
 		if (keywords.length > 0) {
 			if (note.text == null && note.cw == null) return false;
 
 			const _text = (note.text ?? '') + '\n' + (note.cw ?? '');
 
-			const matched = keywords.some(and =>
-				and.every(keyword =>
+			const matched = keywords.some((and) =>
+				and.every((keyword) =>
 					antenna.caseSensitive
 						? _text.includes(keyword)
 						: _text.toLowerCase().includes(keyword.toLowerCase()),
-				));
+				),
+			);
 
 			if (!matched) return false;
 		}
 
-		const excludeKeywords = z.array(z.array(z.string())).parse(antenna.excludeKeywords)
+		const excludeKeywords = z
+			.array(z.array(z.string()))
+			.parse(antenna.excludeKeywords)
 			// Clean up
-			.map(xs => xs.filter(x => x !== ''))
-			.filter(xs => xs.length > 0);
+			.map((xs) => xs.filter((x) => x !== ''))
+			.filter((xs) => xs.length > 0);
 
 		if (excludeKeywords.length > 0) {
 			if (note.text == null && note.cw == null) return false;
 
 			const _text = (note.text ?? '') + '\n' + (note.cw ?? '');
 
-			const matched = excludeKeywords.some(and =>
-				and.every(keyword =>
+			const matched = excludeKeywords.some((and) =>
+				and.every((keyword) =>
 					antenna.caseSensitive
 						? _text.includes(keyword)
 						: _text.toLowerCase().includes(keyword.toLowerCase()),
-				));
+				),
+			);
 
 			if (matched) return false;
 		}
@@ -162,7 +192,9 @@ export class AntennaService implements OnApplicationShutdown {
 
 	public async getAntennas(): Promise<antenna[]> {
 		if (!this.antennasFetched) {
-			this.antennas = await this.prismaService.client.antenna.findMany({ where: { isActive: true } });
+			this.antennas = await this.prismaService.client.antenna.findMany({
+				where: { isActive: true },
+			});
 			this.antennasFetched = true;
 		}
 

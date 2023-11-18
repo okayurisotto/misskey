@@ -7,6 +7,7 @@ import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { limit } from '@/models/zod/misc.js';
 import type { Prisma } from '@prisma/client';
+import { RoleUtilService } from '@/core/RoleUtilService.js';
 
 const res = z.array(UserDetailedSchema);
 export const meta = {
@@ -58,6 +59,7 @@ export default class extends Endpoint<
 		private readonly userEntityService: UserEntityService,
 		private readonly roleService: RoleService,
 		private readonly prismaService: PrismaService,
+		private readonly roleUtilService: RoleUtilService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const orderBy = ((): Prisma.userOrderByWithRelationInput => {
@@ -87,15 +89,17 @@ export default class extends Endpoint<
 				await Promise.all([
 					(async (): Promise<Pick<Prisma.userWhereInput, 'id'>> =>
 						ps.state === 'admin'
-							? { id: { in: await this.roleService.getAdministratorIds() } }
+							? { id: { in: await this.roleUtilService.getAdministratorIds() } }
 							: {})(),
 					(async (): Promise<Pick<Prisma.userWhereInput, 'id'>> =>
 						ps.state === 'moderator'
-							? { id: { in: await this.roleService.getModeratorIds(false) } }
+							? {
+									id: { in: await this.roleUtilService.getModeratorIds(false) },
+							  }
 							: {})(),
 					(async (): Promise<Pick<Prisma.userWhereInput, 'id'>> =>
 						ps.state === 'adminOrModerator'
-							? { id: { in: await this.roleService.getModeratorIds(true) } }
+							? { id: { in: await this.roleUtilService.getModeratorIds(true) } }
 							: {})(),
 				]);
 

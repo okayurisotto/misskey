@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { noSuchNote______ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
@@ -32,7 +32,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 		private readonly getterService: GetterService,
 		private readonly prismaService: PrismaService,
 	) {

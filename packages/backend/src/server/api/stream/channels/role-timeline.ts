@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { isUserRelated } from '@/misc/is-user-related.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
-import { RoleService } from '@/core/RoleService.js';
 import { bindThis } from '@/decorators.js';
+import { RoleUtilService } from '@/core/RoleUtilService.js';
 import Channel from '../channel.js';
 import { StreamMessages } from '../types.js';
 
@@ -13,8 +12,7 @@ class RoleTimelineChannel extends Channel {
 	private roleId: string;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
-		private readonly roleservice: RoleService,
+		private readonly roleUtilService: RoleUtilService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -31,11 +29,13 @@ class RoleTimelineChannel extends Channel {
 	}
 
 	@bindThis
-	private async onEvent(data: StreamMessages['roleTimeline']['payload']): Promise<void> {
+	private async onEvent(
+		data: StreamMessages['roleTimeline']['payload'],
+	): Promise<void> {
 		if (data.type === 'note') {
 			const note = data.body;
 
-			if (!(await this.roleservice.isExplorable({ id: this.roleId }))) {
+			if (!(await this.roleUtilService.isExplorable({ id: this.roleId }))) {
 				return;
 			}
 			if (note.visibility !== 'public') return;
@@ -45,7 +45,13 @@ class RoleTimelineChannel extends Channel {
 			// 流れてきたNoteがブロックされているユーザーが関わるものだったら無視する
 			if (isUserRelated(note, this.userIdsWhoBlockingMe)) return;
 
-			if (note.renote && !note.text && isUserRelated(note, this.userIdsWhoMeMutingRenotes)) return;
+			if (
+				note.renote &&
+				!note.text &&
+				isUserRelated(note, this.userIdsWhoMeMutingRenotes)
+			) {
+				return;
+			}
 
 			this.send('note', note);
 		} else {
@@ -65,18 +71,12 @@ export class RoleTimelineChannelService {
 	public readonly shouldShare = RoleTimelineChannel.shouldShare;
 	public readonly requireCredential = RoleTimelineChannel.requireCredential;
 
-	constructor(
-		private readonly noteEntityService: NoteEntityService,
-		private readonly roleservice: RoleService,
-	) {
-	}
+	constructor(private readonly roleUtilService: RoleUtilService) {}
 
-	public create(id: string, connection: Channel['connection']): RoleTimelineChannel {
-		return new RoleTimelineChannel(
-			this.noteEntityService,
-			this.roleservice,
-			id,
-			connection,
-		);
+	public create(
+		id: string,
+		connection: Channel['connection'],
+	): RoleTimelineChannel {
+		return new RoleTimelineChannel(this.roleUtilService, id, connection);
 	}
 }

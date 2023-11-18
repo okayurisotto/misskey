@@ -1,10 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import z from 'zod';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { MetaService } from '@/core/MetaService.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
+import { DriveUsageCalcService } from '@/core/entities/DriveUsageCalcService.js';
 
 const res = z.object({
 	capacity: z.number(),
@@ -27,14 +26,13 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly metaService: MetaService,
-		private readonly driveFileEntityService: DriveFileEntityService,
 		private readonly roleService: RoleService,
+		private readonly driveUsageCalcService: DriveUsageCalcService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const { policies, usage } = await awaitAll({
 				policies: () => this.roleService.getUserPolicies(me.id),
-				usage: () => this.driveFileEntityService.calcDriveUsageOf(me.id),
+				usage: () => this.driveUsageCalcService.calcUser(me.id),
 			});
 
 			return {

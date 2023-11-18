@@ -21,7 +21,7 @@ export class UserListEntityService {
 			.map(({ userId }) => userId);
 
 		return {
-			...(pick(userList, ["id", "name", "isPublic"])),
+			...pick(userList, ['id', 'name', 'isPublic']),
 			createdAt: userList.createdAt.toISOString(),
 			userIds: userIds,
 		};

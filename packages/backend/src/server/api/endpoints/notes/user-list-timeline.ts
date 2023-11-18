@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { noSuchList } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import ActiveUsersChart from '@/core/chart/charts/active-users.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
@@ -40,7 +40,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 		private readonly activeUsersChart: ActiveUsersChart,
 		private readonly prismaService: PrismaService,
 		private readonly prismaQueryService: PrismaQueryService,

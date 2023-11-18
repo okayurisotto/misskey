@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { isInstanceMuted, isUserFromMutedInstance } from '@/misc/is-instance-muted.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import Channel from '../channel.js';
 
 class MainChannel extends Channel {
@@ -10,7 +10,7 @@ class MainChannel extends Channel {
 	public static override requireCredential = true;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -62,7 +62,7 @@ export class MainChannelService {
 	public readonly requireCredential = MainChannel.requireCredential;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 	) {
 	}
 

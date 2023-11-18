@@ -41,7 +41,7 @@ class DeliverManager {
 		private readonly prismaService: PrismaService,
 		private readonly queueService: QueueService,
 
-		actor: { id: user['id']; host: null; },
+		actor: { id: user['id']; host: null },
 		activity: IActivity | null,
 	) {
 		// 型で弾いてはいるが一応ローカルユーザーかチェック
@@ -97,7 +97,7 @@ class DeliverManager {
 
 		// build inbox list
 		// Process follower recipes first to avoid duplication when processing direct recipes later.
-		if (this.recipes.some(r => isFollowers(r))) {
+		if (this.recipes.some((r) => isFollowers(r))) {
 			// followers deliver
 			// TODO: SELECT DISTINCT ON ("followerSharedInbox") "followerSharedInbox" みたいな問い合わせにすればよりパフォーマンス向上できそう
 			// ただ、sharedInboxがnullなリモートユーザーも稀におり、その対応ができなさそう？
@@ -117,7 +117,8 @@ class DeliverManager {
 
 		for (const recipe of this.recipes.filter(isDirect)) {
 			// check that shared inbox has not been added yet
-			if (recipe.to.sharedInbox !== null && inboxes.has(recipe.to.sharedInbox)) continue;
+			if (recipe.to.sharedInbox !== null && inboxes.has(recipe.to.sharedInbox))
+				continue;
 
 			// check that they actually have an inbox
 			if (recipe.to.inbox === null) continue;
@@ -142,7 +143,10 @@ export class ApDeliverManagerService {
 	 * @param actor
 	 * @param activity Activity
 	 */
-	public async deliverToFollowers(actor: { id: LocalUser['id']; host: null; }, activity: IActivity): Promise<void> {
+	public async deliverToFollowers(
+		actor: { id: LocalUser['id']; host: null },
+		activity: IActivity,
+	): Promise<void> {
 		const manager = new DeliverManager(
 			this.prismaService,
 			this.queueService,
@@ -159,7 +163,11 @@ export class ApDeliverManagerService {
 	 * @param activity Activity
 	 * @param to Target user
 	 */
-	public async deliverToUser(actor: { id: LocalUser['id']; host: null; }, activity: IActivity, to: RemoteUser): Promise<void> {
+	public async deliverToUser(
+		actor: { id: LocalUser['id']; host: null },
+		activity: IActivity,
+		to: RemoteUser,
+	): Promise<void> {
 		const manager = new DeliverManager(
 			this.prismaService,
 			this.queueService,
@@ -170,7 +178,10 @@ export class ApDeliverManagerService {
 		await manager.execute();
 	}
 
-	public createDeliverManager(actor: { id: user['id']; host: null; }, activity: IActivity | null): DeliverManager {
+	public createDeliverManager(
+		actor: { id: user['id']; host: null },
+		activity: IActivity | null,
+	): DeliverManager {
 		return new DeliverManager(
 			this.prismaService,
 			this.queueService,

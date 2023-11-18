@@ -6,9 +6,7 @@ import { INTERNAL_STORAGE_DIR } from '@/paths.js';
 
 @Injectable()
 export class InternalStorageService {
-	constructor(
-		private readonly configLoaderService: ConfigLoaderService,
-	) {}
+	constructor(private readonly configLoaderService: ConfigLoaderService) {}
 
 	public resolvePath(key: string): string {
 		return Path.resolve(INTERNAL_STORAGE_DIR, key);

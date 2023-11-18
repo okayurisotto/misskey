@@ -3,9 +3,9 @@ import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
 import { pick } from 'omick';
 import type Logger from '@/misc/logger.js';
-import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { DriveFileAddService } from '@/core/DriveFileAddService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbJobDataWithUser } from '../types.js';
@@ -15,9 +15,9 @@ export class ExportFavoritesProcessorService {
 	private readonly logger: Logger;
 
 	constructor(
-		private readonly driveService: DriveService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
+		private readonly driveFileAddService: DriveFileAddService,
 	) {
 		this.logger =
 			this.queueLoggerService.logger.createSubLogger('export-favorites');
@@ -82,7 +82,7 @@ export class ExportFavoritesProcessorService {
 
 			const fileName =
 				'favorites-' + dateFormat(new Date(), 'yyyy-MM-dd-HH-mm-ss') + '.json';
-			const driveFile = await this.driveService.addFile({
+			const driveFile = await this.driveFileAddService.add({
 				user,
 				path,
 				name: fileName,

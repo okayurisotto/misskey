@@ -9,12 +9,13 @@ import {
 import { DB_MAX_IMAGE_COMMENT_LENGTH } from '@/const.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
+import { DriveFileEntityPackService } from '@/core/entities/DriveFileEntityPackService.js';
 import { MetaService } from '@/core/MetaService.js';
-import { DriveService } from '@/core/DriveService.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { DriveFileAddService } from '@/core/DriveFileAddService.js';
 import { ApiError } from '../../../error.js';
+import { DriveFileNameValidationService } from '@/core/entities/DriveFileNameValidationService.js';
 
 const res = DriveFileSchema;
 export const meta = {
@@ -52,9 +53,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityPackService: DriveFileEntityPackService,
 		private readonly metaService: MetaService,
-		private readonly driveService: DriveService,
+		private readonly driveFileAddService: DriveFileAddService,
+		private readonly driveFileNameValidationService: DriveFileNameValidationService,
 	) {
 		super(meta, paramDef, async (ps, me, _, file, cleanup, ip, headers) => {
 			// Get 'name' parameter
@@ -65,7 +67,7 @@ export default class extends Endpoint<
 					name = null;
 				} else if (name === 'blob') {
 					name = null;
-				} else if (!this.driveFileEntityService.validateFileName(name)) {
+				} else if (!this.driveFileNameValidationService.validate(name)) {
 					throw new ApiError(meta.errors.invalidFileName);
 				}
 			}
@@ -74,7 +76,7 @@ export default class extends Endpoint<
 
 			try {
 				// Create file
-				const driveFile = await this.driveService.addFile({
+				const driveFile = await this.driveFileAddService.add({
 					user: me,
 					path: file!.path,
 					name,
@@ -85,7 +87,7 @@ export default class extends Endpoint<
 					requestIp: instance.enableIpLogging ? ip : null,
 					requestHeaders: instance.enableIpLogging ? headers : null,
 				});
-				return await this.driveFileEntityService.pack(driveFile, {
+				return await this.driveFileEntityPackService.pack(driveFile, {
 					self: true,
 				});
 			} catch (err) {

@@ -3,6 +3,7 @@ import { IdentifiableError } from '@/misc/identifiable-error.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 import type { note, user } from '@prisma/client';
 
 @Injectable()
@@ -10,16 +11,22 @@ export class GetterService {
 	constructor(
 		private readonly userEntityService: UserEntityService,
 		private readonly prismaService: PrismaService,
+		private readonly userEntityUtilService: UserEntityUtilService,
 	) {}
 
 	/**
 	 * Get note for API processing
 	 */
 	public async getNote(noteId: note['id']): Promise<note> {
-		const note = await this.prismaService.client.note.findUnique({ where: { id: noteId } });
+		const note = await this.prismaService.client.note.findUnique({
+			where: { id: noteId },
+		});
 
 		if (note == null) {
-			throw new IdentifiableError('9725d0ce-ba28-4dde-95a7-2cbb2c15de24', 'No such note.');
+			throw new IdentifiableError(
+				'9725d0ce-ba28-4dde-95a7-2cbb2c15de24',
+				'No such note.',
+			);
 		}
 
 		return note;
@@ -29,10 +36,15 @@ export class GetterService {
 	 * Get user for API processing
 	 */
 	public async getUser(userId: user['id']): Promise<LocalUser | RemoteUser> {
-		const user = await this.prismaService.client.user.findUnique({ where: { id: userId } });
+		const user = await this.prismaService.client.user.findUnique({
+			where: { id: userId },
+		});
 
 		if (user == null) {
-			throw new IdentifiableError('15348ddd-432d-49c2-8a5a-8069753becff', 'No such user.');
+			throw new IdentifiableError(
+				'15348ddd-432d-49c2-8a5a-8069753becff',
+				'No such user.',
+			);
 		}
 
 		return user as LocalUser | RemoteUser;
@@ -44,7 +56,7 @@ export class GetterService {
 	public async getRemoteUser(userId: user['id']): Promise<RemoteUser> {
 		const user = await this.getUser(userId);
 
-		if (!this.userEntityService.isRemoteUser(user)) {
+		if (!this.userEntityUtilService.isRemoteUser(user)) {
 			throw new Error('user is not a remote user');
 		}
 
@@ -57,7 +69,7 @@ export class GetterService {
 	public async getLocalUser(userId: user['id']): Promise<LocalUser> {
 		const user = await this.getUser(userId);
 
-		if (!this.userEntityService.isLocalUser(user)) {
+		if (!this.userEntityUtilService.isLocalUser(user)) {
 			throw new Error('user is not a local user');
 		}
 

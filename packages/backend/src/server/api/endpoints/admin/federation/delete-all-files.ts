@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DriveService } from '@/core/DriveService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { DriveFileDeleteService } from '@/core/DriveFileDeleteService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -22,8 +22,8 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly driveService: DriveService,
 		private readonly prismaService: PrismaService,
+		private readonly driveFileDeleteService: DriveFileDeleteService,
 	) {
 		super(meta, paramDef, async (ps) => {
 			const files = await this.prismaService.client.drive_file.findMany({
@@ -31,7 +31,7 @@ export default class extends Endpoint<
 			});
 
 			await Promise.all(
-				files.map((file) => this.driveService.deleteFile(file)),
+				files.map((file) => this.driveFileDeleteService.delete(file)),
 			);
 		});
 	}

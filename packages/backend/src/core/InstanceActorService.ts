@@ -21,18 +21,20 @@ export class InstanceActorService {
 		const cached = this.cache.get();
 		if (cached) return cached;
 
-		const user = await this.prismaService.client.user.findFirst({
+		const user = (await this.prismaService.client.user.findFirst({
 			where: {
 				host: null,
 				username: ACTOR_USERNAME,
 			},
-		}) as LocalUser | undefined;
+		})) as LocalUser | undefined;
 
 		if (user) {
 			this.cache.set(user);
 			return user;
 		} else {
-			const created = await this.createSystemUserService.createSystemUser(ACTOR_USERNAME) as LocalUser;
+			const created = (await this.createSystemUserService.createSystemUser(
+				ACTOR_USERNAME,
+			)) as LocalUser;
 			this.cache.set(created);
 			return created;
 		}

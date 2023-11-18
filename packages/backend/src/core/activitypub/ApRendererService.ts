@@ -2,57 +2,107 @@ import { createPublicKey, randomUUID } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import * as mfm from 'mfm-js';
 import { z } from 'zod';
-import type { PartialLocalUser, LocalUser, PartialRemoteUser, RemoteUser } from '@/models/entities/User.js';
+import type {
+	PartialLocalUser,
+	LocalUser,
+	PartialRemoteUser,
+	RemoteUser,
+} from '@/models/entities/User.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { MfmService } from '@/core/MfmService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
-import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { DriveFilePublicUrlGenerationService } from '../entities/DriveFilePublicUrlGenerationService.js';
+import { CustomEmojiLocalCacheService } from '../CustomEmojiLocalCacheService.js';
+import { UserEntityUtilService } from '../entities/UserEntityUtilService.js';
 import { LdSignatureService } from './LdSignatureService.js';
 import { ApMfmService } from './ApMfmService.js';
-import type { IAccept, IActivity, IAdd, IAnnounce, IApDocument, IApEmoji, IApHashtag, IApImage, IApMention, IBlock, ICreate, IDelete, IFlag, IFollow, IKey, ILike, IMove, IObject, IPost, IQuestion, IReject, IRemove, ITombstone, IUndo, IUpdate } from './type.js';
-import type { relay, note_reaction, emoji, blocking, drive_file, note, poll, poll_vote, user, user_keypair } from '@prisma/client';
+import type {
+	IAccept,
+	IActivity,
+	IAdd,
+	IAnnounce,
+	IApDocument,
+	IApEmoji,
+	IApHashtag,
+	IApImage,
+	IApMention,
+	IBlock,
+	ICreate,
+	IDelete,
+	IFlag,
+	IFollow,
+	IKey,
+	ILike,
+	IMove,
+	IObject,
+	IPost,
+	IQuestion,
+	IReject,
+	IRemove,
+	ITombstone,
+	IUndo,
+	IUpdate,
+} from './type.js';
+import type {
+	relay,
+	note_reaction,
+	emoji,
+	blocking,
+	drive_file,
+	note,
+	poll,
+	poll_vote,
+	user,
+	user_keypair,
+} from '@prisma/client';
 
 export type AddContext<T extends IObject> = T & { '@context': any; id: string };
 
 @Injectable()
 export class ApRendererService {
 	constructor(
-		private readonly configLoaderService: ConfigLoaderService,
-
-		private readonly customEmojiService: CustomEmojiService,
-		private readonly userEntityService: UserEntityService,
-		private readonly driveFileEntityService: DriveFileEntityService,
-		private readonly ldSignatureService: LdSignatureService,
-		private readonly userKeypairService: UserKeypairService,
 		private readonly apMfmService: ApMfmService,
+		private readonly configLoaderService: ConfigLoaderService,
+		private readonly customEmojiLocalCacheService: CustomEmojiLocalCacheService,
+		private readonly driveFilePublicUrlGenerationService: DriveFilePublicUrlGenerationService,
+		private readonly ldSignatureService: LdSignatureService,
 		private readonly mfmService: MfmService,
 		private readonly prismaService: PrismaService,
+		private readonly userEntityUtilService: UserEntityUtilService,
+		private readonly userKeypairService: UserKeypairService,
 	) {}
 
-	public renderAccept(object: string | IObject, user: { id: user['id']; host: null }): IAccept {
+	public renderAccept(
+		object: string | IObject,
+		user: { id: user['id']; host: null },
+	): IAccept {
 		return {
 			type: 'Accept',
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			object,
 		};
 	}
 
-	public renderAdd(user: LocalUser, target: string | IObject | undefined, object: string | IObject): IAdd {
+	public renderAdd(
+		user: LocalUser,
+		target: string | IObject | undefined,
+		object: string | IObject,
+	): IAdd {
 		return {
 			type: 'Add',
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			target,
 			object,
 		};
 	}
 
 	public renderAnnounce(object: string | IObject, note: note): IAnnounce {
-		const attributedTo = this.userEntityService.genLocalUserUri(note.userId);
+		const attributedTo = this.userEntityUtilService.genLocalUserUri(
+			note.userId,
+		);
 
 		let to: string[] = [];
 		let cc: string[] = [];
@@ -72,7 +122,7 @@ export class ApRendererService {
 
 		return {
 			id: `${this.configLoaderService.data.url}/notes/${note.id}/activity`,
-			actor: this.userEntityService.genLocalUserUri(note.userId),
+			actor: this.userEntityUtilService.genLocalUserUri(note.userId),
 			type: 'Announce',
 			published: note.createdAt.toISOString(),
 			to,
@@ -94,7 +144,7 @@ export class ApRendererService {
 		return {
 			type: 'Block',
 			id: `${this.configLoaderService.data.url}/blocks/${block.id}`,
-			actor: this.userEntityService.genLocalUserUri(block.blockerId),
+			actor: this.userEntityUtilService.genLocalUserUri(block.blockerId),
 			object: block.blockee.uri,
 		};
 	}
@@ -102,7 +152,7 @@ export class ApRendererService {
 	public renderCreate(object: IObject, note: note): ICreate {
 		const activity: ICreate = {
 			id: `${this.configLoaderService.data.url}/notes/${note.id}/activity`,
-			actor: this.userEntityService.genLocalUserUri(note.userId),
+			actor: this.userEntityUtilService.genLocalUserUri(note.userId),
 			type: 'Create',
 			published: note.createdAt.toISOString(),
 			object,
@@ -114,10 +164,13 @@ export class ApRendererService {
 		return activity;
 	}
 
-	public renderDelete(object: IObject | string, user: { id: user['id']; host: null }): IDelete {
+	public renderDelete(
+		object: IObject | string,
+		user: { id: user['id']; host: null },
+	): IDelete {
 		return {
 			type: 'Delete',
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			object,
 			published: new Date().toISOString(),
 		};
@@ -127,7 +180,7 @@ export class ApRendererService {
 		return {
 			type: 'Document',
 			mediaType: file.webpublicType ?? file.type,
-			url: this.driveFileEntityService.getPublicUrl(file),
+			url: this.driveFilePublicUrlGenerationService.generate(file),
 			name: file.comment,
 		};
 	}
@@ -137,7 +190,10 @@ export class ApRendererService {
 			id: `${this.configLoaderService.data.url}/emojis/${emoji.name}`,
 			type: 'Emoji',
 			name: `:${emoji.name}:`,
-			updated: emoji.updatedAt != null ? emoji.updatedAt.toISOString() : new Date().toISOString(),
+			updated:
+				emoji.updatedAt != null
+					? emoji.updatedAt.toISOString()
+					: new Date().toISOString(),
 			icon: {
 				type: 'Image',
 				mediaType: emoji.type ?? 'image/png',
@@ -148,10 +204,14 @@ export class ApRendererService {
 	}
 
 	// to anonymise reporters, the reporting actor must be a system user
-	public renderFlag(user: LocalUser, object: IObject | string, content: string): IFlag {
+	public renderFlag(
+		user: LocalUser,
+		object: IObject | string,
+		content: string,
+	): IFlag {
 		return {
 			type: 'Flag',
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			content,
 			object,
 		};
@@ -161,7 +221,7 @@ export class ApRendererService {
 		return {
 			id: `${this.configLoaderService.data.url}/activities/follow-relay/${relay.id}`,
 			type: 'Follow',
-			actor: this.userEntityService.genLocalUserUri(relayActor.id),
+			actor: this.userEntityUtilService.genLocalUserUri(relayActor.id),
 			object: 'https://www.w3.org/ns/activitystreams#Public',
 		};
 	}
@@ -171,8 +231,10 @@ export class ApRendererService {
 	 * @param id Follower|Followee ID
 	 */
 	public async renderFollowUser(id: user['id']): Promise<string> {
-		const user = await this.prismaService.client.user.findUniqueOrThrow({ where: { id: id } }) as PartialLocalUser | PartialRemoteUser;
-		return this.userEntityService.getUserUri(user);
+		const user = (await this.prismaService.client.user.findUniqueOrThrow({
+			where: { id: id },
+		})) as PartialLocalUser | PartialRemoteUser;
+		return this.userEntityUtilService.getUserUri(user);
 	}
 
 	public renderFollow(
@@ -181,17 +243,21 @@ export class ApRendererService {
 		requestId?: string,
 	): IFollow {
 		return {
-			id: requestId ?? `${this.configLoaderService.data.url}/follows/${follower.id}/${followee.id}`,
+			id:
+				requestId ??
+				`${this.configLoaderService.data.url}/follows/${follower.id}/${followee.id}`,
 			type: 'Follow',
-			actor: this.userEntityService.getUserUri(follower),
-			object: this.userEntityService.getUserUri(followee),
+			actor: this.userEntityUtilService.getUserUri(follower),
+			object: this.userEntityUtilService.getUserUri(followee),
 		};
 	}
 
 	public renderHashtag(tag: string): IApHashtag {
 		return {
 			type: 'Hashtag',
-			href: `${this.configLoaderService.data.url}/tags/${encodeURIComponent(tag)}`,
+			href: `${this.configLoaderService.data.url}/tags/${encodeURIComponent(
+				tag,
+			)}`,
 			name: `#${tag}`,
 		};
 	}
@@ -199,7 +265,7 @@ export class ApRendererService {
 	public renderImage(file: drive_file): IApImage {
 		return {
 			type: 'Image',
-			url: this.driveFileEntityService.getPublicUrl(file),
+			url: this.driveFilePublicUrlGenerationService.generate(file),
 			sensitive: file.isSensitive,
 			name: file.comment,
 		};
@@ -207,9 +273,11 @@ export class ApRendererService {
 
 	public renderKey(user: LocalUser, key: user_keypair, postfix?: string): IKey {
 		return {
-			id: `${this.configLoaderService.data.url}/users/${user.id}${postfix ?? '/publickey'}`,
+			id: `${this.configLoaderService.data.url}/users/${user.id}${
+				postfix ?? '/publickey'
+			}`,
 			type: 'Key',
-			owner: this.userEntityService.genLocalUserUri(user.id),
+			owner: this.userEntityUtilService.genLocalUserUri(user.id),
 			publicKeyPem: createPublicKey(key.publicKey).export({
 				type: 'spki',
 				format: 'pem',
@@ -217,21 +285,26 @@ export class ApRendererService {
 		};
 	}
 
-	public async renderLike(noteReaction: note_reaction, note: { uri: string | null }): Promise<ILike> {
+	public async renderLike(
+		noteReaction: note_reaction,
+		note: { uri: string | null },
+	): Promise<ILike> {
 		const reaction = noteReaction.reaction;
 
 		const object: ILike = {
 			type: 'Like',
 			id: `${this.configLoaderService.data.url}/likes/${noteReaction.id}`,
 			actor: `${this.configLoaderService.data.url}/users/${noteReaction.userId}`,
-			object: note.uri ? note.uri : `${this.configLoaderService.data.url}/notes/${noteReaction.noteId}`,
+			object: note.uri
+				? note.uri
+				: `${this.configLoaderService.data.url}/notes/${noteReaction.noteId}`,
 			content: reaction,
 			_misskey_reaction: reaction,
 		};
 
 		if (reaction.startsWith(':')) {
 			const name = reaction.replaceAll(':', '');
-			const emoji = (await this.customEmojiService.localEmojisCache.fetch()).get(name);
+			const emoji = (await this.customEmojiLocalCacheService.fetch()).get(name);
 
 			if (emoji && !emoji.localOnly) object.tag = [this.renderEmoji(emoji)];
 		}
@@ -239,11 +312,15 @@ export class ApRendererService {
 		return object;
 	}
 
-	public renderMention(mention: PartialLocalUser | PartialRemoteUser): IApMention {
+	public renderMention(
+		mention: PartialLocalUser | PartialRemoteUser,
+	): IApMention {
 		return {
 			type: 'Mention',
-			href: this.userEntityService.getUserUri(mention),
-			name: this.userEntityService.isRemoteUser(mention) ? `@${mention.username}@${mention.host}` : `@${(mention as LocalUser).username}`,
+			href: this.userEntityUtilService.getUserUri(mention),
+			name: this.userEntityUtilService.isRemoteUser(mention)
+				? `@${mention.username}@${mention.host}`
+				: `@${(mention as LocalUser).username}`,
 		};
 	}
 
@@ -251,8 +328,8 @@ export class ApRendererService {
 		src: PartialLocalUser | PartialRemoteUser,
 		dst: PartialLocalUser | PartialRemoteUser,
 	): IMove {
-		const actor = this.userEntityService.getUserUri(src);
-		const target = this.userEntityService.getUserUri(dst);
+		const actor = this.userEntityUtilService.getUserUri(src);
+		const target = this.userEntityUtilService.getUserUri(dst);
 		return {
 			id: `${this.configLoaderService.data.url}/moves/${src.id}/${dst.id}`,
 			actor,
@@ -265,21 +342,28 @@ export class ApRendererService {
 	public async renderNote(note: note, dive = true): Promise<IPost> {
 		const getPromisedFiles = async (ids: string[]): Promise<drive_file[]> => {
 			if (ids.length === 0) return [];
-			const items = await this.prismaService.client.drive_file.findMany({ where: { id: { in: ids } } });
-			return ids.map(id => items.find(item => item.id === id)).filter((item): item is drive_file => item != null);
+			const items = await this.prismaService.client.drive_file.findMany({
+				where: { id: { in: ids } },
+			});
+			return ids
+				.map((id) => items.find((item) => item.id === id))
+				.filter((item): item is drive_file => item != null);
 		};
 
 		let inReplyTo;
 		let inReplyToNote: note | null;
 
 		if (note.replyId) {
-			inReplyToNote = await this.prismaService.client.note.findUnique({ where: { id: note.replyId } });
+			inReplyToNote = await this.prismaService.client.note.findUnique({
+				where: { id: note.replyId },
+			});
 
 			if (inReplyToNote != null) {
-				const inReplyToUserExist = (await this.prismaService.client.user.count({
-					where: { id: inReplyToNote.userId },
-					take: 1,
-				})) > 0;
+				const inReplyToUserExist =
+					(await this.prismaService.client.user.count({
+						where: { id: inReplyToNote.userId },
+						take: 1,
+					})) > 0;
 
 				if (inReplyToUserExist) {
 					if (inReplyToNote.uri) {
@@ -300,16 +384,24 @@ export class ApRendererService {
 		let quote;
 
 		if (note.renoteId) {
-			const renote = await this.prismaService.client.note.findUnique({ where: { id: note.renoteId } });
+			const renote = await this.prismaService.client.note.findUnique({
+				where: { id: note.renoteId },
+			});
 
 			if (renote) {
-				quote = renote.uri ? renote.uri : `${this.configLoaderService.data.url}/notes/${renote.id}`;
+				quote = renote.uri
+					? renote.uri
+					: `${this.configLoaderService.data.url}/notes/${renote.id}`;
 			}
 		}
 
-		const attributedTo = this.userEntityService.genLocalUserUri(note.userId);
+		const attributedTo = this.userEntityUtilService.genLocalUserUri(
+			note.userId,
+		);
 
-		const mentions = (JSON.parse(note.mentionedRemoteUsers) as IMentionedRemoteUsers).map(x => x.uri);
+		const mentions = (
+			JSON.parse(note.mentionedRemoteUsers) as IMentionedRemoteUsers
+		).map((x) => x.uri);
 
 		let to: string[] = [];
 		let cc: string[] = [];
@@ -327,12 +419,17 @@ export class ApRendererService {
 			to = mentions;
 		}
 
-		const mentionedUsers = note.mentions.length > 0
-			? await this.prismaService.client.user.findMany({ where: { id: { in: note.mentions } } })
-			: [];
+		const mentionedUsers =
+			note.mentions.length > 0
+				? await this.prismaService.client.user.findMany({
+						where: { id: { in: note.mentions } },
+				  })
+				: [];
 
-		const hashtagTags = note.tags.map(tag => this.renderHashtag(tag));
-		const mentionTags = mentionedUsers.map(u => this.renderMention(u as LocalUser | RemoteUser));
+		const hashtagTags = note.tags.map((tag) => this.renderHashtag(tag));
+		const mentionTags = mentionedUsers.map((u) =>
+			this.renderMention(u as LocalUser | RemoteUser),
+		);
 
 		const files = await getPromisedFiles(note.fileIds);
 
@@ -340,7 +437,9 @@ export class ApRendererService {
 		let poll: poll | null = null;
 
 		if (note.hasPoll) {
-			poll = await this.prismaService.client.poll.findUnique({ where: { noteId: note.id } });
+			poll = await this.prismaService.client.poll.findUnique({
+				where: { noteId: note.id },
+			});
 		}
 
 		let apText = text;
@@ -349,36 +448,42 @@ export class ApRendererService {
 			apText += `\n\nRE: ${quote}`;
 		}
 
-		const summary = note.cw === '' ? String.fromCharCode(0x200B) : note.cw;
+		const summary = note.cw === '' ? String.fromCharCode(0x200b) : note.cw;
 
-		const content = this.apMfmService.getNoteHtml(Object.assign({}, note, {
-			text: apText,
-		}));
+		const content = this.apMfmService.getNoteHtml(
+			Object.assign({}, note, {
+				text: apText,
+			}),
+		);
 
 		const emojis = await this.getEmojis(note.emojis);
-		const apemojis = emojis.filter(emoji => !emoji.localOnly).map(emoji => this.renderEmoji(emoji));
+		const apemojis = emojis
+			.filter((emoji) => !emoji.localOnly)
+			.map((emoji) => this.renderEmoji(emoji));
 
-		const tag = [
-			...hashtagTags,
-			...mentionTags,
-			...apemojis,
-		];
+		const tag = [...hashtagTags, ...mentionTags, ...apemojis];
 
-		const asPoll = poll ? {
-			type: 'Question',
-			content: this.apMfmService.getNoteHtml(Object.assign({}, note, {
-				text: text,
-			})),
-			[poll.expiresAt && poll.expiresAt < new Date() ? 'closed' : 'endTime']: poll.expiresAt,
-			[poll.multiple ? 'anyOf' : 'oneOf']: poll.choices.map((text, i) => ({
-				type: 'Note',
-				name: text,
-				replies: {
-					type: 'Collection',
-					totalItems: poll!.votes[i],
-				},
-			})),
-		} as const : {};
+		const asPoll = poll
+			? ({
+					type: 'Question',
+					content: this.apMfmService.getNoteHtml(
+						Object.assign({}, note, {
+							text: text,
+						}),
+					),
+					[poll.expiresAt && poll.expiresAt < new Date()
+						? 'closed'
+						: 'endTime']: poll.expiresAt,
+					[poll.multiple ? 'anyOf' : 'oneOf']: poll.choices.map((text, i) => ({
+						type: 'Note',
+						name: text,
+						replies: {
+							type: 'Collection',
+							totalItems: poll!.votes[i],
+						},
+					})),
+			  } as const)
+			: {};
 
 		return {
 			id: `${this.configLoaderService.data.url}/notes/${note.id}`,
@@ -397,40 +502,56 @@ export class ApRendererService {
 			to,
 			cc,
 			inReplyTo,
-			attachment: files.map(x => this.renderDocument(x)),
-			sensitive: note.cw != null || files.some(file => file.isSensitive),
+			attachment: files.map((x) => this.renderDocument(x)),
+			sensitive: note.cw != null || files.some((file) => file.isSensitive),
 			tag,
 			...asPoll,
 		};
 	}
 
 	public async renderPerson(user: LocalUser): Promise<any> {
-		const id = this.userEntityService.genLocalUserUri(user.id);
+		const id = this.userEntityUtilService.genLocalUserUri(user.id);
 		const isSystem = user.username.includes('.');
 
 		const [avatar, banner, profile] = await Promise.all([
-			user.avatarId ? this.prismaService.client.drive_file.findUnique({ where: { id: user.avatarId } }) : undefined,
-			user.bannerId ? this.prismaService.client.drive_file.findUnique({ where: { id: user.bannerId } }) : undefined,
-			this.prismaService.client.user_profile.findUniqueOrThrow({ where: { userId: user.id } }),
+			user.avatarId
+				? this.prismaService.client.drive_file.findUnique({
+						where: { id: user.avatarId },
+				  })
+				: undefined,
+			user.bannerId
+				? this.prismaService.client.drive_file.findUnique({
+						where: { id: user.bannerId },
+				  })
+				: undefined,
+			this.prismaService.client.user_profile.findUniqueOrThrow({
+				where: { userId: user.id },
+			}),
 		]);
 
-		const attachment = z.array(z.object({ name: z.string(), value: z.string() })).parse(profile.fields).map(field => ({
-			type: 'PropertyValue',
-			name: field.name,
-			value: /^https?:/.test(field.value)
-				? `<a href="${new URL(field.value).href}" rel="me nofollow noopener" target="_blank">${new URL(field.value).href}</a>`
-				: field.value,
-		}));
+		const attachment = z
+			.array(z.object({ name: z.string(), value: z.string() }))
+			.parse(profile.fields)
+			.map((field) => ({
+				type: 'PropertyValue',
+				name: field.name,
+				value: /^https?:/.test(field.value)
+					? `<a href="${
+							new URL(field.value).href
+					  }" rel="me nofollow noopener" target="_blank">${
+							new URL(field.value).href
+					  }</a>`
+					: field.value,
+			}));
 
 		const emojis = await this.getEmojis(user.emojis);
-		const apemojis = emojis.filter(emoji => !emoji.localOnly).map(emoji => this.renderEmoji(emoji));
+		const apemojis = emojis
+			.filter((emoji) => !emoji.localOnly)
+			.map((emoji) => this.renderEmoji(emoji));
 
-		const hashtagTags = user.tags.map(tag => this.renderHashtag(tag));
+		const hashtagTags = user.tags.map((tag) => this.renderHashtag(tag));
 
-		const tag = [
-			...apemojis,
-			...hashtagTags,
-		];
+		const tag = [...apemojis, ...hashtagTags];
 
 		const keypair = await this.userKeypairService.getUserKeypair(user.id);
 
@@ -447,7 +568,9 @@ export class ApRendererService {
 			url: `${this.configLoaderService.data.url}/@${user.username}`,
 			preferredUsername: user.username,
 			name: user.name,
-			summary: profile.description ? this.mfmService.toHtml(mfm.parse(profile.description)) : null,
+			summary: profile.description
+				? this.mfmService.toHtml(mfm.parse(profile.description))
+				: null,
 			icon: avatar ? this.renderImage(avatar) : null,
 			image: banner ? this.renderImage(banner) : null,
 			tag,
@@ -477,11 +600,15 @@ export class ApRendererService {
 		return person;
 	}
 
-	public renderQuestion(user: { id: user['id'] }, note: note, poll: poll): IQuestion {
+	public renderQuestion(
+		user: { id: user['id'] },
+		note: note,
+		poll: poll,
+	): IQuestion {
 		return {
 			type: 'Question',
 			id: `${this.configLoaderService.data.url}/questions/${note.id}`,
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			content: note.text ?? '',
 			[poll.multiple ? 'anyOf' : 'oneOf']: poll.choices.map((text, i) => ({
 				name: text,
@@ -494,18 +621,25 @@ export class ApRendererService {
 		};
 	}
 
-	public renderReject(object: string | IObject, user: { id: user['id'] }): IReject {
+	public renderReject(
+		object: string | IObject,
+		user: { id: user['id'] },
+	): IReject {
 		return {
 			type: 'Reject',
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			object,
 		};
 	}
 
-	public renderRemove(user: { id: user['id'] }, target: string | IObject | undefined, object: string | IObject): IRemove {
+	public renderRemove(
+		user: { id: user['id'] },
+		target: string | IObject | undefined,
+		object: string | IObject,
+	): IRemove {
 		return {
 			type: 'Remove',
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			target,
 			object,
 		};
@@ -519,21 +653,31 @@ export class ApRendererService {
 	}
 
 	public renderUndo(object: string | IObject, user: { id: user['id'] }): IUndo {
-		const id = typeof object !== 'string' && typeof object.id === 'string' && object.id.startsWith(this.configLoaderService.data.url) ? `${object.id}/undo` : undefined;
+		const id =
+			typeof object !== 'string' &&
+			typeof object.id === 'string' &&
+			object.id.startsWith(this.configLoaderService.data.url)
+				? `${object.id}/undo`
+				: undefined;
 
 		return {
 			type: 'Undo',
 			...(id ? { id } : {}),
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			object,
 			published: new Date().toISOString(),
 		};
 	}
 
-	public renderUpdate(object: string | IObject, user: { id: user['id'] }): IUpdate {
+	public renderUpdate(
+		object: string | IObject,
+		user: { id: user['id'] },
+	): IUpdate {
 		return {
-			id: `${this.configLoaderService.data.url}/users/${user.id}#updates/${new Date().getTime()}`,
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			id: `${this.configLoaderService.data.url}/users/${
+				user.id
+			}#updates/${new Date().getTime()}`,
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			type: 'Update',
 			to: ['https://www.w3.org/ns/activitystreams#Public'],
 			object,
@@ -541,17 +685,23 @@ export class ApRendererService {
 		};
 	}
 
-	public renderVote(user: { id: user['id'] }, vote: poll_vote, note: note, poll: poll, pollOwner: RemoteUser): ICreate {
+	public renderVote(
+		user: { id: user['id'] },
+		vote: poll_vote,
+		note: note,
+		poll: poll,
+		pollOwner: RemoteUser,
+	): ICreate {
 		return {
 			id: `${this.configLoaderService.data.url}/users/${user.id}#votes/${vote.id}/activity`,
-			actor: this.userEntityService.genLocalUserUri(user.id),
+			actor: this.userEntityUtilService.genLocalUserUri(user.id),
 			type: 'Create',
 			to: [pollOwner.uri],
 			published: new Date().toISOString(),
 			object: {
 				id: `${this.configLoaderService.data.url}/users/${user.id}#votes/${vote.id}`,
 				type: 'Note',
-				attributedTo: this.userEntityService.genLocalUserUri(user.id),
+				attributedTo: this.userEntityUtilService.genLocalUserUri(user.id),
 				to: [pollOwner.uri],
 				inReplyTo: note.uri,
 				name: poll.choices[vote.choice],
@@ -564,45 +714,55 @@ export class ApRendererService {
 			x.id = `${this.configLoaderService.data.url}/${randomUUID()}`;
 		}
 
-		return Object.assign({
-			'@context': [
-				'https://www.w3.org/ns/activitystreams',
-				'https://w3id.org/security/v1',
-				{
-					// as non-standards
-					manuallyApprovesFollowers: 'as:manuallyApprovesFollowers',
-					sensitive: 'as:sensitive',
-					Hashtag: 'as:Hashtag',
-					quoteUrl: 'as:quoteUrl',
-					// Mastodon
-					toot: 'http://joinmastodon.org/ns#',
-					Emoji: 'toot:Emoji',
-					featured: 'toot:featured',
-					discoverable: 'toot:discoverable',
-					// schema
-					schema: 'http://schema.org#',
-					PropertyValue: 'schema:PropertyValue',
-					value: 'schema:value',
-					// Misskey
-					misskey: 'https://misskey-hub.net/ns#',
-					'_misskey_content': 'misskey:_misskey_content',
-					'_misskey_quote': 'misskey:_misskey_quote',
-					'_misskey_reaction': 'misskey:_misskey_reaction',
-					'_misskey_votes': 'misskey:_misskey_votes',
-					'isCat': 'misskey:isCat',
-					// vcard
-					vcard: 'http://www.w3.org/2006/vcard/ns#',
-				},
-			],
-		}, x as T & { id: string });
+		return Object.assign(
+			{
+				'@context': [
+					'https://www.w3.org/ns/activitystreams',
+					'https://w3id.org/security/v1',
+					{
+						// as non-standards
+						manuallyApprovesFollowers: 'as:manuallyApprovesFollowers',
+						sensitive: 'as:sensitive',
+						Hashtag: 'as:Hashtag',
+						quoteUrl: 'as:quoteUrl',
+						// Mastodon
+						toot: 'http://joinmastodon.org/ns#',
+						Emoji: 'toot:Emoji',
+						featured: 'toot:featured',
+						discoverable: 'toot:discoverable',
+						// schema
+						schema: 'http://schema.org#',
+						PropertyValue: 'schema:PropertyValue',
+						value: 'schema:value',
+						// Misskey
+						misskey: 'https://misskey-hub.net/ns#',
+						_misskey_content: 'misskey:_misskey_content',
+						_misskey_quote: 'misskey:_misskey_quote',
+						_misskey_reaction: 'misskey:_misskey_reaction',
+						_misskey_votes: 'misskey:_misskey_votes',
+						isCat: 'misskey:isCat',
+						// vcard
+						vcard: 'http://www.w3.org/2006/vcard/ns#',
+					},
+				],
+			},
+			x as T & { id: string },
+		);
 	}
 
-	public async attachLdSignature(activity: any, user: { id: user['id']; host: null; }): Promise<IActivity> {
+	public async attachLdSignature(
+		activity: any,
+		user: { id: user['id']; host: null },
+	): Promise<IActivity> {
 		const keypair = await this.userKeypairService.getUserKeypair(user.id);
 
 		const ldSignature = this.ldSignatureService.use();
 		ldSignature.debug = false;
-		activity = await ldSignature.signRsaSignature2017(activity, keypair.privateKey, `${this.configLoaderService.data.url}/users/${user.id}#main-key`);
+		activity = await ldSignature.signRsaSignature2017(
+			activity,
+			keypair.privateKey,
+			`${this.configLoaderService.data.url}/users/${user.id}#main-key`,
+		);
 
 		return activity;
 	}
@@ -616,7 +776,14 @@ export class ApRendererService {
 	 * @param prev URL of prev page (optional)
 	 * @param next URL of next page (optional)
 	 */
-	public renderOrderedCollectionPage(id: string, totalItems: any, orderedItems: any, partOf: string, prev?: string, next?: string): any {
+	public renderOrderedCollectionPage(
+		id: string,
+		totalItems: any,
+		orderedItems: any,
+		partOf: string,
+		prev?: string,
+		next?: string,
+	): any {
 		const page: any = {
 			id,
 			partOf,
@@ -639,7 +806,13 @@ export class ApRendererService {
 	 * @param last URL of last page (optional)
 	 * @param orderedItems attached objects (optional)
 	 */
-	public renderOrderedCollection(id: string, totalItems: number, first?: string, last?: string, orderedItems?: IObject[]): any {
+	public renderOrderedCollection(
+		id: string,
+		totalItems: number,
+		first?: string,
+		last?: string,
+		orderedItems?: IObject[],
+	): any {
 		const page: any = {
 			id,
 			type: 'OrderedCollection',
@@ -656,8 +829,8 @@ export class ApRendererService {
 	private async getEmojis(names: string[]): Promise<emoji[]> {
 		if (names.length === 0) return [];
 
-		const allEmojis = await this.customEmojiService.localEmojisCache.fetch();
-		const emojis = names.map(name => allEmojis.get(name)).filter(isNotNull);
+		const allEmojis = await this.customEmojiLocalCacheService.fetch();
+		const emojis = names.map((name) => allEmojis.get(name)).filter(isNotNull);
 
 		return emojis;
 	}

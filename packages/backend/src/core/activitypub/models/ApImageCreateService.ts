@@ -3,24 +3,24 @@ import type { RemoteUser } from '@/models/entities/User.js';
 import { MetaService } from '@/core/MetaService.js';
 import { truncate } from '@/misc/truncate.js';
 import { DB_MAX_IMAGE_COMMENT_LENGTH } from '@/const.js';
-import { DriveService } from '@/core/DriveService.js';
 import type Logger from '@/misc/logger.js';
 import { checkHttps } from '@/misc/check-https.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { DriveFileAddFromUrlService } from '@/core/DriveFileAddFromUrlService.js';
 import { ApResolverService } from '../ApResolverService.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import type { IObject } from '../type.js';
 import type { drive_file } from '@prisma/client';
 
 @Injectable()
-export class ApImageService {
+export class ApImageCreateService {
 	private readonly logger: Logger;
 
 	constructor(
-		private readonly metaService: MetaService,
-		private readonly apResolverService: ApResolverService,
-		private readonly driveService: DriveService,
 		private readonly apLoggerService: ApLoggerService,
+		private readonly apResolverService: ApResolverService,
+		private readonly driveFileAddFromUrlService: DriveFileAddFromUrlService,
+		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.apLoggerService.logger;
@@ -29,7 +29,10 @@ export class ApImageService {
 	/**
 	 * Imageを作成します。
 	 */
-	public async createImage(actor: RemoteUser, value: string | IObject): Promise<drive_file> {
+	public async create(
+		actor: RemoteUser,
+		value: string | IObject,
+	): Promise<drive_file> {
 		// 投稿者が凍結されていたらスキップ
 		if (actor.isSuspended) {
 			throw new Error('actor has been suspended');
@@ -42,7 +45,10 @@ export class ApImageService {
 		}
 
 		if (typeof image.url !== 'string') {
-			throw new Error('invalid image: unexpected type of url: ' + JSON.stringify(image.url, null, 2));
+			throw new Error(
+				'invalid image: unexpected type of url: ' +
+					JSON.stringify(image.url, null, 2),
+			);
 		}
 
 		if (!checkHttps(image.url)) {
@@ -56,9 +62,11 @@ export class ApImageService {
 		// Cache if remote file cache is on AND either
 		// 1. remote sensitive file is also on
 		// 2. or the image is not sensitive
-		const shouldBeCached = instance.cacheRemoteFiles && (instance.cacheRemoteSensitiveFiles || !image.sensitive);
+		const shouldBeCached =
+			instance.cacheRemoteFiles &&
+			(instance.cacheRemoteSensitiveFiles || !image.sensitive);
 
-		const file = await this.driveService.uploadFromUrl({
+		const file = await this.driveFileAddFromUrlService.addFromUrl({
 			url: image.url,
 			user: actor,
 			uri: image.url,
@@ -73,19 +81,8 @@ export class ApImageService {
 			where: { id: file.id },
 			data: { url: image.url, uri: image.url },
 		});
-		return await this.prismaService.client.drive_file.findUniqueOrThrow({ where: { id: file.id } });
-	}
-
-	/**
-	 * Imageを解決します。
-	 *
-	 * Misskeyに対象のImageが登録されていればそれを返し、そうでなければ
-	 * リモートサーバーからフェッチしてMisskeyに登録しそれを返します。
-	 */
-	public async resolveImage(actor: RemoteUser, value: string | IObject): Promise<drive_file> {
-		// TODO
-
-		// リモートサーバーからフェッチしてきて登録
-		return await this.createImage(actor, value);
+		return await this.prismaService.client.drive_file.findUniqueOrThrow({
+			where: { id: file.id },
+		});
 	}
 }

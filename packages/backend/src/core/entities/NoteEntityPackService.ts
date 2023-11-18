@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import * as mfm from 'mfm-js';
-import { ModuleRef } from '@nestjs/core';
 import { z } from 'zod';
 import { nyaize } from '@/misc/nyaize.js';
 import { awaitAll } from '@/misc/prelude/await-all.js';
@@ -8,11 +7,11 @@ import { isNotNull } from '@/misc/is-not-null.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { OnModuleInit } from '@nestjs/common';
-import type { CustomEmojiService } from '../CustomEmojiService.js';
-import type { ReactionService } from '../ReactionService.js';
-import type { UserEntityService } from './UserEntityService.js';
-import type { DriveFileEntityService } from './DriveFileEntityService.js';
+import { ReactionDecodeService } from '../ReactionDecodeService.js';
+import { LegacyReactionConvertService } from '../LegacyReactionConvertService.js';
+import { CustomEmojiPopulateService } from '../CustomEmojiPopulateService.js';
+import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
+import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
 import type { note, note_reaction, user } from '@prisma/client';
 
 type PollChoice = {
@@ -48,23 +47,15 @@ function nyaizeNode(node: mfm.MfmNode): void {
 }
 
 @Injectable()
-export class NoteEntityService implements OnModuleInit {
-	private userEntityService: UserEntityService;
-	private driveFileEntityService: DriveFileEntityService;
-	private customEmojiService: CustomEmojiService;
-	private reactionService: ReactionService;
-
+export class NoteEntityPackService {
 	constructor(
-		private readonly moduleRef: ModuleRef,
+		private readonly customEmojiPopulateService: CustomEmojiPopulateService,
+		private readonly driveFileEntityPackService: DriveFileEntityPackService,
+		private readonly legacyReactionConvertService: LegacyReactionConvertService,
 		private readonly prismaService: PrismaService,
+		private readonly reactionDemodeService: ReactionDecodeService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
-
-	onModuleInit(): void {
-		this.userEntityService = this.moduleRef.get('UserEntityService');
-		this.driveFileEntityService = this.moduleRef.get('DriveFileEntityService');
-		this.customEmojiService = this.moduleRef.get('CustomEmojiService');
-		this.reactionService = this.moduleRef.get('ReactionService');
-	}
 
 	/**
 	 * packされたnoteを閲覧者からの可視性に基づいて適切に隠す。
@@ -73,7 +64,10 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param meId       閲覧者を指定するID。
 	 * @returns          `mutable`なメソッドなため返り値はなし。
 	 */
-	private async hideNote(packedNote: z.infer<typeof NoteSchema>, meId: user['id'] | null): Promise<void> {
+	private async hideNote(
+		packedNote: z.infer<typeof NoteSchema>,
+		meId: user['id'] | null,
+	): Promise<void> {
 		/** 隠すかどうか。隠す場合は`true`へ書き換えられる。 */
 		let hide = false;
 
@@ -85,7 +79,8 @@ export class NoteEntityService implements OnModuleInit {
 				hide = false;
 			} else {
 				/** `visibleUserIds`に`meId`が含まれるか */
-				const specified = packedNote.visibleUserIds?.some((id) => meId === id) ?? false;
+				const specified =
+					packedNote.visibleUserIds?.some((id) => meId === id) ?? false;
 
 				hide = !specified;
 			}
@@ -97,21 +92,25 @@ export class NoteEntityService implements OnModuleInit {
 				hide = true;
 			} else if (meId === packedNote.userId) {
 				hide = false;
-			} else if (packedNote.reply && (meId === packedNote.reply.userId)) {
+			} else if (packedNote.reply && meId === packedNote.reply.userId) {
 				// 自分の投稿に対するリプライだった場合は表示する
 				hide = false;
-			} else if (packedNote.mentions && packedNote.mentions.some(id => meId === id)) {
+			} else if (
+				packedNote.mentions &&
+				packedNote.mentions.some((id) => meId === id)
+			) {
 				// 自分へのメンションが含まれる場合は表示する
 				hide = false;
 			} else {
 				/** 自分が投稿者のフォロワーかどうか */
-				const isFollowing = await this.prismaService.client.following.count({
-					where: {
-						followeeId: packedNote.userId,
-						followerId: meId,
-					},
-					take: 1,
-				}) > 0;
+				const isFollowing =
+					(await this.prismaService.client.following.count({
+						where: {
+							followeeId: packedNote.userId,
+							followerId: meId,
+						},
+						take: 1,
+					})) > 0;
 
 				hide = !isFollowing;
 			}
@@ -135,9 +134,14 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param meId
 	 * @returns `meId`が`null`でなかった場合、自身の投票結果が返り値の`isVoted`に`true`として表される。
 	 */
-	private async populatePoll(note: note, meId: user['id'] | null): Promise<Poll> {
-		const poll = await this.prismaService.client.poll.findUniqueOrThrow({ where: { noteId: note.id } });
-		const choices = poll.choices.map(c => ({
+	private async populatePoll(
+		note: note,
+		meId: user['id'] | null,
+	): Promise<Poll> {
+		const poll = await this.prismaService.client.poll.findUniqueOrThrow({
+			where: { noteId: note.id },
+		});
+		const choices = poll.choices.map((c) => ({
 			text: c,
 			votes: poll.votes[poll.choices.indexOf(c)],
 			isVoted: false,
@@ -152,7 +156,7 @@ export class NoteEntityService implements OnModuleInit {
 					},
 				});
 
-				const myChoices = votes.map(v => v.choice);
+				const myChoices = votes.map((v) => v.choice);
 				for (const myChoice of myChoices) {
 					choices[myChoice].isVoted = true;
 				}
@@ -196,7 +200,7 @@ export class NoteEntityService implements OnModuleInit {
 		if (_hint_?.myReactions) {
 			const reaction = _hint_.myReactions.get(note.id);
 			if (reaction) {
-				return this.reactionService.convertLegacyReaction(reaction.reaction);
+				return this.legacyReactionConvertService.convert(reaction.reaction);
 			} else if (reaction === null) {
 				return undefined;
 			}
@@ -218,69 +222,10 @@ export class NoteEntityService implements OnModuleInit {
 		});
 
 		if (reaction) {
-			return this.reactionService.convertLegacyReaction(reaction.reaction);
+			return this.legacyReactionConvertService.convert(reaction.reaction);
 		}
 
 		return undefined;
-	}
-
-	/**
-	 * その`note`が`meId`で指定された閲覧者にとって閲覧可能か判定する。
-	 *
-	 * @param note
-	 * @param meId
-	 * @returns
-	 */
-	public async isVisibleForMe(note: note, meId: user['id'] | null): Promise<boolean> {
-		// This code must always be synchronized with the checks in generateVisibilityQuery.
-		// `visibility`が`'specified'` && 自分が指定されていない => 非表示
-		if (note.visibility === 'specified') {
-			if (meId == null) {
-				return false;
-			} else if (meId === note.userId) {
-				return true;
-			} else {
-				// 指定されているかどうか
-				return note.visibleUserIds.some((id) => meId === id);
-			}
-		}
-
-		// `visibility`が`'followers'` && 自分が投稿者のフォロワーでない => 非表示
-		if (note.visibility === 'followers') {
-			if (meId == null) {
-				return false;
-			} else if (meId === note.userId) {
-				return true;
-			} else if (meId === note.replyUserId) {
-				// 自分の投稿に対するリプライだった場合は表示する
-				return true;
-			} else if (note.mentions.some(id => meId === id)) {
-				// 自分へのメンションが含まれる場合は表示する
-				return true;
-			} else {
-				// 自分が投稿者のフォロワーかどうか
-				const [following, user] = await Promise.all([
-					this.prismaService.client.following.count({
-						where: {
-							followeeId: note.userId,
-							followerId: meId,
-						},
-						take: 1,
-					}),
-					this.prismaService.client.user.findUniqueOrThrow({ where: { id: meId } }),
-				]);
-
-				if (following > 0) {
-					return true;
-				} else {
-					// `note`がリモートのもので、なおかつ`meId`によって指定される閲覧者もまたリモートのユーザーだった場合、visibleであると判定する
-					// 閲覧者がリモートユーザーであることはほぼないと思われるが十分な確認はできていない。
-					return note.userHost !== null && user.host !== null;
-				}
-			}
-		}
-
-		return true;
 	}
 
 	/**
@@ -290,21 +235,25 @@ export class NoteEntityService implements OnModuleInit {
 	 * @param packedFiles あらかじめpackされた`file`の`Map`。ここにないものはあとから取得され、追加される。
 	 * @returns           packされた`file`。取得できなかった`file`に関しては除かれるため、`fileIds`と要素数が合わないこともなくはないはず。
 	 */
-	public async packAttachedFiles(
+	private async packAttachedFiles(
 		fileIds: note['fileIds'],
-		packedFiles: Map<note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>,
+		packedFiles: Map<
+			note['fileIds'][number],
+			z.infer<typeof DriveFileSchema> | null
+		>,
 	): Promise<z.infer<typeof DriveFileSchema>[]> {
 		const missingIds = [];
 		for (const id of fileIds) {
 			if (!packedFiles.has(id)) missingIds.push(id);
 		}
 		if (missingIds.length > 0) {
-			const additionalMap = await this.driveFileEntityService.packManyByIdsMap(missingIds);
+			const additionalMap =
+				await this.driveFileEntityPackService.packManyByIdsMap(missingIds);
 			for (const [k, v] of additionalMap) {
 				packedFiles.set(k, v);
 			}
 		}
-		return fileIds.map(id => packedFiles.get(id)).filter(isNotNull);
+		return fileIds.map((id) => packedFiles.get(id)).filter(isNotNull);
 	}
 
 	/**
@@ -325,7 +274,10 @@ export class NoteEntityService implements OnModuleInit {
 			skipHide?: boolean;
 			_hint_?: {
 				myReactions: Map<note['id'], note_reaction | null>;
-				packedFiles: Map<note['fileIds'][number], z.infer<typeof DriveFileSchema> | null>;
+				packedFiles: Map<
+					note['fileIds'][number],
+					z.infer<typeof DriveFileSchema> | null
+				>;
 			};
 		},
 	): Promise<z.infer<typeof NoteSchema>> {
@@ -345,29 +297,53 @@ export class NoteEntityService implements OnModuleInit {
 		let text = note.text;
 
 		if (note.name && (note.url ?? note.uri)) {
-			text = `【${note.name}】\n${(note.text ?? '').trim()}\n\n${note.url ?? note.uri}`;
+			text = `【${note.name}】\n${(note.text ?? '').trim()}\n\n${
+				note.url ?? note.uri
+			}`;
 		}
 
 		const channel = note.channelId
-			? await this.prismaService.client.channel.findUnique({ where: { id: note.channelId } })
+			? await this.prismaService.client.channel.findUnique({
+					where: { id: note.channelId },
+			  })
 			: null;
 
-		const reactionEmojiNames = Object.keys(NoteReactionsSchema.optional().parse(note.reactions) ?? {})
-			.filter(x => x.startsWith(':') && x.includes('@') && !x.includes('@.')) // リモートのカスタム絵文字のみ
-			.map(x => this.reactionService.decodeReaction(x).reaction.replaceAll(':', ''));
+		const reactionEmojiNames = Object.keys(
+			NoteReactionsSchema.optional().parse(note.reactions) ?? {},
+		)
+			.filter((x) => x.startsWith(':') && x.includes('@') && !x.includes('@.')) // リモートのカスタム絵文字のみ
+			.map((x) => {
+				return this.reactionDemodeService
+					.decodeReaction(x)
+					.reaction.replaceAll(':', '');
+			});
 		const packedFiles = options?._hint_?.packedFiles;
 
-		const getDetail = (async (): Promise<Record<string, never> | { reply: z.infer<typeof NoteSchema> | undefined; renote: z.infer<typeof NoteSchema> | undefined; poll: Poll | undefined; myReaction?: unknown }> => {
+		const getDetail = async (): Promise<
+			| Record<string, never>
+			| {
+					reply: z.infer<typeof NoteSchema> | undefined;
+					renote: z.infer<typeof NoteSchema> | undefined;
+					poll: Poll | undefined;
+					myReaction?: unknown;
+			  }
+		> => {
 			if (!opts.detail) return {};
 
 			const result = await awaitAll({
 				reply: () =>
 					note.replyId
-						? this.pack(note.replyId, me, { detail: false, _hint_: options?._hint_ })
+						? this.pack(note.replyId, me, {
+								detail: false,
+								_hint_: options?._hint_,
+						  })
 						: Promise.resolve(undefined),
 				renote: () =>
 					note.renoteId
-						? this.pack(note.renoteId, me, { detail: true, _hint_: options?._hint_ })
+						? this.pack(note.renoteId, me, {
+								detail: true,
+								_hint_: options?._hint_,
+						  })
 						: Promise.resolve(undefined),
 				poll: () =>
 					note.hasPoll
@@ -385,21 +361,20 @@ export class NoteEntityService implements OnModuleInit {
 				poll: result.poll,
 				...(result.myReaction != null ? { myReaction: result.myReaction } : {}),
 			};
-		});
+		};
 
 		const result = await awaitAll({
-			user: () =>
-				this.userEntityService.packLite(note.user),
+			user: () => this.userEntityPackLiteService.packLite(note.user),
 			reactionEmojis: () =>
-				this.customEmojiService.populateEmojis(reactionEmojiNames, host),
+				this.customEmojiPopulateService.populate(reactionEmojiNames, host),
 			emojis: () =>
 				host != null
-					? this.customEmojiService.populateEmojis(note.emojis, host)
+					? this.customEmojiPopulateService.populate(note.emojis, host)
 					: Promise.resolve(undefined),
 			files: () =>
 				packedFiles != null
 					? Promise.resolve(this.packAttachedFiles(note.fileIds, packedFiles))
-					: this.driveFileEntityService.packManyByIds(note.fileIds),
+					: this.driveFileEntityPackService.packManyByIds(note.fileIds),
 			detail: getDetail,
 		});
 
@@ -413,10 +388,13 @@ export class NoteEntityService implements OnModuleInit {
 			visibility: note.visibility,
 			localOnly: note.localOnly,
 			reactionAcceptance: note.reactionAcceptance,
-			visibleUserIds: note.visibility === 'specified' ? note.visibleUserIds : undefined,
+			visibleUserIds:
+				note.visibility === 'specified' ? note.visibleUserIds : undefined,
 			renoteCount: note.renoteCount,
 			repliesCount: note.repliesCount,
-			reactions: this.reactionService.convertLegacyReactions(z.record(z.string(), z.number()).optional().parse(note.reactions) ?? {}),
+			reactions: this.legacyReactionConvertService.convertAll(
+				z.record(z.string(), z.number()).optional().parse(note.reactions) ?? {},
+			),
 			reactionEmojis: result.reactionEmojis,
 			emojis: result.emojis,
 			tags: note.tags.length > 0 ? note.tags : undefined,
@@ -425,11 +403,13 @@ export class NoteEntityService implements OnModuleInit {
 			replyId: note.replyId,
 			renoteId: note.renoteId,
 			channelId: note.channelId ?? undefined,
-			channel: channel ? {
-				id: channel.id,
-				name: channel.name,
-				color: channel.color,
-			} : undefined,
+			channel: channel
+				? {
+						id: channel.id,
+						name: channel.name,
+						color: channel.color,
+				  }
+				: undefined,
 			mentions: note.mentions.length > 0 ? note.mentions : undefined,
 			uri: note.uri ?? undefined,
 			url: note.url ?? undefined,
@@ -474,94 +454,52 @@ export class NoteEntityService implements OnModuleInit {
 		/** `_hint_.myReactions`として渡すためのもの */
 		const myReactionsMap = new Map<note['id'], note_reaction | null>();
 		if (meId) {
-			const renoteIds = notes.map(n => n.renoteId).filter(isNotNull);
+			const renoteIds = notes.map((n) => n.renoteId).filter(isNotNull);
 			// パフォーマンスのためノートが作成されてから1秒以上経っていない場合はリアクションを取得しない
-			const targets = [...notes.filter(n => n.createdAt.getTime() + 1000 < Date.now()).map(n => n.id), ...renoteIds];
+			const targets = [
+				...notes
+					.filter((n) => n.createdAt.getTime() + 1000 < Date.now())
+					.map((n) => n.id),
+				...renoteIds,
+			];
 
 			/** データベースからまとめて取得されたリアクション情報 */
-			const myReactions = await this.prismaService.client.note_reaction.findMany({
-				where: {
-					userId: meId,
-					noteId: { in: targets },
-				},
-			});
+			const myReactions =
+				await this.prismaService.client.note_reaction.findMany({
+					where: {
+						userId: meId,
+						noteId: { in: targets },
+					},
+				});
 
 			// `myReactions`を`noteId`をもとにグループ化した上で`myReactionsMap`にセット
 			for (const target of targets) {
-				myReactionsMap.set(target, myReactions.find(reaction => reaction.noteId === target) ?? null);
+				myReactionsMap.set(
+					target,
+					myReactions.find((reaction) => reaction.noteId === target) ?? null,
+				);
 			}
 		}
 
-		await this.customEmojiService.prefetchEmojis(this.aggregateNoteEmojis(notes));
-
 		// TODO: renoteIdやreplyIdを解決する
 
-		const fileIds = notes.map(n => [n.fileIds, n.renote?.fileIds, n.reply?.fileIds]).flat(2).filter(isNotNull);
+		const fileIds = notes
+			.map((n) => [n.fileIds, n.renote?.fileIds, n.reply?.fileIds])
+			.flat(2)
+			.filter(isNotNull);
 		const packedFiles = new Map(
 			fileIds.length > 0
-				? await this.driveFileEntityService.packManyByIdsMap(fileIds)
+				? await this.driveFileEntityPackService.packManyByIdsMap(fileIds)
 				: [],
 		);
 
 		return await Promise.all(
-			notes.map(n => this.pack(n, me, { ...options, _hint_: { myReactions: myReactionsMap, packedFiles } })),
+			notes.map((n) =>
+				this.pack(n, me, {
+					...options,
+					_hint_: { myReactions: myReactionsMap, packedFiles },
+				}),
+			),
 		);
-	}
-
-	private parseNoteEmojis(emojis: string[], host: string | null): ({ name: null; host: null; } | { name: string | undefined; host: string | null; })[] {
-		return emojis.map(e => this.customEmojiService.parseEmojiStr(e, host));
-	};
-
-	/**
-	 * 引数として渡された複数の`note`に関連したすべての絵文字を集計する。
-	 * その`note`で使われている絵文字のみならず、`user`や`renote`や`renote.user`や`reactions`からも集計する。
-	 * `reply`からの集計には対応していない。
-	 *
-	 * @param notes
-	 * @returns
-	 */
-	public aggregateNoteEmojis(notes: (note & { renote?: (note & { user?: user }) | null; user?: user })[]): { name: string; host: string; }[] {
-		let emojis: ({ name: null; host: null; } | { name: string | undefined; host: string | null; })[] = [];
-
-		for (const note of notes) {
-			emojis = emojis.concat(this.parseNoteEmojis(note.emojis, note.userHost));
-			if (note.user) {
-				emojis = emojis.concat(this.parseNoteEmojis(note.user.emojis, note.userHost));
-			}
-			if (note.renote != null) {
-				emojis = emojis.concat(this.parseNoteEmojis(note.renote.emojis, note.renote.userHost));
-			}
-			if (note.renote?.user != null) {
-				emojis = emojis.concat(this.parseNoteEmojis(note.renote.user.emojis, note.renote.userHost));
-			}
-
-			// `note.reactions`で使われている絵文字を集計
-			const reactions = NoteReactionsSchema.parse(note.reactions);
-			const customReactions = Object.keys(reactions)
-				.map(x => this.reactionService.decodeReaction(x))
-				.map(({ name, host }) => ({ name, host }))
-				.filter((x): x is { name: string; host: string | null } => x.name !== undefined && x.host !== undefined);
-			emojis = emojis.concat(customReactions);
-		}
-
-		return emojis.filter((x): x is { name: string; host: string; } => x.name != null && x.host != null);
-	}
-
-	/**
-	 * `userId`で指定したユーザーの、`renoteId`で指定した`note`の`renote`がいくつあるか数える。
-	 *
-	 * @param userId
-	 * @param renoteId
-	 * @param excludeNoteId カウントしない`renote`のID。
-	 * @returns
-	 */
-	public async countSameRenotes(userId: string, renoteId: string, excludeNoteId: string | undefined): Promise<number> {
-		return await this.prismaService.client.note.count({
-			where: {
-				userId: userId,
-				renoteId: renoteId,
-				id: { not: excludeNoteId },
-			}
-		});
 	}
 }

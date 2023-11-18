@@ -23,9 +23,12 @@ export class PageLikeEntityService {
 		src: page_like['id'] | page_like,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<{ id: string; page: z.infer<typeof PageSchema> }> {
-		const like = typeof src === 'object'
-			? src
-			: await this.prismaService.client.page_like.findUniqueOrThrow({ where: { id: src } });
+		const like =
+			typeof src === 'object'
+				? src
+				: await this.prismaService.client.page_like.findUniqueOrThrow({
+						where: { id: src },
+				  });
 
 		return {
 			id: like.id,

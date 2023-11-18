@@ -33,13 +33,11 @@ export class HttpRequestService {
 	 */
 	public httpsAgent: https.Agent;
 
-	constructor(
-		private readonly configLoaderService: ConfigLoaderService,
-	) {
+	constructor(private readonly configLoaderService: ConfigLoaderService) {
 		const cache = new CacheableLookup({
-			maxTtl: 3600,	// 1hours
-			errorTtl: 30,	// 30secs
-			lookup: false,	// nativeのdns.lookupにfallbackしない
+			maxTtl: 3600, // 1hours
+			errorTtl: 30, // 30secs
+			lookup: false, // nativeのdns.lookupにfallbackしない
 		});
 
 		this.http = new http.Agent({
@@ -56,28 +54,31 @@ export class HttpRequestService {
 			lookup: cache.lookup as unknown as net.LookupFunction,
 		});
 
-		const maxSockets = Math.max(256, configLoaderService.data.deliverJobConcurrency);
+		const maxSockets = Math.max(
+			256,
+			configLoaderService.data.deliverJobConcurrency,
+		);
 
 		this.httpAgent = configLoaderService.data.proxy
 			? new HttpProxyAgent({
-				keepAlive: true,
-				keepAliveMsecs: 30 * 1000,
-				maxSockets,
-				maxFreeSockets: 256,
-				scheduling: 'lifo',
-				proxy: configLoaderService.data.proxy,
-			})
+					keepAlive: true,
+					keepAliveMsecs: 30 * 1000,
+					maxSockets,
+					maxFreeSockets: 256,
+					scheduling: 'lifo',
+					proxy: configLoaderService.data.proxy,
+			  })
 			: this.http;
 
 		this.httpsAgent = configLoaderService.data.proxy
 			? new HttpsProxyAgent({
-				keepAlive: true,
-				keepAliveMsecs: 30 * 1000,
-				maxSockets,
-				maxFreeSockets: 256,
-				scheduling: 'lifo',
-				proxy: configLoaderService.data.proxy,
-			})
+					keepAlive: true,
+					keepAliveMsecs: 30 * 1000,
+					maxSockets,
+					maxFreeSockets: 256,
+					scheduling: 'lifo',
+					proxy: configLoaderService.data.proxy,
+			  })
 			: this.https;
 	}
 
@@ -87,8 +88,14 @@ export class HttpRequestService {
 	 * @param bypassProxy Allways bypass proxy
 	 */
 	@bindThis
-	public getAgentByUrl(url: URL, bypassProxy = false): http.Agent | https.Agent {
-		if (bypassProxy || this.configLoaderService.data.proxyBypassHosts.includes(url.hostname)) {
+	public getAgentByUrl(
+		url: URL,
+		bypassProxy = false,
+	): http.Agent | https.Agent {
+		if (
+			bypassProxy ||
+			this.configLoaderService.data.proxyBypassHosts.includes(url.hostname)
+		) {
 			return url.protocol === 'http:' ? this.http : this.https;
 		} else {
 			return url.protocol === 'http:' ? this.httpAgent : this.httpsAgent;
@@ -96,26 +103,40 @@ export class HttpRequestService {
 	}
 
 	@bindThis
-	public async getJson<T = unknown>(url: string, accept = 'application/json, */*', headers?: Record<string, string>): Promise<T> {
+	public async getJson<T = unknown>(
+		url: string,
+		accept = 'application/json, */*',
+		headers?: Record<string, string>,
+	): Promise<T> {
 		const res = await this.send(url, {
 			method: 'GET',
-			headers: Object.assign({
-				Accept: accept,
-			}, headers ?? {}),
+			headers: Object.assign(
+				{
+					Accept: accept,
+				},
+				headers ?? {},
+			),
 			timeout: 5000,
 			size: 1024 * 256,
 		});
 
-		return await res.json() as T;
+		return (await res.json()) as T;
 	}
 
 	@bindThis
-	public async getHtml(url: string, accept = 'text/html, */*', headers?: Record<string, string>): Promise<string> {
+	public async getHtml(
+		url: string,
+		accept = 'text/html, */*',
+		headers?: Record<string, string>,
+	): Promise<string> {
 		const res = await this.send(url, {
 			method: 'GET',
-			headers: Object.assign({
-				Accept: accept,
-			}, headers ?? {}),
+			headers: Object.assign(
+				{
+					Accept: accept,
+				},
+				headers ?? {},
+			),
 			timeout: 5000,
 		});
 
@@ -123,17 +144,21 @@ export class HttpRequestService {
 	}
 
 	@bindThis
-	public async send(url: string, args: {
-		method?: string,
-		body?: string,
-		headers?: Record<string, string>,
-		timeout?: number,
-		size?: number,
-	} = {}, extra: {
-		throwErrorWhenResponseNotOk: boolean;
-	} = {
-		throwErrorWhenResponseNotOk: true,
-	}): Promise<Response> {
+	public async send(
+		url: string,
+		args: {
+			method?: string;
+			body?: string;
+			headers?: Record<string, string>;
+			timeout?: number;
+			size?: number;
+		} = {},
+		extra: {
+			throwErrorWhenResponseNotOk: boolean;
+		} = {
+			throwErrorWhenResponseNotOk: true,
+		},
+	): Promise<Response> {
 		const timeout = args.timeout ?? 5000;
 
 		const controller = new AbortController();
@@ -154,7 +179,11 @@ export class HttpRequestService {
 		});
 
 		if (!res.ok && extra.throwErrorWhenResponseNotOk) {
-			throw new StatusError(`${res.status} ${res.statusText}`, res.status, res.statusText);
+			throw new StatusError(
+				`${res.status} ${res.statusText}`,
+				res.status,
+				res.statusText,
+			);
 		}
 
 		return res;

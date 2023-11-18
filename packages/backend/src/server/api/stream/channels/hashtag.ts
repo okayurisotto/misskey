@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
@@ -14,7 +14,7 @@ class HashtagChannel extends Channel {
 	private q: string[][];
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -71,7 +71,7 @@ export class HashtagChannelService {
 	public readonly requireCredential = HashtagChannel.requireCredential;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 	) {
 	}
 

@@ -76,7 +76,10 @@ export class SearchService implements OnApplicationBootstrap {
 	) {}
 
 	public async onApplicationBootstrap(): Promise<void> {
-		if (this.configLoaderService.data.meilisearch && this.meiliSearchService.instance) {
+		if (
+			this.configLoaderService.data.meilisearch &&
+			this.meiliSearchService.instance
+		) {
 			this.meilisearchNoteIndex = this.meiliSearchService.instance.index(
 				`${this.configLoaderService.data.meilisearch.index}---notes`,
 			);
@@ -96,7 +99,8 @@ export class SearchService implements OnApplicationBootstrap {
 		}
 
 		if (this.configLoaderService.data.meilisearch?.scope) {
-			this.meilisearchIndexScope = this.configLoaderService.data.meilisearch.scope;
+			this.meilisearchIndexScope =
+				this.configLoaderService.data.meilisearch.scope;
 		}
 	}
 

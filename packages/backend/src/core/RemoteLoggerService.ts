@@ -6,9 +6,7 @@ import { LoggerService } from '@/core/LoggerService.js';
 export class RemoteLoggerService {
 	public logger: Logger;
 
-	constructor(
-		private readonly loggerService: LoggerService,
-	) {
+	constructor(private readonly loggerService: LoggerService) {
 		this.logger = this.loggerService.getLogger('remote', 'cyan');
 	}
 }

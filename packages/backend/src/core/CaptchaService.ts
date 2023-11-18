@@ -10,68 +10,103 @@ type CaptchaResponse = {
 export class CaptchaService {
 	constructor(private readonly httpRequestService: HttpRequestService) {}
 
-	private async getCaptchaResponse(url: string, secret: string, response: string): Promise<CaptchaResponse> {
+	private async getCaptchaResponse(
+		url: string,
+		secret: string,
+		response: string,
+	): Promise<CaptchaResponse> {
 		const params = new URLSearchParams({
 			secret,
 			response,
 		});
 
-		const res = await this.httpRequestService.send(url, {
-			method: 'POST',
-			body: params.toString(),
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded',
+		const res = await this.httpRequestService.send(
+			url,
+			{
+				method: 'POST',
+				body: params.toString(),
+				headers: {
+					'Content-Type': 'application/x-www-form-urlencoded',
+				},
 			},
-		}, { throwErrorWhenResponseNotOk: false });
+			{ throwErrorWhenResponseNotOk: false },
+		);
 
 		if (!res.ok) {
 			throw new Error(`${res.status}`);
 		}
 
-		return await res.json() as CaptchaResponse;
+		return (await res.json()) as CaptchaResponse;
 	}
 
-	public async verifyRecaptcha(secret: string, response: string | null | undefined): Promise<void> {
+	public async verifyRecaptcha(
+		secret: string,
+		response: string | null | undefined,
+	): Promise<void> {
 		if (response == null) {
 			throw new Error('recaptcha-failed: no response provided');
 		}
 
-		const result = await this.getCaptchaResponse('https://www.recaptcha.net/recaptcha/api/siteverify', secret, response).catch(err => {
+		const result = await this.getCaptchaResponse(
+			'https://www.recaptcha.net/recaptcha/api/siteverify',
+			secret,
+			response,
+		).catch((err) => {
 			throw new Error(`recaptcha-request-failed: ${err}`);
 		});
 
 		if (result.success !== true) {
-			const errorCodes = result['error-codes'] ? result['error-codes'].join(', ') : '';
+			const errorCodes = result['error-codes']
+				? result['error-codes'].join(', ')
+				: '';
 			throw new Error(`recaptcha-failed: ${errorCodes}`);
 		}
 	}
 
-	public async verifyHcaptcha(secret: string, response: string | null | undefined): Promise<void> {
+	public async verifyHcaptcha(
+		secret: string,
+		response: string | null | undefined,
+	): Promise<void> {
 		if (response == null) {
 			throw new Error('hcaptcha-failed: no response provided');
 		}
 
-		const result = await this.getCaptchaResponse('https://hcaptcha.com/siteverify', secret, response).catch(err => {
+		const result = await this.getCaptchaResponse(
+			'https://hcaptcha.com/siteverify',
+			secret,
+			response,
+		).catch((err) => {
 			throw new Error(`hcaptcha-request-failed: ${err}`);
 		});
 
 		if (result.success !== true) {
-			const errorCodes = result['error-codes'] ? result['error-codes'].join(', ') : '';
+			const errorCodes = result['error-codes']
+				? result['error-codes'].join(', ')
+				: '';
 			throw new Error(`hcaptcha-failed: ${errorCodes}`);
 		}
 	}
 
-	public async verifyTurnstile(secret: string, response: string | null | undefined): Promise<void> {
+	public async verifyTurnstile(
+		secret: string,
+		response: string | null | undefined,
+	): Promise<void> {
 		if (response == null) {
 			throw new Error('turnstile-failed: no response provided');
 		}
 
-		const result = await this.getCaptchaResponse('https://challenges.cloudflare.com/turnstile/v0/siteverify', secret, response).catch(err => {
+		const result = await this.getCaptchaResponse(
+			'https://challenges.cloudflare.com/turnstile/v0/siteverify',
+			secret,
+			response,
+		).catch((err) => {
 			throw new Error(`turnstile-request-failed: ${err}`);
 		});
 
 		if (result.success !== true) {
-			const errorCodes = result['error-codes'] ? result['error-codes'].join(', ') : '';
+			const errorCodes = result['error-codes']
+				? result['error-codes'].join(', ')
+				: '';
 			throw new Error(`turnstile-failed: ${errorCodes}`);
 		}
 	}

@@ -3,8 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { noSuchUser_________ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GetterService } from '@/server/api/GetterService.js';
-import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { UserFollowRequestRejectService } from '@/core/UserFollowRequestRejectService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -27,7 +27,7 @@ export default class extends Endpoint<
 > {
 	constructor(
 		private readonly getterService: GetterService,
-		private readonly userFollowingService: UserFollowingService,
+		private readonly userFollowRequestRejectService: UserFollowRequestRejectService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch follower
@@ -40,7 +40,7 @@ export default class extends Endpoint<
 					throw err;
 				});
 
-			await this.userFollowingService.rejectFollowRequest(me, follower);
+			await this.userFollowRequestRejectService.reject(me, follower);
 
 			return;
 		});

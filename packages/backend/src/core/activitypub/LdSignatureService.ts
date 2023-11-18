@@ -12,12 +12,15 @@ class LdSignature {
 	public preLoad = true;
 	public loderTimeout = 5000;
 
-	constructor(
-		private readonly httpRequestService: HttpRequestService,
-	) {
-	}
+	constructor(private readonly httpRequestService: HttpRequestService) {}
 
-	public async signRsaSignature2017(data: any, privateKey: string, creator: string, domain?: string, created?: Date): Promise<any> {
+	public async signRsaSignature2017(
+		data: any,
+		privateKey: string,
+		creator: string,
+		domain?: string,
+		created?: Date,
+	): Promise<any> {
 		const options: {
 			type: string;
 			creator: string;
@@ -52,7 +55,10 @@ class LdSignature {
 		};
 	}
 
-	public async verifyRsaSignature2017(data: any, publicKey: string): Promise<boolean> {
+	public async verifyRsaSignature2017(
+		data: any,
+		publicKey: string,
+	): Promise<boolean> {
 		const toBeSigned = await this.createVerifyData(data, data.signature);
 		const verifier = crypto.createVerify('sha256');
 		verifier.update(toBeSigned);
@@ -113,22 +119,24 @@ class LdSignature {
 	}
 
 	private async fetchDocument(url: string): Promise<JsonLd> {
-		const json = await this.httpRequestService.send(
-			url,
-			{
-				headers: {
-					Accept: 'application/ld+json, application/json',
+		const json = await this.httpRequestService
+			.send(
+				url,
+				{
+					headers: {
+						Accept: 'application/ld+json, application/json',
+					},
+					timeout: this.loderTimeout,
 				},
-				timeout: this.loderTimeout,
-			},
-			{ throwErrorWhenResponseNotOk: false },
-		).then(res => {
-			if (!res.ok) {
-				throw new Error(`${res.status} ${res.statusText}`);
-			} else {
-				return res.json();
-			}
-		});
+				{ throwErrorWhenResponseNotOk: false },
+			)
+			.then((res) => {
+				if (!res.ok) {
+					throw new Error(`${res.status} ${res.statusText}`);
+				} else {
+					return res.json();
+				}
+			});
 
 		return json as JsonLd;
 	}
@@ -142,10 +150,7 @@ class LdSignature {
 
 @Injectable()
 export class LdSignatureService {
-	constructor(
-		private readonly httpRequestService: HttpRequestService,
-	) {
-	}
+	constructor(private readonly httpRequestService: HttpRequestService) {}
 
 	public use(): LdSignature {
 		return new LdSignature(this.httpRequestService);

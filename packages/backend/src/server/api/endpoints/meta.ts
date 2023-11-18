@@ -3,13 +3,13 @@ import { Injectable } from '@nestjs/common';
 import JSON5 from 'json5';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { AdEntityService } from '@/core/entities/AdEntityService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
 import { MetaSchema } from '../../../models/zod/MetaSchema.js';
 
 const res = MetaSchema;
@@ -31,12 +31,11 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
+		private readonly adEntityService: AdEntityService,
 		private readonly configLoaderService: ConfigLoaderService,
-
-		private readonly userEntityService: UserEntityService,
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
-		private readonly adEntityService: AdEntityService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {
 		super(meta, paramDef, async (ps) => {
 			const instance = await this.metaService.fetch(true);
@@ -130,7 +129,7 @@ export default class extends Endpoint<
 							await this.prismaService.client.user.findUniqueOrThrow({
 								where: { id: instance.proxyAccountId },
 							});
-						return await this.userEntityService.packLite(proxyAccount);
+						return await this.userEntityPackLiteService.packLite(proxyAccount);
 					} catch {
 						return null;
 					}

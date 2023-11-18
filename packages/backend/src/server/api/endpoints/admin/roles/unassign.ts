@@ -11,6 +11,7 @@ import { ApiError } from '@/server/api/error.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RoleUtilService } from '@/core/RoleUtilService.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -39,6 +40,7 @@ export default class extends Endpoint<
 	constructor(
 		private readonly roleService: RoleService,
 		private readonly prismaService: PrismaService,
+		private readonly roleUtilService: RoleUtilService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const role = await this.prismaService.client.role.findUnique({
@@ -61,7 +63,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchUser);
 			}
 
-			await this.roleService.unassign(user.id, role.id);
+			await this.roleUtilService.unassign(user.id, role.id);
 		});
 	}
 }

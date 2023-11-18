@@ -7,12 +7,12 @@ import {
 	notFollowing,
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { UserFollowingService } from '@/core/UserFollowingService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserFollowingDeleteService } from '@/core/UserFollowingDeleteService.js';
+import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
 import { ApiError } from '../../error.js';
 
 const res = UserLiteSchema;
@@ -44,10 +44,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly userEntityService: UserEntityService,
 		private readonly getterService: GetterService,
-		private readonly userFollowingService: UserFollowingService,
 		private readonly prismaService: PrismaService,
+		private readonly userFollowingDeleteService: UserFollowingDeleteService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const follower = me;
@@ -81,9 +81,9 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.notFollowing);
 			}
 
-			await this.userFollowingService.unfollow(follower, followee);
+			await this.userFollowingDeleteService.delete(follower, followee);
 
-			return await this.userEntityService.packLite(followee);
+			return await this.userEntityPackLiteService.packLite(followee);
 		});
 	}
 }

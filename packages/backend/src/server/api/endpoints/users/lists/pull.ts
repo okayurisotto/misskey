@@ -5,11 +5,11 @@ import {
 	noSuchUser______________________,
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -37,10 +37,10 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly userEntityService: UserEntityService,
 		private readonly getterService: GetterService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch the list
@@ -76,7 +76,7 @@ export default class extends Endpoint<
 			this.globalEventService.publishUserListStream(
 				userList.id,
 				'userRemoved',
-				await this.userEntityService.packLite(user),
+				await this.userEntityPackLiteService.packLite(user),
 			);
 		});
 	}

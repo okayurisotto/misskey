@@ -10,7 +10,6 @@ import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 export class VideoProcessingService {
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
-
 		private readonly imageProcessingService: ImageProcessingService,
 	) {}
 
@@ -26,20 +25,25 @@ export class VideoProcessingService {
 					.on('error', rej)
 					.screenshot({
 						folder: dir,
-						filename: 'out.png',	// must have .png extension
+						filename: 'out.png', // must have .png extension
 						count: 1,
 						timestamps: ['5%'],
 					});
 			});
 
-			return await this.imageProcessingService.convertToWebp(`${dir}/out.png`, 498, 422);
+			return await this.imageProcessingService.convertToWebp(
+				`${dir}/out.png`,
+				498,
+				422,
+			);
 		} finally {
 			cleanup();
 		}
 	}
 
 	public getExternalVideoThumbnailUrl(url: string): string | null {
-		if (this.configLoaderService.data.videoThumbnailGenerator == null) return null;
+		if (this.configLoaderService.data.videoThumbnailGenerator == null)
+			return null;
 
 		return appendQuery(
 			`${this.configLoaderService.data.videoThumbnailGenerator}/thumbnail.webp`,

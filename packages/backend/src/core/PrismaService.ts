@@ -6,9 +6,7 @@ import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 export class PrismaService implements OnApplicationShutdown {
 	public readonly client: PrismaClient;
 
-	constructor(
-		private readonly configLoaderService: ConfigLoaderService,
-	) {
+	constructor(private readonly configLoaderService: ConfigLoaderService) {
 		this.client = new PrismaClient({
 			datasources: {
 				db: {

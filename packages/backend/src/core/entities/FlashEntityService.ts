@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { FlashSchema } from '@/models/zod/FlashSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { UserEntityService } from './UserEntityService.js';
+import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
 import type { flash, user } from '@prisma/client';
 
@@ -10,7 +10,7 @@ import type { flash, user } from '@prisma/client';
 export class FlashEntityService {
 	constructor(
 		private readonly prismaService: PrismaService,
-		private readonly userEntityService: UserEntityService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
 
 	/**
@@ -31,13 +31,13 @@ export class FlashEntityService {
 		});
 
 		const result = await awaitAll({
-			user: () => this.userEntityService.packLite(flash.user),
+			user: () => this.userEntityPackLiteService.packLite(flash.user),
 			isLiked: async () =>
 				meId
-					? await this.prismaService.client.flash_like.count({
+					? (await this.prismaService.client.flash_like.count({
 							where: { flashId: flash.id, userId: meId },
 							take: 1,
-					  }) > 0
+					  })) > 0
 					: undefined,
 		});
 

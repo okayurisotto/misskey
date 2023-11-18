@@ -15,42 +15,55 @@ export class NotificationService implements OnApplicationShutdown {
 	readonly #shutdownController = new AbortController();
 
 	constructor(
-		private readonly redisClient: RedisService,
-
-		private readonly notificationEntityService: NotificationEntityService,
-		private readonly idService: IdService,
-		private readonly globalEventService: GlobalEventService,
-		private readonly pushNotificationService: PushNotificationService,
 		private readonly cacheService: CacheService,
+		private readonly globalEventService: GlobalEventService,
+		private readonly idService: IdService,
+		private readonly notificationEntityService: NotificationEntityService,
 		private readonly prismaService: PrismaService,
-	) {
-	}
+		private readonly pushNotificationService: PushNotificationService,
+		private readonly redisClient: RedisService,
+	) {}
 
 	public async readAllNotification(
 		userId: user['id'],
 		force = false,
 	): Promise<void> {
-		const latestReadNotificationId = await this.redisClient.get(`latestReadNotification:${userId}`);
+		const latestReadNotificationId = await this.redisClient.get(
+			`latestReadNotification:${userId}`,
+		);
 
 		const latestNotificationIdsRes = await this.redisClient.xrevrange(
 			`notificationTimeline:${userId}`,
 			'+',
 			'-',
-			'COUNT', 1);
+			'COUNT',
+			1,
+		);
 		const latestNotificationId = latestNotificationIdsRes[0]?.[0];
 
 		if (latestNotificationId == null) return;
 
-		this.redisClient.set(`latestReadNotification:${userId}`, latestNotificationId);
+		this.redisClient.set(
+			`latestReadNotification:${userId}`,
+			latestNotificationId,
+		);
 
-		if (force || latestReadNotificationId == null || (latestReadNotificationId < latestNotificationId)) {
+		if (
+			force ||
+			latestReadNotificationId == null ||
+			latestReadNotificationId < latestNotificationId
+		) {
 			return this.postReadAllNotifications(userId);
 		}
 	}
 
 	private postReadAllNotifications(userId: user['id']): void {
 		this.globalEventService.publishMainStream(userId, 'readAllNotifications');
-		this.pushNotificationService.pushNotification(userId, 'readAllNotifications', undefined);
+		this.pushNotificationService.pushNotification(
+			userId,
+			'readAllNotifications',
+			undefined,
+		);
 	}
 
 	public async createNotification(
@@ -67,7 +80,8 @@ export class NotificationService implements OnApplicationShutdown {
 				return null;
 			}
 
-			const mutings = await this.cacheService.userMutingsCache.fetch(notifieeId);
+			const mutings =
+				await this.cacheService.userMutingsCache.fetch(notifieeId);
 			if (mutings.has(data.notifierId)) {
 				return null;
 			}
@@ -82,26 +96,71 @@ export class NotificationService implements OnApplicationShutdown {
 
 		const redisIdPromise = this.redisClient.xadd(
 			`notificationTimeline:${notifieeId}`,
-			'MAXLEN', '~', '300',
+			'MAXLEN',
+			'~',
+			'300',
 			'*',
-			'data', JSON.stringify(notification));
+			'data',
+			JSON.stringify(notification),
+		);
 
-		const packed = await this.notificationEntityService.pack(notification, notifieeId, {});
+		const packed = await this.notificationEntityService.pack(
+			notification,
+			notifieeId,
+			{},
+		);
 
 		// Publish notification event
-		this.globalEventService.publishMainStream(notifieeId, 'notification', packed);
+		this.globalEventService.publishMainStream(
+			notifieeId,
+			'notification',
+			packed,
+		);
 
 		// 2秒経っても(今回作成した)通知が既読にならなかったら「未読の通知がありますよ」イベントを発行する
-		setTimeout(2000, 'unread notification', { signal: this.#shutdownController.signal }).then(async () => {
-			const latestReadNotificationId = await this.redisClient.get(`latestReadNotification:${notifieeId}`);
-			if (latestReadNotificationId && (latestReadNotificationId >= (await redisIdPromise)!)) return;
+		setTimeout(2000, 'unread notification', {
+			signal: this.#shutdownController.signal,
+		}).then(
+			async () => {
+				const latestReadNotificationId = await this.redisClient.get(
+					`latestReadNotification:${notifieeId}`,
+				);
+				if (
+					latestReadNotificationId &&
+					latestReadNotificationId >= (await redisIdPromise)!
+				)
+					return;
 
-			this.globalEventService.publishMainStream(notifieeId, 'unreadNotification', packed);
-			this.pushNotificationService.pushNotification(notifieeId, 'notification', packed);
+				this.globalEventService.publishMainStream(
+					notifieeId,
+					'unreadNotification',
+					packed,
+				);
+				this.pushNotificationService.pushNotification(
+					notifieeId,
+					'notification',
+					packed,
+				);
 
-			if (type === 'follow') this.emailNotificationFollow(notifieeId, await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.notifierId! } }));
-			if (type === 'receiveFollowRequest') this.emailNotificationReceiveFollowRequest(notifieeId, await this.prismaService.client.user.findUniqueOrThrow({ where: { id: data.notifierId! } }));
-		}, () => { /* aborted, ignore it */ });
+				if (type === 'follow')
+					this.emailNotificationFollow(
+						notifieeId,
+						await this.prismaService.client.user.findUniqueOrThrow({
+							where: { id: data.notifierId! },
+						}),
+					);
+				if (type === 'receiveFollowRequest')
+					this.emailNotificationReceiveFollowRequest(
+						notifieeId,
+						await this.prismaService.client.user.findUniqueOrThrow({
+							where: { id: data.notifierId! },
+						}),
+					);
+			},
+			() => {
+				/* aborted, ignore it */
+			},
+		);
 
 		return notification;
 	}
@@ -111,7 +170,10 @@ export class NotificationService implements OnApplicationShutdown {
 
 	// TODO: locale ファイルをクライアント用とサーバー用で分けたい
 
-	private async emailNotificationFollow(userId: user['id'], follower: user): Promise<void> {
+	private async emailNotificationFollow(
+		userId: user['id'],
+		follower: user,
+	): Promise<void> {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
 		if (!userProfile.email || !userProfile.emailNotificationTypes.includes('follow')) return;
@@ -122,7 +184,10 @@ export class NotificationService implements OnApplicationShutdown {
 		*/
 	}
 
-	private async emailNotificationReceiveFollowRequest(userId: user['id'], follower: user): Promise<void> {
+	private async emailNotificationReceiveFollowRequest(
+		userId: user['id'],
+		follower: user,
+	): Promise<void> {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
 		if (!userProfile.email || !userProfile.emailNotificationTypes.includes('receiveFollowRequest')) return;

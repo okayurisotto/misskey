@@ -16,9 +16,9 @@ import { QueueService } from '@/core/QueueService.js';
 import { PollService } from '@/core/PollService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserBlockingCheckService } from '@/core/UserBlockingCheckService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -55,8 +55,8 @@ export default class extends Endpoint<
 		private readonly pollService: PollService,
 		private readonly apRendererService: ApRendererService,
 		private readonly globalEventService: GlobalEventService,
-		private readonly userBlockingService: UserBlockingService,
 		private readonly prismaService: PrismaService,
+		private readonly userBlockingCheckService: UserBlockingCheckService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const createdAt = new Date();
@@ -75,7 +75,7 @@ export default class extends Endpoint<
 
 			// Check blocking
 			if (note.userId !== me.id) {
-				const blocked = await this.userBlockingService.checkBlocked(
+				const blocked = await this.userBlockingCheckService.check(
 					note.userId,
 					me.id,
 				);

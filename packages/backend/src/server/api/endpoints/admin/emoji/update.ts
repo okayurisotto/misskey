@@ -7,9 +7,9 @@ import {
 	sameNameEmojiExists,
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { CustomEmojiUpdateService } from '@/core/CustomEmojiUpdateService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -47,7 +47,7 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly customEmojiService: CustomEmojiService,
+		private readonly customEmojiUpdateService: CustomEmojiUpdateService,
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
@@ -64,7 +64,7 @@ export default class extends Endpoint<
 				return result;
 			})();
 
-			await this.customEmojiService.update(ps.id, {
+			await this.customEmojiUpdateService.update(ps.id, {
 				driveFile,
 				name: ps.name,
 				category: ps.category ?? null,

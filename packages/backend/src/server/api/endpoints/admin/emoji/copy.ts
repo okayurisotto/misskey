@@ -3,12 +3,12 @@ import { Injectable } from '@nestjs/common';
 import { noSuchEmoji } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdService } from '@/core/IdService.js';
-import { DriveService } from '@/core/DriveService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
+import { DriveFileAddFromUrlService } from '@/core/DriveFileAddFromUrlService.js';
 import { ApiError } from '../../../error.js';
 import type { drive_file } from '@prisma/client';
 
@@ -34,8 +34,8 @@ export default class extends Endpoint<
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly idService: IdService,
 		private readonly globalEventService: GlobalEventService,
-		private readonly driveService: DriveService,
 		private readonly prismaService: PrismaService,
+		private readonly driveFileAddFromUrlService: DriveFileAddFromUrlService,
 	) {
 		super(meta, paramDef, async (ps) => {
 			const emoji = await this.prismaService.client.emoji.findUnique({
@@ -50,7 +50,7 @@ export default class extends Endpoint<
 
 			try {
 				// Create file
-				driveFile = await this.driveService.uploadFromUrl({
+				driveFile = await this.driveFileAddFromUrlService.addFromUrl({
 					url: emoji.originalUrl,
 					user: null,
 					force: true,

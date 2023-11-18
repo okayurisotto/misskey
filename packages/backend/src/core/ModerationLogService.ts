@@ -22,7 +22,7 @@ export class ModerationLogService {
 				userId: moderator.id,
 				type: type,
 				info: info ?? {},
-			}
+			},
 		});
 	}
 }

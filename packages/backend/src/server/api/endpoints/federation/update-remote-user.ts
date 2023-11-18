@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { ApPersonUpdateService } from '@/core/activitypub/models/ApPersonUpdateService.js';
 
 export const meta = {
 	tags: ['federation'],
@@ -23,11 +23,11 @@ export default class extends Endpoint<
 > {
 	constructor(
 		private readonly getterService: GetterService,
-		private readonly apPersonService: ApPersonService,
+		private readonly apPersonUpdateService: ApPersonUpdateService,
 	) {
 		super(meta, paramDef, async (ps) => {
 			const user = await this.getterService.getRemoteUser(ps.userId);
-			await this.apPersonService.updatePerson(user.uri);
+			await this.apPersonUpdateService.update(user.uri);
 		});
 	}
 }

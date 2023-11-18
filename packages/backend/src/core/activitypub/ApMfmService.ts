@@ -7,18 +7,18 @@ import type { note } from '@prisma/client';
 
 @Injectable()
 export class ApMfmService {
-	constructor(
-		private readonly mfmService: MfmService,
-	) {
-	}
+	constructor(private readonly mfmService: MfmService) {}
 
 	public htmlToMfm(html: string, tag?: IObject | IObject[]): string {
-		const hashtagNames = extractApHashtagObjects(tag).map(x => x.name);
+		const hashtagNames = extractApHashtagObjects(tag).map((x) => x.name);
 		return this.mfmService.fromHtml(html, hashtagNames);
 	}
 
 	public getNoteHtml(note: note): string | null {
 		if (!note.text) return '';
-		return this.mfmService.toHtml(mfm.parse(note.text), JSON.parse(note.mentionedRemoteUsers));
+		return this.mfmService.toHtml(
+			mfm.parse(note.text),
+			JSON.parse(note.mentionedRemoteUsers),
+		);
 	}
 }

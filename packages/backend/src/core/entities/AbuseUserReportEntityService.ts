@@ -14,6 +14,8 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { EmailService } from '@/core/EmailService.js';
 import { PaginationQuery } from '../PrismaQueryService.js';
+import { RoleUtilService } from '../RoleUtilService.js';
+import { UserEntityUtilService } from './UserEntityUtilService.js';
 import type { AbuseUserReport, Prisma, user } from '@prisma/client';
 import type { z } from 'zod';
 
@@ -35,6 +37,8 @@ export class AbuseUserReportEntityService {
 		private readonly queueService: QueueService,
 		private readonly roleService: RoleService,
 		private readonly userEntityService: UserEntityService,
+		private readonly userEntityUtilService: UserEntityUtilService,
+		private readonly roleUtilService: RoleUtilService,
 	) {}
 
 	public async pack(
@@ -151,7 +155,8 @@ export class AbuseUserReportEntityService {
 			});
 
 		const forwarded =
-			options.forward && this.userEntityService.isRemoteUser(report.targetUser);
+			options.forward &&
+			this.userEntityUtilService.isRemoteUser(report.targetUser);
 
 		if (forwarded) {
 			const actor = await this.instanceActorService.getInstanceActor();
@@ -189,7 +194,7 @@ export class AbuseUserReportEntityService {
 	public async publishToModerators(
 		report: z.infer<typeof AbuseUserReportSchema>,
 	): Promise<void> {
-		const moderators = await this.roleService.getModerators();
+		const moderators = await this.roleUtilService.getModerators();
 
 		for (const moderator of moderators) {
 			this.globalEventService.publishAdminStream(

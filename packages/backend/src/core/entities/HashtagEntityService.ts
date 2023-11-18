@@ -11,9 +11,7 @@ export class HashtagEntityService {
 	 * @param src
 	 * @returns
 	 */
-	public async pack(
-		src: hashtag,
-	): Promise<z.infer<typeof HashtagSchema>> {
+	public async pack(src: hashtag): Promise<z.infer<typeof HashtagSchema>> {
 		return {
 			tag: src.name,
 			mentionedUsersCount: src.mentionedUsersCount,

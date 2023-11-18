@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { checkWordMute } from '@/misc/check-word-mute.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { isInstanceMuted } from '@/misc/is-instance-muted.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
@@ -15,7 +15,7 @@ class HomeTimelineChannel extends Channel {
 	private withReplies: boolean;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -105,7 +105,7 @@ export class HomeTimelineChannelService {
 	public readonly requireCredential = HomeTimelineChannel.requireCredential;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 	) {
 	}
 

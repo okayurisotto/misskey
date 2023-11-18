@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
+import { DriveFileEntityPackService } from '@/core/entities/DriveFileEntityPackService.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -41,7 +41,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityPackService: DriveFileEntityPackService,
 		private readonly prismaService: PrismaService,
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
@@ -75,7 +75,7 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return await this.driveFileEntityService.packMany(files, {
+			return await this.driveFileEntityPackService.packMany(files, {
 				detail: true,
 				withUser: true,
 				self: true,

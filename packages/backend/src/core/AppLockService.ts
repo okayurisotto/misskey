@@ -10,11 +10,13 @@ const retryDelay = 100;
 
 @Injectable()
 export class AppLockService {
-	private readonly lock: (key: string, timeout?: number, _?: (() => Promise<void>) | undefined) => Promise<() => void>;
+	private readonly lock: (
+		key: string,
+		timeout?: number,
+		_?: (() => Promise<void>) | undefined,
+	) => Promise<() => void>;
 
-	constructor(
-		private readonly redisClient: RedisService,
-	) {
+	constructor(private readonly redisClient: RedisService) {
 		this.lock = promisify(redisLock(this.redisClient, retryDelay));
 	}
 
@@ -28,7 +30,10 @@ export class AppLockService {
 		return this.lock(`ap-object:${uri}`, timeout);
 	}
 
-	public getChartInsertLock(lockKey: string, timeout = 30 * 1000): Promise<() => void> {
+	public getChartInsertLock(
+		lockKey: string,
+		timeout = 30 * 1000,
+	): Promise<() => void> {
 		return this.lock(`chart-insert:${lockKey}`, timeout);
 	}
 }

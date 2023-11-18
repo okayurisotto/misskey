@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { isUserRelated } from '@/misc/is-user-related.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { bindThis } from '@/decorators.js';
@@ -17,7 +17,7 @@ class UserListChannel extends Channel {
 	private listUsersClock: NodeJS.Timer;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 		private readonly prismaService: PrismaService,
 
 		id: string,
@@ -116,7 +116,7 @@ export class UserListChannelService {
 	public readonly requireCredential = UserListChannel.requireCredential;
 
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 		private readonly prismaService: PrismaService,
 	) {
 	}

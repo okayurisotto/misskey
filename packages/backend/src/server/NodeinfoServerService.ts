@@ -3,13 +3,13 @@ import { z } from 'zod';
 import { MetaService } from '@/core/MetaService.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
 import { MemorySingleCache } from '@/misc/cache.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import NotesChart from '@/core/chart/charts/notes.js';
 import UsersChart from '@/core/chart/charts/users.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 
 const nodeinfo2_1path = '/nodeinfo/2.1';
@@ -65,27 +65,30 @@ type NodeInfo2 = {
 export class NodeinfoServerService {
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
-
-		private readonly userEntityService: UserEntityService,
 		private readonly metaService: MetaService,
 		private readonly notesChart: NotesChart,
-		private readonly usersChart: UsersChart,
 		private readonly prismaService: PrismaService,
-	) {
-		//this.createServer = this.createServer.bind(this);
-	}
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
+		private readonly usersChart: UsersChart,
+	) {}
 
-	public getLinks(): { rel: string; href: string; }[] {
-		return [/* (awaiting release) {
+	public getLinks(): { rel: string; href: string }[] {
+		return [
+			/* (awaiting release) {
 			rel: 'http://nodeinfo.diaspora.software/ns/schema/2.1',
 			href: config.url + nodeinfo2_1path
-		}, */{
+		}, */ {
 				rel: 'http://nodeinfo.diaspora.software/ns/schema/2.0',
 				href: this.configLoaderService.data.url + nodeinfo2_0path,
-			}];
+			},
+		];
 	}
 
-	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
+	public createServer(
+		fastify: FastifyInstance,
+		options: FastifyPluginOptions,
+		done: (err?: Error) => void,
+	): void {
 		const nodeinfo2 = async (): Promise<NodeInfo2> => {
 			const now = Date.now();
 
@@ -109,14 +112,17 @@ export class NodeinfoServerService {
 			const activeHalfyear = null;
 			const activeMonth = null;
 
-			const getProxyAccount = async (): Promise<z.infer<typeof UserLiteSchema> | null> => {
+			const getProxyAccount = async (): Promise<z.infer<
+				typeof UserLiteSchema
+			> | null> => {
 				if (meta.proxyAccountId === null) return null;
 
 				try {
-					const proxyAccount = await this.prismaService.client.user.findUniqueOrThrow({
-						where: { id: meta.proxyAccountId },
-					});
-					return await this.userEntityService.packLite(proxyAccount);
+					const proxyAccount =
+						await this.prismaService.client.user.findUniqueOrThrow({
+							where: { id: meta.proxyAccountId },
+						});
+					return await this.userEntityPackLiteService.packLite(proxyAccount);
 				} catch {
 					return null;
 				}
@@ -124,7 +130,10 @@ export class NodeinfoServerService {
 
 			const proxyAccount = await getProxyAccount();
 
-			const basePolicies = { ...DEFAULT_POLICIES, ...z.record(z.string(), z.any()).parse(meta.policies) };
+			const basePolicies = {
+				...DEFAULT_POLICIES,
+				...z.record(z.string(), z.any()).parse(meta.policies),
+			};
 
 			return {
 				software: {
@@ -169,7 +178,9 @@ export class NodeinfoServerService {
 			};
 		};
 
-		const cache = new MemorySingleCache<Awaited<ReturnType<typeof nodeinfo2>>>(1000 * 60 * 10);
+		const cache = new MemorySingleCache<Awaited<ReturnType<typeof nodeinfo2>>>(
+			1000 * 60 * 10,
+		);
 
 		fastify.get(nodeinfo2_1path, async (request, reply) => {
 			const base = await cache.fetch(() => nodeinfo2());

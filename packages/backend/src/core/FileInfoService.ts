@@ -42,19 +42,20 @@ const TYPE_SVG = {
 
 @Injectable()
 export class FileInfoService {
-	constructor(
-		private readonly aiService: AiService,
-	) {}
+	constructor(private readonly aiService: AiService) {}
 
 	/**
 	 * Get file information
 	 */
-	public async getFileInfo(path: string, opts: {
-		skipSensitiveDetection: boolean;
-		sensitiveThreshold?: number;
-		sensitiveThresholdForPorn?: number;
-		enableSensitiveMediaDetectionForVideos?: boolean;
-	}): Promise<FileInfo> {
+	public async getFileInfo(
+		path: string,
+		opts: {
+			skipSensitiveDetection: boolean;
+			sensitiveThreshold?: number;
+			sensitiveThresholdForPorn?: number;
+			enableSensitiveMediaDetectionForVideos?: boolean;
+		},
+	): Promise<FileInfo> {
 		const warnings = [] as string[];
 
 		const size = await this.getFileSize(path);
@@ -67,19 +68,21 @@ export class FileInfoService {
 		let height: number | undefined;
 		let orientation: number | undefined;
 
-		if ([
-			'image/png',
-			'image/gif',
-			'image/jpeg',
-			'image/webp',
-			'image/avif',
-			'image/apng',
-			'image/bmp',
-			'image/tiff',
-			'image/svg+xml',
-			'image/vnd.adobe.photoshop',
-		].includes(type.mime)) {
-			const imageSize = await this.detectImageSize(path).catch(e => {
+		if (
+			[
+				'image/png',
+				'image/gif',
+				'image/jpeg',
+				'image/webp',
+				'image/avif',
+				'image/apng',
+				'image/bmp',
+				'image/tiff',
+				'image/svg+xml',
+				'image/vnd.adobe.photoshop',
+			].includes(type.mime)
+		) {
+			const imageSize = await this.detectImageSize(path).catch((e) => {
 				warnings.push(`detectImageSize failed: ${e}`);
 				return undefined;
 			});
@@ -105,16 +108,18 @@ export class FileInfoService {
 
 		let blurhash: string | undefined;
 
-		if ([
-			'image/jpeg',
-			'image/gif',
-			'image/png',
-			'image/apng',
-			'image/webp',
-			'image/avif',
-			'image/svg+xml',
-		].includes(type.mime)) {
-			blurhash = await this.getBlurhash(path).catch(e => {
+		if (
+			[
+				'image/jpeg',
+				'image/gif',
+				'image/png',
+				'image/apng',
+				'image/webp',
+				'image/avif',
+				'image/svg+xml',
+			].includes(type.mime)
+		) {
+			blurhash = await this.getBlurhash(path).catch((e) => {
 				warnings.push(`getBlurhash failed: ${e}`);
 				return undefined;
 			});
@@ -130,11 +135,14 @@ export class FileInfoService {
 				opts.sensitiveThreshold ?? 0.5,
 				opts.sensitiveThresholdForPorn ?? 0.75,
 				opts.enableSensitiveMediaDetectionForVideos ?? false,
-			).then(value => {
-				[sensitive, porn] = value;
-			}, error => {
-				warnings.push(`detectSensitivity failed: ${error}`);
-			});
+			).then(
+				(value) => {
+					[sensitive, porn] = value;
+				},
+				(error) => {
+					warnings.push(`detectSensitivity failed: ${error}`);
+				},
+			);
 		}
 
 		return {
@@ -151,40 +159,65 @@ export class FileInfoService {
 		};
 	}
 
-	private async detectSensitivity(source: string, mime: string, sensitiveThreshold: number, sensitiveThresholdForPorn: number, analyzeVideo: boolean): Promise<[sensitive: boolean, porn: boolean]> {
+	private async detectSensitivity(
+		source: string,
+		mime: string,
+		sensitiveThreshold: number,
+		sensitiveThresholdForPorn: number,
+		analyzeVideo: boolean,
+	): Promise<[sensitive: boolean, porn: boolean]> {
 		let sensitive = false;
 		let porn = false;
 
-		function judgePrediction(result: readonly predictionType[]): [sensitive: boolean, porn: boolean] {
+		function judgePrediction(
+			result: readonly predictionType[],
+		): [sensitive: boolean, porn: boolean] {
 			let sensitive = false;
 			let porn = false;
 
-			if ((result.find(x => x.className === 'Sexy')?.probability ?? 0) > sensitiveThreshold) sensitive = true;
-			if ((result.find(x => x.className === 'Hentai')?.probability ?? 0) > sensitiveThreshold) sensitive = true;
-			if ((result.find(x => x.className === 'Porn')?.probability ?? 0) > sensitiveThreshold) sensitive = true;
+			if (
+				(result.find((x) => x.className === 'Sexy')?.probability ?? 0) >
+				sensitiveThreshold
+			)
+				sensitive = true;
+			if (
+				(result.find((x) => x.className === 'Hentai')?.probability ?? 0) >
+				sensitiveThreshold
+			)
+				sensitive = true;
+			if (
+				(result.find((x) => x.className === 'Porn')?.probability ?? 0) >
+				sensitiveThreshold
+			)
+				sensitive = true;
 
-			if ((result.find(x => x.className === 'Porn')?.probability ?? 0) > sensitiveThresholdForPorn) porn = true;
+			if (
+				(result.find((x) => x.className === 'Porn')?.probability ?? 0) >
+				sensitiveThresholdForPorn
+			)
+				porn = true;
 
 			return [sensitive, porn];
 		}
 
-		if ([
-			'image/jpeg',
-			'image/png',
-			'image/webp',
-		].includes(mime)) {
+		if (['image/jpeg', 'image/png', 'image/webp'].includes(mime)) {
 			const result = await this.aiService.detectSensitive(source);
 			if (result) {
 				[sensitive, porn] = judgePrediction(result);
 			}
-		} else if (analyzeVideo && (mime === 'image/apng' || mime.startsWith('video/'))) {
+		} else if (
+			analyzeVideo &&
+			(mime === 'image/apng' || mime.startsWith('video/'))
+		) {
 			const [outDir, disposeOutDir] = await createTempDir();
 			try {
 				const command = FFmpeg()
 					.input(source)
 					.inputOptions([
-						'-skip_frame', 'nokey', // 可能ならキーフレームのみを取得してほしいとする（そうなるとは限らない）
-						'-lowres', '3', // 元の画質でデコードする必要はないので 1/8 画質でデコードしてもよいとする（そうなるとは限らない）
+						'-skip_frame',
+						'nokey', // 可能ならキーフレームのみを取得してほしいとする（そうなるとは限らない）
+						'-lowres',
+						'3', // 元の画質でデコードする必要はないので 1/8 画質でデコードしてもよいとする（そうなるとは限らない）
 					])
 					.noAudio()
 					.videoFilters([
@@ -240,8 +273,12 @@ export class FileInfoService {
 						fs.promises.unlink(path);
 					}
 				}
-				sensitive = results.filter(x => x[0]).length >= Math.ceil(results.length * sensitiveThreshold);
-				porn = results.filter(x => x[1]).length >= Math.ceil(results.length * sensitiveThresholdForPorn);
+				sensitive =
+					results.filter((x) => x[0]).length >=
+					Math.ceil(results.length * sensitiveThreshold);
+				porn =
+					results.filter((x) => x[1]).length >=
+					Math.ceil(results.length * sensitiveThresholdForPorn);
 			} finally {
 				disposeOutDir();
 			}
@@ -250,7 +287,10 @@ export class FileInfoService {
 		return [sensitive, porn];
 	}
 
-	private async *asyncIterateFrames(cwd: string, command: FFmpeg.FfmpegCommand): AsyncGenerator<string, void> {
+	private async *asyncIterateFrames(
+		cwd: string,
+		command: FFmpeg.FfmpegCommand,
+	): AsyncGenerator<string, void> {
 		const watcher = new FSWatcher({
 			cwd,
 			disableGlobbing: true,
@@ -261,17 +301,20 @@ export class FileInfoService {
 			watcher.close();
 		});
 		command.run();
-		for (let i = 1; true; i++) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+		for (let i = 1; true; i++) {
+			// eslint-disable-line @typescript-eslint/no-unnecessary-condition
 			const current = `${i}.png`;
 			const next = `${i + 1}.png`;
 			const framePath = join(cwd, current);
 			if (await this.exists(join(cwd, next))) {
 				yield framePath;
-			} else if (!finished) { // eslint-disable-line @typescript-eslint/no-unnecessary-condition
+			} else if (!finished) {
+				// eslint-disable-line @typescript-eslint/no-unnecessary-condition
 				watcher.add(next);
 				await new Promise<void>((resolve, reject) => {
 					watcher.on('add', function onAdd(path) {
-						if (path === next) { // 次フレームの書き出しが始まっているなら、現在フレームの書き出しは終わっている
+						if (path === next) {
+							// 次フレームの書き出しが始まっているなら、現在フレームの書き出しは終わっている
 							watcher.unwatch(current);
 							watcher.off('add', onAdd);
 							resolve();
@@ -290,7 +333,10 @@ export class FileInfoService {
 	}
 
 	private exists(path: string): Promise<boolean> {
-		return fs.promises.access(path).then(() => true, () => false);
+		return fs.promises.access(path).then(
+			() => true,
+			() => false,
+		);
 	}
 
 	public fixMime(mime: string | fileType.MimeType): string {
@@ -312,7 +358,7 @@ export class FileInfoService {
 		mime: string;
 		ext: string | null;
 	}> {
-	// Check 0 byte
+		// Check 0 byte
 		const fileSize = await this.getFileSize(path);
 		if (fileSize === 0) {
 			return TYPE_OCTET_STREAM;
@@ -322,7 +368,7 @@ export class FileInfoService {
 
 		if (type) {
 			// XMLはSVGかもしれない
-			if (type.mime === 'application/xml' && await this.checkSvg(path)) {
+			if (type.mime === 'application/xml' && (await this.checkSvg(path))) {
 				return TYPE_SVG;
 			}
 
@@ -375,12 +421,12 @@ export class FileInfoService {
 	 * Detect dimensions of image
 	 */
 	private async detectImageSize(path: string): Promise<{
-	width: number;
-	height: number;
-	wUnits: string;
-	hUnits: string;
-	orientation?: number;
-}> {
+		width: number;
+		height: number;
+		wUnits: string;
+		hUnits: string;
+		orientation?: number;
+	}> {
 		const readable = fs.createReadStream(path);
 		const imageSize = await probeImageSize(readable);
 		readable.destroy();
@@ -402,7 +448,13 @@ export class FileInfoService {
 					let hash;
 
 					try {
-						hash = encode(new Uint8ClampedArray(buffer), info.width, info.height, 5, 5);
+						hash = encode(
+							new Uint8ClampedArray(buffer),
+							info.width,
+							info.height,
+							5,
+							5,
+						);
 					} catch (e) {
 						return reject(e);
 					}

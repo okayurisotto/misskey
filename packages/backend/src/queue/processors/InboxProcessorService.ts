@@ -14,12 +14,12 @@ import type { RemoteUser } from '@/models/entities/User.js';
 import { ApDbResolverService } from '@/core/activitypub/ApDbResolverService.js';
 import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
-import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { LdSignatureService } from '@/core/activitypub/LdSignatureService.js';
 import { ApInboxService } from '@/core/activitypub/ApInboxService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { InboxJobData } from '../types.js';
 import type { user_publickey } from '@prisma/client';
+import { ApPersonResolveService } from '@/core/activitypub/models/ApPersonResolveService.js';
 
 @Injectable()
 export class InboxProcessorService {
@@ -32,18 +32,18 @@ export class InboxProcessorService {
 		private readonly federatedInstanceService: FederatedInstanceService,
 		private readonly fetchInstanceMetadataService: FetchInstanceMetadataService,
 		private readonly ldSignatureService: LdSignatureService,
-		private readonly apPersonService: ApPersonService,
 		private readonly apDbResolverService: ApDbResolverService,
 		private readonly instanceChart: InstanceChart,
 		private readonly apRequestChart: ApRequestChart,
 		private readonly federationChart: FederationChart,
 		private readonly queueLoggerService: QueueLoggerService,
+		private readonly apPersonResolveService: ApPersonResolveService,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('inbox');
 	}
 
 	public async process(job: Bull.Job<InboxJobData>): Promise<string> {
-		const signature = job.data.signature;	// HTTP-signature
+		const signature = job.data.signature; // HTTP-signature
 		const activity = job.data.activity;
 
 		//#region Log
@@ -69,19 +69,27 @@ export class InboxProcessorService {
 		let authUser: {
 			user: RemoteUser;
 			key: user_publickey | null;
-		} | null = await this.apDbResolverService.getAuthUserFromKeyId(signature.keyId);
+		} | null = await this.apDbResolverService.getAuthUserFromKeyId(
+			signature.keyId,
+		);
 
 		// keyIdでわからなければ、activity.actorを元にDBから取得 || activity.actorを元にリモートから取得
 		if (authUser == null) {
 			try {
-				authUser = await this.apDbResolverService.getAuthUserFromApId(getApId(activity.actor));
+				authUser = await this.apDbResolverService.getAuthUserFromApId(
+					getApId(activity.actor),
+				);
 			} catch (err) {
 				// 対象が4xxならスキップ
 				if (err instanceof StatusError) {
 					if (err.isClientError) {
-						throw new Bull.UnrecoverableError(`skip: Ignored deleted actors on both ends ${activity.actor} - ${err.statusCode}`);
+						throw new Bull.UnrecoverableError(
+							`skip: Ignored deleted actors on both ends ${activity.actor} - ${err.statusCode}`,
+						);
 					}
-					throw new Error(`Error in actor ${activity.actor} - ${err.statusCode ?? err}`);
+					throw new Error(
+						`Error in actor ${activity.actor} - ${err.statusCode ?? err}`,
+					);
 				}
 			}
 		}
@@ -93,47 +101,68 @@ export class InboxProcessorService {
 
 		// publicKey がなくても終了
 		if (authUser.key == null) {
-			throw new Bull.UnrecoverableError('skip: failed to resolve user publicKey');
+			throw new Bull.UnrecoverableError(
+				'skip: failed to resolve user publicKey',
+			);
 		}
 
 		// HTTP-Signatureの検証
-		const httpSignatureValidated = httpSignature.verifySignature(signature, authUser.key.keyPem);
+		const httpSignatureValidated = httpSignature.verifySignature(
+			signature,
+			authUser.key.keyPem,
+		);
 
 		// また、signatureのsignerは、activity.actorと一致する必要がある
 		if (!httpSignatureValidated || authUser.user.uri !== activity.actor) {
 			// 一致しなくても、でもLD-Signatureがありそうならそっちも見る
 			if (activity.signature) {
 				if (activity.signature.type !== 'RsaSignature2017') {
-					throw new Bull.UnrecoverableError(`skip: unsupported LD-signature type ${activity.signature.type}`);
+					throw new Bull.UnrecoverableError(
+						`skip: unsupported LD-signature type ${activity.signature.type}`,
+					);
 				}
 
 				// activity.signature.creator: https://example.oom/users/user#main-key
 				// みたいになっててUserを引っ張れば公開キーも入ることを期待する
 				if (activity.signature.creator) {
 					const candicate = activity.signature.creator.replace(/#.*/, '');
-					await this.apPersonService.resolvePerson(candicate).catch(() => null);
+					await this.apPersonResolveService
+						.resolve(candicate)
+						.catch(() => null);
 				}
 
 				// keyIdからLD-Signatureのユーザーを取得
-				authUser = await this.apDbResolverService.getAuthUserFromKeyId(activity.signature.creator);
+				authUser = await this.apDbResolverService.getAuthUserFromKeyId(
+					activity.signature.creator,
+				);
 				if (authUser == null) {
-					throw new Bull.UnrecoverableError('skip: LD-Signatureのユーザーが取得できませんでした');
+					throw new Bull.UnrecoverableError(
+						'skip: LD-Signatureのユーザーが取得できませんでした',
+					);
 				}
 
 				if (authUser.key == null) {
-					throw new Bull.UnrecoverableError('skip: LD-SignatureのユーザーはpublicKeyを持っていませんでした');
+					throw new Bull.UnrecoverableError(
+						'skip: LD-SignatureのユーザーはpublicKeyを持っていませんでした',
+					);
 				}
 
 				// LD-Signature検証
 				const ldSignature = this.ldSignatureService.use();
-				const verified = await ldSignature.verifyRsaSignature2017(activity, authUser.key.keyPem).catch(() => false);
+				const verified = await ldSignature
+					.verifyRsaSignature2017(activity, authUser.key.keyPem)
+					.catch(() => false);
 				if (!verified) {
-					throw new Bull.UnrecoverableError('skip: LD-Signatureの検証に失敗しました');
+					throw new Bull.UnrecoverableError(
+						'skip: LD-Signatureの検証に失敗しました',
+					);
 				}
 
 				// もう一度actorチェック
 				if (authUser.user.uri !== activity.actor) {
-					throw new Bull.UnrecoverableError(`skip: LD-Signature user(${authUser.user.uri}) !== activity.actor(${activity.actor})`);
+					throw new Bull.UnrecoverableError(
+						`skip: LD-Signature user(${authUser.user.uri}) !== activity.actor(${activity.actor})`,
+					);
 				}
 
 				// ブロックしてたら中断
@@ -142,7 +171,9 @@ export class InboxProcessorService {
 					throw new Bull.UnrecoverableError(`Blocked request: ${ldHost}`);
 				}
 			} else {
-				throw new Bull.UnrecoverableError(`skip: http-signature verification failed and no LD-Signature. keyId=${signature.keyId}`);
+				throw new Bull.UnrecoverableError(
+					`skip: http-signature verification failed and no LD-Signature. keyId=${signature.keyId}`,
+				);
 			}
 		}
 
@@ -151,12 +182,14 @@ export class InboxProcessorService {
 			const signerHost = this.utilityService.extractDbHost(authUser.user.uri);
 			const activityIdHost = this.utilityService.extractDbHost(activity.id);
 			if (signerHost !== activityIdHost) {
-				throw new Bull.UnrecoverableError(`skip: signerHost(${signerHost}) !== activity.id host(${activityIdHost}`);
+				throw new Bull.UnrecoverableError(
+					`skip: signerHost(${signerHost}) !== activity.id host(${activityIdHost}`,
+				);
 			}
 		}
 
 		// Update stats
-		this.federatedInstanceService.fetch(authUser.user.host).then(i => {
+		this.federatedInstanceService.fetch(authUser.user.host).then((i) => {
 			this.federatedInstanceService.update(i.id, {
 				latestRequestReceivedAt: new Date(),
 				isNotResponding: false,

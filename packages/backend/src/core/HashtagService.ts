@@ -1,26 +1,34 @@
 import { Injectable } from '@nestjs/common';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { IdService } from '@/core/IdService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import type { user } from '@prisma/client';
 
 @Injectable()
 export class HashtagService {
 	constructor(
-		private readonly userEntityService: UserEntityService,
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
+		private readonly userEntityUtilService: UserEntityUtilService,
 	) {}
 
-	public async updateHashtags(user: Pick<user, 'id' | 'host'>, tags: string[]): Promise<void> {
+	public async updateHashtags(
+		user: Pick<user, 'id' | 'host'>,
+		tags: string[],
+	): Promise<void> {
 		await Promise.all(tags.map((tag) => this.updateHashtag(user, tag)));
 	}
 
-	public async updateUsertags(user: Pick<user, 'id' | 'host' | 'tags'>, tags: string[]): Promise<void> {
+	public async updateUsertags(
+		user: Pick<user, 'id' | 'host' | 'tags'>,
+		tags: string[],
+	): Promise<void> {
 		await Promise.all([
 			...tags.map((tag) => this.updateHashtag(user, tag, true, true)),
-			...user.tags.filter((tag) => !tags.includes(tag)).map((tag) => this.updateHashtag(user, tag, true, false)),
+			...user.tags
+				.filter((tag) => !tags.includes(tag))
+				.map((tag) => this.updateHashtag(user, tag, true, false)),
 		]);
 	}
 
@@ -38,8 +46,8 @@ export class HashtagService {
 			if (index === null && !inc) return;
 
 			if (index !== null) {
-				const isLocalUser = this.userEntityService.isLocalUser(user);
-				const isRemoteUser = this.userEntityService.isRemoteUser(user);
+				const isLocalUser = this.userEntityUtilService.isLocalUser(user);
+				const isRemoteUser = this.userEntityUtilService.isRemoteUser(user);
 
 				const attachedUserIds = new Set(index.attachedUserIds);
 				const attachedLocalUserIds = new Set(index.attachedLocalUserIds);
@@ -95,11 +103,25 @@ export class HashtagService {
 							mentionedRemoteUsersCount: 0,
 							attachedUserIds: [user.id],
 							attachedUsersCount: 1,
-							attachedLocalUserIds: this.userEntityService.isLocalUser(user) ? [user.id] : [],
-							attachedLocalUsersCount: this.userEntityService.isLocalUser(user) ? 1 : 0,
-							attachedRemoteUserIds: this.userEntityService.isRemoteUser(user) ? [user.id] : [],
-							attachedRemoteUsersCount: this.userEntityService.isRemoteUser(user) ? 1 : 0,
-						}
+							attachedLocalUserIds: this.userEntityUtilService.isLocalUser(user)
+								? [user.id]
+								: [],
+							attachedLocalUsersCount: this.userEntityUtilService.isLocalUser(
+								user,
+							)
+								? 1
+								: 0,
+							attachedRemoteUserIds: this.userEntityUtilService.isRemoteUser(
+								user,
+							)
+								? [user.id]
+								: [],
+							attachedRemoteUsersCount: this.userEntityUtilService.isRemoteUser(
+								user,
+							)
+								? 1
+								: 0,
+						},
 					});
 				} else {
 					await client.hashtag.create({
@@ -108,17 +130,30 @@ export class HashtagService {
 							name,
 							mentionedUserIds: [user.id],
 							mentionedUsersCount: 1,
-							mentionedLocalUserIds: this.userEntityService.isLocalUser(user) ? [user.id] : [],
-							mentionedLocalUsersCount: this.userEntityService.isLocalUser(user) ? 1 : 0,
-							mentionedRemoteUserIds: this.userEntityService.isRemoteUser(user) ? [user.id] : [],
-							mentionedRemoteUsersCount: this.userEntityService.isRemoteUser(user) ? 1 : 0,
+							mentionedLocalUserIds: this.userEntityUtilService.isLocalUser(
+								user,
+							)
+								? [user.id]
+								: [],
+							mentionedLocalUsersCount: this.userEntityUtilService.isLocalUser(
+								user,
+							)
+								? 1
+								: 0,
+							mentionedRemoteUserIds: this.userEntityUtilService.isRemoteUser(
+								user,
+							)
+								? [user.id]
+								: [],
+							mentionedRemoteUsersCount:
+								this.userEntityUtilService.isRemoteUser(user) ? 1 : 0,
 							attachedUserIds: [],
 							attachedUsersCount: 0,
 							attachedLocalUserIds: [],
 							attachedLocalUsersCount: 0,
 							attachedRemoteUserIds: [],
 							attachedRemoteUsersCount: 0,
-						}
+						},
 					});
 				}
 			}

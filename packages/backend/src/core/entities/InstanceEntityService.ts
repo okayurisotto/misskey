@@ -14,7 +14,9 @@ export class InstanceEntityService {
 		private readonly utilityService: UtilityService,
 	) {}
 
-	public packLite(instance: instance): z.infer<typeof FederationInstanceLiteSchema> {
+	public packLite(
+		instance: instance,
+	): z.infer<typeof FederationInstanceLiteSchema> {
 		return pick(instance, [
 			'name',
 			'softwareName',
@@ -25,7 +27,9 @@ export class InstanceEntityService {
 		]);
 	}
 
-	public async pack(instance: instance): Promise<z.infer<typeof FederationInstanceSchema>> {
+	public async pack(
+		instance: instance,
+	): Promise<z.infer<typeof FederationInstanceSchema>> {
 		const meta = await this.metaService.fetch();
 		return {
 			id: instance.id,

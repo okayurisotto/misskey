@@ -1,21 +1,20 @@
 import { Injectable } from '@nestjs/common';
 import { Feed } from 'feed';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { unique } from '@/misc/prelude/array.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import type { Acct } from '@/misc/acct.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { DriveFilePublicUrlGenerationService } from '@/core/entities/DriveFilePublicUrlGenerationService.js';
+import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 
 @Injectable()
 export class FeedService {
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
-
-		private readonly userEntityService: UserEntityService,
-		private readonly driveFileEntityService: DriveFileEntityService,
 		private readonly prismaService: PrismaService,
+		private readonly driveFilePublicUrlGenerationService: DriveFilePublicUrlGenerationService,
+		private readonly userEntityUtilService: UserEntityUtilService,
 	) {}
 
 	public async packFeed(acct: Acct): Promise<Feed | null> {
@@ -57,7 +56,7 @@ export class FeedService {
 					: ''
 			}`,
 			link: author.link,
-			image: user.avatarUrl ?? this.userEntityService.getIdenticonUrl(user),
+			image: user.avatarUrl ?? this.userEntityUtilService.getIdenticonUrl(user),
 			feedLinks: {
 				json: `${author.link}.json`,
 				atom: `${author.link}.atom`,
@@ -86,7 +85,7 @@ export class FeedService {
 				description: note.cw ?? undefined,
 				content: note.text ?? undefined,
 				image: file
-					? this.driveFileEntityService.getPublicUrl(file)
+					? this.driveFilePublicUrlGenerationService.generate(file)
 					: undefined,
 			});
 		}

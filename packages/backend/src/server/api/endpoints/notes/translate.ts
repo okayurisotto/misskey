@@ -3,11 +3,11 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { noSuchNote__________________ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { NoteVisibilityService } from '@/core/entities/NoteVisibilityService.js';
 import { ApiError } from '../../error.js';
 
 const res = z.union([
@@ -37,10 +37,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly noteEntityService: NoteEntityService,
 		private readonly getterService: GetterService,
 		private readonly metaService: MetaService,
 		private readonly httpRequestService: HttpRequestService,
+		private readonly noteVisibilityService: NoteVisibilityService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
@@ -51,7 +51,10 @@ export default class extends Endpoint<
 			});
 
 			if (
-				!(await this.noteEntityService.isVisibleForMe(note, me ? me.id : null))
+				!(await this.noteVisibilityService.isVisibleForMe(
+					note,
+					me ? me.id : null,
+				))
 			) {
 				return 204; // TODO: 良い感じのエラー返す
 			}

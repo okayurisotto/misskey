@@ -4,11 +4,11 @@ import { format as DateFormat } from 'date-fns';
 import { z } from 'zod';
 import { pick } from 'omick';
 import Logger from '@/misc/logger.js';
-import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
+import { DriveFileAddService } from '@/core/DriveFileAddService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { DBExportAntennasData } from '../types.js';
 import type * as Bull from 'bullmq';
@@ -18,10 +18,10 @@ export class ExportAntennasProcessorService {
 	private readonly logger: Logger;
 
 	constructor(
-		private readonly driveService: DriveService,
 		private readonly utilityService: UtilityService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
+		private readonly driveFileAddService: DriveFileAddService,
 	) {
 		this.logger =
 			this.queueLoggerService.logger.createSubLogger('export-antennas');
@@ -78,7 +78,7 @@ export class ExportAntennasProcessorService {
 
 			const fileName =
 				'antennas-' + DateFormat(new Date(), 'yyyy-MM-dd-HH-mm-ss') + '.json';
-			const driveFile = await this.driveService.addFile({
+			const driveFile = await this.driveFileAddService.add({
 				user,
 				path,
 				name: fileName,

@@ -3,7 +3,7 @@ import promiseLimit from 'promise-limit';
 import type { RemoteUser } from '@/models/entities/User.js';
 import { concat, unique } from '@/misc/prelude/array.js';
 import { getApIds } from './type.js';
-import { ApPersonService } from './models/ApPersonService.js';
+import { ApPersonResolveService } from './models/ApPersonResolveService.js';
 import type { ApObject } from './type.js';
 import type { Resolver } from './ApResolverService.js';
 import type { user } from '@prisma/client';
@@ -11,29 +11,40 @@ import type { user } from '@prisma/client';
 type Visibility = 'public' | 'home' | 'followers' | 'specified';
 
 type AudienceInfo = {
-	visibility: Visibility,
-	mentionedUsers: user[],
-	visibleUsers: user[],
+	visibility: Visibility;
+	mentionedUsers: user[];
+	visibleUsers: user[];
 };
 
 type GroupedAudience = Record<'public' | 'followers' | 'other', string[]>;
 
 @Injectable()
-export class ApAudienceService {
+export class ApAudienceParseService {
 	constructor(
-		private readonly apPersonService: ApPersonService,
+		private readonly apPersonResolveService: ApPersonResolveService,
 	) {}
 
-	public async parseAudience(actor: RemoteUser, to?: ApObject, cc?: ApObject, resolver?: Resolver): Promise<AudienceInfo> {
+	public async parse(
+		actor: RemoteUser,
+		to?: ApObject,
+		cc?: ApObject,
+		resolver?: Resolver,
+	): Promise<AudienceInfo> {
 		const toGroups = this.groupingAudience(getApIds(to), actor);
 		const ccGroups = this.groupingAudience(getApIds(cc), actor);
 
 		const others = unique(concat([toGroups.other, ccGroups.other]));
 
 		const limit = promiseLimit<user | null>(2);
-		const mentionedUsers = (await Promise.all(
-			others.map(id => limit(() => this.apPersonService.resolvePerson(id, resolver).catch(() => null))),
-		)).filter((x): x is user => x != null);
+		const mentionedUsers = (
+			await Promise.all(
+				others.map((id) =>
+					limit(() =>
+						this.apPersonResolveService.resolve(id, resolver).catch(() => null),
+					),
+				),
+			)
+		).filter((x): x is user => x != null);
 
 		if (toGroups.public.length > 0) {
 			return {

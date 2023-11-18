@@ -2,13 +2,13 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { noSuchFile_ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { CustomEmojiService } from '@/core/CustomEmojiService.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
+import { CustomEmojiAddService } from '@/core/CustomEmojiAddService.js';
 import { ApiError } from '../../../error.js';
 
 const res = EmojiDetailedSchema; // TODO
@@ -43,7 +43,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly customEmojiService: CustomEmojiService,
+		private readonly customEmojiAddService: CustomEmojiAddService,
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly moderationLogService: ModerationLogService,
 		private readonly prismaService: PrismaService,
@@ -54,7 +54,7 @@ export default class extends Endpoint<
 			});
 			if (driveFile === null) throw new ApiError(meta.errors.noSuchFile);
 
-			const emoji = await this.customEmojiService.add({
+			const emoji = await this.customEmojiAddService.add({
 				driveFile,
 				name: ps.name,
 				category: ps.category ?? null,

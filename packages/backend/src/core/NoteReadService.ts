@@ -12,29 +12,36 @@ export class NoteReadService implements OnApplicationShutdown {
 	readonly #shutdownController = new AbortController();
 
 	constructor(
-		private readonly idService: IdService,
 		private readonly globalEventService: GlobalEventService,
+		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
 	) {}
 
-	public async insertNoteUnread(userId: user['id'], note: note, params: {
-		// NOTE: isSpecifiedがtrueならisMentionedは必ずfalse
-		isSpecified: boolean;
-		isMentioned: boolean;
-	}): Promise<void> {
+	public async insertNoteUnread(
+		userId: user['id'],
+		note: note,
+		params: {
+			// NOTE: isSpecifiedがtrueならisMentionedは必ずfalse
+			isSpecified: boolean;
+			isMentioned: boolean;
+		},
+	): Promise<void> {
 		//#region ミュートしているなら無視
-		const mute = await this.prismaService.client.muting.findMany({ where: { muterId: userId } });
-		if (mute.map(m => m.muteeId).includes(note.userId)) return;
+		const mute = await this.prismaService.client.muting.findMany({
+			where: { muterId: userId },
+		});
+		if (mute.map((m) => m.muteeId).includes(note.userId)) return;
 		//#endregion
 
 		// スレッドミュート
-		const isThreadMuted = (await this.prismaService.client.note_thread_muting.count({
-			where: {
-				userId: userId,
-				threadId: note.threadId ?? note.id,
-			},
-			take: 1,
-		})) > 0;
+		const isThreadMuted =
+			(await this.prismaService.client.note_thread_muting.count({
+				where: {
+					userId: userId,
+					threadId: note.threadId ?? note.id,
+				},
+				take: 1,
+			})) > 0;
 		if (isThreadMuted) return;
 
 		const unread = {
@@ -49,21 +56,37 @@ export class NoteReadService implements OnApplicationShutdown {
 		await this.prismaService.client.note_unread.create({ data: unread });
 
 		// 2秒経っても既読にならなかったら「未読の投稿がありますよ」イベントを発行する
-		setTimeout(2000, 'unread note', { signal: this.#shutdownController.signal }).then(async () => {
-			const exist = (await this.prismaService.client.note_unread.count({
-				where: { id: unread.id },
-				take: 1,
-			})) > 0;
+		setTimeout(2000, 'unread note', {
+			signal: this.#shutdownController.signal,
+		}).then(
+			async () => {
+				const exist =
+					(await this.prismaService.client.note_unread.count({
+						where: { id: unread.id },
+						take: 1,
+					})) > 0;
 
-			if (!exist) return;
+				if (!exist) return;
 
-			if (params.isMentioned) {
-				this.globalEventService.publishMainStream(userId, 'unreadMention', note.id);
-			}
-			if (params.isSpecified) {
-				this.globalEventService.publishMainStream(userId, 'unreadSpecifiedNote', note.id);
-			}
-		}, () => { /* aborted, ignore it */ });
+				if (params.isMentioned) {
+					this.globalEventService.publishMainStream(
+						userId,
+						'unreadMention',
+						note.id,
+					);
+				}
+				if (params.isSpecified) {
+					this.globalEventService.publishMainStream(
+						userId,
+						'unreadSpecifiedNote',
+						note.id,
+					);
+				}
+			},
+			() => {
+				/* aborted, ignore it */
+			},
+		);
 	}
 
 	public async read(
@@ -81,38 +104,53 @@ export class NoteReadService implements OnApplicationShutdown {
 			}
 		}
 
-		if ((readMentions.length > 0) || (readSpecifiedNotes.length > 0)) {
+		if (readMentions.length > 0 || readSpecifiedNotes.length > 0) {
 			// Remove the record
 			await this.prismaService.client.note_unread.deleteMany({
 				where: {
 					userId: userId,
-					noteId: { in: [...readMentions.map(n => n.id), ...readSpecifiedNotes.map(n => n.id)] },
+					noteId: {
+						in: [
+							...readMentions.map((n) => n.id),
+							...readSpecifiedNotes.map((n) => n.id),
+						],
+					},
 				},
 			});
 
-			this.prismaService.client.note_unread.count({
-				where: {
-					userId: userId,
-					isMentioned: true,
-				},
-			}).then(mentionsCount => {
-				if (mentionsCount === 0) {
-					// 全て既読になったイベントを発行
-					this.globalEventService.publishMainStream(userId, 'readAllUnreadMentions');
-				}
-			});
+			this.prismaService.client.note_unread
+				.count({
+					where: {
+						userId: userId,
+						isMentioned: true,
+					},
+				})
+				.then((mentionsCount) => {
+					if (mentionsCount === 0) {
+						// 全て既読になったイベントを発行
+						this.globalEventService.publishMainStream(
+							userId,
+							'readAllUnreadMentions',
+						);
+					}
+				});
 
-			this.prismaService.client.note_unread.count({
-				where: {
-					userId: userId,
-					isSpecified: true,
-				},
-			}).then(specifiedCount => {
-				if (specifiedCount === 0) {
-					// 全て既読になったイベントを発行
-					this.globalEventService.publishMainStream(userId, 'readAllUnreadSpecifiedNotes');
-				}
-			});
+			this.prismaService.client.note_unread
+				.count({
+					where: {
+						userId: userId,
+						isSpecified: true,
+					},
+				})
+				.then((specifiedCount) => {
+					if (specifiedCount === 0) {
+						// 全て既読になったイベントを発行
+						this.globalEventService.publishMainStream(
+							userId,
+							'readAllUnreadSpecifiedNotes',
+						);
+					}
+				});
 		}
 	}
 

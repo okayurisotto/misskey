@@ -8,12 +8,13 @@ import {
 	restrictedByRole,
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
+import { DriveFileEntityPackService } from '@/core/entities/DriveFileEntityPackService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { DriveFileNameValidationService } from '@/core/entities/DriveFileNameValidationService.js';
 import { ApiError } from '../../../error.js';
 
 const res = DriveFileSchema;
@@ -48,10 +49,11 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly driveFileEntityService: DriveFileEntityService,
+		private readonly driveFileEntityPackService: DriveFileEntityPackService,
 		private readonly roleService: RoleService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
+		private readonly driveFileNameValidationService: DriveFileNameValidationService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const file = await this.prismaService.client.drive_file.findUnique({
@@ -68,7 +70,7 @@ export default class extends Endpoint<
 			}
 
 			if (ps.name) file.name = ps.name;
-			if (!this.driveFileEntityService.validateFileName(file.name)) {
+			if (!this.driveFileNameValidationService.validate(file.name)) {
 				throw new ApiError(meta.errors.invalidFileName);
 			}
 
@@ -115,7 +117,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			const fileObj = await this.driveFileEntityService.pack(file, {
+			const fileObj = await this.driveFileEntityPackService.pack(file, {
 				self: true,
 			});
 

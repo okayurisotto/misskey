@@ -13,11 +13,15 @@ export class AiService {
 	private model: nsfw.NSFWJS | null = null;
 	private readonly modelLoadMutex: Mutex = new Mutex();
 
-	public async detectSensitive(path: string): Promise<nsfw.predictionType[] | null> {
+	public async detectSensitive(
+		path: string,
+	): Promise<nsfw.predictionType[] | null> {
 		try {
 			if (isSupportedCpu === undefined) {
 				const cpuFlags = await this.getCpuFlags();
-				isSupportedCpu = REQUIRED_CPU_FLAGS.every(required => cpuFlags.includes(required));
+				isSupportedCpu = REQUIRED_CPU_FLAGS.every((required) =>
+					cpuFlags.includes(required),
+				);
 			}
 
 			if (!isSupportedCpu) {
@@ -30,13 +34,15 @@ export class AiService {
 			if (this.model == null) {
 				await this.modelLoadMutex.runExclusive(async () => {
 					if (this.model == null) {
-						this.model = await nsfw.load(`file://${NSFW_MODEL_DIR}/`, { size: 299 });
+						this.model = await nsfw.load(`file://${NSFW_MODEL_DIR}/`, {
+							size: 299,
+						});
 					}
 				});
 			}
 
 			const buffer = await fs.promises.readFile(path);
-			const image = await tf.node.decodeImage(buffer, 3) as any;
+			const image = (await tf.node.decodeImage(buffer, 3)) as any;
 			try {
 				const predictions = await this.model!.classify(image);
 				return predictions;

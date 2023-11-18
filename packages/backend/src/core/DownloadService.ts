@@ -26,10 +26,15 @@ export class DownloadService {
 		this.logger = this.loggerService.getLogger('download');
 	}
 
-	public async downloadUrl(url: string, path: string): Promise<{
+	public async downloadUrl(
+		url: string,
+		path: string,
+	): Promise<{
 		filename: string;
 	}> {
-		this.logger.info(`Downloading ${chalk.cyan(url)} to ${chalk.cyanBright(path)} ...`);
+		this.logger.info(
+			`Downloading ${chalk.cyan(url)} to ${chalk.cyanBright(path)} ...`,
+		);
 
 		const timeout = 30 * 1000;
 		const operationTimeout = 60 * 1000;
@@ -38,68 +43,85 @@ export class DownloadService {
 		const urlObj = new URL(url);
 		let filename = urlObj.pathname.split('/').pop() ?? 'untitled';
 
-		const req = got.stream(url, {
-			headers: {
-				'User-Agent': this.configLoaderService.data.userAgent,
-			},
-			timeout: {
-				lookup: timeout,
-				connect: timeout,
-				secureConnect: timeout,
-				socket: timeout,	// read timeout
-				response: timeout,
-				send: timeout,
-				request: operationTimeout,	// whole operation timeout
-			},
-			agent: {
-				http: this.httpRequestService.httpAgent,
-				https: this.httpRequestService.httpsAgent,
-			},
-			http2: false,	// default
-			retry: {
-				limit: 0,
-			},
-			enableUnixSockets: false,
-		}).on('response', (res: Got.Response) => {
-			if ((NODE_ENV === 'production' || NODE_ENV === 'test') && !this.configLoaderService.data.proxy && res.ip) {
-				if (this.isPrivateIp(res.ip)) {
-					this.logger.warn(`Blocked address: ${res.ip}`);
-					req.destroy();
-				}
-			}
-
-			const contentLength = res.headers['content-length'];
-			if (contentLength != null) {
-				const size = Number(contentLength);
-				if (size > maxSize) {
-					this.logger.warn(`maxSize exceeded (${size} > ${maxSize}) on response`);
-					req.destroy();
-				}
-			}
-
-			const contentDisposition = res.headers['content-disposition'];
-			if (contentDisposition != null) {
-				try {
-					const parsed = parse(contentDisposition);
-					if (parsed.parameters['filename']) {
-						filename = parsed.parameters['filename'];
+		const req = got
+			.stream(url, {
+				headers: {
+					'User-Agent': this.configLoaderService.data.userAgent,
+				},
+				timeout: {
+					lookup: timeout,
+					connect: timeout,
+					secureConnect: timeout,
+					socket: timeout, // read timeout
+					response: timeout,
+					send: timeout,
+					request: operationTimeout, // whole operation timeout
+				},
+				agent: {
+					http: this.httpRequestService.httpAgent,
+					https: this.httpRequestService.httpsAgent,
+				},
+				http2: false, // default
+				retry: {
+					limit: 0,
+				},
+				enableUnixSockets: false,
+			})
+			.on('response', (res: Got.Response) => {
+				if (
+					(NODE_ENV === 'production' || NODE_ENV === 'test') &&
+					!this.configLoaderService.data.proxy &&
+					res.ip
+				) {
+					if (this.isPrivateIp(res.ip)) {
+						this.logger.warn(`Blocked address: ${res.ip}`);
+						req.destroy();
 					}
-				} catch (e) {
-					this.logger.warn(`Failed to parse content-disposition: ${contentDisposition}`);
 				}
-			}
-		}).on('downloadProgress', (progress: Got.Progress) => {
-			if (progress.transferred > maxSize) {
-				this.logger.warn(`maxSize exceeded (${progress.transferred} > ${maxSize}) on downloadProgress`);
-				req.destroy();
-			}
-		});
+
+				const contentLength = res.headers['content-length'];
+				if (contentLength != null) {
+					const size = Number(contentLength);
+					if (size > maxSize) {
+						this.logger.warn(
+							`maxSize exceeded (${size} > ${maxSize}) on response`,
+						);
+						req.destroy();
+					}
+				}
+
+				const contentDisposition = res.headers['content-disposition'];
+				if (contentDisposition != null) {
+					try {
+						const parsed = parse(contentDisposition);
+						if (parsed.parameters['filename']) {
+							filename = parsed.parameters['filename'];
+						}
+					} catch (e) {
+						this.logger.warn(
+							`Failed to parse content-disposition: ${contentDisposition}`,
+						);
+					}
+				}
+			})
+			.on('downloadProgress', (progress: Got.Progress) => {
+				if (progress.transferred > maxSize) {
+					this.logger.warn(
+						`maxSize exceeded (${progress.transferred} > ${maxSize}) on downloadProgress`,
+					);
+					req.destroy();
+				}
+			});
 
 		try {
 			await stream.pipeline(req, fs.createWriteStream(path));
 		} catch (e) {
 			if (e instanceof Got.HTTPError) {
-				throw new StatusError(`${e.response.statusCode} ${e.response.statusMessage}`, e.response.statusCode, e.response.statusMessage);
+				throw new StatusError(
+					`${e.response.statusCode} ${e.response.statusMessage}`,
+					e.response.statusCode,
+					e.response.statusMessage,
+				);
 			} else {
 				throw e;
 			}

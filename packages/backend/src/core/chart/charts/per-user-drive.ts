@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { AppLockService } from '@/core/AppLockService.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
+import { DriveUsageCalcService } from '@/core/entities/DriveUsageCalcService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import Chart from '../core.js';
@@ -20,21 +20,30 @@ export default class PerUserDriveChart extends Chart<typeof schema> {
 		appLockService: AppLockService,
 		chartLoggerService: ChartLoggerService,
 
-		private readonly driveFileEntityService: DriveFileEntityService,
 		private readonly prismaService: PrismaService,
+		private readonly driveUsageCalcService: DriveUsageCalcService,
 	) {
-		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
+		super(
+			db,
+			(k) => appLockService.getChartInsertLock(k),
+			chartLoggerService.logger,
+			name,
+			schema,
+			true,
+		);
 	}
 
-	protected async tickMajor(group: string): Promise<Partial<KVs<typeof schema>>> {
+	protected async tickMajor(
+		group: string,
+	): Promise<Partial<KVs<typeof schema>>> {
 		const [count, size] = await Promise.all([
 			this.prismaService.client.drive_file.count({ where: { userId: group } }),
-			this.driveFileEntityService.calcDriveUsageOf(group),
+			this.driveUsageCalcService.calcUser(group),
 		]);
 
 		return {
-			'totalCount': count,
-			'totalSize': size,
+			totalCount: count,
+			totalSize: size,
 		};
 	}
 
@@ -44,13 +53,16 @@ export default class PerUserDriveChart extends Chart<typeof schema> {
 
 	public async update(file: drive_file, isAdditional: boolean): Promise<void> {
 		const fileSizeKb = file.size / 1000;
-		await this.commit({
-			'totalCount': isAdditional ? 1 : -1,
-			'totalSize': isAdditional ? fileSizeKb : -fileSizeKb,
-			'incCount': isAdditional ? 1 : 0,
-			'incSize': isAdditional ? fileSizeKb : 0,
-			'decCount': isAdditional ? 0 : 1,
-			'decSize': isAdditional ? 0 : fileSizeKb,
-		}, file.userId);
+		await this.commit(
+			{
+				totalCount: isAdditional ? 1 : -1,
+				totalSize: isAdditional ? fileSizeKb : -fileSizeKb,
+				incCount: isAdditional ? 1 : 0,
+				incSize: isAdditional ? fileSizeKb : 0,
+				decCount: isAdditional ? 0 : 1,
+				decSize: isAdditional ? 0 : fileSizeKb,
+			},
+			file.userId,
+		);
 	}
 }

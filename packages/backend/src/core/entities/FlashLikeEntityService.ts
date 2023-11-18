@@ -23,9 +23,12 @@ export class FlashLikeEntityService {
 		src: flash_like['id'] | flash_like,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<{ id: string; flash: z.infer<typeof FlashSchema> }> {
-		const like = typeof src === 'object'
-			? src
-			: await this.prismaService.client.flash_like.findUniqueOrThrow({ where: { id: src } });
+		const like =
+			typeof src === 'object'
+				? src
+				: await this.prismaService.client.flash_like.findUniqueOrThrow({
+						where: { id: src },
+				  });
 
 		return {
 			id: like.id,

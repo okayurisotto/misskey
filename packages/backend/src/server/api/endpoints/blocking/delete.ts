@@ -8,10 +8,10 @@ import {
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { UserBlockingService } from '@/core/UserBlockingService.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserBlockingDeleteService } from '@/core/UserBlockingDeleteService.js';
 import { ApiError } from '../../error.js';
 
 const res = UserDetailedNotMeSchema;
@@ -42,8 +42,8 @@ export default class extends Endpoint<
 > {
 	constructor(
 		private readonly userEntityService: UserEntityService,
-		private readonly userBlockingService: UserBlockingService,
 		private readonly prismaService: PrismaService,
+		private readonly userBlockingDeleteService: UserBlockingDeleteService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const blocker = await this.prismaService.client.user.findUniqueOrThrow({
@@ -79,7 +79,7 @@ export default class extends Endpoint<
 			}
 
 			// Delete blocking
-			await this.userBlockingService.unblock(blocker, blockee);
+			await this.userBlockingDeleteService.delete(blocker, blockee);
 
 			return await this.userEntityService.packDetailed(blockee.id, blocker);
 		});

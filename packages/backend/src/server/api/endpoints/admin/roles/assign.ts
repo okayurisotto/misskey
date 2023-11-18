@@ -6,6 +6,7 @@ import { ApiError } from '@/server/api/error.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { RoleUtilService } from '@/core/RoleUtilService.js';
 
 export const meta = {
 	tags: ['admin', 'role'],
@@ -32,8 +33,9 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly roleService: RoleService,
 		private readonly prismaService: PrismaService,
+		private readonly roleService: RoleService,
+		private readonly roleUtilService: RoleUtilService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const role = await this.prismaService.client.role.findUnique({
@@ -59,7 +61,7 @@ export default class extends Endpoint<
 				return;
 			}
 
-			await this.roleService.assign(
+			await this.roleUtilService.assign(
 				ps.userId,
 				ps.roleId,
 				ps.expiresAt ? new Date(ps.expiresAt) : null,

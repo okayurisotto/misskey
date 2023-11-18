@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
-import { UserEntityService } from './UserEntityService.js';
+import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { follow_request, user } from '@prisma/client';
 import type { z } from 'zod';
 
@@ -9,7 +9,7 @@ import type { z } from 'zod';
 export class FollowRequestEntityService {
 	constructor(
 		private readonly prismaService: PrismaService,
-		private readonly userEntityService: UserEntityService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
 
 	/**
@@ -22,16 +22,28 @@ export class FollowRequestEntityService {
 	public async pack(
 		src: follow_request['id'] | follow_request,
 		me?: { id: user['id'] } | null | undefined,
-	): Promise<{ id: string; follower: z.infer<typeof UserLiteSchema>; followee: z.infer<typeof UserLiteSchema> }> {
-		const request = await this.prismaService.client.follow_request.findUniqueOrThrow({
-			where: { id: typeof src === 'string' ? src : src.id },
-			include: { user_follow_request_followeeIdTouser: true, user_follow_request_followerIdTouser: true },
-		});
+	): Promise<{
+		id: string;
+		follower: z.infer<typeof UserLiteSchema>;
+		followee: z.infer<typeof UserLiteSchema>;
+	}> {
+		const request =
+			await this.prismaService.client.follow_request.findUniqueOrThrow({
+				where: { id: typeof src === 'string' ? src : src.id },
+				include: {
+					user_follow_request_followeeIdTouser: true,
+					user_follow_request_followerIdTouser: true,
+				},
+			});
 
 		return {
 			id: request.id,
-			follower: await this.userEntityService.packLite(request.user_follow_request_followerIdTouser),
-			followee: await this.userEntityService.packLite(request.user_follow_request_followeeIdTouser),
+			follower: await this.userEntityPackLiteService.packLite(
+				request.user_follow_request_followerIdTouser,
+			),
+			followee: await this.userEntityPackLiteService.packLite(
+				request.user_follow_request_followeeIdTouser,
+			),
 		};
 	}
 }

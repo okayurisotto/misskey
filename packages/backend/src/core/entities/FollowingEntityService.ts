@@ -30,9 +30,12 @@ export class FollowingEntityService {
 			populateFollower?: boolean;
 		} = {},
 	): Promise<z.infer<typeof FollowingSchema>> {
-		const following = typeof src === 'object'
-			? src
-			: await this.prismaService.client.following.findUniqueOrThrow({ where: { id: src } });
+		const following =
+			typeof src === 'object'
+				? src
+				: await this.prismaService.client.following.findUniqueOrThrow({
+						where: { id: src },
+				  });
 
 		const result = await awaitAll({
 			followee: () =>

@@ -23,9 +23,12 @@ export class GalleryLikeEntityService {
 		src: gallery_like['id'] | gallery_like,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<{ id: string; post: z.infer<typeof GalleryPostSchema> }> {
-		const like = typeof src === 'object'
-			? src
-			: await this.prismaService.client.gallery_like.findUniqueOrThrow({ where: { id: src } });
+		const like =
+			typeof src === 'object'
+				? src
+				: await this.prismaService.client.gallery_like.findUniqueOrThrow({
+						where: { id: src },
+				  });
 
 		return {
 			id: like.id,

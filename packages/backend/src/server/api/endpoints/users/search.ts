@@ -6,6 +6,7 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { UserSchema } from '@/models/zod/UserSchema.js';
 import { LocalUsernameSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
 import type { user } from '@prisma/client';
 
 const res = z.array(UserSchema);
@@ -32,8 +33,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly userEntityService: UserEntityService,
 		private readonly prismaService: PrismaService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
+		private readonly userEntityService: UserEntityService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const activeThreshold = new Date(Date.now() - ms('30days'));
@@ -140,7 +142,7 @@ export default class extends Endpoint<
 					if (ps.detail) {
 						return this.userEntityService.packDetailed(user, me);
 					} else {
-						return this.userEntityService.packLite(user);
+						return this.userEntityPackLiteService.packLite(user);
 					}
 				}),
 			);

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { InviteCodeSchema } from '@/models/zod/InviteCodeSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { UserEntityService } from './UserEntityService.js';
+import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
 import type { registration_ticket, user } from '@prisma/client';
 
@@ -10,7 +10,7 @@ import type { registration_ticket, user } from '@prisma/client';
 export class InviteCodeEntityService {
 	constructor(
 		private readonly prismaService: PrismaService,
-		private readonly userEntityService: UserEntityService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
 
 	/**
@@ -24,19 +24,27 @@ export class InviteCodeEntityService {
 		src: registration_ticket['id'] | registration_ticket,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof InviteCodeSchema>> {
-		const target = await this.prismaService.client.registration_ticket.findUniqueOrThrow({
-			where: { id: typeof src === 'string' ? src : src.id },
-			include: { user_registration_ticket_createdByIdTouser: true, user_registration_ticket_usedByIdTouser: true },
-		});
+		const target =
+			await this.prismaService.client.registration_ticket.findUniqueOrThrow({
+				where: { id: typeof src === 'string' ? src : src.id },
+				include: {
+					user_registration_ticket_createdByIdTouser: true,
+					user_registration_ticket_usedByIdTouser: true,
+				},
+			});
 
 		const result = await awaitAll({
 			createdBy: () =>
 				target.user_registration_ticket_createdByIdTouser
-					? this.userEntityService.packLite(target.user_registration_ticket_createdByIdTouser)
+					? this.userEntityPackLiteService.packLite(
+							target.user_registration_ticket_createdByIdTouser,
+					  )
 					: Promise.resolve(null),
 			usedBy: () =>
 				target.user_registration_ticket_usedByIdTouser
-					? this.userEntityService.packLite(target.user_registration_ticket_usedByIdTouser)
+					? this.userEntityPackLiteService.packLite(
+							target.user_registration_ticket_usedByIdTouser,
+					  )
 					: Promise.resolve(null),
 		});
 

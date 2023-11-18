@@ -10,12 +10,12 @@ import {
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { UserFollowingService } from '@/core/UserFollowingService.js';
+import { UserFollowingCreateService } from '@/core/UserFollowingCreateService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
 import { ApiError } from '../../error.js';
 
 const res = UserLiteSchema;
@@ -50,10 +50,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly userEntityService: UserEntityService,
 		private readonly getterService: GetterService,
-		private readonly userFollowingService: UserFollowingService,
 		private readonly prismaService: PrismaService,
+		private readonly userFollowingCreateService: UserFollowingCreateService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const follower = me;
@@ -88,7 +88,7 @@ export default class extends Endpoint<
 			}
 
 			try {
-				await this.userFollowingService.follow(follower, followee);
+				await this.userFollowingCreateService.create(follower, followee);
 			} catch (e) {
 				if (e instanceof IdentifiableError) {
 					if (e.id === '710e8fb0-b8c3-4922-be49-d5d93d8e6a6e') {
@@ -101,7 +101,7 @@ export default class extends Endpoint<
 				throw e;
 			}
 
-			return await this.userEntityService.packLite(followee);
+			return await this.userEntityPackLiteService.packLite(followee);
 		});
 	}
 }

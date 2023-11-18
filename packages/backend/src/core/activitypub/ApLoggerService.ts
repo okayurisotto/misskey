@@ -6,9 +6,10 @@ import { RemoteLoggerService } from '@/core/RemoteLoggerService.js';
 export class ApLoggerService {
 	public logger: Logger;
 
-	constructor(
-		private readonly remoteLoggerService: RemoteLoggerService,
-	) {
-		this.logger = this.remoteLoggerService.logger.createSubLogger('ap', 'magenta');
+	constructor(private readonly remoteLoggerService: RemoteLoggerService) {
+		this.logger = this.remoteLoggerService.logger.createSubLogger(
+			'ap',
+			'magenta',
+		);
 	}
 }

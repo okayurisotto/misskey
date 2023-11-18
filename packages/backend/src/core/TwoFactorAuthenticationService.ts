@@ -118,15 +118,10 @@ type VerifyResult = {
 
 @Injectable()
 export class TwoFactorAuthenticationService {
-	constructor(
-		private readonly configLoaderService: ConfigLoaderService,
-	) {}
+	constructor(private readonly configLoaderService: ConfigLoaderService) {}
 
 	public hash(data: Buffer): Buffer {
-		return crypto
-			.createHash('sha256')
-			.update(data)
-			.digest();
+		return crypto.createHash('sha256').update(data).digest();
 	}
 
 	public verifySignin({
@@ -137,12 +132,12 @@ export class TwoFactorAuthenticationService {
 		signature,
 		challenge,
 	}: {
-		publicKey: Buffer,
-		authenticatorData: Buffer,
-		clientDataJSON: Buffer,
-		clientData: any,
-		signature: Buffer,
-		challenge: string
+		publicKey: Buffer;
+		authenticatorData: Buffer;
+		clientDataJSON: Buffer;
+		clientData: any;
+		signature: Buffer;
+		challenge: string;
 	}): boolean {
 		if (clientData.type !== 'webauthn.get') {
 			throw new Error('type is not webauthn.get');
@@ -151,7 +146,12 @@ export class TwoFactorAuthenticationService {
 		if (this.hash(clientData.challenge).toString('hex') !== challenge) {
 			throw new Error('challenge mismatch');
 		}
-		if (clientData.origin !== this.configLoaderService.data.scheme + '://' + this.configLoaderService.data.host) {
+		if (
+			clientData.origin !==
+			this.configLoaderService.data.scheme +
+				'://' +
+				this.configLoaderService.data.host
+		) {
 			throw new Error('origin mismatch');
 		}
 
@@ -167,15 +167,18 @@ export class TwoFactorAuthenticationService {
 	}
 
 	public getProcedures(): {
-		none: {                verify(opts: { publicKey: Map<number, Buffer>; }): VerifyResult };
-		'android-key': {       verify(opts: VerifyOptions): VerifyResult                       };
-		'android-safetynet': { verify(opts: VerifyOptions): VerifyResult                       };
-		packed: {              verify(opts: VerifyOptions): VerifyResult                       };
-		'fido-u2f': {          verify(opts: VerifyOptions): VerifyResult                       };
+		none: { verify(opts: { publicKey: Map<number, Buffer> }): VerifyResult };
+		'android-key': { verify(opts: VerifyOptions): VerifyResult };
+		'android-safetynet': { verify(opts: VerifyOptions): VerifyResult };
+		packed: { verify(opts: VerifyOptions): VerifyResult };
+		'fido-u2f': { verify(opts: VerifyOptions): VerifyResult };
 	} {
 		return {
 			none: {
-				verify({ publicKey }: { publicKey: Map<number, Buffer> }): { publicKey: Buffer; valid: boolean } {
+				verify({ publicKey }: { publicKey: Map<number, Buffer> }): {
+					publicKey: Buffer;
+					valid: boolean;
+				} {
 					const negTwo = publicKey.get(-2);
 
 					if (!negTwo || negTwo.length !== 32) {
@@ -206,12 +209,12 @@ export class TwoFactorAuthenticationService {
 					rpIdHash,
 					credentialId,
 				}: {
-					attStmt: any,
-					authenticatorData: Buffer,
-					clientDataHash: Buffer,
+					attStmt: any;
+					authenticatorData: Buffer;
+					clientDataHash: Buffer;
 					publicKey: Map<number, any>;
-					rpIdHash: Buffer,
-					credentialId: Buffer,
+					rpIdHash: Buffer;
+					credentialId: Buffer;
 				}): { valid: boolean; publicKey: Buffer } {
 					if (attStmt.alg !== -7) {
 						throw new Error('alg mismatch');
@@ -266,12 +269,12 @@ export class TwoFactorAuthenticationService {
 					rpIdHash,
 					credentialId,
 				}: {
-					attStmt: any,
-					authenticatorData: Buffer,
-					clientDataHash: Buffer,
+					attStmt: any;
+					authenticatorData: Buffer;
+					clientDataHash: Buffer;
 					publicKey: Map<number, any>;
-					rpIdHash: Buffer,
-					credentialId: Buffer,
+					rpIdHash: Buffer;
+					credentialId: Buffer;
 				}): { valid: boolean; publicKey: Buffer } => {
 					const verificationData = this.hash(
 						Buffer.concat([authenticatorData, clientDataHash]),
@@ -279,7 +282,9 @@ export class TwoFactorAuthenticationService {
 
 					const jwsParts = attStmt.response.toString('utf-8').split('.');
 
-					const header = JSON.parse(base64URLDecode(jwsParts[0]).toString('utf-8'));
+					const header = JSON.parse(
+						base64URLDecode(jwsParts[0]).toString('utf-8'),
+					);
 					const response = JSON.parse(
 						base64URLDecode(jwsParts[1]).toString('utf-8'),
 					);
@@ -293,7 +298,9 @@ export class TwoFactorAuthenticationService {
 						.map((key: any) => PEMString(key))
 						.concat([GSR2]);
 
-					if (getCertSubject(certificateChain[0])['CN'] !== 'attest.android.com') {
+					if (
+						getCertSubject(certificateChain[0])['CN'] !== 'attest.android.com'
+					) {
 						throw new Error('invalid common name');
 					}
 
@@ -340,12 +347,12 @@ export class TwoFactorAuthenticationService {
 					rpIdHash,
 					credentialId,
 				}: {
-					attStmt: any,
-					authenticatorData: Buffer,
-					clientDataHash: Buffer,
+					attStmt: any;
+					authenticatorData: Buffer;
+					clientDataHash: Buffer;
 					publicKey: Map<number, any>;
-					rpIdHash: Buffer,
-					credentialId: Buffer,
+					rpIdHash: Buffer;
+					credentialId: Buffer;
 				}): { valid: boolean; publicKey: Buffer } {
 					const verificationData = Buffer.concat([
 						authenticatorData,
@@ -399,12 +406,12 @@ export class TwoFactorAuthenticationService {
 					rpIdHash,
 					credentialId,
 				}: {
-					attStmt: any,
-					authenticatorData: Buffer,
-					clientDataHash: Buffer,
-					publicKey: Map<number, any>,
-					rpIdHash: Buffer,
-					credentialId: Buffer
+					attStmt: any;
+					authenticatorData: Buffer;
+					clientDataHash: Buffer;
+					publicKey: Map<number, any>;
+					rpIdHash: Buffer;
+					credentialId: Buffer;
 				}): { valid: boolean; publicKey: Buffer } {
 					const x5c: Buffer[] = attStmt.x5c;
 					if (x5c.length !== 1) {

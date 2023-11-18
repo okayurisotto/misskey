@@ -6,6 +6,7 @@ import { UserSuspendService } from '@/core/UserSuspendService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -27,6 +28,7 @@ export default class extends Endpoint<
 		private readonly queueService: QueueService,
 		private readonly userSuspendService: UserSuspendService,
 		private readonly prismaService: PrismaService,
+		private readonly userEntityUtilService: UserEntityUtilService,
 	) {
 		super(meta, paramDef, async (ps) => {
 			const user = await this.prismaService.client.user.findUnique({
@@ -41,7 +43,7 @@ export default class extends Endpoint<
 				throw new Error('cannot delete a root account');
 			}
 
-			if (this.userEntityService.isLocalUser(user)) {
+			if (this.userEntityUtilService.isLocalUser(user)) {
 				// 物理削除する前にDelete activityを送信する
 				// TODO: `Promise.all`しても問題ないか確認する
 				await this.userSuspendService.doPostSuspend(user);

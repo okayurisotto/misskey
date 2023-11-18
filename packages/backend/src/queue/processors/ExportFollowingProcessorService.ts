@@ -2,10 +2,10 @@ import * as fs from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
 import type Logger from '@/misc/logger.js';
-import { DriveService } from '@/core/DriveService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { DriveFileAddService } from '@/core/DriveFileAddService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbExportFollowingData } from '../types.js';
@@ -18,9 +18,9 @@ export class ExportFollowingProcessorService {
 
 	constructor(
 		private readonly utilityService: UtilityService,
-		private readonly driveService: DriveService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
+		private readonly driveFileAddService: DriveFileAddService,
 	) {
 		this.logger =
 			this.queueLoggerService.logger.createSubLogger('export-following');
@@ -74,7 +74,7 @@ export class ExportFollowingProcessorService {
 
 			const fileName =
 				'following-' + dateFormat(new Date(), 'yyyy-MM-dd-HH-mm-ss') + '.csv';
-			const driveFile = await this.driveService.addFile({
+			const driveFile = await this.driveFileAddService.add({
 				user,
 				path,
 				name: fileName,

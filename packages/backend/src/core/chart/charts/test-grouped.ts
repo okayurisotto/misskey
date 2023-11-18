@@ -19,10 +19,19 @@ export default class TestGroupedChart extends Chart<typeof schema> {
 		appLockService: AppLockService,
 		logger: Logger,
 	) {
-		super(db, (k) => appLockService.getChartInsertLock(k), logger, name, schema, true);
+		super(
+			db,
+			(k) => appLockService.getChartInsertLock(k),
+			logger,
+			name,
+			schema,
+			true,
+		);
 	}
 
-	protected async tickMajor(group: string): Promise<Partial<KVs<typeof schema>>> {
+	protected async tickMajor(
+		group: string,
+	): Promise<Partial<KVs<typeof schema>>> {
 		return {
 			'foo.total': this.total[group],
 		};
@@ -37,9 +46,12 @@ export default class TestGroupedChart extends Chart<typeof schema> {
 
 		this.total[group]++;
 
-		await this.commit({
-			'foo.total': 1,
-			'foo.inc': 1,
-		}, group);
+		await this.commit(
+			{
+				'foo.total': 1,
+				'foo.inc': 1,
+			},
+			group,
+		);
 	}
 }

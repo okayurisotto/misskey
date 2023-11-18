@@ -3,9 +3,9 @@ import ms from 'ms';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import { DriveFileEntityService } from '@/core/entities/DriveFileEntityService.js';
-import { DriveService } from '@/core/DriveService.js';
+import { DriveFileEntityPackService } from '@/core/entities/DriveFileEntityPackService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
+import { DriveFileAddFromUrlService } from '@/core/DriveFileAddFromUrlService.js';
 
 export const meta = {
 	tags: ['drive'],
@@ -37,13 +37,13 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly driveFileEntityService: DriveFileEntityService,
-		private readonly driveService: DriveService,
+		private readonly driveFileEntityPackService: DriveFileEntityPackService,
 		private readonly globalEventService: GlobalEventService,
+		private readonly driveFileAddFromUrlService: DriveFileAddFromUrlService,
 	) {
 		super(meta, paramDef, async (ps, user, _1, _2, _3, ip, headers) => {
-			this.driveService
-				.uploadFromUrl({
+			this.driveFileAddFromUrlService
+				.addFromUrl({
 					url: ps.url,
 					user,
 					folderId: ps.folderId,
@@ -54,7 +54,7 @@ export default class extends Endpoint<
 					requestHeaders: headers,
 				})
 				.then((file) => {
-					this.driveFileEntityService
+					this.driveFileEntityPackService
 						.pack(file, { self: true })
 						.then((packedFile) => {
 							this.globalEventService.publishMainStream(

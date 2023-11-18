@@ -21,10 +21,19 @@ export default class PerUserNotesChart extends Chart<typeof schema> {
 
 		private readonly prismaService: PrismaService,
 	) {
-		super(db, (k) => appLockService.getChartInsertLock(k), chartLoggerService.logger, name, schema, true);
+		super(
+			db,
+			(k) => appLockService.getChartInsertLock(k),
+			chartLoggerService.logger,
+			name,
+			schema,
+			true,
+		);
 	}
 
-	protected async tickMajor(group: string): Promise<Partial<KVs<typeof schema>>> {
+	protected async tickMajor(
+		group: string,
+	): Promise<Partial<KVs<typeof schema>>> {
 		const [count] = await Promise.all([
 			this.prismaService.client.note.count({ where: { userId: group } }),
 		]);
@@ -38,15 +47,27 @@ export default class PerUserNotesChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	public update(user: { id: user['id'] }, note: note, isAdditional: boolean): void {
-		this.commit({
-			'total': isAdditional ? 1 : -1,
-			'inc': isAdditional ? 1 : 0,
-			'dec': isAdditional ? 0 : 1,
-			'diffs.normal': note.replyId == null && note.renoteId == null ? (isAdditional ? 1 : -1) : 0,
-			'diffs.renote': note.renoteId != null ? (isAdditional ? 1 : -1) : 0,
-			'diffs.reply': note.replyId != null ? (isAdditional ? 1 : -1) : 0,
-			'diffs.withFile': note.fileIds.length > 0 ? (isAdditional ? 1 : -1) : 0,
-		}, user.id);
+	public update(
+		user: { id: user['id'] },
+		note: note,
+		isAdditional: boolean,
+	): void {
+		this.commit(
+			{
+				total: isAdditional ? 1 : -1,
+				inc: isAdditional ? 1 : 0,
+				dec: isAdditional ? 0 : 1,
+				'diffs.normal':
+					note.replyId == null && note.renoteId == null
+						? isAdditional
+							? 1
+							: -1
+						: 0,
+				'diffs.renote': note.renoteId != null ? (isAdditional ? 1 : -1) : 0,
+				'diffs.reply': note.replyId != null ? (isAdditional ? 1 : -1) : 0,
+				'diffs.withFile': note.fileIds.length > 0 ? (isAdditional ? 1 : -1) : 0,
+			},
+			user.id,
+		);
 	}
 }

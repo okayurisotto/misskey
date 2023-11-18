@@ -6,15 +6,16 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { LocalUser } from '@/models/entities/User.js';
 import { isActor, isPost, getApId } from '@/core/activitypub/type.js';
 import { ApResolverService } from '@/core/activitypub/ApResolverService.js';
-import { ApDbResolverService } from '@/core/activitypub/ApDbResolverService.js';
 import { MetaService } from '@/core/MetaService.js';
-import { ApPersonService } from '@/core/activitypub/models/ApPersonService.js';
 import { ApNoteService } from '@/core/activitypub/models/ApNoteService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { ApPersonCreateService } from '@/core/activitypub/models/ApPersonCreateService.js';
+import { ApUserIdResolverService } from '@/core/activitypub/ApUserIdResolverService.js';
+import { ApNoteIdResolverService } from '@/core/activitypub/ApNoteIdResolverService.js';
 import { ApiError } from '../../error.js';
 import type { note, user } from '@prisma/client';
 
@@ -47,14 +48,15 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly utilityService: UtilityService,
-		private readonly userEntityService: UserEntityService,
-		private readonly noteEntityService: NoteEntityService,
-		private readonly metaService: MetaService,
-		private readonly apResolverService: ApResolverService,
-		private readonly apDbResolverService: ApDbResolverService,
-		private readonly apPersonService: ApPersonService,
+		private readonly apNoteIdResolverService: ApNoteIdResolverService,
 		private readonly apNoteService: ApNoteService,
+		private readonly apPersonCreateService: ApPersonCreateService,
+		private readonly apResolverService: ApResolverService,
+		private readonly apUserIdResolverService: ApUserIdResolverService,
+		private readonly metaService: MetaService,
+		private readonly noteEntityService: NoteEntityPackService,
+		private readonly userEntityService: UserEntityService,
+		private readonly utilityService: UtilityService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const object = await this.fetchAny(ps.uri, me);
@@ -87,8 +89,8 @@ export default class extends Endpoint<
 		let local = await this.mergePack(
 			me,
 			...(await Promise.all([
-				this.apDbResolverService.getUserFromApId(uri),
-				this.apDbResolverService.getNoteFromApId(uri),
+				this.apUserIdResolverService.getUserFromApId(uri),
+				this.apNoteIdResolverService.getNoteFromApId(uri),
 			])),
 		);
 		if (local != null) return local;
@@ -103,8 +105,8 @@ export default class extends Endpoint<
 			local = await this.mergePack(
 				me,
 				...(await Promise.all([
-					this.apDbResolverService.getUserFromApId(object.id),
-					this.apDbResolverService.getNoteFromApId(object.id),
+					this.apUserIdResolverService.getUserFromApId(object.id),
+					this.apNoteIdResolverService.getNoteFromApId(object.id),
 				])),
 			);
 			if (local != null) return local;
@@ -113,7 +115,7 @@ export default class extends Endpoint<
 		return await this.mergePack(
 			me,
 			isActor(object)
-				? await this.apPersonService.createPerson(getApId(object))
+				? await this.apPersonCreateService.create(getApId(object))
 				: null,
 			isPost(object)
 				? await this.apNoteService.createNote(getApId(object), undefined, true)

@@ -35,39 +35,46 @@ export class WebhookService implements OnApplicationShutdown {
 		const obj = JSON.parse(data);
 
 		if (obj.channel === 'internal') {
-			const { type, body } = obj.message as StreamMessages['internal']['payload'];
+			const { type, body } =
+				obj.message as StreamMessages['internal']['payload'];
 			switch (type) {
 				case 'webhookCreated':
 					if (body.active) {
 						this.webhooks.push({
 							...body,
 							createdAt: new Date(body.createdAt),
-							latestSentAt: body.latestSentAt ? new Date(body.latestSentAt) : null,
+							latestSentAt: body.latestSentAt
+								? new Date(body.latestSentAt)
+								: null,
 						});
 					}
 					break;
 				case 'webhookUpdated':
 					if (body.active) {
-						const i = this.webhooks.findIndex(a => a.id === body.id);
+						const i = this.webhooks.findIndex((a) => a.id === body.id);
 						if (i > -1) {
 							this.webhooks[i] = {
 								...body,
 								createdAt: new Date(body.createdAt),
-								latestSentAt: body.latestSentAt ? new Date(body.latestSentAt) : null,
+								latestSentAt: body.latestSentAt
+									? new Date(body.latestSentAt)
+									: null,
 							};
 						} else {
 							this.webhooks.push({
 								...body,
 								createdAt: new Date(body.createdAt),
-								latestSentAt: body.latestSentAt ? new Date(body.latestSentAt) : null,
+								latestSentAt: body.latestSentAt
+									? new Date(body.latestSentAt)
+									: null,
 							});
 						}
 					} else {
-						this.webhooks = this.webhooks.filter(a => a.id !== body.id);
+						this.webhooks = this.webhooks.filter((a) => a.id !== body.id);
 					}
 					break;
 				case 'webhookDeleted':
-					this.webhooks = this.webhooks.filter(a => a.id !== body.id);
+					this.webhooks = this.webhooks.filter((a) => a.id !== body.id);
 					break;
 				default:
 					break;

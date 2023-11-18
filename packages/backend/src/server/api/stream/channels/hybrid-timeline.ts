@@ -4,7 +4,7 @@ import { checkWordMute } from '@/misc/check-word-mute.js';
 import { isUserRelated } from '@/misc/is-user-related.js';
 import { isInstanceMuted } from '@/misc/is-instance-muted.js';
 import { MetaService } from '@/core/MetaService.js';
-import { NoteEntityService } from '@/core/entities/NoteEntityService.js';
+import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import { RoleService } from '@/core/RoleService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { bindThis } from '@/decorators.js';
@@ -19,7 +19,7 @@ class HybridTimelineChannel extends Channel {
 	constructor(
 		private readonly metaService: MetaService,
 		private readonly roleService: RoleService,
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 
 		id: string,
 		connection: Channel['connection'],
@@ -119,7 +119,7 @@ export class HybridTimelineChannelService {
 	constructor(
 		private readonly metaService: MetaService,
 		private readonly roleService: RoleService,
-		private readonly noteEntityService: NoteEntityService,
+		private readonly noteEntityService: NoteEntityPackService,
 	) {
 	}
 

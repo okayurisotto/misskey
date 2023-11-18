@@ -1,30 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
 import type { NoteReactionSchema } from '@/models/zod/NoteReactionSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { OnModuleInit } from '@nestjs/common';
-import type { ReactionService } from '../ReactionService.js';
-import type { UserEntityService } from './UserEntityService.js';
-import type { NoteEntityService } from './NoteEntityService.js';
+import { LegacyReactionConvertService } from '../LegacyReactionConvertService.js';
+import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
+import { NoteEntityPackService } from './NoteEntityPackService.js';
 import type { z } from 'zod';
 import type { note_reaction, user } from '@prisma/client';
 
 @Injectable()
-export class NoteReactionEntityService implements OnModuleInit {
-	private userEntityService: UserEntityService;
-	private noteEntityService: NoteEntityService;
-	private reactionService: ReactionService;
-
+export class NoteReactionEntityService {
 	constructor(
-		private readonly moduleRef: ModuleRef,
+		private readonly legacyReactionConvertService: LegacyReactionConvertService,
+		private readonly noteEntityService: NoteEntityPackService,
 		private readonly prismaService: PrismaService,
+		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
-
-	onModuleInit(): void {
-		this.userEntityService = this.moduleRef.get('UserEntityService');
-		this.noteEntityService = this.moduleRef.get('NoteEntityService');
-		this.reactionService = this.moduleRef.get('ReactionService');
-	}
 
 	/**
 	 * `note_reaction`をpackする。
@@ -46,19 +36,22 @@ export class NoteReactionEntityService implements OnModuleInit {
 			...options,
 		};
 
-		const reaction = await this.prismaService.client.note_reaction.findUniqueOrThrow({
-			where: { id: typeof src === 'string' ? src : src.id },
-			include: { user: true },
-		});
+		const reaction =
+			await this.prismaService.client.note_reaction.findUniqueOrThrow({
+				where: { id: typeof src === 'string' ? src : src.id },
+				include: { user: true },
+			});
 
 		return {
 			id: reaction.id,
 			createdAt: reaction.createdAt.toISOString(),
-			user: await this.userEntityService.packLite(reaction.user),
-			type: this.reactionService.convertLegacyReaction(reaction.reaction),
-			...(opts.withNote ? {
-				note: await this.noteEntityService.pack(reaction.noteId, me),
-			} : {}),
+			user: await this.userEntityPackLiteService.packLite(reaction.user),
+			type: this.legacyReactionConvertService.convert(reaction.reaction),
+			...(opts.withNote
+				? {
+						note: await this.noteEntityService.pack(reaction.noteId, me),
+				  }
+				: {}),
 		};
 	}
 }
