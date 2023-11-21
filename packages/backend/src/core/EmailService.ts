@@ -2,24 +2,20 @@ import * as nodemailer from 'nodemailer';
 import { Injectable } from '@nestjs/common';
 import { validate as validateEmail } from 'deep-email-validator';
 import { MetaService } from '@/core/MetaService.js';
-import type Logger from '@/misc/logger.js';
-import { LoggerService } from '@/core/LoggerService.js';
+import Logger from '@/misc/logger.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
 
 @Injectable()
 export class EmailService {
-	private readonly logger: Logger;
+	private readonly logger = new Logger('email');
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
 		private readonly metaService: MetaService,
-		private readonly loggerService: LoggerService,
 		private readonly prismaService: PrismaService,
-	) {
-		this.logger = this.loggerService.getLogger('email');
-	}
+	) {}
 
 	public async sendEmail(
 		to: string,

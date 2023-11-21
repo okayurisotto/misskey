@@ -3,8 +3,7 @@ import { URL } from 'node:url';
 import { Injectable } from '@nestjs/common';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
-import { LoggerService } from '@/core/LoggerService.js';
-import type Logger from '@/misc/logger.js';
+import Logger from '@/misc/logger.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { user } from '@prisma/client';
 
@@ -171,18 +170,13 @@ export class ApRequestCreator {
 
 @Injectable()
 export class ApRequestService {
-	private readonly logger: Logger;
+	private readonly logger = new Logger('ap-request');
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
-
-		private readonly userKeypairService: UserKeypairService,
 		private readonly httpRequestService: HttpRequestService,
-		private readonly loggerService: LoggerService,
-	) {
-		// eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-		this.logger = this.loggerService?.getLogger('ap-request'); // なぜか TypeError: Cannot read properties of undefined (reading 'getLogger') と言われる
-	}
+		private readonly userKeypairService: UserKeypairService,
+	) {}
 
 	public async signedPost(
 		user: { id: user['id'] },

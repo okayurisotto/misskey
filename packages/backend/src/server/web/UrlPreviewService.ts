@@ -2,40 +2,35 @@ import { Injectable } from '@nestjs/common';
 import { summaly } from 'summaly';
 import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
-import type Logger from '@/misc/logger.js';
+import Logger from '@/misc/logger.js';
 import { query } from '@/misc/prelude/url.js';
-import { LoggerService } from '@/core/LoggerService.js';
 import { ApiError } from '@/server/api/error.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
 
 @Injectable()
 export class UrlPreviewService {
-	private readonly logger: Logger;
+	private readonly logger = new Logger('url-preview');
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
-
-		private readonly metaService: MetaService,
 		private readonly httpRequestService: HttpRequestService,
-		private readonly loggerService: LoggerService,
-	) {
-		this.logger = this.loggerService.getLogger('url-preview');
-	}
+		private readonly metaService: MetaService,
+	) {}
 
 	private wrap(url?: string | null): string | null {
 		return url != null
 			? url.match(/^https?:\/\//)
 				? `${this.configLoaderService.data.mediaProxy}/preview.webp?${query({
-					url,
-					preview: '1',
-				})}`
+						url,
+						preview: '1',
+				  })}`
 				: url
 			: null;
 	}
 
 	public async handle(
-		request: FastifyRequest<{ Querystring: { url: string; lang?: string; } }>,
+		request: FastifyRequest<{ Querystring: { url: string; lang?: string } }>,
 		reply: FastifyReply,
 	): Promise<object | undefined> {
 		const url = request.query.url;
@@ -52,32 +47,48 @@ export class UrlPreviewService {
 
 		const meta = await this.metaService.fetch();
 
-		this.logger.info(meta.summalyProxy
-			? `(Proxy) Getting preview of ${url}@${lang} ...`
-			: `Getting preview of ${url}@${lang} ...`);
+		this.logger.info(
+			meta.summalyProxy
+				? `(Proxy) Getting preview of ${url}@${lang} ...`
+				: `Getting preview of ${url}@${lang} ...`,
+		);
 		try {
-			const summary = meta.summalyProxy ?
-				await this.httpRequestService.getJson<ReturnType<typeof summaly>>(`${meta.summalyProxy}?${query({
-					url: url,
-					lang: lang ?? 'ja-JP',
-				})}`)
-				:
-				await summaly(url, {
-					followRedirects: false,
-					lang: lang ?? 'ja-JP',
-					agent: this.configLoaderService.data.proxy ? {
-						http: this.httpRequestService.httpAgent,
-						https: this.httpRequestService.httpsAgent,
-					} : undefined,
-				});
+			const summary = meta.summalyProxy
+				? await this.httpRequestService.getJson<ReturnType<typeof summaly>>(
+						`${meta.summalyProxy}?${query({
+							url: url,
+							lang: lang ?? 'ja-JP',
+						})}`,
+				  )
+				: await summaly(url, {
+						followRedirects: false,
+						lang: lang ?? 'ja-JP',
+						agent: this.configLoaderService.data.proxy
+							? {
+									http: this.httpRequestService.httpAgent,
+									https: this.httpRequestService.httpsAgent,
+							  }
+							: undefined,
+				  });
 
 			this.logger.succ(`Got preview of ${url}: ${summary.title}`);
 
-			if (!(summary.url.startsWith('http://') || summary.url.startsWith('https://'))) {
+			if (
+				!(
+					summary.url.startsWith('http://') ||
+					summary.url.startsWith('https://')
+				)
+			) {
 				throw new Error('unsupported schema included');
 			}
 
-			if (summary.player.url && !(summary.player.url.startsWith('http://') || summary.player.url.startsWith('https://'))) {
+			if (
+				summary.player.url &&
+				!(
+					summary.player.url.startsWith('http://') ||
+					summary.player.url.startsWith('https://')
+				)
+			) {
 				throw new Error('unsupported schema included');
 			}
 

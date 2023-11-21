@@ -7,11 +7,10 @@ import fastifyStatic from '@fastify/static';
 import { z } from 'zod';
 import { NODE_ENV } from '@/env.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import type Logger from '@/misc/logger.js';
+import Logger from '@/misc/logger.js';
 import * as Acct from '@/misc/acct.js';
 import { genIdenticon } from '@/misc/gen-identicon.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { LoggerService } from '@/core/LoggerService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ProcessMessage } from '@/boot/ProcessMessage.js';
@@ -30,29 +29,25 @@ const _dirname = fileURLToPath(new URL('.', import.meta.url));
 
 @Injectable()
 export class ServerService implements OnApplicationShutdown {
-	private readonly logger: Logger;
+	private readonly logger = new Logger('server', 'gray');
 	private fastify: FastifyInstance | null = null;
 
 	constructor(
-		private readonly configLoaderService: ConfigLoaderService,
-
-		private readonly metaService: MetaService,
-		private readonly userEntityService: UserEntityService,
-		private readonly apiServerService: ApiServerService,
-		private readonly openApiServerService: OpenApiServerService,
-		private readonly streamingApiServerService: StreamingApiServerService,
 		private readonly activityPubServerService: ActivityPubServerService,
-		private readonly wellKnownServerService: WellKnownServerService,
-		private readonly nodeinfoServerService: NodeinfoServerService,
-		private readonly fileServerService: FileServerService,
+		private readonly apiServerService: ApiServerService,
 		private readonly clientServerService: ClientServerService,
+		private readonly configLoaderService: ConfigLoaderService,
+		private readonly fileServerService: FileServerService,
 		private readonly globalEventService: GlobalEventService,
-		private readonly loggerService: LoggerService,
+		private readonly metaService: MetaService,
+		private readonly nodeinfoServerService: NodeinfoServerService,
+		private readonly openApiServerService: OpenApiServerService,
 		private readonly prismaService: PrismaService,
+		private readonly streamingApiServerService: StreamingApiServerService,
+		private readonly userEntityService: UserEntityService,
 		private readonly userEntityUtilService: UserEntityUtilService,
-	) {
-		this.logger = this.loggerService.getLogger('server', 'gray');
-	}
+		private readonly wellKnownServerService: WellKnownServerService,
+	) {}
 
 	public async launch(): Promise<void> {
 		const fastify = Fastify({

@@ -9,19 +9,27 @@ import { sharpBmp } from 'sharp-read-bmp';
 import { createTemp } from '@/misc/create-temp.js';
 import { FILE_TYPE_BROWSERSAFE } from '@/const.js';
 import { StatusError } from '@/misc/status-error.js';
-import type Logger from '@/misc/logger.js';
+import Logger from '@/misc/logger.js';
 import { DownloadService } from '@/core/DownloadService.js';
-import { IImageStreamable, ImageProcessingService, webpDefault } from '@/core/ImageProcessingService.js';
+import {
+	IImageStreamable,
+	ImageProcessingService,
+	webpDefault,
+} from '@/core/ImageProcessingService.js';
 import { VideoProcessingService } from '@/core/VideoProcessingService.js';
 import { InternalStorageService } from '@/core/InternalStorageService.js';
 import { contentDisposition } from '@/misc/content-disposition.js';
 import { FileInfoService } from '@/core/FileInfoService.js';
-import { LoggerService } from '@/core/LoggerService.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { correctFilename } from '@/misc/correct-filename.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
-import type { FastifyInstance, FastifyRequest, FastifyReply, FastifyPluginOptions } from 'fastify';
+import type {
+	FastifyInstance,
+	FastifyRequest,
+	FastifyReply,
+	FastifyPluginOptions,
+} from 'fastify';
 import type { drive_file } from '@prisma/client';
 
 const _filename = fileURLToPath(import.meta.url);
@@ -37,27 +45,28 @@ const assets = `${_dirname}/../../server/file/assets/`;
 
 @Injectable()
 export class FileServerService {
-	private readonly logger: Logger;
+	private readonly logger = new Logger('server', 'gray');
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
-
-		private readonly fileInfoService: FileInfoService,
 		private readonly downloadService: DownloadService,
+		private readonly fileInfoService: FileInfoService,
 		private readonly imageProcessingService: ImageProcessingService,
-		private readonly videoProcessingService: VideoProcessingService,
 		private readonly internalStorageService: InternalStorageService,
-		private readonly loggerService: LoggerService,
 		private readonly prismaService: PrismaService,
-	) {
-		this.logger = this.loggerService.getLogger('server', 'gray');
+		private readonly videoProcessingService: VideoProcessingService,
+	) {}
 
-		//this.createServer = this.createServer.bind(this);
-	}
-
-	public createServer(fastify: FastifyInstance, options: FastifyPluginOptions, done: (err?: Error) => void): void {
+	public createServer(
+		fastify: FastifyInstance,
+		options: FastifyPluginOptions,
+		done: (err?: Error) => void,
+	): void {
 		fastify.addHook('onRequest', (request, reply, done) => {
-			reply.header('Content-Security-Policy', 'default-src \'none\'; img-src \'self\'; media-src \'self\'; style-src \'unsafe-inline\'');
+			reply.header(
+				'Content-Security-Policy',
+				"default-src 'none'; img-src 'self'; media-src 'self'; style-src 'unsafe-inline'",
+			);
 			done();
 		});
 
@@ -72,27 +81,43 @@ export class FileServerService {
 			return reply.send(file);
 		});
 
-		fastify.get<{ Params: { key: string; } }>('/files/:key', async (request, reply) => {
-			return await this.sendDriveFile(request, reply)
-				.catch(err => this.errorHandler(request, reply, err));
-		});
-		fastify.get<{ Params: { key: string; } }>('/files/:key/*', async (request, reply) => {
-			return await this.sendDriveFile(request, reply)
-				.catch(err => this.errorHandler(request, reply, err));
-		});
+		fastify.get<{ Params: { key: string } }>(
+			'/files/:key',
+			async (request, reply) => {
+				return await this.sendDriveFile(request, reply).catch((err) =>
+					this.errorHandler(request, reply, err),
+				);
+			},
+		);
+		fastify.get<{ Params: { key: string } }>(
+			'/files/:key/*',
+			async (request, reply) => {
+				return await this.sendDriveFile(request, reply).catch((err) =>
+					this.errorHandler(request, reply, err),
+				);
+			},
+		);
 
 		fastify.get<{
-			Params: { url: string; };
-			Querystring: { url?: string; };
+			Params: { url: string };
+			Querystring: { url?: string };
 		}>('/proxy/:url*', async (request, reply) => {
-			return await this.proxyHandler(request, reply)
-				.catch(err => this.errorHandler(request, reply, err));
+			return await this.proxyHandler(request, reply).catch((err) =>
+				this.errorHandler(request, reply, err),
+			);
 		});
 
 		done();
 	}
 
-	private async errorHandler(request: FastifyRequest<{ Params?: { [x: string]: any }; Querystring?: { [x: string]: any }; }>, reply: FastifyReply, err?: any): Promise<undefined> {
+	private async errorHandler(
+		request: FastifyRequest<{
+			Params?: { [x: string]: any };
+			Querystring?: { [x: string]: any };
+		}>,
+		reply: FastifyReply,
+		err?: any,
+	): Promise<undefined> {
 		this.logger.error(`${err}`);
 
 		reply.header('Cache-Control', 'max-age=300');
@@ -101,7 +126,10 @@ export class FileServerService {
 			return reply.sendFile('/dummy.png', assets);
 		}
 
-		if (err instanceof StatusError && (err.statusCode === 302 || err.isClientError)) {
+		if (
+			err instanceof StatusError &&
+			(err.statusCode === 302 || err.isClientError)
+		) {
 			reply.code(err.statusCode);
 			return;
 		}
@@ -110,7 +138,10 @@ export class FileServerService {
 		return;
 	}
 
-	private async sendDriveFile(request: FastifyRequest<{ Params: { key: string; } }>, reply: FastifyReply): Promise<Readable | Buffer | undefined> {
+	private async sendDriveFile(
+		request: FastifyRequest<{ Params: { key: string } }>,
+		reply: FastifyReply,
+	): Promise<Readable | Buffer | undefined> {
 		const key = request.params.key;
 		const file = await this.getFileFromKey(key).then();
 
@@ -134,20 +165,27 @@ export class FileServerService {
 					if (isMimeImage(file.mime, 'sharp-convertible-image-with-bmp')) {
 						reply.header('Cache-Control', 'max-age=31536000, immutable');
 
-						const url = new URL(`${this.configLoaderService.data.mediaProxy}/static.webp`);
+						const url = new URL(
+							`${this.configLoaderService.data.mediaProxy}/static.webp`,
+						);
 						url.searchParams.set('url', file.url);
 						url.searchParams.set('static', '1');
 
 						file.cleanup();
 						return await reply.redirect(301, url.toString());
 					} else if (file.mime.startsWith('video/')) {
-						const externalThumbnail = this.videoProcessingService.getExternalVideoThumbnailUrl(file.url);
+						const externalThumbnail =
+							this.videoProcessingService.getExternalVideoThumbnailUrl(
+								file.url,
+							);
 						if (externalThumbnail) {
 							file.cleanup();
 							return await reply.redirect(301, externalThumbnail);
 						}
 
-						image = await this.videoProcessingService.generateVideoThumbnail(file.path);
+						image = await this.videoProcessingService.generateVideoThumbnail(
+							file.path,
+						);
 					}
 				}
 
@@ -155,7 +193,9 @@ export class FileServerService {
 					if (['image/svg+xml'].includes(file.mime)) {
 						reply.header('Cache-Control', 'max-age=31536000, immutable');
 
-						const url = new URL(`${this.configLoaderService.data.mediaProxy}/svg.webp`);
+						const url = new URL(
+							`${this.configLoaderService.data.mediaProxy}/svg.webp`,
+						);
 						url.searchParams.set('url', file.url);
 
 						file.cleanup();
@@ -180,8 +220,14 @@ export class FileServerService {
 					file.cleanup();
 				}
 
-				reply.header('Content-Type', FILE_TYPE_BROWSERSAFE.includes(image.type) ? image.type : 'application/octet-stream');
-				reply.header('Content-Disposition',
+				reply.header(
+					'Content-Type',
+					FILE_TYPE_BROWSERSAFE.includes(image.type)
+						? image.type
+						: 'application/octet-stream',
+				);
+				reply.header(
+					'Content-Disposition',
 					contentDisposition(
 						'inline',
 						correctFilename(file.filename, image.ext),
@@ -196,14 +242,30 @@ export class FileServerService {
 					extname: file.ext ? `.${file.ext}` : '.unknown',
 				}).toString();
 
-				reply.header('Content-Type', FILE_TYPE_BROWSERSAFE.includes(file.mime) ? file.mime : 'application/octet-stream');
+				reply.header(
+					'Content-Type',
+					FILE_TYPE_BROWSERSAFE.includes(file.mime)
+						? file.mime
+						: 'application/octet-stream',
+				);
 				reply.header('Cache-Control', 'max-age=31536000, immutable');
-				reply.header('Content-Disposition', contentDisposition('inline', filename));
+				reply.header(
+					'Content-Disposition',
+					contentDisposition('inline', filename),
+				);
 				return fs.createReadStream(file.path);
 			} else {
-				reply.header('Content-Type', FILE_TYPE_BROWSERSAFE.includes(file.file.type) ? file.file.type : 'application/octet-stream');
+				reply.header(
+					'Content-Type',
+					FILE_TYPE_BROWSERSAFE.includes(file.file.type)
+						? file.file.type
+						: 'application/octet-stream',
+				);
 				reply.header('Cache-Control', 'max-age=31536000, immutable');
-				reply.header('Content-Disposition', contentDisposition('inline', file.filename));
+				reply.header(
+					'Content-Disposition',
+					contentDisposition('inline', file.filename),
+				);
 				return fs.createReadStream(file.path);
 			}
 		} catch (e) {
@@ -212,8 +274,17 @@ export class FileServerService {
 		}
 	}
 
-	private async proxyHandler(request: FastifyRequest<{ Params: { url: string; }; Querystring: { url?: string; }; }>, reply: FastifyReply): Promise<Readable | Buffer | undefined> {
-		const url = 'url' in request.query ? request.query.url : 'https://' + request.params.url;
+	private async proxyHandler(
+		request: FastifyRequest<{
+			Params: { url: string };
+			Querystring: { url?: string };
+		}>,
+		reply: FastifyReply,
+	): Promise<Readable | Buffer | undefined> {
+		const url =
+			'url' in request.query
+				? request.query.url
+				: 'https://' + request.params.url;
 
 		if (typeof url !== 'string') {
 			reply.code(400);
@@ -223,21 +294,25 @@ export class FileServerService {
 		// アバタークロップなど、どうしてもオリジンである必要がある場合
 		const mustOrigin = 'origin' in request.query;
 
-		if (this.configLoaderService.data.externalMediaProxyEnabled && !mustOrigin) {
+		if (
+			this.configLoaderService.data.externalMediaProxyEnabled &&
+			!mustOrigin
+		) {
 			// 外部のメディアプロキシが有効なら、そちらにリダイレクト
 
 			reply.header('Cache-Control', 'public, max-age=259200'); // 3 days
 
-			const url = new URL(`${this.configLoaderService.data.mediaProxy}/${request.params.url || ''}`);
+			const url = new URL(
+				`${this.configLoaderService.data.mediaProxy}/${
+					request.params.url || ''
+				}`,
+			);
 
 			for (const [key, value] of Object.entries(request.query)) {
 				url.searchParams.append(key, value);
 			}
 
-			return await reply.redirect(
-				301,
-				url.toString(),
-			);
+			return await reply.redirect(301, url.toString());
 		}
 
 		// Create temp file
@@ -255,8 +330,14 @@ export class FileServerService {
 		}
 
 		try {
-			const isConvertibleImage = isMimeImage(file.mime, 'sharp-convertible-image-with-bmp');
-			const isAnimationConvertibleImage = isMimeImage(file.mime, 'sharp-animation-convertible-image-with-bmp');
+			const isConvertibleImage = isMimeImage(
+				file.mime,
+				'sharp-convertible-image-with-bmp',
+			);
+			const isAnimationConvertibleImage = isMimeImage(
+				file.mime,
+				'sharp-animation-convertible-image-with-bmp',
+			);
 
 			if (
 				'emoji' in request.query ||
@@ -280,7 +361,11 @@ export class FileServerService {
 						type: file.mime,
 					};
 				} else {
-					const data = (await sharpBmp(file.path, file.mime, { animated: !('static' in request.query) }))
+					const data = (
+						await sharpBmp(file.path, file.mime, {
+							animated: !('static' in request.query),
+						})
+					)
 						.resize({
 							height: 'emoji' in request.query ? 128 : 320,
 							withoutEnlargement: true,
@@ -294,9 +379,17 @@ export class FileServerService {
 					};
 				}
 			} else if ('static' in request.query) {
-				image = this.imageProcessingService.convertSharpToWebpStream(await sharpBmp(file.path, file.mime), 498, 422);
+				image = this.imageProcessingService.convertSharpToWebpStream(
+					await sharpBmp(file.path, file.mime),
+					498,
+					422,
+				);
 			} else if ('preview' in request.query) {
-				image = this.imageProcessingService.convertSharpToWebpStream(await sharpBmp(file.path, file.mime), 200, 200);
+				image = this.imageProcessingService.convertSharpToWebpStream(
+					await sharpBmp(file.path, file.mime),
+					200,
+					200,
+				);
 			} else if ('badge' in request.query) {
 				const mask = (await sharpBmp(file.path, file.mime))
 					.resize(96, 96, {
@@ -318,7 +411,12 @@ export class FileServerService {
 				}
 
 				const data = sharp({
-					create: { width: 96, height: 96, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+					create: {
+						width: 96,
+						height: 96,
+						channels: 4,
+						background: { r: 0, g: 0, b: 0, alpha: 0 },
+					},
 				})
 					.pipelineColorspace('b-w')
 					.boolean(await mask.png().toBuffer(), 'eor');
@@ -329,8 +427,15 @@ export class FileServerService {
 					type: 'image/png',
 				};
 			} else if (file.mime === 'image/svg+xml') {
-				image = this.imageProcessingService.convertToWebpStream(file.path, 2048, 2048);
-			} else if (!file.mime.startsWith('image/') || !FILE_TYPE_BROWSERSAFE.includes(file.mime)) {
+				image = this.imageProcessingService.convertToWebpStream(
+					file.path,
+					2048,
+					2048,
+				);
+			} else if (
+				!file.mime.startsWith('image/') ||
+				!FILE_TYPE_BROWSERSAFE.includes(file.mime)
+			) {
 				throw new StatusError('Rejected type', 403, 'Rejected type');
 			}
 
@@ -355,11 +460,9 @@ export class FileServerService {
 
 			reply.header('Content-Type', image.type);
 			reply.header('Cache-Control', 'max-age=31536000, immutable');
-			reply.header('Content-Disposition',
-				contentDisposition(
-					'inline',
-					correctFilename(file.filename, image.ext),
-				),
+			reply.header(
+				'Content-Disposition',
+				contentDisposition('inline', correctFilename(file.filename, image.ext)),
 			);
 			return image.data;
 		} catch (e) {
@@ -369,14 +472,35 @@ export class FileServerService {
 	}
 
 	private async getStreamAndTypeFromUrl(url: string): Promise<
-		{ state: 'remote'; fileRole?: 'thumbnail' | 'webpublic' | 'original'; file?: drive_file; mime: string; ext: string | null; path: string; cleanup: () => void; filename: string; }
-		| { state: 'stored_internal'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: drive_file; filename: string; mime: string; ext: string | null; path: string; }
+		| {
+				state: 'remote';
+				fileRole?: 'thumbnail' | 'webpublic' | 'original';
+				file?: drive_file;
+				mime: string;
+				ext: string | null;
+				path: string;
+				cleanup: () => void;
+				filename: string;
+		  }
+		| {
+				state: 'stored_internal';
+				fileRole: 'thumbnail' | 'webpublic' | 'original';
+				file: drive_file;
+				filename: string;
+				mime: string;
+				ext: string | null;
+				path: string;
+		  }
 		| '404'
 		| '204'
 	> {
 		if (url.startsWith(`${this.configLoaderService.data.url}/files/`)) {
-			const key = url.replace(`${this.configLoaderService.data.url}/files/`, '').split('/').shift();
-			if (!key) throw new StatusError('Invalid File Key', 400, 'Invalid File Key');
+			const key = url
+				.replace(`${this.configLoaderService.data.url}/files/`, '')
+				.split('/')
+				.shift();
+			if (!key)
+				throw new StatusError('Invalid File Key', 400, 'Invalid File Key');
 
 			return await this.getFileFromKey(key);
 		}
@@ -384,9 +508,14 @@ export class FileServerService {
 		return await this.downloadAndDetectTypeFromUrl(url);
 	}
 
-	private async downloadAndDetectTypeFromUrl(url: string): Promise<
-		{ state: 'remote' ; mime: string; ext: string | null; path: string; cleanup: () => void; filename: string; }
-	> {
+	private async downloadAndDetectTypeFromUrl(url: string): Promise<{
+		state: 'remote';
+		mime: string;
+		ext: string | null;
+		path: string;
+		cleanup: () => void;
+		filename: string;
+	}> {
 		const [path, cleanup] = await createTemp();
 		try {
 			const { filename } = await this.downloadService.downloadUrl(url, path);
@@ -395,8 +524,10 @@ export class FileServerService {
 
 			return {
 				state: 'remote',
-				mime, ext,
-				path, cleanup,
+				mime,
+				ext,
+				path,
+				cleanup,
 				filename,
 			};
 		} catch (e) {
@@ -406,18 +537,38 @@ export class FileServerService {
 	}
 
 	private async getFileFromKey(key: string): Promise<
-		{ state: 'remote'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: drive_file; filename: string; url: string; mime: string; ext: string | null; path: string; cleanup: () => void; }
-		| { state: 'stored_internal'; fileRole: 'thumbnail' | 'webpublic' | 'original'; file: drive_file; filename: string; mime: string; ext: string | null; path: string; }
+		| {
+				state: 'remote';
+				fileRole: 'thumbnail' | 'webpublic' | 'original';
+				file: drive_file;
+				filename: string;
+				url: string;
+				mime: string;
+				ext: string | null;
+				path: string;
+				cleanup: () => void;
+		  }
+		| {
+				state: 'stored_internal';
+				fileRole: 'thumbnail' | 'webpublic' | 'original';
+				file: drive_file;
+				filename: string;
+				mime: string;
+				ext: string | null;
+				path: string;
+		  }
 		| '404'
 		| '204'
 	> {
 		// Fetch drive file
 		const file = await this.prismaService.client.drive_file.findFirst({
-			where: { OR: [
-				{ accessKey: key },
-				{ thumbnailAccessKey: key },
-				{ webpublicAccessKey: key },
-			]},
+			where: {
+				OR: [
+					{ accessKey: key },
+					{ thumbnailAccessKey: key },
+					{ webpublicAccessKey: key },
+				],
+			},
 		});
 
 		if (file == null) return '404';
@@ -431,7 +582,11 @@ export class FileServerService {
 			return {
 				...result,
 				url: file.uri,
-				fileRole: isThumbnail ? 'thumbnail' : isWebpublic ? 'webpublic' : 'original',
+				fileRole: isThumbnail
+					? 'thumbnail'
+					: isWebpublic
+					? 'webpublic'
+					: 'original',
 				file,
 				filename: file.name,
 			};
@@ -446,7 +601,8 @@ export class FileServerService {
 				fileRole: isThumbnail ? 'thumbnail' : 'webpublic',
 				file,
 				filename: file.name,
-				mime, ext,
+				mime,
+				ext,
 				path,
 			};
 		}

@@ -9,22 +9,18 @@ import { NODE_ENV } from '@/env.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { StatusError } from '@/misc/status-error.js';
-import { LoggerService } from '@/core/LoggerService.js';
-import type Logger from '@/misc/logger.js';
+import Logger from '@/misc/logger.js';
 
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class DownloadService {
-	private readonly logger: Logger;
+	private readonly logger = new Logger('download');
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
 		private readonly httpRequestService: HttpRequestService,
-		private readonly loggerService: LoggerService,
-	) {
-		this.logger = this.loggerService.getLogger('download');
-	}
+	) {}
 
 	public async downloadUrl(
 		url: string,

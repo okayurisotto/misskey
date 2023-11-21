@@ -3,7 +3,6 @@ import { QueueService } from '@/core/QueueService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import Logger from '@/misc/logger.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
-import { LoggerService } from '@/core/LoggerService.js';
 import { CacheService } from '@/core/CacheService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
@@ -11,19 +10,16 @@ import type { user } from '@prisma/client';
 
 @Injectable()
 export class UserBlockingDeleteService {
-	private readonly logger: Logger;
+	private readonly logger = new Logger('user-block');
 
 	constructor(
 		private readonly apRendererService: ApRendererService,
 		private readonly cacheService: CacheService,
 		private readonly globalEventService: GlobalEventService,
-		private readonly loggerService: LoggerService,
 		private readonly prismaService: PrismaService,
 		private readonly queueService: QueueService,
 		private readonly userEntityUtilService: UserEntityUtilService,
-	) {
-		this.logger = this.loggerService.getLogger('user-block');
-	}
+	) {}
 
 	public async delete(blocker: user, blockee: user): Promise<void> {
 		const blocking_ = await this.prismaService.client.blocking.findUnique({

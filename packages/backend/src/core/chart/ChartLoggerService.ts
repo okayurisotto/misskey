@@ -1,12 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type Logger from '@/misc/logger.js';
-import { LoggerService } from '@/core/LoggerService.js';
+import Logger from '@/misc/logger.js';
 
 @Injectable()
 export class ChartLoggerService {
-	public logger: Logger;
-
-	constructor(private readonly loggerService: LoggerService) {
-		this.logger = this.loggerService.getLogger('chart', 'white');
-	}
+	public readonly logger = new Logger('chart', 'white');
 }

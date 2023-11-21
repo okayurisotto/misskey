@@ -74,7 +74,6 @@ import { InternalStorageService } from './InternalStorageService.js';
 import { InviteCodeEntityService } from './entities/InviteCodeEntityService.js';
 import { LdSignatureService } from './activitypub/LdSignatureService.js';
 import { LocalAccountMovingService } from './LocalAccountMovingService.js';
-import { LoggerService } from './LoggerService.js';
 import { MetaService } from './MetaService.js';
 import { MfmService } from './MfmService.js';
 import { ModerationLogEntityService } from './entities/ModerationLogEntityService.js';
@@ -296,7 +295,6 @@ const $ApNoteService: Provider = {
 		LdSignatureService,
 		LegacyReactionConvertService,
 		LocalAccountMovingService,
-		LoggerService,
 		MetaService,
 		MfmService,
 		ModerationLogEntityService,
@@ -483,7 +481,6 @@ const $ApNoteService: Provider = {
 		LdSignatureService,
 		LegacyReactionConvertService,
 		LocalAccountMovingService,
-		LoggerService,
 		MetaService,
 		MfmService,
 		ModerationLogEntityService,

@@ -1,25 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import Limiter from 'ratelimiter';
 import { NODE_ENV } from '@/env.js';
-import type Logger from '@/misc/logger.js';
-import { LoggerService } from '@/core/LoggerService.js';
+import Logger from '@/misc/logger.js';
 import { RedisService } from '@/core/RedisService.js';
 import type { IEndpointMeta } from './endpoints.js';
 
 @Injectable()
 export class RateLimiterService {
-	private readonly logger: Logger;
+	private readonly logger = new Logger('limiter');
 	private readonly disabled = NODE_ENV !== 'production';
 
-	constructor(
-		private readonly redisClient: RedisService,
+	constructor(private readonly redisClient: RedisService) {}
 
-		private readonly loggerService: LoggerService,
-	) {
-		this.logger = this.loggerService.getLogger('limiter');
-	}
-
-	public limit(limitation: IEndpointMeta['limit'] & { key: NonNullable<string> }, actor: string, factor = 1): Promise<void> {
+	public limit(
+		limitation: IEndpointMeta['limit'] & { key: NonNullable<string> },
+		actor: string,
+		factor = 1,
+	): Promise<void> {
 		return new Promise<void>((ok, reject) => {
 			if (this.disabled) ok();
 
@@ -37,7 +34,9 @@ export class RateLimiterService {
 						return reject('ERR');
 					}
 
-					this.logger.debug(`${actor} ${limitation.key} min remaining: ${info.remaining}`);
+					this.logger.debug(
+						`${actor} ${limitation.key} min remaining: ${info.remaining}`,
+					);
 
 					if (info.remaining === 0) {
 						reject('BRIEF_REQUEST_INTERVAL');
@@ -65,7 +64,9 @@ export class RateLimiterService {
 						return reject('ERR');
 					}
 
-					this.logger.debug(`${actor} ${limitation.key} max remaining: ${info.remaining}`);
+					this.logger.debug(
+						`${actor} ${limitation.key} max remaining: ${info.remaining}`,
+					);
 
 					if (info.remaining === 0) {
 						reject('RATE_LIMIT_EXCEEDED');

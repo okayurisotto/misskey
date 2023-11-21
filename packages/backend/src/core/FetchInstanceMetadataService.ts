@@ -2,8 +2,7 @@ import { URL } from 'node:url';
 import { Injectable } from '@nestjs/common';
 import { JSDOM } from 'jsdom';
 import tinycolor from 'tinycolor2';
-import type Logger from '@/misc/logger.js';
-import { LoggerService } from '@/core/LoggerService.js';
+import Logger from '@/misc/logger.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { RedisService } from '@/core/RedisService.js';
@@ -31,16 +30,13 @@ type NodeInfo = {
 
 @Injectable()
 export class FetchInstanceMetadataService {
-	private readonly logger: Logger;
+	private readonly logger = new Logger('metadata', 'cyan');
 
 	constructor(
 		private readonly httpRequestService: HttpRequestService,
-		private readonly loggerService: LoggerService,
 		private readonly federatedInstanceService: FederatedInstanceService,
 		private readonly redisClient: RedisService,
-	) {
-		this.logger = this.loggerService.getLogger('metadata', 'cyan');
-	}
+	) {}
 
 	public async tryLock(host: string): Promise<boolean> {
 		const mutex = await this.redisClient.set(
