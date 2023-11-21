@@ -84,15 +84,15 @@ export default class Logger {
 	/**
 	 * 実行を継続できない状況で使う。
 	 */
-	public error(x: string | Error, data?: unknown, important = false): void {
-		if (x instanceof Error) {
+	public error(value: string | Error, data?: unknown, important = false): void {
+		if (value instanceof Error) {
 			if (typeof data === 'object') {
-				this.log('error', x.toString(), { ...data, e: x }, important);
+				this.log('error', value.toString(), { ...data, e: value }, important);
 			} else {
-				this.log('error', x.toString(), { e: x }, important);
+				this.log('error', value.toString(), { e: value }, important);
 			}
 		} else {
-			this.log('error', x, data, important);
+			this.log('error', value, data, important);
 		}
 	}
 
