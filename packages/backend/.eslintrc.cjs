@@ -8,7 +8,7 @@ module.exports = {
 	plugins: ['@typescript-eslint', 'import'],
 	extends: [
 		'eslint:recommended',
-		'plugin:@typescript-eslint/recommended-type-checked',
+		'plugin:@typescript-eslint/strict-type-checked',
 		'plugin:import/recommended',
 		'plugin:import/typescript',
 		'prettier',
@@ -36,32 +36,42 @@ module.exports = {
 		'prefer-arrow-callback': ['error'],
 
 		/* typescript */
-		'@typescript-eslint/await-thenable': ['warn'], // TODO
-		'@typescript-eslint/consistent-type-imports': ['off'], // TODO: デコレータのメタデータとして参照される型を通常の`import`に置き換えなければならなくなり、結果として動かなくなることがあるため
+		// 厳しくしているもの
 		'@typescript-eslint/explicit-function-return-type': ['error'],
 		'@typescript-eslint/naming-convention': ['error', { selector: 'typeLike', format: ['PascalCase'] }, { selector: 'typeParameter', format: [] }],
-		'@typescript-eslint/no-base-to-string': ['warn'], // TODO
-		'@typescript-eslint/no-empty-function': ['off'], // OK
-		'@typescript-eslint/no-explicit-any': ['warn'], // TODO
-		'@typescript-eslint/no-floating-promises': ['warn'], // TODO
 		'@typescript-eslint/no-inferrable-types': ['error'],
-		'@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
-		'@typescript-eslint/no-non-null-assertion': ['warn'], // TODO
-		'@typescript-eslint/no-redundant-type-constituents': ['warn'], // TODO
-		'@typescript-eslint/no-unnecessary-condition': ['warn'], // TODO: 既存の型が`as`などされていて信用できないため
-		'@typescript-eslint/no-unsafe-argument': ['warn'], // TODO
-		'@typescript-eslint/no-unsafe-assignment': ['warn'], // TODO
-		'@typescript-eslint/no-unsafe-call': ['warn'], // TODO
-		'@typescript-eslint/no-unsafe-member-access': ['warn'], // TODO
-		'@typescript-eslint/no-unsafe-return': ['warn'], // TODO
-		'@typescript-eslint/no-unused-vars': ['warn'], // TODO
-		'@typescript-eslint/no-var-requires': ['error'],
-		'@typescript-eslint/prefer-nullish-coalescing': ['warn'],
 		'@typescript-eslint/prefer-readonly': ['error'],
-		'@typescript-eslint/require-await': ['warn'], // TODO
-		'@typescript-eslint/restrict-plus-operands': ['warn'], // TODO
-		'@typescript-eslint/restrict-template-expressions': ['warn'], // TODO
-		'@typescript-eslint/unbound-method': ['error'], // TODO
+		// 事情があって無効化しているもの
+		'@typescript-eslint/no-extraneous-class': ['off'], // NestJSの`@Module`デコレータを使うようなクラスは中身が空になる
+		// TODO
+		'@typescript-eslint/await-thenable': ['warn'],
+		'@typescript-eslint/no-base-to-string': ['warn'],
+		'@typescript-eslint/no-confusing-void-expression': ['warn'],
+		'@typescript-eslint/no-dynamic-delete': ['warn'],
+		'@typescript-eslint/no-empty-function': ['warn'],
+		'@typescript-eslint/no-explicit-any': ['warn'],
+		'@typescript-eslint/no-floating-promises': ['warn'],
+		'@typescript-eslint/no-invalid-void-type': ['warn'],
+		'@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
+		'@typescript-eslint/no-non-null-assertion': ['warn'],
+		'@typescript-eslint/no-redundant-type-constituents': ['warn'],
+		'@typescript-eslint/no-throw-literal': ['warn'],
+		'@typescript-eslint/no-unnecessary-boolean-literal-compare': ['warn'],
+		'@typescript-eslint/no-unnecessary-condition': ['warn'],
+		'@typescript-eslint/no-unsafe-argument': ['warn'],
+		'@typescript-eslint/no-unsafe-assignment': ['warn'],
+		'@typescript-eslint/no-unsafe-call': ['warn'],
+		'@typescript-eslint/no-unsafe-member-access': ['warn'],
+		'@typescript-eslint/no-unsafe-return': ['warn'],
+		'@typescript-eslint/no-unused-vars': ['warn'],
+		'@typescript-eslint/no-useless-constructor': ['warn'],
+		'@typescript-eslint/prefer-includes': ['warn'],
+		'@typescript-eslint/prefer-nullish-coalescing': ['warn'],
+		'@typescript-eslint/prefer-reduce-type-parameter': ['warn'],
+		'@typescript-eslint/require-await': ['warn'],
+		'@typescript-eslint/restrict-plus-operands': ['warn'],
+		'@typescript-eslint/restrict-template-expressions': ['warn'],
+		'@typescript-eslint/unbound-method': ['error'],
 
 		/* import */
 		'import/no-default-export': ['warn'],
