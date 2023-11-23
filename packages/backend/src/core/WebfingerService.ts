@@ -1,6 +1,5 @@
 import { URL } from 'node:url';
 import { Injectable } from '@nestjs/common';
-import { query as urlQuery } from '@/misc/prelude/url.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { MISSKEY_WEBFINGER_USE_HTTP } from '@/env.js';
 
@@ -14,8 +13,8 @@ export type IWebFinger = {
 	subject: string;
 };
 
-const urlRegex = /^https?:\/\//;
-const mRegex = /^([^@]+)@(.*)/;
+const urlPattern = /^https?:\/\//;
+const mentionPattern = /^([^@]+)@(.*)/;
 
 @Injectable()
 export class WebfingerService {
@@ -31,25 +30,26 @@ export class WebfingerService {
 	}
 
 	private genUrl(query: string): string {
-		if (query.match(urlRegex)) {
-			const u = new URL(query);
-			return (
-				`${u.protocol}//${u.hostname}/.well-known/webfinger?` +
-				urlQuery({ resource: query })
+		if (urlPattern.test(query)) {
+			const parsedUrl = new URL(query);
+			const url = new URL(
+				'/.well-known/webfinger',
+				`${parsedUrl.protocol}//${parsedUrl.hostname}`, // without port?
 			);
+			url.searchParams.set('resource', query);
+			return url.href;
 		}
 
-		const m = query.match(mRegex);
-		if (m) {
-			const hostname = m[2];
+		const mention = query.match(mentionPattern);
+		if (mention) {
+			const hostname = mention[2];
 			const useHttp =
 				MISSKEY_WEBFINGER_USE_HTTP &&
 				MISSKEY_WEBFINGER_USE_HTTP.toLowerCase() === 'true';
-			return `http${
-				useHttp ? '' : 's'
-			}://${hostname}/.well-known/webfinger?${urlQuery({
-				resource: `acct:${query}`,
-			})}`;
+			const protocol = useHttp ? 'http:' : 'https:';
+			const url = new URL('/.well-known/webfinger', `${protocol}//${hostname}`); // without port?
+			url.searchParams.set('resource', `acct:${query}`);
+			return url.href;
 		}
 
 		throw new Error(`Invalid query (${query})`);

@@ -67,7 +67,6 @@ module.exports = {
 		'@typescript-eslint/no-useless-constructor': ['warn'],
 		'@typescript-eslint/prefer-includes': ['warn'],
 		'@typescript-eslint/prefer-nullish-coalescing': ['warn'],
-		'@typescript-eslint/prefer-reduce-type-parameter': ['warn'],
 		'@typescript-eslint/require-await': ['warn'],
 		'@typescript-eslint/restrict-plus-operands': ['warn'],
 		'@typescript-eslint/restrict-template-expressions': ['warn'],

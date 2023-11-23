@@ -177,14 +177,14 @@ export class ServerService implements OnApplicationShutdown {
 
 			let url: URL;
 			if ('badge' in queries) {
-				url = new URL(`${this.configLoaderService.data.mediaProxy}/emoji.png`);
+				url = new URL('emoji.png', this.configLoaderService.data.mediaProxy);
 				url.searchParams.set(
 					'url',
 					emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl,
 				);
 				url.searchParams.set('badge', '1');
 			} else {
-				url = new URL(`${this.configLoaderService.data.mediaProxy}/emoji.webp`);
+				url = new URL('emoji.webp', this.configLoaderService.data.mediaProxy);
 				url.searchParams.set(
 					'url',
 					emoji.publicUrl === '' ? emoji.originalUrl : emoji.publicUrl,

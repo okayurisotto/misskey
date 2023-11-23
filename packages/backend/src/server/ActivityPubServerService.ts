@@ -4,7 +4,6 @@ import fastifyAccepts from '@fastify/accepts';
 import httpSignature from '@peertube/http-signature';
 import accepts from 'accepts';
 import vary from 'vary';
-import * as url from '@/misc/prelude/url.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { QueueService } from '@/core/QueueService.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
@@ -140,7 +139,10 @@ export class ActivityPubServerService {
 		//#endregion
 
 		const limit = 10;
-		const partOf = `${this.configLoaderService.data.url}/users/${userId}/followers`;
+		const partOf = new URL(
+			`./users/${userId}/followers`,
+			this.configLoaderService.data.url,
+		);
 
 		if (page) {
 			const query: Prisma.followingWhereInput = {
@@ -168,31 +170,33 @@ export class ActivityPubServerService {
 					this.apRendererService.renderFollowUser(following.followerId),
 				),
 			);
+			const id = new URL(partOf);
+			id.searchParams.set('page', 'true');
+			if (cursor) id.searchParams.set('cursor', cursor);
+
+			const next = new URL(partOf.href);
+			next.searchParams.set('page', 'true');
+			next.searchParams.set('cursor', followings.at(-1)!.id);
+
 			const rendered = this.apRendererService.renderOrderedCollectionPage(
-				`${partOf}?${url.query({
-					page: 'true',
-					cursor,
-				})}`,
+				id.href,
 				user.followersCount,
 				renderedFollowers,
-				partOf,
+				partOf.href,
 				undefined,
-				inStock
-					? `${partOf}?${url.query({
-							page: 'true',
-							cursor: followings.at(-1)!.id,
-					  })}`
-					: undefined,
+				inStock ? next.href : undefined,
 			);
 
 			this.setResponseType(request, reply);
 			return this.apRendererService.addContext(rendered);
 		} else {
+			const last = new URL(partOf);
+			last.searchParams.set('page', 'true');
 			// index page
 			const rendered = this.apRendererService.renderOrderedCollection(
-				partOf,
+				partOf.href,
 				user.followersCount,
-				`${partOf}?page=true`,
+				last.href,
 			);
 			reply.header('Cache-Control', 'public, max-age=180');
 			this.setResponseType(request, reply);
@@ -247,7 +251,9 @@ export class ActivityPubServerService {
 		//#endregion
 
 		const limit = 10;
-		const partOf = `${this.configLoaderService.data.url}/users/${userId}/following`;
+		const partOf = new URL(
+			`${this.configLoaderService.data.url}/users/${userId}/following`,
+		);
 
 		if (page) {
 			const query: Prisma.followingWhereInput = {
@@ -275,31 +281,35 @@ export class ActivityPubServerService {
 					this.apRendererService.renderFollowUser(following.followeeId),
 				),
 			);
+
+			const id = new URL(partOf);
+			id.searchParams.set('page', 'true');
+			if (cursor) id.searchParams.set('cursor', cursor);
+
+			const next = new URL(partOf);
+			next.searchParams.set('page', 'true');
+			next.searchParams.set('cursor', followings.at(-1)!.id);
+
 			const rendered = this.apRendererService.renderOrderedCollectionPage(
-				`${partOf}?${url.query({
-					page: 'true',
-					cursor,
-				})}`,
+				id.href,
 				user.followingCount,
 				renderedFollowees,
-				partOf,
+				partOf.href,
 				undefined,
-				inStock
-					? `${partOf}?${url.query({
-							page: 'true',
-							cursor: followings.at(-1)!.id,
-					  })}`
-					: undefined,
+				inStock ? next.href : undefined,
 			);
 
 			this.setResponseType(request, reply);
 			return this.apRendererService.addContext(rendered);
 		} else {
 			// index page
+			const last = new URL(partOf);
+			last.searchParams.set('page', 'true');
+
 			const rendered = this.apRendererService.renderOrderedCollection(
-				partOf,
+				partOf.href,
 				user.followingCount,
-				`${partOf}?page=true`,
+				last.href,
 			);
 			reply.header('Cache-Control', 'public, max-age=180');
 			this.setResponseType(request, reply);
@@ -396,7 +406,10 @@ export class ActivityPubServerService {
 		}
 
 		const limit = 20;
-		const partOf = `${this.configLoaderService.data.url}/users/${userId}/outbox`;
+		const partOf = new URL(
+			`./users/${userId}/outbox`,
+			this.configLoaderService.data.url,
+		);
 
 		if (page) {
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({
@@ -421,38 +434,45 @@ export class ActivityPubServerService {
 			const activities = await Promise.all(
 				notes.map((note) => this.packActivity(note)),
 			);
+
+			const id = new URL(partOf);
+			id.searchParams.set('page', 'true');
+			if (sinceId) id.searchParams.set('since_id', sinceId);
+			if (untilId) id.searchParams.set('until_id', untilId);
+
+			const prev = new URL(partOf);
+			prev.searchParams.set('page', 'true');
+			prev.searchParams.set('since_id', notes[0].id);
+
+			const next = new URL(partOf);
+			next.searchParams.set('page', 'true');
+			next.searchParams.set('until_id', notes.at(-1)!.id);
+
 			const rendered = this.apRendererService.renderOrderedCollectionPage(
-				`${partOf}?${url.query({
-					page: 'true',
-					since_id: sinceId,
-					until_id: untilId,
-				})}`,
+				id.href,
 				user.notesCount,
 				activities,
-				partOf,
-				notes.length
-					? `${partOf}?${url.query({
-							page: 'true',
-							since_id: notes[0].id,
-					  })}`
-					: undefined,
-				notes.length
-					? `${partOf}?${url.query({
-							page: 'true',
-							until_id: notes.at(-1)!.id,
-					  })}`
-					: undefined,
+				partOf.href,
+				notes.length ? prev.href : undefined,
+				notes.length ? next.href : undefined,
 			);
 
 			this.setResponseType(request, reply);
 			return this.apRendererService.addContext(rendered);
 		} else {
+			const first = new URL(partOf);
+			first.searchParams.set('page', 'true');
+
+			const last = new URL(partOf);
+			last.searchParams.set('page', 'true');
+			last.searchParams.set('since_id', '000000000000000000000000');
+
 			// index page
 			const rendered = this.apRendererService.renderOrderedCollection(
-				partOf,
+				partOf.href,
 				user.notesCount,
-				`${partOf}?page=true`,
-				`${partOf}?page=true&since_id=000000000000000000000000`,
+				first.href,
+				last.href,
 			);
 			reply.header('Cache-Control', 'public, max-age=180');
 			this.setResponseType(request, reply);

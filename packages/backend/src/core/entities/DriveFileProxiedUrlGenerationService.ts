@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { appendQuery, query } from '@/misc/prelude/url.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
@@ -16,12 +15,12 @@ export class DriveFileProxiedUrlGenerationService {
 	 * @returns
 	 */
 	public generate(url: string, mode?: 'static' | 'avatar'): string {
-		return appendQuery(
-			`${this.configLoaderService.data.mediaProxy}/${mode ?? 'image'}.webp`,
-			query({
-				url,
-				...(mode ? { [mode]: '1' } : {}),
-			}),
+		const proxiedUrl = new URL(
+			`${mode ?? 'image'}.webp`,
+			this.configLoaderService.data.mediaProxy,
 		);
+		proxiedUrl.searchParams.set('url', url);
+		if (mode !== undefined) proxiedUrl.searchParams.set(mode, '1');
+		return proxiedUrl.href;
 	}
 }

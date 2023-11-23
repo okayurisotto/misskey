@@ -166,7 +166,8 @@ export class FileServerService {
 						reply.header('Cache-Control', 'max-age=31536000, immutable');
 
 						const url = new URL(
-							`${this.configLoaderService.data.mediaProxy}/static.webp`,
+							'static.webp',
+							this.configLoaderService.data.mediaProxy,
 						);
 						url.searchParams.set('url', file.url);
 						url.searchParams.set('static', '1');
@@ -194,7 +195,8 @@ export class FileServerService {
 						reply.header('Cache-Control', 'max-age=31536000, immutable');
 
 						const url = new URL(
-							`${this.configLoaderService.data.mediaProxy}/svg.webp`,
+							'svg.webp',
+							this.configLoaderService.data.mediaProxy,
 						);
 						url.searchParams.set('url', file.url);
 
@@ -303,9 +305,8 @@ export class FileServerService {
 			reply.header('Cache-Control', 'public, max-age=259200'); // 3 days
 
 			const url = new URL(
-				`${this.configLoaderService.data.mediaProxy}/${
-					request.params.url || ''
-				}`,
+				request.params.url || '',
+				this.configLoaderService.data.mediaProxy,
 			);
 
 			for (const [key, value] of Object.entries(request.query)) {

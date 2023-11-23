@@ -104,7 +104,7 @@ export default class extends Endpoint<
 					...z.record(z.string(), z.any()).parse(instance.policies),
 				},
 
-				mediaProxy: this.configLoaderService.data.mediaProxy,
+				mediaProxy: this.configLoaderService.data.mediaProxy.replace(/\/$/, ''),
 
 				...(ps.detail
 					? {

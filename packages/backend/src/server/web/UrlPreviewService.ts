@@ -3,7 +3,6 @@ import { summaly } from 'summaly';
 import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import Logger from '@/misc/logger.js';
-import { query } from '@/misc/prelude/url.js';
 import { ApiError } from '@/server/api/error.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
@@ -19,14 +18,16 @@ export class UrlPreviewService {
 	) {}
 
 	private wrap(url?: string | null): string | null {
-		return url != null
-			? url.match(/^https?:\/\//)
-				? `${this.configLoaderService.data.mediaProxy}/preview.webp?${query({
-						url,
-						preview: '1',
-				  })}`
-				: url
-			: null;
+		if (url == null) return null;
+		if (!/^https?:\/\//.test(url)) return url;
+
+		const proxiedUrl = new URL(
+			'preview.webp',
+			this.configLoaderService.data.mediaProxy,
+		);
+		proxiedUrl.searchParams.set('url', url);
+		proxiedUrl.searchParams.set('preview', '1');
+		return proxiedUrl.href;
 	}
 
 	public async handle(
@@ -53,23 +54,30 @@ export class UrlPreviewService {
 				: `Getting preview of ${url}@${lang} ...`,
 		);
 		try {
-			const summary = meta.summalyProxy
-				? await this.httpRequestService.getJson<ReturnType<typeof summaly>>(
-						`${meta.summalyProxy}?${query({
-							url: url,
-							lang: lang ?? 'ja-JP',
-						})}`,
-				  )
-				: await summaly(url, {
+			const summary = await (async (): ReturnType<typeof summaly> => {
+				const lang_ = lang ?? 'ja-JP';
+
+				if (meta.summalyProxy) {
+					const proxiedUrl = new URL(meta.summalyProxy);
+					proxiedUrl.searchParams.set('url', url);
+					proxiedUrl.searchParams.set('lang', lang_);
+					return await this.httpRequestService.getJson(proxiedUrl.href);
+				} else if (this.configLoaderService.data.proxy) {
+					return await summaly(url, {
 						followRedirects: false,
-						lang: lang ?? 'ja-JP',
-						agent: this.configLoaderService.data.proxy
-							? {
-									http: this.httpRequestService.httpAgent,
-									https: this.httpRequestService.httpsAgent,
-							  }
-							: undefined,
-				  });
+						lang: lang_,
+						agent: {
+							http: this.httpRequestService.httpAgent,
+							https: this.httpRequestService.httpsAgent,
+						},
+					});
+				} else {
+					return await summaly(url, {
+						followRedirects: false,
+						lang: lang_,
+					});
+				}
+			})();
 
 			this.logger.succ(`Got preview of ${url}: ${summary.title}`);
 

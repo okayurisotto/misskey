@@ -3,7 +3,6 @@ import FFmpeg from 'fluent-ffmpeg';
 import { ImageProcessingService } from '@/core/ImageProcessingService.js';
 import type { IImage } from '@/core/ImageProcessingService.js';
 import { createTempDir } from '@/misc/create-temp.js';
-import { appendQuery, query } from '@/misc/prelude/url.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
@@ -42,15 +41,16 @@ export class VideoProcessingService {
 	}
 
 	public getExternalVideoThumbnailUrl(url: string): string | null {
-		if (this.configLoaderService.data.videoThumbnailGenerator == null)
+		if (this.configLoaderService.data.videoThumbnailGenerator === null) {
 			return null;
+		}
 
-		return appendQuery(
-			`${this.configLoaderService.data.videoThumbnailGenerator}/thumbnail.webp`,
-			query({
-				thumbnail: '1',
-				url,
-			}),
+		const proxiedUrl = new URL(
+			'thumbnail.webp',
+			this.configLoaderService.data.videoThumbnailGenerator,
 		);
+		proxiedUrl.searchParams.set('thumbnail', '1');
+		proxiedUrl.searchParams.set('url', url);
+		return proxiedUrl.href;
 	}
 }

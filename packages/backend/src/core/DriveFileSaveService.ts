@@ -262,7 +262,7 @@ export class DriveFileSaveService {
 		generateWeb: boolean,
 	): Promise<{ webpublic: IImage | null; thumbnail: IImage | null }> {
 		if (type.startsWith('video/')) {
-			if (this.configLoaderService.data.videoThumbnailGenerator != null) {
+			if (this.configLoaderService.data.videoThumbnailGenerator !== null) {
 				// videoThumbnailGeneratorが指定されていたら動画サムネイル生成はスキップ
 				return {
 					webpublic: null,

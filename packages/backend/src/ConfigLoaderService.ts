@@ -66,9 +66,9 @@ const SourceSchema = z.object({
 	relashionshipJobPerSec: z.number().default(64), // typo?
 
 	maxFileSize: z.number().default(262144000),
-	mediaProxy: z.string().nullable().default(null),
+	mediaProxy: z.string().endsWith('/').nullable().default(null),
 	proxyRemoteFiles: z.boolean().default(false),
-	videoThumbnailGenerator: z.string().nullable().default(null),
+	videoThumbnailGenerator: z.string().endsWith('/').nullable().default(null),
 
 	accesslog: z.string().optional(), // unused?
 	feedback_url: z.string().optional(), // unused?
@@ -210,19 +210,13 @@ export class ConfigLoaderService {
 		const userAgent = `Misskey/${meta.version} (${config.url})`;
 		const clientEntry = clientManifest['src/_boot_.ts'];
 
-		const externalMediaProxy =
-			config.mediaProxy !== null
-				? this.removeLastSlash(config.mediaProxy)
-				: null;
-		const internalMediaProxy = `${scheme}://${host}/proxy`;
+		const externalMediaProxy = config.mediaProxy;
+		const internalMediaProxy = `${scheme}://${host}/proxy/`;
 		const mediaProxy = externalMediaProxy ?? internalMediaProxy;
 		const externalMediaProxyEnabled =
 			externalMediaProxy !== null && externalMediaProxy !== internalMediaProxy;
 
-		const videoThumbnailGenerator =
-			config.videoThumbnailGenerator !== null
-				? this.removeLastSlash(config.videoThumbnailGenerator)
-				: null;
+		const videoThumbnailGenerator = config.videoThumbnailGenerator;
 
 		const redis = this.convertRedisOptions(config.redis, host);
 
