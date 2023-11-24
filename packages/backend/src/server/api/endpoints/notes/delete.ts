@@ -7,7 +7,6 @@ import {
 } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteDeleteService } from '@/core/NoteDeleteService.js';
-import { GetterService } from '@/server/api/GetterService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -39,30 +38,26 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly getterService: GetterService,
-		private readonly roleService: RoleService,
 		private readonly noteDeleteService: NoteDeleteService,
 		private readonly prismaService: PrismaService,
+		private readonly roleService: RoleService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
-				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
-					throw new ApiError(meta.errors.noSuchNote);
-				}
-				throw err;
+			const note = await this.prismaService.client.note.findUniqueOrThrow({
+				where: { id: ps.noteId },
+				include: { user: true },
 			});
 
-			if (!(await this.roleService.isModerator(me)) && note.userId !== me.id) {
-				throw new ApiError(meta.errors.accessDenied);
+			// この操作を行うユーザーはノート作成者に限定されない。
+			// モデレーターもまたこのAPIからノートを削除することがある。
+			if (note.userId !== me.id) {
+				const isModerator = await this.roleService.isModerator(me);
+				if (!isModerator) {
+					throw new ApiError(meta.errors.accessDenied);
+				}
 			}
 
-			// この操作を行うのが投稿者とは限らない(例えばモデレーター)ため
-			await this.noteDeleteService.delete(
-				await this.prismaService.client.user.findUniqueOrThrow({
-					where: { id: note.userId },
-				}),
-				note,
-			);
+			await this.noteDeleteService.delete(note.user, note);
 		});
 	}
 }
