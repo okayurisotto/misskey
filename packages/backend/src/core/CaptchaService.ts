@@ -55,7 +55,7 @@ export class CaptchaService {
 			throw new Error(`recaptcha-request-failed: ${err}`);
 		});
 
-		if (result.success !== true) {
+		if (!result.success) {
 			const errorCodes = result['error-codes']
 				? result['error-codes'].join(', ')
 				: '';
@@ -79,7 +79,7 @@ export class CaptchaService {
 			throw new Error(`hcaptcha-request-failed: ${err}`);
 		});
 
-		if (result.success !== true) {
+		if (!result.success) {
 			const errorCodes = result['error-codes']
 				? result['error-codes'].join(', ')
 				: '';
@@ -103,7 +103,7 @@ export class CaptchaService {
 			throw new Error(`turnstile-request-failed: ${err}`);
 		});
 
-		if (result.success !== true) {
+		if (!result.success) {
 			const errorCodes = result['error-codes']
 				? result['error-codes'].join(', ')
 				: '';

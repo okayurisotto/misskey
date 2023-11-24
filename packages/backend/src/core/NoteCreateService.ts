@@ -229,8 +229,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 			if (this.isSensitive(data, sensitiveWords)) {
 				data.visibility = 'home';
 			} else if (
-				(await this.roleService.getUserPolicies(user.id)).canPublicNote ===
-				false
+				!(await this.roleService.getUserPolicies(user.id)).canPublicNote
 			) {
 				data.visibility = 'home';
 			}

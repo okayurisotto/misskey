@@ -146,26 +146,22 @@ export class RoleService {
 		}
 
 		return {
-			gtlAvailable: calc('gtlAvailable', (vs) => vs.some((v) => v === true)),
-			ltlAvailable: calc('ltlAvailable', (vs) => vs.some((v) => v === true)),
-			canPublicNote: calc('canPublicNote', (vs) => vs.some((v) => v === true)),
-			canInvite: calc('canInvite', (vs) => vs.some((v) => v === true)),
+			gtlAvailable: calc('gtlAvailable', (vs) => vs.some((v) => v)),
+			ltlAvailable: calc('ltlAvailable', (vs) => vs.some((v) => v)),
+			canPublicNote: calc('canPublicNote', (vs) => vs.some((v) => v)),
+			canInvite: calc('canInvite', (vs) => vs.some((v) => v)),
 			inviteLimit: calc('inviteLimit', (vs) => Math.max(...vs)),
 			inviteLimitCycle: calc('inviteLimitCycle', (vs) => Math.max(...vs)),
 			inviteExpirationTime: calc('inviteExpirationTime', (vs) =>
 				Math.max(...vs),
 			),
 			canManageCustomEmojis: calc('canManageCustomEmojis', (vs) =>
-				vs.some((v) => v === true),
+				vs.some((v) => v),
 			),
-			canSearchNotes: calc('canSearchNotes', (vs) =>
-				vs.some((v) => v === true),
-			),
-			canHideAds: calc('canHideAds', (vs) => vs.some((v) => v === true)),
+			canSearchNotes: calc('canSearchNotes', (vs) => vs.some((v) => v)),
+			canHideAds: calc('canHideAds', (vs) => vs.some((v) => v)),
 			driveCapacityMb: calc('driveCapacityMb', (vs) => Math.max(...vs)),
-			alwaysMarkNsfw: calc('alwaysMarkNsfw', (vs) =>
-				vs.some((v) => v === true),
-			),
+			alwaysMarkNsfw: calc('alwaysMarkNsfw', (vs) => vs.some((v) => v)),
 			pinLimit: calc('pinLimit', (vs) => Math.max(...vs)),
 			antennaLimit: calc('antennaLimit', (vs) => Math.max(...vs)),
 			wordMuteLimit: calc('wordMuteLimit', (vs) => Math.max(...vs)),

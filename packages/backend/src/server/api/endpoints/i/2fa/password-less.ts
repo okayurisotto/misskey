@@ -30,7 +30,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			if (ps.value === true) {
+			if (ps.value) {
 				// セキュリティキーがなければパスワードレスを有効にはできない
 				const keyCount =
 					await this.prismaService.client.user_security_key.count({
