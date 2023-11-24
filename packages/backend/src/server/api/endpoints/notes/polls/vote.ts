@@ -8,10 +8,8 @@ import {
 	alreadyExpired,
 	youHaveBeenBlocked_,
 } from '@/server/api/errors.js';
-import type { RemoteUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { GetterService } from '@/server/api/GetterService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { PollService } from '@/core/PollService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
@@ -19,6 +17,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserBlockingCheckService } from '@/core/UserBlockingCheckService.js';
+import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 import { ApiError } from '../../../error.js';
 
 export const meta = {
@@ -49,29 +48,31 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly idService: IdService,
-		private readonly getterService: GetterService,
-		private readonly queueService: QueueService,
-		private readonly pollService: PollService,
 		private readonly apRendererService: ApRendererService,
 		private readonly globalEventService: GlobalEventService,
+		private readonly idService: IdService,
+		private readonly pollService: PollService,
 		private readonly prismaService: PrismaService,
+		private readonly queueService: QueueService,
 		private readonly userBlockingCheckService: UserBlockingCheckService,
+		private readonly userEntityUtilService: UserEntityUtilService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const createdAt = new Date();
 
-			// Get votee
-			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
-				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
-					throw new ApiError(meta.errors.noSuchNote);
-				}
-				throw err;
+			const note = await this.prismaService.client.note.findUnique({
+				where: { id: ps.noteId, hasPoll: true },
+				include: {
+					user: true,
+					poll: {
+						where: {
+							OR: [{ expiresAt: null }, { expiresAt: { lt: createdAt } }],
+						},
+					},
+				},
 			});
-
-			if (!note.hasPoll) {
-				throw new ApiError(meta.errors.noPoll);
-			}
+			if (note === null) throw new ApiError(meta.errors.noSuchNote);
+			if (note.poll === null) throw new ApiError(meta.errors.noPoll);
 
 			// Check blocking
 			if (note.userId !== me.id) {
@@ -84,28 +85,17 @@ export default class extends Endpoint<
 				}
 			}
 
-			const poll = await this.prismaService.client.poll.findUniqueOrThrow({
-				where: { noteId: note.id },
-			});
-
-			if (poll.expiresAt && poll.expiresAt < createdAt) {
-				throw new ApiError(meta.errors.alreadyExpired);
-			}
-
-			if (poll.choices[ps.choice] == null) {
+			if (note.poll.choices.at(ps.choice) === undefined) {
 				throw new ApiError(meta.errors.invalidChoice);
 			}
 
 			// if already voted
 			const exist = await this.prismaService.client.poll_vote.findMany({
-				where: {
-					noteId: note.id,
-					userId: me.id,
-				},
+				where: { noteId: note.id, userId: me.id },
 			});
 
 			if (exist.length) {
-				if (poll.multiple) {
+				if (note.poll.multiple) {
 					if (exist.some((x) => x.choice === ps.choice)) {
 						throw new ApiError(meta.errors.alreadyVoted);
 					}
@@ -126,15 +116,11 @@ export default class extends Endpoint<
 			});
 
 			// Increment votes count
-			const votes = (
-				await this.prismaService.client.poll.findUniqueOrThrow({
-					where: { noteId: poll.noteId },
-					select: { votes: true },
-				})
-			).votes;
 			await this.prismaService.client.poll.update({
-				where: { noteId: poll.noteId },
-				data: { votes: votes.map((v, i) => (i === ps.choice ? v + 1 : v)) },
+				where: { noteId: note.poll.noteId },
+				data: {
+					votes: note.poll.votes.map((v, i) => (i === ps.choice ? v + 1 : v)),
+				},
 			});
 
 			this.globalEventService.publishNoteStream(note.id, 'pollVoted', {
@@ -143,24 +129,25 @@ export default class extends Endpoint<
 			});
 
 			// リモート投票の場合リプライ送信
-			if (note.userHost != null) {
-				const pollOwner =
-					(await this.prismaService.client.user.findUniqueOrThrow({
-						where: { id: note.userId },
-					})) as RemoteUser;
-
-				this.queueService.deliver(
+			if (this.userEntityUtilService.isRemoteUser(note.user)) {
+				await this.queueService.deliver(
 					me,
 					this.apRendererService.addContext(
-						this.apRendererService.renderVote(me, vote, note, poll, pollOwner),
+						this.apRendererService.renderVote(
+							me,
+							vote,
+							note,
+							note.poll,
+							note.user,
+						),
 					),
-					pollOwner.inbox,
+					note.user.inbox,
 					false,
 				);
 			}
 
 			// リモートフォロワーにUpdate配信
-			this.pollService.deliverQuestionUpdate(note.id);
+			await this.pollService.deliverQuestionUpdate(note.id);
 		});
 	}
 }
