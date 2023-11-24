@@ -19,10 +19,6 @@ export class AdminChannelService {
 	public readonly shouldShare = AdminChannel.shouldShare;
 	public readonly requireCredential = AdminChannel.requireCredential;
 
-	constructor(
-	) {
-	}
-
 	public create(id: string, connection: Channel['connection']): AdminChannel {
 		return new AdminChannel(
 			id,

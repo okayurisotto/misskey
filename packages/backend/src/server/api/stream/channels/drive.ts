@@ -19,10 +19,6 @@ export class DriveChannelService {
 	public readonly shouldShare = DriveChannel.shouldShare;
 	public readonly requireCredential = DriveChannel.requireCredential;
 
-	constructor(
-	) {
-	}
-
 	public create(id: string, connection: Channel['connection']): DriveChannel {
 		return new DriveChannel(
 			id,

@@ -10,12 +10,6 @@ class QueueStatsChannel extends Channel {
 	public static override shouldShare = true;
 	public static override requireCredential = false;
 
-	constructor(id: string, connection: Channel['connection']) {
-		super(id, connection);
-		//this.onStats = this.onStats.bind(this);
-		//this.onMessage = this.onMessage.bind(this);
-	}
-
 	public async init(params: any): Promise<void> {
 		// eslint-disable-next-line @typescript-eslint/unbound-method
 		ev.addListener('queueStats', this.onStats);
@@ -50,10 +44,6 @@ class QueueStatsChannel extends Channel {
 export class QueueStatsChannelService {
 	public readonly shouldShare = QueueStatsChannel.shouldShare;
 	public readonly requireCredential = QueueStatsChannel.requireCredential;
-
-	constructor(
-	) {
-	}
 
 	public create(id: string, connection: Channel['connection']): QueueStatsChannel {
 		return new QueueStatsChannel(

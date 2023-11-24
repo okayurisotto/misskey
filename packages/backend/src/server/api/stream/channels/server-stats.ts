@@ -10,12 +10,6 @@ class ServerStatsChannel extends Channel {
 	public static override shouldShare = true;
 	public static override requireCredential = false;
 
-	constructor(id: string, connection: Channel['connection']) {
-		super(id, connection);
-		//this.onStats = this.onStats.bind(this);
-		//this.onMessage = this.onMessage.bind(this);
-	}
-
 	public async init(params: any): Promise<void> {
 		// eslint-disable-next-line @typescript-eslint/unbound-method
 		ev.addListener('serverStats', this.onStats);
@@ -50,10 +44,6 @@ class ServerStatsChannel extends Channel {
 export class ServerStatsChannelService {
 	public readonly shouldShare = ServerStatsChannel.shouldShare;
 	public readonly requireCredential = ServerStatsChannel.requireCredential;
-
-	constructor(
-	) {
-	}
 
 	public create(id: string, connection: Channel['connection']): ServerStatsChannel {
 		return new ServerStatsChannel(
