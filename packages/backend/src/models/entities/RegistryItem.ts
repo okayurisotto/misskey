@@ -41,7 +41,7 @@ export class RegistryItem {
 		default: {}, nullable: true,
 		comment: 'The value of the RegistryItem.',
 	})
-	public value: any | null;
+	public value: unknown;
 
 	@Index()
 	@Column('varchar', {

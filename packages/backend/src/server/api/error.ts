@@ -8,7 +8,7 @@ export class ApiError extends Error {
 	public httpStatusCode?: number;
 	public info?: any;
 
-	constructor(err?: E | null | undefined, info?: any | null | undefined) {
+	constructor(err?: E | null | undefined, info?: unknown) {
 		if (err == null) err = {
 			message: 'Internal error occurred. Please contact us if the error persists.',
 			code: 'INTERNAL_ERROR',

@@ -54,7 +54,6 @@ module.exports = {
 		'@typescript-eslint/no-invalid-void-type': ['warn'],
 		'@typescript-eslint/no-misused-promises': ['error', { checksVoidReturn: false }],
 		'@typescript-eslint/no-non-null-assertion': ['warn'],
-		'@typescript-eslint/no-redundant-type-constituents': ['warn'],
 		'@typescript-eslint/no-throw-literal': ['warn'],
 		'@typescript-eslint/no-unnecessary-boolean-literal-compare': ['warn'],
 		'@typescript-eslint/no-unnecessary-condition': ['warn'],

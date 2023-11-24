@@ -1,7 +1,7 @@
 import { URL } from 'node:url';
 import { Injectable } from '@nestjs/common';
 import * as parse5 from 'parse5';
-import { Window } from 'happy-dom';
+import { IText, Window } from 'happy-dom';
 import { intersperse } from '@/misc/prelude/array.js';
 import type { IMentionedRemoteUsers } from '@/models/entities/Note.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
@@ -371,7 +371,7 @@ export class MfmService {
 					.split(/\r\n|\r|\n/)
 					.map((x) => doc.createTextNode(x));
 
-				for (const x of intersperse<any | 'br'>('br', nodes)) {
+				for (const x of intersperse<IText | 'br'>('br', nodes)) {
 					el.appendChild(x === 'br' ? doc.createElement('br') : x);
 				}
 
