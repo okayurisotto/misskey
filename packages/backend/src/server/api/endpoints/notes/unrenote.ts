@@ -4,10 +4,8 @@ import { Injectable } from '@nestjs/common';
 import { noSuchNote___________________ } from '@/server/api/errors.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { NoteDeleteService } from '@/core/NoteDeleteService.js';
-import { GetterService } from '@/server/api/GetterService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { ApiError } from '../../error.js';
 
 export const meta = {
 	tags: ['notes'],
@@ -33,33 +31,20 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly getterService: GetterService,
 		private readonly noteDeleteService: NoteDeleteService,
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const note = await this.getterService.getNote(ps.noteId).catch((err) => {
-				if (err.id === '9725d0ce-ba28-4dde-95a7-2cbb2c15de24') {
-					throw new ApiError(meta.errors.noSuchNote);
-				}
-				throw err;
-			});
-
 			const renotes = await this.prismaService.client.note.findMany({
-				where: {
-					userId: me.id,
-					renoteId: note.id,
-				},
+				where: { userId: me.id, renoteId: ps.noteId },
+				include: { user: true },
 			});
 
-			for (const note of renotes) {
-				this.noteDeleteService.delete(
-					await this.prismaService.client.user.findUniqueOrThrow({
-						where: { id: me.id },
-					}),
-					note,
-				);
-			}
+			await Promise.all(
+				renotes.map(async (note) => {
+					await this.noteDeleteService.delete(note.user, note);
+				}),
+			);
 		});
 	}
 }
