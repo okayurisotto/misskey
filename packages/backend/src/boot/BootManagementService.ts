@@ -58,7 +58,7 @@ export class BootManagementService {
 				: []),
 		]);
 
-		if (this.configLoaderService.data.socket) {
+		if (this.configLoaderService.data.socket !== undefined) {
 			this.logger.succ(
 				`Now listening on socket ${this.configLoaderService.data.socket} on ${this.configLoaderService.data.url}`,
 				true,

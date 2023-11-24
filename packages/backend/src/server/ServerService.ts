@@ -315,12 +315,12 @@ export class ServerService implements OnApplicationShutdown {
 			}
 		});
 
-		if (this.configLoaderService.data.socket) {
+		if (this.configLoaderService.data.socket !== undefined) {
 			if (fs.existsSync(this.configLoaderService.data.socket)) {
 				fs.unlinkSync(this.configLoaderService.data.socket);
 			}
 			await fastify.listen({ path: this.configLoaderService.data.socket });
-			if (this.configLoaderService.data.chmodSocket) {
+			if (this.configLoaderService.data.chmodSocket !== undefined) {
 				fs.chmodSync(
 					this.configLoaderService.data.socket,
 					this.configLoaderService.data.chmodSocket,

@@ -5,12 +5,12 @@ import { genMeid, parseMeid } from '@/misc/id/meid.js';
 import { genMeidg, parseMeidg } from '@/misc/id/meidg.js';
 import { genObjectId, parseObjectId } from '@/misc/id/object-id.js';
 import { parseUlid } from '@/misc/id/ulid.js';
-import { idGenerationMethods } from '@/const.js';
+import { ID_GENERATION_METHODS } from '@/const.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class IdService {
-	private readonly method: (typeof idGenerationMethods)[number];
+	private readonly method: (typeof ID_GENERATION_METHODS)[number];
 
 	constructor(configLoaderService: ConfigLoaderService) {
 		this.method = configLoaderService.data.id;
