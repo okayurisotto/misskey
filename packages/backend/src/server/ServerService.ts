@@ -62,10 +62,7 @@ export class ServerService implements OnApplicationShutdown {
 			!this.configLoaderService.data.disableHsts
 		) {
 			fastify.addHook('onRequest', async (_request, reply) => {
-				await reply.header(
-					'strict-transport-security',
-					'max-age=15552000; preload',
-				); // 6 months
+				reply.header('strict-transport-security', 'max-age=15552000; preload'); // 6 months
 			});
 		}
 
@@ -145,21 +142,19 @@ export class ServerService implements OnApplicationShutdown {
 
 			const path = params.path;
 
-			await reply.header('Cache-Control', 'public, max-age=86400');
+			reply.header('Cache-Control', 'public, max-age=86400');
 
 			if (!path.match(/^[a-zA-Z0-9\-_@.]+?\.webp$/)) {
-				await reply.code(404);
+				reply.code(404);
 				return;
 			}
 
-			await reply.header(
+			reply.header(
 				'Content-Security-Policy',
 				"default-src 'none'; style-src 'unsafe-inline'",
 			);
 
-			const segments = z
-				.tuple([z.string(), z.string().optional()])
-				.parse(path.split('@'));
+			const segments = z.string().array().parse(path.split('@'));
 			const name = segments[0].replace('.webp', '');
 			const host = segments[1]?.replace('.webp', '');
 
@@ -173,9 +168,9 @@ export class ServerService implements OnApplicationShutdown {
 
 			if (emoji === null) {
 				if ('fallback' in queries) {
-					return await reply.redirect('/static-assets/emoji-unknown.png');
+					return reply.redirect('/static-assets/emoji-unknown.png');
 				} else {
-					await reply.code(404);
+					reply.code(404);
 					return;
 				}
 			}
@@ -200,16 +195,12 @@ export class ServerService implements OnApplicationShutdown {
 				}
 			}
 
-			return await reply.redirect(301, url.toString());
+			return reply.redirect(301, url.toString());
 		});
 
 		// media proxy経由のアバターURLへリダイレクト
 		fastify.get('/avatar/@:acct', async (request, reply) => {
-			const params = z
-				.object({
-					acct: z.string(),
-				})
-				.parse(request.params);
+			const params = z.object({ acct: z.string() }).parse(request.params);
 
 			const { username, host } = Acct.parse(params.acct);
 			const user = await this.prismaService.client.user.findFirst({
@@ -223,18 +214,16 @@ export class ServerService implements OnApplicationShutdown {
 				},
 			});
 
-			await reply.header('Cache-Control', 'public, max-age=86400');
+			reply.header('Cache-Control', 'public, max-age=86400');
 
 			if (user) {
 				if (user.avatarUrl) {
-					await reply.redirect(user.avatarUrl);
+					reply.redirect(user.avatarUrl);
 				} else {
-					await reply.redirect(
-						this.userEntityUtilService.getIdenticonUrl(user),
-					);
+					reply.redirect(this.userEntityUtilService.getIdenticonUrl(user));
 				}
 			} else {
-				await reply.redirect('/static-assets/user-unknown.png');
+				reply.redirect('/static-assets/user-unknown.png');
 			}
 		});
 
@@ -263,7 +252,7 @@ export class ServerService implements OnApplicationShutdown {
 			});
 
 			if (profile === null) {
-				await reply.code(404);
+				reply.code(404);
 				return;
 			}
 
@@ -286,7 +275,7 @@ export class ServerService implements OnApplicationShutdown {
 				}),
 			);
 
-			await reply.code(200);
+			reply.code(200);
 			return 'Verify succeeded!';
 		});
 
