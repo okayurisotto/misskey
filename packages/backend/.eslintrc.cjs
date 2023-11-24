@@ -48,7 +48,6 @@ module.exports = {
 		'@typescript-eslint/no-base-to-string': ['warn'],
 		'@typescript-eslint/no-confusing-void-expression': ['warn'],
 		'@typescript-eslint/no-dynamic-delete': ['warn'],
-		'@typescript-eslint/no-empty-function': ['warn'],
 		'@typescript-eslint/no-explicit-any': ['warn'],
 		'@typescript-eslint/no-floating-promises': ['warn'],
 		'@typescript-eslint/no-invalid-void-type': ['warn'],
@@ -67,7 +66,6 @@ module.exports = {
 		'@typescript-eslint/require-await': ['warn'],
 		'@typescript-eslint/restrict-plus-operands': ['warn'],
 		'@typescript-eslint/restrict-template-expressions': ['warn'],
-		'@typescript-eslint/unbound-method': ['error'],
 
 		/* import */
 		'import/no-default-export': ['warn'],
