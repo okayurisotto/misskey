@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { AbuseUserReportEntityService } from '@/core/entities/AbuseUserReportEntityService.js';
+import { AbuseUserReportFetchingService } from '@/core/entities/AbuseUserReportFetchingService.js';
 import { PaginationSchema, limit } from '@/models/zod/misc.js';
 import { AbuseUserReportSchema } from '@/models/zod/AbuseUserReportSchema.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -34,7 +34,7 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly abuseUserReportEntityService: AbuseUserReportEntityService,
+		private readonly abuseUserReportFetchingService: AbuseUserReportFetchingService,
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps) => {
@@ -44,7 +44,7 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			return await this.abuseUserReportEntityService.showMany(
+			return await this.abuseUserReportFetchingService.showMany(
 				{
 					AND: [
 						ps.state === 'resolved' ? { resolved: true } : {},

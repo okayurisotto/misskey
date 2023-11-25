@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { AbuseUserReportEntityService } from '@/core/entities/AbuseUserReportEntityService.js';
+import { AbuseUserReportCreationNotificationService } from '@/core/entities/AbuseUserReportCreationNotificationService.js';
+import { AbuseUserReportCreationService } from '@/core/entities/AbuseUserReportCreationService.js';
 
 export const meta = {
 	tags: ['users'],
@@ -23,17 +24,18 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly abuseUserReportEntityService: AbuseUserReportEntityService,
+		private readonly abuseUserReportCreationService: AbuseUserReportCreationService,
+		private readonly abuseUserReportCreationNotificationService: AbuseUserReportCreationNotificationService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const report = await this.abuseUserReportEntityService.create({
+			const report = await this.abuseUserReportCreationService.create({
 				comment: ps.comment,
 				reporterId: me.id,
 				targetUserId: ps.userId,
 			});
 
 			setImmediate(async () => {
-				await this.abuseUserReportEntityService.publishToModerators(report);
+				await this.abuseUserReportCreationNotificationService.notify(report);
 			});
 		});
 	}

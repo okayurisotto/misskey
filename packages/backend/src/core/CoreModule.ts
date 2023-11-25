@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AbuseUserReportEntityService } from './entities/AbuseUserReportEntityService.js';
+import { AbuseUserReportFetchingService } from './entities/AbuseUserReportFetchingService.js';
 import { AccountMovingPostProcessService } from './AccountMovingPostProcessService.js';
 import { AccountUpdateService } from './AccountUpdateService.js';
 import { AchievementService } from './AchievementService.js';
@@ -182,6 +182,9 @@ import { ApNoteIdResolverService } from './activitypub/ApNoteIdResolverService.j
 import { ApUserIdResolverService } from './activitypub/ApUserIdResolverService.js';
 import { ApUriParseService } from './activitypub/ApUriParseService.js';
 import { UserEntityPackLiteService } from './entities/UserEntityPackLiteService.js';
+import { AbuseUserReportResolutionService } from './entities/AbuseUserReportResolutionService.js';
+import { AbuseUserReportCreationNotificationService } from './entities/AbuseUserReportCreationNotificationService.js';
+import { AbuseUserReportCreationService } from './entities/AbuseUserReportCreationService.js';
 
 //#region 文字列ベースでのinjection用（循環参照対応のため）
 const $ApNoteService: Provider = {
@@ -193,7 +196,10 @@ const $ApNoteService: Provider = {
 @Module({
 	imports: [QueueModule],
 	providers: [
-		AbuseUserReportEntityService,
+		AbuseUserReportCreationService,
+		AbuseUserReportCreationNotificationService,
+		AbuseUserReportFetchingService,
+		AbuseUserReportResolutionService,
 		AccountMovingPostProcessService,
 		AccountUpdateService,
 		AchievementService,
@@ -380,7 +386,10 @@ const $ApNoteService: Provider = {
 		//#endregion
 	],
 	exports: [
-		AbuseUserReportEntityService,
+		AbuseUserReportCreationService,
+		AbuseUserReportCreationNotificationService,
+		AbuseUserReportFetchingService,
+		AbuseUserReportResolutionService,
 		AccountMovingPostProcessService,
 		AccountUpdateService,
 		AchievementService,

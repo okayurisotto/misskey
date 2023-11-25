@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import { AbuseUserReportEntityService } from '@/core/entities/AbuseUserReportEntityService.js';
+import { AbuseUserReportResolutionService } from '@/core/entities/AbuseUserReportResolutionService.js';
 
 export const meta = {
 	tags: ['admin'],
@@ -23,10 +23,10 @@ export default class extends Endpoint<
 	z.ZodType<void>
 > {
 	constructor(
-		private readonly abuseUserReportEntityService: AbuseUserReportEntityService,
+		private readonly abuseUserReportResolutionService: AbuseUserReportResolutionService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			await this.abuseUserReportEntityService.resolve(ps.reportId, {
+			await this.abuseUserReportResolutionService.resolve(ps.reportId, {
 				forward: ps.forward,
 				assigneeId: me.id,
 			});

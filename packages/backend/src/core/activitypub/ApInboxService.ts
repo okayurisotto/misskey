@@ -15,7 +15,7 @@ import type { RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
-import { AbuseUserReportEntityService } from '../entities/AbuseUserReportEntityService.js';
+import { AbuseUserReportFetchingService } from '../entities/AbuseUserReportFetchingService.js';
 import { UserFollowingCreateService } from '../UserFollowingCreateService.js';
 import { UserFollowingDeleteService } from '../UserFollowingDeleteService.js';
 import { UserFollowRequestCancelService } from '../UserFollowRequestCancelService.js';
@@ -81,13 +81,14 @@ import type { Resolver } from './ApResolverService.js';
 import { ApQuestionUpdateService } from './models/ApQuestionUpdateService.js';
 import { ApUserIdResolverService } from './ApUserIdResolverService.js';
 import { ApNoteIdResolverService } from './ApNoteIdResolverService.js';
+import { AbuseUserReportCreationService } from '../entities/AbuseUserReportCreationService.js';
 
 @Injectable()
 export class ApInboxService {
 	private readonly logger: Logger;
 
 	constructor(
-		private readonly abuseUserReportEntityService: AbuseUserReportEntityService,
+		private readonly abuseUserReportCreationService: AbuseUserReportCreationService,
 		private readonly apAudienceParseService: ApAudienceParseService,
 		private readonly apLoggerService: ApLoggerService,
 		private readonly apNoteEmojiExtractService: ApNoteEmojiExtractService,
@@ -623,7 +624,7 @@ export class ApInboxService {
 		});
 		if (users.length < 1) return 'skip';
 
-		await this.abuseUserReportEntityService.create({
+		await this.abuseUserReportCreationService.create({
 			comment: `${activity.content}\n${JSON.stringify(uris, null, 2)}`,
 			reporterId: actor.id,
 			targetUserId: users[0].id,
