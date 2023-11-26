@@ -18,7 +18,8 @@
 		"jest-and-coverage": "cross-env NODE_ENV=test node --experimental-vm-modules --experimental-import-meta-resolve node_modules/jest/bin/jest.js --coverage --forceExit",
 		"jest-clear": "cross-env NODE_ENV=test node --experimental-vm-modules --experimental-import-meta-resolve node_modules/jest/bin/jest.js --clearCache",
 		"test": "pnpm jest",
-		"test-and-coverage": "pnpm jest-and-coverage"
+		"test-and-coverage": "pnpm jest-and-coverage",
+		"prisma-diff": "prisma migrate diff --from-schema-datamodel ./prisma/schema.backup.prisma --to-schema-datamodel ./prisma/schema.prisma"
 	},
 	"optionalDependencies": {
 		"@tensorflow/tfjs": "4.4.0",

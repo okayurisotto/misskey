@@ -1,0 +1,2130 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model chart__active_users {
+  id                                   Int      @id(map: "PK_317237a9f733b970604a11e314f") @default(dbgenerated("nextval('__chart__active_users_id_seq'::regclass)"))
+  date                                 Int      @unique(map: "IDX_0ad37b7ef50f4ddc84363d7ccc")
+  unique_temp___registeredWithinWeek   String[] @default([]) @db.VarChar
+  registeredWithinWeek                 Int      @default(0) @map("___registeredWithinWeek")
+  unique_temp___registeredWithinMonth  String[] @default([]) @db.VarChar
+  registeredWithinMonth                Int      @default(0) @map("___registeredWithinMonth")
+  unique_temp___registeredWithinYear   String[] @default([]) @db.VarChar
+  registeredWithinYear                 Int      @default(0) @map("___registeredWithinYear")
+  unique_temp___registeredOutsideWeek  String[] @default([]) @db.VarChar
+  registeredOutsideWeek                Int      @default(0) @map("___registeredOutsideWeek")
+  unique_temp___registeredOutsideMonth String[] @default([]) @db.VarChar
+  registeredOutsideMonth               Int      @default(0) @map("___registeredOutsideMonth")
+  unique_temp___registeredOutsideYear  String[] @default([]) @db.VarChar
+  registeredOutsideYear                Int      @default(0) @map("___registeredOutsideYear")
+  readWrite                            Int      @default(0) @map("___readWrite")
+  unique_temp___read                   String[] @default([]) @db.VarChar
+  read                                 Int      @default(0) @map("___read")
+  unique_temp___write                  String[] @default([]) @db.VarChar
+  write                                Int      @default(0) @map("___write")
+
+  @@map("__chart__active_users")
+}
+
+model chart__ap_request {
+  id               Int @id(map: "PK_56a25cd447c7ee08876b3baf8d8") @default(dbgenerated("nextval('__chart__ap_request_id_seq'::regclass)"))
+  date             Int @unique(map: "IDX_e56f4beac5746d44bc3e19c80d")
+  deliverFailed    Int @default(0) @map("___deliverFailed")
+  deliverSucceeded Int @default(0) @map("___deliverSucceeded")
+  inboxReceived    Int @default(0) @map("___inboxReceived")
+
+  @@map("__chart__ap_request")
+}
+
+model chart__drive {
+  id              Int @id(map: "PK_f96bc548a765cd4b3b354221ce7") @default(dbgenerated("nextval('__chart__drive_id_seq'::regclass)"))
+  date            Int @unique(map: "IDX_13565815f618a1ff53886c5b28")
+  local_incCount  Int @default(0) @map("___local_incCount")
+  local_incSize   Int @default(0) @map("___local_incSize")
+  local_decCount  Int @default(0) @map("___local_decCount")
+  local_decSize   Int @default(0) @map("___local_decSize")
+  remote_incCount Int @default(0) @map("___remote_incCount")
+  remote_incSize  Int @default(0) @map("___remote_incSize")
+  remote_decCount Int @default(0) @map("___remote_decCount")
+  remote_decSize  Int @default(0) @map("___remote_decSize")
+
+  @@map("__chart__drive")
+}
+
+model chart__federation {
+  id                               Int      @id(map: "PK_b39dcd31a0fe1a7757e348e85fd") @default(dbgenerated("nextval('__chart__federation_id_seq'::regclass)"))
+  date                             Int      @unique(map: "IDX_36cb699c49580d4e6c2e6159f9")
+  unique_temp___deliveredInstances String[] @default([]) @db.VarChar
+  deliveredInstances               Int      @default(0) @map("___deliveredInstances") @db.SmallInt
+  unique_temp___inboxInstances     String[] @default([]) @db.VarChar
+  inboxInstances                   Int      @default(0) @map("___inboxInstances") @db.SmallInt
+  unique_temp___stalled            String[] @default([]) @db.VarChar
+  stalled                          Int      @default(0) @map("___stalled") @db.SmallInt
+  sub                              Int      @default(0) @map("___sub") @db.SmallInt
+  pub                              Int      @default(0) @map("___pub") @db.SmallInt
+  pubsub                           Int      @default(0) @map("___pubsub") @db.SmallInt
+  subActive                        Int      @default(0) @map("___subActive") @db.SmallInt
+  pubActive                        Int      @default(0) @map("___pubActive") @db.SmallInt
+
+  @@map("__chart__federation")
+}
+
+model chart__hashtag {
+  id                         Int      @id(map: "PK_c32f1ea2b44a5d2f7881e37f8f9") @default(dbgenerated("nextval('__chart__hashtag_id_seq'::regclass)"))
+  date                       Int
+  group                      String   @db.VarChar(128)
+  local_users                Int      @default(0) @map("___local_users")
+  remote_users               Int      @default(0) @map("___remote_users")
+  unique_temp___local_users  String[] @default([]) @db.VarChar
+  unique_temp___remote_users String[] @default([]) @db.VarChar
+
+  @@unique([date, group], map: "IDX_25a97c02003338124b2b75fdbc")
+  @@unique([date, group], map: "UQ_25a97c02003338124b2b75fdbc8")
+  @@map("__chart__hashtag")
+}
+
+model chart__instance {
+  id                   Int    @id(map: "PK_1267c67c7c2d47b4903975f2c00") @default(dbgenerated("nextval('__chart__instance_id_seq'::regclass)"))
+  date                 Int
+  group                String @db.VarChar(128)
+  requests_failed      Int    @default(0) @map("___requests_failed") @db.SmallInt
+  requests_succeeded   Int    @default(0) @map("___requests_succeeded") @db.SmallInt
+  requests_received    Int    @default(0) @map("___requests_received") @db.SmallInt
+  notes_total          Int    @default(0) @map("___notes_total")
+  notes_inc            Int    @default(0) @map("___notes_inc")
+  notes_dec            Int    @default(0) @map("___notes_dec")
+  notes_diffs_normal   Int    @default(0) @map("___notes_diffs_normal")
+  notes_diffs_reply    Int    @default(0) @map("___notes_diffs_reply")
+  notes_diffs_renote   Int    @default(0) @map("___notes_diffs_renote")
+  users_total          Int    @default(0) @map("___users_total")
+  users_inc            Int    @default(0) @map("___users_inc") @db.SmallInt
+  users_dec            Int    @default(0) @map("___users_dec") @db.SmallInt
+  following_total      Int    @default(0) @map("___following_total")
+  following_inc        Int    @default(0) @map("___following_inc") @db.SmallInt
+  following_dec        Int    @default(0) @map("___following_dec") @db.SmallInt
+  followers_total      Int    @default(0) @map("___followers_total")
+  followers_inc        Int    @default(0) @map("___followers_inc") @db.SmallInt
+  followers_dec        Int    @default(0) @map("___followers_dec") @db.SmallInt
+  drive_totalFiles     Int    @default(0) @map("___drive_totalFiles")
+  drive_incFiles       Int    @default(0) @map("___drive_incFiles")
+  drive_incUsage       Int    @default(0) @map("___drive_incUsage")
+  drive_decFiles       Int    @default(0) @map("___drive_decFiles")
+  drive_decUsage       Int    @default(0) @map("___drive_decUsage")
+  notes_diffs_withFile Int    @default(0) @map("___notes_diffs_withFile")
+
+  @@unique([date, group], map: "IDX_39ee857ab2f23493037c6b6631")
+  @@unique([date, group], map: "UQ_39ee857ab2f23493037c6b66311")
+  @@map("__chart__instance")
+}
+
+model chart__network {
+  id               Int @id(map: "PK_bc4290c2e27fad14ef0c1ca93f3") @default(dbgenerated("nextval('__chart__network_id_seq'::regclass)"))
+  date             Int @unique(map: "IDX_a1efd3e0048a5f2793a47360dc")
+  incomingRequests Int @default(0) @map("___incomingRequests")
+  outgoingRequests Int @default(0) @map("___outgoingRequests")
+  totalTime        Int @default(0) @map("___totalTime")
+  incomingBytes    Int @default(0) @map("___incomingBytes")
+  outgoingBytes    Int @default(0) @map("___outgoingBytes")
+
+  @@map("__chart__network")
+}
+
+model chart__notes {
+  id                    Int @id(map: "PK_0aec823fa85c7f901bdb3863b14") @default(dbgenerated("nextval('__chart__notes_id_seq'::regclass)"))
+  date                  Int @unique(map: "IDX_42eb716a37d381cdf566192b2b")
+  local_total           Int @default(0) @map("___local_total")
+  local_inc             Int @default(0) @map("___local_inc")
+  local_dec             Int @default(0) @map("___local_dec")
+  local_diffs_normal    Int @default(0) @map("___local_diffs_normal")
+  local_diffs_reply     Int @default(0) @map("___local_diffs_reply")
+  local_diffs_renote    Int @default(0) @map("___local_diffs_renote")
+  remote_total          Int @default(0) @map("___remote_total")
+  remote_inc            Int @default(0) @map("___remote_inc")
+  remote_dec            Int @default(0) @map("___remote_dec")
+  remote_diffs_normal   Int @default(0) @map("___remote_diffs_normal")
+  remote_diffs_reply    Int @default(0) @map("___remote_diffs_reply")
+  remote_diffs_renote   Int @default(0) @map("___remote_diffs_renote")
+  local_diffs_withFile  Int @default(0) @map("___local_diffs_withFile")
+  remote_diffs_withFile Int @default(0) @map("___remote_diffs_withFile")
+
+  @@map("__chart__notes")
+}
+
+model chart__per_user_drive {
+  id         Int    @id(map: "PK_d0ef23d24d666e1a44a0cd3d208") @default(dbgenerated("nextval('__chart__per_user_drive_id_seq'::regclass)"))
+  date       Int
+  group      String @db.VarChar(128)
+  totalCount Int    @default(0) @map("___totalCount")
+  totalSize  Int    @default(0) @map("___totalSize")
+  incCount   Int    @default(0) @map("___incCount") @db.SmallInt
+  incSize    Int    @default(0) @map("___incSize")
+  decCount   Int    @default(0) @map("___decCount") @db.SmallInt
+  decSize    Int    @default(0) @map("___decSize")
+
+  @@unique([date, group], map: "IDX_30bf67687f483ace115c5ca642")
+  @@unique([date, group], map: "UQ_30bf67687f483ace115c5ca6429")
+  @@map("__chart__per_user_drive")
+}
+
+model chart__per_user_following {
+  id                      Int    @id(map: "PK_85bb1b540363a29c2fec83bd907") @default(dbgenerated("nextval('__chart__per_user_following_id_seq'::regclass)"))
+  date                    Int
+  group                   String @db.VarChar(128)
+  local_followings_total  Int    @default(0) @map("___local_followings_total")
+  local_followings_inc    Int    @default(0) @map("___local_followings_inc") @db.SmallInt
+  local_followings_dec    Int    @default(0) @map("___local_followings_dec") @db.SmallInt
+  local_followers_total   Int    @default(0) @map("___local_followers_total")
+  local_followers_inc     Int    @default(0) @map("___local_followers_inc") @db.SmallInt
+  local_followers_dec     Int    @default(0) @map("___local_followers_dec") @db.SmallInt
+  remote_followings_total Int    @default(0) @map("___remote_followings_total")
+  remote_followings_inc   Int    @default(0) @map("___remote_followings_inc") @db.SmallInt
+  remote_followings_dec   Int    @default(0) @map("___remote_followings_dec") @db.SmallInt
+  remote_followers_total  Int    @default(0) @map("___remote_followers_total")
+  remote_followers_inc    Int    @default(0) @map("___remote_followers_inc") @db.SmallInt
+  remote_followers_dec    Int    @default(0) @map("___remote_followers_dec") @db.SmallInt
+
+  @@unique([date, group], map: "IDX_b77d4dd9562c3a899d9a286fcd")
+  @@unique([date, group], map: "UQ_b77d4dd9562c3a899d9a286fcd7")
+  @@map("__chart__per_user_following")
+}
+
+model chart__per_user_notes {
+  id             Int    @id(map: "PK_334acf6e915af2f29edc11b8e50") @default(dbgenerated("nextval('__chart__per_user_notes_id_seq'::regclass)"))
+  date           Int
+  group          String @db.VarChar(128)
+  total          Int    @default(0) @map("___total")
+  inc            Int    @default(0) @map("___inc") @db.SmallInt
+  dec            Int    @default(0) @map("___dec") @db.SmallInt
+  diffs_normal   Int    @default(0) @map("___diffs_normal") @db.SmallInt
+  diffs_reply    Int    @default(0) @map("___diffs_reply") @db.SmallInt
+  diffs_renote   Int    @default(0) @map("___diffs_renote") @db.SmallInt
+  diffs_withFile Int    @default(0) @map("___diffs_withFile") @db.SmallInt
+
+  @@unique([date, group], map: "IDX_5048e9daccbbbc6d567bb142d3")
+  @@unique([date, group], map: "UQ_5048e9daccbbbc6d567bb142d34")
+  @@map("__chart__per_user_notes")
+}
+
+model chart__per_user_pv {
+  id                        Int      @id(map: "PK_3c938a24f0203b5bd13fab51059") @default(dbgenerated("nextval('__chart__per_user_pv_id_seq'::regclass)"))
+  date                      Int
+  group                     String   @db.VarChar(128)
+  unique_temp___upv_user    String[] @default([]) @db.VarChar
+  upv_user                  Int      @default(0) @map("___upv_user") @db.SmallInt
+  pv_user                   Int      @default(0) @map("___pv_user") @db.SmallInt
+  unique_temp___upv_visitor String[] @default([]) @db.VarChar
+  upv_visitor               Int      @default(0) @map("___upv_visitor") @db.SmallInt
+  pv_visitor                Int      @default(0) @map("___pv_visitor") @db.SmallInt
+
+  @@unique([date, group], map: "IDX_f2a56da57921ca8439f45c1d95")
+  @@unique([date, group], map: "UQ_f2a56da57921ca8439f45c1d95f")
+  @@map("__chart__per_user_pv")
+}
+
+model chart__per_user_reaction {
+  id           Int    @id(map: "PK_984f54dae441e65b633e8d27a7f") @default(dbgenerated("nextval('__chart__per_user_reaction_id_seq'::regclass)"))
+  date         Int
+  group        String @db.VarChar(128)
+  local_count  Int    @default(0) @map("___local_count") @db.SmallInt
+  remote_count Int    @default(0) @map("___remote_count") @db.SmallInt
+
+  @@unique([date, group], map: "IDX_229a41ad465f9205f1f5703291")
+  @@unique([date, group], map: "UQ_229a41ad465f9205f1f57032910")
+  @@map("__chart__per_user_reaction")
+}
+
+model chart__test {
+  id        Int     @id(map: "PK_b4bc31dffbd1b785276a3ecfc1e") @default(dbgenerated("nextval('__chart__test_id_seq'::regclass)"))
+  date      Int
+  group     String? @db.VarChar(128)
+  foo_total BigInt  @map("___foo_total")
+  foo_inc   BigInt  @map("___foo_inc")
+  foo_dec   BigInt  @map("___foo_dec")
+
+  @@unique([date, group], map: "IDX_a319e5dbf47e8a17497623beae")
+  @@map("__chart__test")
+}
+
+model chart__test_grouped {
+  id        Int     @id(map: "PK_f4a2b175d308695af30d4293272") @default(dbgenerated("nextval('__chart__test_grouped_id_seq'::regclass)"))
+  date      Int
+  group     String? @db.VarChar(128)
+  foo_total BigInt  @map("___foo_total")
+  foo_inc   BigInt  @map("___foo_inc")
+  foo_dec   BigInt  @map("___foo_dec")
+
+  @@unique([date, group], map: "IDX_b14489029e4b3aaf4bba5fb524")
+  @@map("__chart__test_grouped")
+}
+
+model chart__test_unique {
+  id    Int      @id(map: "PK_409bac9c97cc612d8500012319d") @default(dbgenerated("nextval('__chart__test_unique_id_seq'::regclass)"))
+  date  Int
+  group String?  @db.VarChar(128)
+  foo   String[] @default([]) @map("___foo") @db.VarChar
+
+  @@unique([date, group], map: "IDX_a0cd75442dd10d0643a17c4a49")
+  @@map("__chart__test_unique")
+}
+
+model chart__users {
+  id           Int @id(map: "PK_4dfcf2c78d03524b9eb2c99d328") @default(dbgenerated("nextval('__chart__users_id_seq'::regclass)"))
+  date         Int @unique(map: "IDX_845254b3eaf708ae8a6cac3026")
+  local_total  Int @default(0) @map("___local_total")
+  local_inc    Int @default(0) @map("___local_inc") @db.SmallInt
+  local_dec    Int @default(0) @map("___local_dec") @db.SmallInt
+  remote_total Int @default(0) @map("___remote_total")
+  remote_inc   Int @default(0) @map("___remote_inc") @db.SmallInt
+  remote_dec   Int @default(0) @map("___remote_dec") @db.SmallInt
+
+  @@map("__chart__users")
+}
+
+model chart_day__active_users {
+  id                                   Int      @id(map: "PK_b1790489b14f005ae8f404f5795") @default(dbgenerated("nextval('__chart_day__active_users_id_seq'::regclass)"))
+  date                                 Int      @unique(map: "IDX_d5954f3df5e5e3bdfc3c03f390")
+  unique_temp___registeredWithinWeek   String[] @default([]) @db.VarChar
+  registeredWithinWeek                 Int      @default(0) @map("___registeredWithinWeek")
+  unique_temp___registeredWithinMonth  String[] @default([]) @db.VarChar
+  registeredWithinMonth                Int      @default(0) @map("___registeredWithinMonth")
+  unique_temp___registeredWithinYear   String[] @default([]) @db.VarChar
+  registeredWithinYear                 Int      @default(0) @map("___registeredWithinYear")
+  unique_temp___registeredOutsideWeek  String[] @default([]) @db.VarChar
+  registeredOutsideWeek                Int      @default(0) @map("___registeredOutsideWeek")
+  unique_temp___registeredOutsideMonth String[] @default([]) @db.VarChar
+  registeredOutsideMonth               Int      @default(0) @map("___registeredOutsideMonth")
+  unique_temp___registeredOutsideYear  String[] @default([]) @db.VarChar
+  registeredOutsideYear                Int      @default(0) @map("___registeredOutsideYear")
+  readWrite                            Int      @default(0) @map("___readWrite")
+  unique_temp___read                   String[] @default([]) @db.VarChar
+  read                                 Int      @default(0) @map("___read")
+  unique_temp___write                  String[] @default([]) @db.VarChar
+  write                                Int      @default(0) @map("___write")
+
+  @@map("__chart_day__active_users")
+}
+
+model chart_day__ap_request {
+  id               Int @id(map: "PK_9318b49daee320194e23f712e69") @default(dbgenerated("nextval('__chart_day__ap_request_id_seq'::regclass)"))
+  date             Int @unique(map: "IDX_a848f66d6cec11980a5dd59582")
+  deliverFailed    Int @default(0) @map("___deliverFailed")
+  deliverSucceeded Int @default(0) @map("___deliverSucceeded")
+  inboxReceived    Int @default(0) @map("___inboxReceived")
+
+  @@map("__chart_day__ap_request")
+}
+
+model chart_day__drive {
+  id              Int @id(map: "PK_e7ec0de057c77c40fc8d8b62151") @default(dbgenerated("nextval('__chart_day__drive_id_seq'::regclass)"))
+  date            Int @unique(map: "IDX_0b60ebb3aa0065f10b0616c117")
+  local_incCount  Int @default(0) @map("___local_incCount")
+  local_incSize   Int @default(0) @map("___local_incSize")
+  local_decCount  Int @default(0) @map("___local_decCount")
+  local_decSize   Int @default(0) @map("___local_decSize")
+  remote_incCount Int @default(0) @map("___remote_incCount")
+  remote_incSize  Int @default(0) @map("___remote_incSize")
+  remote_decCount Int @default(0) @map("___remote_decCount")
+  remote_decSize  Int @default(0) @map("___remote_decSize")
+
+  @@map("__chart_day__drive")
+}
+
+model chart_day__federation {
+  id                               Int      @id(map: "PK_7ca721c769f31698e0e1331e8e6") @default(dbgenerated("nextval('__chart_day__federation_id_seq'::regclass)"))
+  date                             Int      @unique(map: "IDX_617a8fe225a6e701d89e02d2c7")
+  unique_temp___deliveredInstances String[] @default([]) @db.VarChar
+  deliveredInstances               Int      @default(0) @map("___deliveredInstances") @db.SmallInt
+  unique_temp___inboxInstances     String[] @default([]) @db.VarChar
+  inboxInstances                   Int      @default(0) @map("___inboxInstances") @db.SmallInt
+  unique_temp___stalled            String[] @default([]) @db.VarChar
+  stalled                          Int      @default(0) @map("___stalled") @db.SmallInt
+  sub                              Int      @default(0) @map("___sub") @db.SmallInt
+  pub                              Int      @default(0) @map("___pub") @db.SmallInt
+  pubsub                           Int      @default(0) @map("___pubsub") @db.SmallInt
+  subActive                        Int      @default(0) @map("___subActive") @db.SmallInt
+  pubActive                        Int      @default(0) @map("___pubActive") @db.SmallInt
+
+  @@map("__chart_day__federation")
+}
+
+model chart_day__hashtag {
+  id                         Int      @id(map: "PK_13d5a3b089344e5557f8e0980b4") @default(dbgenerated("nextval('__chart_day__hashtag_id_seq'::regclass)"))
+  date                       Int
+  group                      String   @db.VarChar(128)
+  local_users                Int      @default(0) @map("___local_users")
+  remote_users               Int      @default(0) @map("___remote_users")
+  unique_temp___local_users  String[] @default([]) @db.VarChar
+  unique_temp___remote_users String[] @default([]) @db.VarChar
+
+  @@unique([date, group], map: "IDX_8f589cf056ff51f09d6096f645")
+  @@unique([date, group], map: "UQ_8f589cf056ff51f09d6096f6450")
+  @@map("__chart_day__hashtag")
+}
+
+model chart_day__instance {
+  id                   Int    @id(map: "PK_479a8ff9d959274981087043023") @default(dbgenerated("nextval('__chart_day__instance_id_seq'::regclass)"))
+  date                 Int
+  group                String @db.VarChar(128)
+  requests_failed      Int    @default(0) @map("___requests_failed") @db.SmallInt
+  requests_succeeded   Int    @default(0) @map("___requests_succeeded") @db.SmallInt
+  requests_received    Int    @default(0) @map("___requests_received") @db.SmallInt
+  notes_total          Int    @default(0) @map("___notes_total")
+  notes_inc            Int    @default(0) @map("___notes_inc")
+  notes_dec            Int    @default(0) @map("___notes_dec")
+  notes_diffs_normal   Int    @default(0) @map("___notes_diffs_normal")
+  notes_diffs_reply    Int    @default(0) @map("___notes_diffs_reply")
+  notes_diffs_renote   Int    @default(0) @map("___notes_diffs_renote")
+  users_total          Int    @default(0) @map("___users_total")
+  users_inc            Int    @default(0) @map("___users_inc") @db.SmallInt
+  users_dec            Int    @default(0) @map("___users_dec") @db.SmallInt
+  following_total      Int    @default(0) @map("___following_total")
+  following_inc        Int    @default(0) @map("___following_inc") @db.SmallInt
+  following_dec        Int    @default(0) @map("___following_dec") @db.SmallInt
+  followers_total      Int    @default(0) @map("___followers_total")
+  followers_inc        Int    @default(0) @map("___followers_inc") @db.SmallInt
+  followers_dec        Int    @default(0) @map("___followers_dec") @db.SmallInt
+  drive_totalFiles     Int    @default(0) @map("___drive_totalFiles")
+  drive_incFiles       Int    @default(0) @map("___drive_incFiles")
+  drive_incUsage       Int    @default(0) @map("___drive_incUsage")
+  drive_decFiles       Int    @default(0) @map("___drive_decFiles")
+  drive_decUsage       Int    @default(0) @map("___drive_decUsage")
+  notes_diffs_withFile Int    @default(0) @map("___notes_diffs_withFile")
+
+  @@unique([date, group], map: "IDX_fea7c0278325a1a2492f2d6acb")
+  @@unique([date, group], map: "UQ_fea7c0278325a1a2492f2d6acbf")
+  @@map("__chart_day__instance")
+}
+
+model chart_day__network {
+  id               Int @id(map: "PK_cac499d6f471042dfed1e7e0132") @default(dbgenerated("nextval('__chart_day__network_id_seq'::regclass)"))
+  date             Int @unique(map: "IDX_8bfa548c2b31f9e07db113773e")
+  incomingRequests Int @default(0) @map("___incomingRequests")
+  outgoingRequests Int @default(0) @map("___outgoingRequests")
+  totalTime        Int @default(0) @map("___totalTime")
+  incomingBytes    Int @default(0) @map("___incomingBytes")
+  outgoingBytes    Int @default(0) @map("___outgoingBytes")
+
+  @@map("__chart_day__network")
+}
+
+model chart_day__notes {
+  id                    Int @id(map: "PK_1fa4139e1f338272b758d05e090") @default(dbgenerated("nextval('__chart_day__notes_id_seq'::regclass)"))
+  date                  Int @unique(map: "IDX_1a527b423ad0858a1af5a056d4")
+  local_total           Int @default(0) @map("___local_total")
+  local_inc             Int @default(0) @map("___local_inc")
+  local_dec             Int @default(0) @map("___local_dec")
+  local_diffs_normal    Int @default(0) @map("___local_diffs_normal")
+  local_diffs_reply     Int @default(0) @map("___local_diffs_reply")
+  local_diffs_renote    Int @default(0) @map("___local_diffs_renote")
+  remote_total          Int @default(0) @map("___remote_total")
+  remote_inc            Int @default(0) @map("___remote_inc")
+  remote_dec            Int @default(0) @map("___remote_dec")
+  remote_diffs_normal   Int @default(0) @map("___remote_diffs_normal")
+  remote_diffs_reply    Int @default(0) @map("___remote_diffs_reply")
+  remote_diffs_renote   Int @default(0) @map("___remote_diffs_renote")
+  local_diffs_withFile  Int @default(0) @map("___local_diffs_withFile")
+  remote_diffs_withFile Int @default(0) @map("___remote_diffs_withFile")
+
+  @@map("__chart_day__notes")
+}
+
+model chart_day__per_user_drive {
+  id         Int    @id(map: "PK_1ae135254c137011645da7f4045") @default(dbgenerated("nextval('__chart_day__per_user_drive_id_seq'::regclass)"))
+  date       Int
+  group      String @db.VarChar(128)
+  totalCount Int    @default(0) @map("___totalCount")
+  totalSize  Int    @default(0) @map("___totalSize")
+  incCount   Int    @default(0) @map("___incCount") @db.SmallInt
+  incSize    Int    @default(0) @map("___incSize")
+  decCount   Int    @default(0) @map("___decCount") @db.SmallInt
+  decSize    Int    @default(0) @map("___decSize")
+
+  @@unique([date, group], map: "IDX_62aa5047b5aec92524f24c701d")
+  @@unique([date, group], map: "UQ_62aa5047b5aec92524f24c701d7")
+  @@map("__chart_day__per_user_drive")
+}
+
+model chart_day__per_user_following {
+  id                      Int    @id(map: "PK_68ce6b67da57166da66fc8fb27e") @default(dbgenerated("nextval('__chart_day__per_user_following_id_seq'::regclass)"))
+  date                    Int
+  group                   String @db.VarChar(128)
+  local_followings_total  Int    @default(0) @map("___local_followings_total")
+  local_followings_inc    Int    @default(0) @map("___local_followings_inc") @db.SmallInt
+  local_followings_dec    Int    @default(0) @map("___local_followings_dec") @db.SmallInt
+  local_followers_total   Int    @default(0) @map("___local_followers_total")
+  local_followers_inc     Int    @default(0) @map("___local_followers_inc") @db.SmallInt
+  local_followers_dec     Int    @default(0) @map("___local_followers_dec") @db.SmallInt
+  remote_followings_total Int    @default(0) @map("___remote_followings_total")
+  remote_followings_inc   Int    @default(0) @map("___remote_followings_inc") @db.SmallInt
+  remote_followings_dec   Int    @default(0) @map("___remote_followings_dec") @db.SmallInt
+  remote_followers_total  Int    @default(0) @map("___remote_followers_total")
+  remote_followers_inc    Int    @default(0) @map("___remote_followers_inc") @db.SmallInt
+  remote_followers_dec    Int    @default(0) @map("___remote_followers_dec") @db.SmallInt
+
+  @@unique([date, group], map: "IDX_e4849a3231f38281280ea4c0ee")
+  @@unique([date, group], map: "UQ_e4849a3231f38281280ea4c0eee")
+  @@map("__chart_day__per_user_following")
+}
+
+model chart_day__per_user_notes {
+  id             Int    @id(map: "PK_58bab6b6d3ad9310cbc7460fd28") @default(dbgenerated("nextval('__chart_day__per_user_notes_id_seq'::regclass)"))
+  date           Int
+  group          String @db.VarChar(128)
+  total          Int    @default(0) @map("___total")
+  inc            Int    @default(0) @map("___inc") @db.SmallInt
+  dec            Int    @default(0) @map("___dec") @db.SmallInt
+  diffs_normal   Int    @default(0) @map("___diffs_normal") @db.SmallInt
+  diffs_reply    Int    @default(0) @map("___diffs_reply") @db.SmallInt
+  diffs_renote   Int    @default(0) @map("___diffs_renote") @db.SmallInt
+  diffs_withFile Int    @default(0) @map("___diffs_withFile") @db.SmallInt
+
+  @@unique([date, group], map: "IDX_c5545d4b31cdc684034e33b81c")
+  @@unique([date, group], map: "UQ_c5545d4b31cdc684034e33b81c3")
+  @@map("__chart_day__per_user_notes")
+}
+
+model chart_day__per_user_pv {
+  id                        Int      @id(map: "PK_0085d7542f6772e99b9dcfb0a9c") @default(dbgenerated("nextval('__chart_day__per_user_pv_id_seq'::regclass)"))
+  date                      Int
+  group                     String   @db.VarChar(128)
+  unique_temp___upv_user    String[] @default([]) @db.VarChar
+  upv_user                  Int      @default(0) @map("___upv_user") @db.SmallInt
+  pv_user                   Int      @default(0) @map("___pv_user") @db.SmallInt
+  unique_temp___upv_visitor String[] @default([]) @db.VarChar
+  upv_visitor               Int      @default(0) @map("___upv_visitor") @db.SmallInt
+  pv_visitor                Int      @default(0) @map("___pv_visitor") @db.SmallInt
+
+  @@unique([date, group], map: "IDX_f221e45cfac5bea0ce0f3149fb")
+  @@unique([date, group], map: "UQ_f221e45cfac5bea0ce0f3149fbb")
+  @@map("__chart_day__per_user_pv")
+}
+
+model chart_day__per_user_reaction {
+  id           Int    @id(map: "PK_8af24e2d51ff781a354fe595eda") @default(dbgenerated("nextval('__chart_day__per_user_reaction_id_seq'::regclass)"))
+  date         Int
+  group        String @db.VarChar(128)
+  local_count  Int    @default(0) @map("___local_count") @db.SmallInt
+  remote_count Int    @default(0) @map("___remote_count") @db.SmallInt
+
+  @@unique([date, group], map: "IDX_d54b653660d808b118e36c184c")
+  @@unique([date, group], map: "UQ_d54b653660d808b118e36c184c0")
+  @@map("__chart_day__per_user_reaction")
+}
+
+model chart_day__users {
+  id           Int @id(map: "PK_d7f7185abb9851f70c4726c54bd") @default(dbgenerated("nextval('__chart_day__users_id_seq'::regclass)"))
+  date         Int @unique(map: "IDX_cad6e07c20037f31cdba8a350c")
+  local_total  Int @default(0) @map("___local_total")
+  local_inc    Int @default(0) @map("___local_inc") @db.SmallInt
+  local_dec    Int @default(0) @map("___local_dec") @db.SmallInt
+  remote_total Int @default(0) @map("___remote_total")
+  remote_inc   Int @default(0) @map("___remote_inc") @db.SmallInt
+  remote_dec   Int @default(0) @map("___remote_dec") @db.SmallInt
+
+  @@map("__chart_day__users")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model abuse_user_report {
+  id                                        String   @id(map: "PK_87873f5f5cc5c321a1306b2d18c") @db.VarChar(32)
+  createdAt                                 DateTime @db.Timestamptz(6)
+  targetUserId                              String   @db.VarChar(32)
+  reporterId                                String   @db.VarChar(32)
+  assigneeId                                String?  @db.VarChar(32)
+  resolved                                  Boolean  @default(false)
+  comment                                   String   @db.VarChar(2048)
+  targetUserHost                            String?  @db.VarChar(128)
+  reporterHost                              String?  @db.VarChar(128)
+  forwarded                                 Boolean  @default(false)
+  user_abuse_user_report_reporterIdTouser   user     @relation("abuse_user_report_reporterIdTouser", fields: [reporterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_04cc96756f89d0b7f9473e8cdf3")
+  user_abuse_user_report_assigneeIdTouser   user?    @relation("abuse_user_report_assigneeIdTouser", fields: [assigneeId], references: [id], onUpdate: NoAction, map: "FK_08b883dd5fdd6f9c4c1572b36de")
+  user_abuse_user_report_targetUserIdTouser user     @relation("abuse_user_report_targetUserIdTouser", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9021cc2e1feb5f72d3db6e9f5f")
+
+  @@index([reporterId], map: "IDX_04cc96756f89d0b7f9473e8cdf")
+  @@index([resolved], map: "IDX_2b15aaf4a0dc5be3499af7ab6a")
+  @@index([targetUserHost], map: "IDX_4ebbf7f93cdc10e8d1ef2fc6cd")
+  @@index([targetUserId], map: "IDX_a9021cc2e1feb5f72d3db6e9f5")
+  @@index([createdAt], map: "IDX_db2098070b2b5a523c58181f74")
+  @@index([reporterHost], map: "IDX_f8d8b93740ad12c4ce8213a199")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model access_token {
+  id          String    @id(map: "PK_f20f028607b2603deabd8182d12") @db.VarChar(32)
+  createdAt   DateTime  @db.Timestamptz(6)
+  token       String    @db.VarChar(128)
+  hash        String    @db.VarChar(128)
+  userId      String    @db.VarChar(32)
+  appId       String?   @db.VarChar(32)
+  lastUsedAt  DateTime? @db.Timestamptz(6)
+  session     String?   @db.VarChar(128)
+  name        String?   @db.VarChar(128)
+  description String?   @db.VarChar(512)
+  iconUrl     String?   @db.VarChar(512)
+  permission  String[]  @default([]) @db.VarChar(64)
+  fetched     Boolean   @default(false)
+  user        user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9949557d0e1b2c19e5344c171e9")
+  app         app?      @relation(fields: [appId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a3ff16c90cc87a82a0b5959e560")
+
+  @@index([hash], map: "IDX_64c327441248bae40f7d92f34f")
+  @@index([token], map: "IDX_70ba8f6af34bc924fc9e12adb8")
+  @@index([userId], map: "IDX_9949557d0e1b2c19e5344c171e")
+  @@index([session], map: "IDX_bf3a053c07d9fb5d87317c56ee")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model ad {
+  id        String   @id(map: "PK_0193d5ef09746e88e9ea92c634d") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  expiresAt DateTime @db.Timestamptz(6)
+  place     String   @db.VarChar(32)
+  priority  String   @db.VarChar(32)
+  url       String   @db.VarChar(1024)
+  imageUrl  String   @db.VarChar(1024)
+  memo      String   @db.VarChar(8192)
+  ratio     Int      @default(1)
+  startsAt  DateTime @default(now()) @db.Timestamptz(6)
+  dayOfWeek Int      @default(0)
+
+  @@index([createdAt], map: "IDX_1129c2ef687fc272df040bafaa")
+  @@index([expiresAt], map: "IDX_2da24ce20ad209f1d9dc032457")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model announcement {
+  id                String              @id(map: "PK_e0ef0550174fd1099a308fd18a0") @db.VarChar(32)
+  createdAt         DateTime            @db.Timestamptz(6)
+  text              String              @db.VarChar(8192)
+  title             String              @db.VarChar(256)
+  imageUrl          String?             @db.VarChar(1024)
+  updatedAt         DateTime?           @db.Timestamptz(6)
+  announcement_read announcement_read[]
+
+  @@index([createdAt], map: "IDX_118ec703e596086fc4515acb39")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model announcement_read {
+  id             String       @id(map: "PK_4b90ad1f42681d97b2683890c5e") @db.VarChar(32)
+  userId         String       @db.VarChar(32)
+  announcementId String       @db.VarChar(32)
+  createdAt      DateTime     @db.Timestamptz(6)
+  announcement   announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_603a7b1e7aa0533c6c88e9bfafe")
+  user           user         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8288151386172b8109f7239ab28")
+
+  @@unique([userId, announcementId], map: "IDX_924fa71815cfa3941d003702a0")
+  @@index([announcementId], map: "IDX_603a7b1e7aa0533c6c88e9bfaf")
+  @@index([userId], map: "IDX_8288151386172b8109f7239ab2")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model antenna {
+  id              String           @id(map: "PK_c170b99775e1dccca947c9f2d5f") @db.VarChar(32)
+  createdAt       DateTime         @db.Timestamptz(6)
+  userId          String           @db.VarChar(32)
+  name            String           @db.VarChar(128)
+  src             antenna_src_enum
+  userListId      String?          @db.VarChar(32)
+  keywords        Json             @default("[]")
+  withFile        Boolean
+  expression      String?          @db.VarChar(2048)
+  notify          Boolean
+  caseSensitive   Boolean          @default(false)
+  withReplies     Boolean          @default(false)
+  users           String[]         @default([]) @db.VarChar(1024)
+  excludeKeywords Json             @default("[]")
+  lastUsedAt      DateTime         @default(dbgenerated("'2023-08-02 03:03:37.55099+00'::timestamp with time zone")) @db.Timestamptz(6)
+  isActive        Boolean          @default(true)
+  user            user             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6446c571a0e8d0f05f01c789096")
+  user_list       user_list?       @relation(fields: [userListId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_709d7d32053d0dd7620f678eeb9")
+
+  @@index([lastUsedAt], map: "IDX_084c2abb8948ef59a37dce6ac1")
+  @@index([isActive], map: "IDX_36ef5192a1ce55ed0e40aa4db5")
+  @@index([userId], map: "IDX_6446c571a0e8d0f05f01c78909")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model app {
+  id           String         @id(map: "PK_9478629fc093d229df09e560aea") @db.VarChar(32)
+  createdAt    DateTime       @db.Timestamptz(6)
+  userId       String?        @db.VarChar(32)
+  secret       String         @db.VarChar(64)
+  name         String         @db.VarChar(128)
+  description  String         @db.VarChar(512)
+  permission   String[]       @db.VarChar(64)
+  callbackUrl  String?        @db.VarChar(512)
+  access_token access_token[]
+  user         user?          @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_3f5b0899ef90527a3462d7c2cb3")
+  auth_session auth_session[]
+
+  @@index([createdAt], map: "IDX_048a757923ed8b157e9895da53")
+  @@index([userId], map: "IDX_3f5b0899ef90527a3462d7c2cb")
+  @@index([secret], map: "IDX_f49922d511d666848f250663c4")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model attestation_challenge {
+  id                    String   @db.VarChar(32)
+  userId                String   @db.VarChar(32)
+  challenge             String   @db.VarChar(64)
+  createdAt             DateTime @db.Timestamptz(6)
+  registrationChallenge Boolean  @default(false)
+  user                  user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f1a461a618fa1755692d0e0d592")
+
+  @@id([id, userId], map: "PK_d0ba6786e093f1bcb497572a6b5")
+  @@index([challenge], map: "IDX_47efb914aed1f72dd39a306c7b")
+  @@index([userId], map: "IDX_f1a461a618fa1755692d0e0d59")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model auth_session {
+  id        String   @id(map: "PK_19354ed146424a728c1112a8cbf") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  token     String   @db.VarChar(128)
+  userId    String?  @db.VarChar(32)
+  appId     String   @db.VarChar(32)
+  user      user?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c072b729d71697f959bde66ade0")
+  app       app      @relation(fields: [appId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dbe037d4bddd17b03a1dc778dee")
+
+  @@index([token], map: "IDX_62cb09e1129f6ec024ef66e183")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model blocking {
+  id                            String   @id(map: "PK_e5d9a541cc1965ee7e048ea09dd") @db.VarChar(32)
+  createdAt                     DateTime @db.Timestamptz(6)
+  blockeeId                     String   @db.VarChar(32)
+  blockerId                     String   @db.VarChar(32)
+  user_blocking_blockerIdTouser user     @relation("blocking_blockerIdTouser", fields: [blockerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0627125f1a8a42c9a1929edb552")
+  user_blocking_blockeeIdTouser user     @relation("blocking_blockeeIdTouser", fields: [blockeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2cd4a2743a99671308f5417759e")
+
+  @@unique([blockerId, blockeeId], map: "IDX_98a1bc5cb30dfd159de056549f")
+  @@index([blockerId], map: "IDX_0627125f1a8a42c9a1929edb55")
+  @@index([blockeeId], map: "IDX_2cd4a2743a99671308f5417759")
+  @@index([createdAt], map: "IDX_b9a354f7941c1e779f3b33aea6")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model channel {
+  id                  String                @id(map: "PK_590f33ee6ee7d76437acf362e39") @db.VarChar(32)
+  createdAt           DateTime              @db.Timestamptz(6)
+  lastNotedAt         DateTime?             @db.Timestamptz(6)
+  userId              String?               @db.VarChar(32)
+  name                String                @db.VarChar(128)
+  description         String?               @db.VarChar(2048)
+  bannerId            String?               @db.VarChar(32)
+  notesCount          Int                   @default(0)
+  usersCount          Int                   @default(0)
+  pinnedNoteIds       String[]              @default([]) @db.VarChar(128)
+  color               String                @default("#86b300") @db.VarChar(16)
+  isArchived          Boolean               @default(false)
+  user                user?                 @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_823bae55bd81b3be6e05cff4383")
+  drive_file          drive_file?           @relation(fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_999da2bcc7efadbfe0e92d3bc19")
+  channel_favorite    channel_favorite[]
+  channel_following   channel_following[]
+  channel_note_pining channel_note_pining[]
+  note                note[]
+
+  @@index([usersCount], map: "IDX_094b86cd36bb805d1aa1e8cc9a")
+  @@index([notesCount], map: "IDX_0f58c11241e649d2a638a8de94")
+  @@index([lastNotedAt], map: "IDX_29ef80c6f13bcea998447fce43")
+  @@index([createdAt], map: "IDX_71cb7b435b7c0d4843317e7e16")
+  @@index([userId], map: "IDX_823bae55bd81b3be6e05cff438")
+  @@index([isArchived], map: "IDX_cc7c72974f1b2f385a8921f094")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model channel_favorite {
+  id        String   @id(map: "PK_59bddfd54d48689a298d41af00c") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  channelId String   @db.VarChar(32)
+  userId    String   @db.VarChar(32)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8302bd27226605ece14842fb25a")
+  channel   channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d3ca0db011b75ac2a940a2337d2")
+
+  @@index([createdAt], map: "IDX_735a5544f9249d412255f47f95")
+  @@index([userId], map: "IDX_8302bd27226605ece14842fb25")
+  @@index([channelId], map: "IDX_d3ca0db011b75ac2a940a2337d")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model channel_following {
+  id         String   @id(map: "PK_8b104be7f7415113f2a02cd5bdd") @db.VarChar(32)
+  createdAt  DateTime @db.Timestamptz(6)
+  followeeId String   @db.VarChar(32)
+  followerId String   @db.VarChar(32)
+  channel    channel  @relation(fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e43068c3f92cab197c3d3cd86e")
+  user       user     @relation(fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6d8084ec9496e7334a4602707e1")
+
+  @@unique([followerId, followeeId], map: "IDX_2e230dd45a10e671d781d99f3e")
+  @@index([followeeId], map: "IDX_0e43068c3f92cab197c3d3cd86")
+  @@index([createdAt], map: "IDX_11e71f2511589dcc8a4d3214f9")
+  @@index([followerId], map: "IDX_6d8084ec9496e7334a4602707e")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model channel_note_pining {
+  id        String   @id(map: "PK_44f7474496bcf2e4b741681146d") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  channelId String   @db.VarChar(32)
+  noteId    String   @db.VarChar(32)
+  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_10b19ef67d297ea9de325cd4502")
+  channel   channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8125f950afd3093acb10d2db8a8")
+
+  @@unique([channelId, noteId], map: "IDX_f36fed37d6d4cdcc68c803cd9c")
+  @@index([channelId], map: "IDX_8125f950afd3093acb10d2db8a")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model clip {
+  id            String          @id(map: "PK_f0685dac8d4dd056d7255670b75") @db.VarChar(32)
+  createdAt     DateTime        @db.Timestamptz(6)
+  userId        String          @db.VarChar(32)
+  name          String          @db.VarChar(128)
+  isPublic      Boolean         @default(false)
+  description   String?         @db.VarChar(2048)
+  lastClippedAt DateTime?       @db.Timestamptz(6)
+  user          user            @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2b5ec6c574d6802c94c80313fb2")
+  clip_favorite clip_favorite[]
+  clip_note     clip_note[]
+
+  @@index([userId], map: "IDX_2b5ec6c574d6802c94c80313fb")
+  @@index([lastClippedAt], map: "IDX_a3eac04ae2aa9e221e7596114a")
+}
+
+model clip_favorite {
+  id        String   @id(map: "PK_1b539f43906f05ebcabe752a977") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  clipId    String   @db.VarChar(32)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_25a31662b0b0cc9af6549a9d711")
+  clip      clip     @relation(fields: [clipId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fce61c7986cee54393e79f1d849")
+
+  @@unique([userId, clipId], map: "IDX_b1754a39d0b281e07ed7c078ec")
+  @@index([userId], map: "IDX_25a31662b0b0cc9af6549a9d71")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model clip_note {
+  id     String @id(map: "PK_e94cda2f40a99b57e032a1a738b") @db.VarChar(32)
+  noteId String @db.VarChar(32)
+  clipId String @db.VarChar(32)
+  note   note   @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a012eaf5c87c65da1deb5fdbfa3")
+  clip   clip   @relation(fields: [clipId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ebe99317bbbe9968a0c6f579adf")
+
+  @@unique([noteId, clipId], map: "IDX_6fc0ec357d55a18646262fdfff")
+  @@index([noteId], map: "IDX_a012eaf5c87c65da1deb5fdbfa")
+  @@index([clipId], map: "IDX_ebe99317bbbe9968a0c6f579ad")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model drive_file {
+  id                             String              @id(map: "PK_43ddaaaf18c9e68029b7cbb032e") @db.VarChar(32)
+  createdAt                      DateTime            @db.Timestamptz(6)
+  userId                         String?             @db.VarChar(32)
+  userHost                       String?             @db.VarChar(128)
+  md5                            String              @db.VarChar(32)
+  name                           String              @db.VarChar(256)
+  type                           String              @db.VarChar(128)
+  size                           Int
+  comment                        String?             @db.VarChar(512)
+  properties                     Json                @default("{}")
+  storedInternal                 Boolean
+  url                            String              @db.VarChar(512)
+  thumbnailUrl                   String?             @db.VarChar(512)
+  webpublicUrl                   String?             @db.VarChar(512)
+  accessKey                      String?             @unique(map: "IDX_d85a184c2540d2deba33daf642") @db.VarChar(256)
+  thumbnailAccessKey             String?             @unique(map: "IDX_e74022ce9a074b3866f70e0d27") @db.VarChar(256)
+  webpublicAccessKey             String?             @unique(map: "IDX_c55b2b7c284d9fef98026fc88e") @db.VarChar(256)
+  uri                            String?             @db.VarChar(512)
+  src                            String?             @db.VarChar(512)
+  folderId                       String?             @db.VarChar(32)
+  isSensitive                    Boolean             @default(false)
+  isLink                         Boolean             @default(false)
+  blurhash                       String?             @db.VarChar(128)
+  webpublicType                  String?             @db.VarChar(128)
+  requestHeaders                 Json?               @default("{}")
+  requestIp                      String?             @db.VarChar(128)
+  maybeSensitive                 Boolean             @default(false)
+  maybePorn                      Boolean             @default(false)
+  channel                        channel[]
+  user_drive_file_userIdTouser   user?               @relation("drive_file_userIdTouser", fields: [userId], references: [id], onUpdate: NoAction, map: "FK_860fa6f6c7df5bb887249fba22e")
+  drive_folder                   drive_folder?       @relation(fields: [folderId], references: [id], onUpdate: NoAction, map: "FK_bb90d1956dafc4068c28aa7560a")
+  messaging_message              messaging_message[]
+  page                           page[]
+  user_user_avatarIdTodrive_file user?               @relation("user_avatarIdTodrive_file")
+  user_user_bannerIdTodrive_file user?               @relation("user_bannerIdTodrive_file")
+
+  @@index([isLink], map: "IDX_315c779174fe8247ab324f036e")
+  @@index([md5], map: "IDX_37bb9a1b4585f8a3beb24c62d6")
+  @@index([maybeSensitive], map: "IDX_3b33dff77bb64b23c88151d23e")
+  @@index([userId, folderId, id], map: "IDX_55720b33a61a7c806a8215b825")
+  @@index([userId], map: "IDX_860fa6f6c7df5bb887249fba22")
+  @@index([maybePorn], map: "IDX_8bdcd3dd2bddb78014999a16ce")
+  @@index([userHost], map: "IDX_92779627994ac79277f070c91e")
+  @@index([type], map: "IDX_a40b8df8c989d7db937ea27cf6")
+  @@index([isSensitive], map: "IDX_a7eba67f8b3fa27271e85d2e26")
+  @@index([folderId], map: "IDX_bb90d1956dafc4068c28aa7560")
+  @@index([createdAt], map: "IDX_c8dfad3b72196dd1d6b5db168a")
+  @@index([uri], map: "IDX_e5848eac4940934e23dbc17581")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model drive_folder {
+  id                 String         @id(map: "PK_7a0c089191f5ebdc214e0af808a") @db.VarChar(32)
+  createdAt          DateTime       @db.Timestamptz(6)
+  name               String         @db.VarChar(128)
+  userId             String?        @db.VarChar(32)
+  parentId           String?        @db.VarChar(32)
+  drive_file         drive_file[]
+  drive_folder       drive_folder?  @relation("drive_folderTodrive_folder", fields: [parentId], references: [id], onUpdate: NoAction, map: "FK_00ceffb0cdc238b3233294f08f2")
+  other_drive_folder drive_folder[] @relation("drive_folderTodrive_folder")
+  user               user?          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f4fc06e49c0171c85f1c48060d2")
+
+  @@index([parentId], map: "IDX_00ceffb0cdc238b3233294f08f")
+  @@index([createdAt], map: "IDX_02878d441ceae15ce060b73daf")
+  @@index([userId], map: "IDX_f4fc06e49c0171c85f1c48060d")
+}
+
+model emoji {
+  id                                      String    @id(map: "PK_df74ce05e24999ee01ea0bc50a3") @db.VarChar(32)
+  updatedAt                               DateTime? @db.Timestamptz(6)
+  name                                    String    @db.VarChar(128)
+  host                                    String?   @db.VarChar(128)
+  originalUrl                             String    @db.VarChar(512)
+  uri                                     String?   @db.VarChar(512)
+  type                                    String?   @db.VarChar(64)
+  aliases                                 String[]  @default([]) @db.VarChar(128)
+  category                                String?   @db.VarChar(128)
+  publicUrl                               String    @default("") @db.VarChar(512)
+  license                                 String?   @db.VarChar(1024)
+  localOnly                               Boolean   @default(false)
+  isSensitive                             Boolean   @default(false)
+  roleIdsThatCanBeUsedThisEmojiAsReaction String[]  @default([]) @db.VarChar(128)
+
+  @@unique([name, host], map: "IDX_4f4d35e1256c84ae3d1f0eab10")
+  @@index([host], map: "IDX_5900e907bb46516ddf2871327c")
+  @@index([name], map: "IDX_b37dafc86e9af007e3295c2781")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model flash {
+  id          String       @id(map: "PK_0c01a2c1c5f2266942dd1b3fdbc") @db.VarChar(32)
+  createdAt   DateTime     @db.Timestamptz(6)
+  updatedAt   DateTime     @db.Timestamptz(6)
+  title       String       @db.VarChar(256)
+  summary     String       @db.VarChar(1024)
+  userId      String       @db.VarChar(32)
+  script      String       @db.VarChar(65536)
+  permissions String[]     @default([]) @db.VarChar(256)
+  likedCount  Int          @default(0)
+  user        user         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9b88250fc2fd009b8f1b5623ed5")
+  flash_like  flash_like[]
+
+  @@index([createdAt], map: "IDX_149d2e44785707548c82999b01")
+  @@index([updatedAt], map: "IDX_3aa8ea9a8f15214ad91638c0a7")
+  @@index([userId], map: "IDX_9b88250fc2fd009b8f1b5623ed")
+}
+
+model flash_like {
+  id        String   @id(map: "PK_d110109ee310588d63d6183b233") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  flashId   String   @db.VarChar(32)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_60c4af1c19a7a75f1592f93b287")
+  flash     flash    @relation(fields: [flashId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6c16fe0e93b7a1951eca624b76a")
+
+  @@unique([userId, flashId], map: "IDX_cfbfeeccb0cbedcd660b17eb07")
+  @@index([userId], map: "IDX_60c4af1c19a7a75f1592f93b28")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model follow_request {
+  id                                   String   @id(map: "PK_53a9aa3725f7a3deb150b39dbfc") @db.VarChar(32)
+  createdAt                            DateTime @db.Timestamptz(6)
+  followeeId                           String   @db.VarChar(32)
+  followerId                           String   @db.VarChar(32)
+  requestId                            String?  @db.VarChar(128)
+  followerHost                         String?  @db.VarChar(128)
+  followerInbox                        String?  @db.VarChar(512)
+  followerSharedInbox                  String?  @db.VarChar(512)
+  followeeHost                         String?  @db.VarChar(128)
+  followeeInbox                        String?  @db.VarChar(512)
+  followeeSharedInbox                  String?  @db.VarChar(512)
+  user_follow_request_followeeIdTouser user     @relation("follow_request_followeeIdTouser", fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_12c01c0d1a79f77d9f6c15fadd2")
+  user_follow_request_followerIdTouser user     @relation("follow_request_followerIdTouser", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a7fd92dd6dc519e6fb435dd108f")
+
+  @@unique([followerId, followeeId], map: "IDX_d54a512b822fac7ed52800f6b4")
+  @@index([followeeId], map: "IDX_12c01c0d1a79f77d9f6c15fadd")
+  @@index([followerId], map: "IDX_a7fd92dd6dc519e6fb435dd108")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model following {
+  id                              String   @id(map: "PK_c76c6e044bdf76ecf8bfb82a645") @db.VarChar(32)
+  createdAt                       DateTime @db.Timestamptz(6)
+  followeeId                      String   @db.VarChar(32)
+  followerId                      String   @db.VarChar(32)
+  followerHost                    String?  @db.VarChar(128)
+  followerInbox                   String?  @db.VarChar(512)
+  followerSharedInbox             String?  @db.VarChar(512)
+  followeeHost                    String?  @db.VarChar(128)
+  followeeInbox                   String?  @db.VarChar(512)
+  followeeSharedInbox             String?  @db.VarChar(512)
+  user_following_followeeIdTouser user     @relation("following_followeeIdTouser", fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_24e0042143a18157b234df186c3")
+  user_following_followerIdTouser user     @relation("following_followerIdTouser", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6516c5a6f3c015b4eed39978be5")
+
+  @@unique([followerId, followeeId], map: "IDX_307be5f1d1252e0388662acb96")
+  @@index([followeeId], map: "IDX_24e0042143a18157b234df186c")
+  @@index([followerHost], map: "IDX_4ccd2239268ebbd1b35e318754")
+  @@index([createdAt], map: "IDX_582f8fab771a9040a12961f3e7")
+  @@index([followerId], map: "IDX_6516c5a6f3c015b4eed39978be")
+  @@index([followeeHost], map: "IDX_fcdafee716dfe9c3b5fde90f30")
+}
+
+model gallery_like {
+  id           String       @id(map: "PK_853ab02be39b8de45cd720cc15f") @db.VarChar(32)
+  createdAt    DateTime     @db.Timestamptz(6)
+  userId       String       @db.VarChar(32)
+  postId       String       @db.VarChar(32)
+  user         user         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8fd5215095473061855ceb948cf")
+  gallery_post gallery_post @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b1cb568bfe569e47b7051699fc8")
+
+  @@unique([userId, postId], map: "IDX_df1b5f4099e99fb0bc5eae53b6")
+  @@index([userId], map: "IDX_8fd5215095473061855ceb948c")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model gallery_post {
+  id           String         @id(map: "PK_8e90d7b6015f2c4518881b14753") @db.VarChar(32)
+  createdAt    DateTime       @db.Timestamptz(6)
+  updatedAt    DateTime       @db.Timestamptz(6)
+  title        String         @db.VarChar(256)
+  description  String?        @db.VarChar(2048)
+  userId       String         @db.VarChar(32)
+  fileIds      String[]       @default([]) @db.VarChar(32)
+  isSensitive  Boolean        @default(false)
+  likedCount   Int            @default(0)
+  tags         String[]       @default([]) @db.VarChar(128)
+  gallery_like gallery_like[]
+  user         user           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_985b836dddd8615e432d7043ddb")
+
+  @@index([tags], map: "IDX_05cca34b985d1b8edc1d1e28df")
+  @@index([likedCount], map: "IDX_1a165c68a49d08f11caffbd206")
+  @@index([fileIds], map: "IDX_3ca50563facd913c425e7a89ee")
+  @@index([createdAt], map: "IDX_8f1a239bd077c8864a20c62c2c")
+  @@index([userId], map: "IDX_985b836dddd8615e432d7043dd")
+  @@index([isSensitive], map: "IDX_f2d744d9a14d0dfb8b96cb7fc5")
+  @@index([updatedAt], map: "IDX_f631d37835adb04792e361807c")
+}
+
+model hashtag {
+  id                        String   @id(map: "PK_cb36eb8af8412bfa978f1165d78") @db.VarChar(32)
+  name                      String   @unique(map: "IDX_347fec870eafea7b26c8a73bac") @db.VarChar(128)
+  mentionedUserIds          String[] @db.VarChar(32)
+  mentionedUsersCount       Int      @default(0)
+  mentionedLocalUserIds     String[] @db.VarChar(32)
+  mentionedLocalUsersCount  Int      @default(0)
+  mentionedRemoteUserIds    String[] @db.VarChar(32)
+  mentionedRemoteUsersCount Int      @default(0)
+  attachedUserIds           String[] @db.VarChar(32)
+  attachedUsersCount        Int      @default(0)
+  attachedLocalUserIds      String[] @db.VarChar(32)
+  attachedLocalUsersCount   Int      @default(0)
+  attachedRemoteUserIds     String[] @db.VarChar(32)
+  attachedRemoteUsersCount  Int      @default(0)
+
+  @@index([attachedRemoteUsersCount], map: "IDX_0b03cbcd7e6a7ce068efa8ecc2")
+  @@index([attachedLocalUsersCount], map: "IDX_0c44bf4f680964145f2a68a341")
+  @@index([mentionedLocalUsersCount], map: "IDX_0e206cec573f1edff4a3062923")
+  @@index([mentionedUsersCount], map: "IDX_2710a55f826ee236ea1a62698f")
+  @@index([mentionedRemoteUsersCount], map: "IDX_4c02d38a976c3ae132228c6fce")
+  @@index([attachedUsersCount], map: "IDX_d57f9030cd3af7f63ffb1c267c")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model instance {
+  id                      String    @id(map: "PK_eaf60e4a0c399c9935413e06474") @db.VarChar(32)
+  firstRetrievedAt        DateTime  @db.Timestamptz(6)
+  host                    String    @unique(map: "IDX_8d5afc98982185799b160e10eb") @db.VarChar(128)
+  usersCount              Int       @default(0)
+  notesCount              Int       @default(0)
+  followingCount          Int       @default(0)
+  followersCount          Int       @default(0)
+  latestRequestReceivedAt DateTime? @db.Timestamptz(6)
+  isNotResponding         Boolean   @default(false)
+  softwareName            String?   @db.VarChar(64)
+  softwareVersion         String?   @db.VarChar(64)
+  openRegistrations       Boolean?
+  name                    String?   @db.VarChar(256)
+  description             String?   @db.VarChar(4096)
+  maintainerName          String?   @db.VarChar(128)
+  maintainerEmail         String?   @db.VarChar(256)
+  infoUpdatedAt           DateTime? @db.Timestamptz(6)
+  isSuspended             Boolean   @default(false)
+  iconUrl                 String?   @db.VarChar(256)
+  themeColor              String?   @db.VarChar(64)
+  faviconUrl              String?   @db.VarChar(256)
+
+  @@index([firstRetrievedAt], map: "IDX_2cd3b2a6b4cf0b910b260afe08")
+  @@index([isSuspended], map: "IDX_34500da2e38ac393f7bb6b299c")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model messaging_message {
+  id                                       String      @id(map: "PK_db398fd79dc95d0eb8c30456eaa") @db.VarChar(32)
+  createdAt                                DateTime    @db.Timestamptz(6)
+  userId                                   String      @db.VarChar(32)
+  recipientId                              String?     @db.VarChar(32)
+  text                                     String?     @db.VarChar(4096)
+  isRead                                   Boolean     @default(false)
+  fileId                                   String?     @db.VarChar(32)
+  groupId                                  String?     @db.VarChar(32)
+  reads                                    String[]    @default([]) @db.VarChar(32)
+  uri                                      String?     @db.VarChar(512)
+  user_group                               user_group? @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c4be03b446884f9e9c502135be")
+  drive_file                               drive_file? @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_535def119223ac05ad3fa9ef64b")
+  user_messaging_message_userIdTouser      user        @relation("messaging_message_userIdTouser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5377c307783fce2b6d352e1203b")
+  user_messaging_message_recipientIdTouser user?       @relation("messaging_message_recipientIdTouser", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cac14a4e3944454a5ce7daa5142")
+
+  @@index([groupId], map: "IDX_2c4be03b446884f9e9c502135b")
+  @@index([userId], map: "IDX_5377c307783fce2b6d352e1203")
+  @@index([recipientId], map: "IDX_cac14a4e3944454a5ce7daa514")
+  @@index([createdAt], map: "IDX_e21cd3646e52ef9c94aaf17c2e")
+}
+
+model meta {
+  id                                     String                                       @id(map: "PK_c4c17a6c2bd7651338b60fc590b") @db.VarChar(32)
+  name                                   String?                                      @db.VarChar(1024)
+  description                            String?                                      @db.VarChar(1024)
+  maintainerName                         String?                                      @db.VarChar(1024)
+  maintainerEmail                        String?                                      @db.VarChar(1024)
+  disableRegistration                    Boolean                                      @default(false)
+  langs                                  String[]                                     @default([]) @db.VarChar(1024)
+  hiddenTags                             String[]                                     @default([]) @db.VarChar(1024)
+  blockedHosts                           String[]                                     @default([]) @db.VarChar(1024)
+  mascotImageUrl                         String?                                      @default("/assets/ai.png") @db.VarChar(1024)
+  bannerUrl                              String?                                      @db.VarChar(1024)
+  iconUrl                                String?                                      @db.VarChar(1024)
+  cacheRemoteFiles                       Boolean                                      @default(true)
+  enableRecaptcha                        Boolean                                      @default(false)
+  recaptchaSiteKey                       String?                                      @db.VarChar(1024)
+  recaptchaSecretKey                     String?                                      @db.VarChar(1024)
+  summalyProxy                           String?                                      @db.VarChar(1024)
+  enableEmail                            Boolean                                      @default(false)
+  email                                  String?                                      @db.VarChar(1024)
+  smtpSecure                             Boolean                                      @default(false)
+  smtpHost                               String?                                      @db.VarChar(1024)
+  smtpPort                               Int?
+  smtpUser                               String?                                      @db.VarChar(1024)
+  smtpPass                               String?                                      @db.VarChar(1024)
+  enableServiceWorker                    Boolean                                      @default(false)
+  swPublicKey                            String?                                      @db.VarChar(1024)
+  swPrivateKey                           String?                                      @db.VarChar(1024)
+  pinnedUsers                            String[]                                     @default([]) @db.VarChar(1024)
+  termsOfServiceUrl                      String?                                      @db.VarChar(1024)
+  repositoryUrl                          String                                       @default("https://github.com/misskey-dev/misskey") @db.VarChar(1024)
+  feedbackUrl                            String?                                      @default("https://github.com/misskey-dev/misskey/issues/new") @db.VarChar(1024)
+  useObjectStorage                       Boolean                                      @default(false)
+  objectStorageBucket                    String?                                      @db.VarChar(1024)
+  objectStoragePrefix                    String?                                      @db.VarChar(1024)
+  objectStorageBaseUrl                   String?                                      @db.VarChar(1024)
+  objectStorageEndpoint                  String?                                      @db.VarChar(1024)
+  objectStorageRegion                    String?                                      @db.VarChar(1024)
+  objectStorageAccessKey                 String?                                      @db.VarChar(1024)
+  objectStorageSecretKey                 String?                                      @db.VarChar(1024)
+  objectStoragePort                      Int?
+  objectStorageUseSSL                    Boolean                                      @default(true)
+  proxyAccountId                         String?                                      @db.VarChar(32)
+  objectStorageUseProxy                  Boolean                                      @default(true)
+  enableHcaptcha                         Boolean                                      @default(false)
+  hcaptchaSiteKey                        String?                                      @db.VarChar(1024)
+  hcaptchaSecretKey                      String?                                      @db.VarChar(1024)
+  objectStorageSetPublicRead             Boolean                                      @default(false)
+  backgroundImageUrl                     String?                                      @db.VarChar(1024)
+  logoImageUrl                           String?                                      @db.VarChar(1024)
+  objectStorageS3ForcePathStyle          Boolean                                      @default(true)
+  deeplAuthKey                           String?                                      @db.VarChar(1024)
+  deeplIsPro                             Boolean                                      @default(false)
+  emailRequiredForSignup                 Boolean                                      @default(false)
+  themeColor                             String?                                      @db.VarChar(1024)
+  defaultLightTheme                      String?                                      @db.VarChar(8192)
+  defaultDarkTheme                       String?                                      @db.VarChar(8192)
+  sensitiveMediaDetection                meta_sensitivemediadetection_enum            @default(none)
+  sensitiveMediaDetectionSensitivity     meta_sensitivemediadetectionsensitivity_enum @default(medium)
+  setSensitiveFlagAutomatically          Boolean                                      @default(false)
+  enableIpLogging                        Boolean                                      @default(false)
+  enableSensitiveMediaDetectionForVideos Boolean                                      @default(false)
+  enableActiveEmailValidation            Boolean                                      @default(true)
+  enableTurnstile                        Boolean                                      @default(false)
+  turnstileSiteKey                       String?                                      @db.VarChar(1024)
+  turnstileSecretKey                     String?                                      @db.VarChar(1024)
+  policies                               Json                                         @default("{}")
+  sensitiveWords                         String[]                                     @default([]) @db.VarChar(1024)
+  enableChartsForRemoteUser              Boolean                                      @default(true)
+  enableChartsForFederatedInstances      Boolean                                      @default(true)
+  serverRules                            String[]                                     @default([]) @db.VarChar(280)
+  preservedUsernames                     String[]                                     @default(["admin", "administrator", "root", "system", "maintainer", "host", "mod", "moderator", "owner", "superuser", "staff", "auth", "i", "me", "everyone", "all", "mention", "mentions", "example", "user", "users", "account", "accounts", "official", "help", "helps", "support", "supports", "info", "information", "informations", "announce", "announces", "announcement", "announcements", "notice", "notification", "notifications", "dev", "developer", "developers", "tech", "misskey"]) @db.VarChar(1024)
+  serverErrorImageUrl                    String?                                      @db.VarChar(1024)
+  notFoundImageUrl                       String?                                      @db.VarChar(1024)
+  infoImageUrl                           String?                                      @db.VarChar(1024)
+  enableServerMachineStats               Boolean                                      @default(false)
+  enableIdenticonGeneration              Boolean                                      @default(true)
+  cacheRemoteSensitiveFiles              Boolean                                      @default(true)
+  user                                   user?                                        @relation(fields: [proxyAccountId], references: [id], onUpdate: NoAction, map: "FK_ab1bc0c1e209daa77b8e8d212ad")
+}
+
+model migrations {
+  id        Int    @id(map: "PK_8c82d7f526340ab734260ea46be") @default(autoincrement())
+  timestamp BigInt
+  name      String @db.VarChar
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model moderation_log {
+  id        String   @id(map: "PK_d0adca6ecfd068db83e4526cc26") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  type      String   @db.VarChar(128)
+  info      Json
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a08ad074601d204e0f69da9a954")
+
+  @@index([userId], map: "IDX_a08ad074601d204e0f69da9a95")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model muted_note {
+  id     String                 @id(map: "PK_897e2eff1c0b9b64e55ca1418a4") @db.VarChar(32)
+  noteId String                 @db.VarChar(32)
+  userId String                 @db.VarChar(32)
+  reason muted_note_reason_enum
+  note   note                   @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_70ab9786313d78e4201d81cdb89")
+  user   user                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d8e07aa18c2d64e86201601aec1")
+
+  @@unique([noteId, userId], map: "IDX_a8c6bfd637d3f1d67a27c48e27")
+  @@index([reason], map: "IDX_636e977ff90b23676fb5624b25")
+  @@index([noteId], map: "IDX_70ab9786313d78e4201d81cdb8")
+  @@index([userId], map: "IDX_d8e07aa18c2d64e86201601aec")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model muting {
+  id                        String    @id(map: "PK_2e92d06c8b5c602eeb27ca9ba48") @db.VarChar(32)
+  createdAt                 DateTime  @db.Timestamptz(6)
+  muteeId                   String    @db.VarChar(32)
+  muterId                   String    @db.VarChar(32)
+  expiresAt                 DateTime? @db.Timestamptz(6)
+  user_muting_muterIdTouser user      @relation("muting_muterIdTouser", fields: [muterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_93060675b4a79a577f31d260c67")
+  user_muting_muteeIdTouser user      @relation("muting_muteeIdTouser", fields: [muteeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ec96b4fed9dae517e0dbbe0675c")
+
+  @@unique([muterId, muteeId], map: "IDX_1eb9d9824a630321a29fd3b290")
+  @@index([muterId], map: "IDX_93060675b4a79a577f31d260c6")
+  @@index([expiresAt], map: "IDX_c1fd1c3dfb0627aa36c253fd14")
+  @@index([muteeId], map: "IDX_ec96b4fed9dae517e0dbbe0675")
+  @@index([createdAt], map: "IDX_f86d57fbca33c7a4e6897490cc")
+  @@index([createdAt], map: "IDX_renote_muting_createdAt")
+  @@index([muteeId], map: "IDX_renote_muting_muteeId")
+  @@index([muterId], map: "IDX_renote_muting_muterId")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model note {
+  id                             String                @id(map: "PK_96d0c172a4fba276b1bbed43058") @db.VarChar(32)
+  createdAt                      DateTime              @db.Timestamptz(6)
+  replyId                        String?               @db.VarChar(32)
+  renoteId                       String?               @db.VarChar(32)
+  text                           String?
+  name                           String?               @db.VarChar(256)
+  cw                             String?               @db.VarChar(512)
+  userId                         String                @db.VarChar(32)
+  localOnly                      Boolean               @default(false)
+  renoteCount                    Int                   @default(0) @db.SmallInt
+  repliesCount                   Int                   @default(0) @db.SmallInt
+  reactions                      Json                  @default("{}")
+  visibility                     note_visibility_enum
+  uri                            String?               @unique(map: "IDX_153536c67d05e9adb24e99fc2b") @db.VarChar(512)
+  score                          Int                   @default(0)
+  fileIds                        String[]              @default([]) @db.VarChar(32)
+  attachedFileTypes              String[]              @default([]) @db.VarChar(256)
+  visibleUserIds                 String[]              @default([]) @db.VarChar(32)
+  mentions                       String[]              @default([]) @db.VarChar(32)
+  mentionedRemoteUsers           String                @default("[]")
+  emojis                         String[]              @default([]) @db.VarChar(128)
+  tags                           String[]              @default([]) @db.VarChar(128)
+  hasPoll                        Boolean               @default(false)
+  userHost                       String?               @db.VarChar(128)
+  replyUserId                    String?               @db.VarChar(32)
+  replyUserHost                  String?               @db.VarChar(128)
+  renoteUserId                   String?               @db.VarChar(32)
+  renoteUserHost                 String?               @db.VarChar(128)
+  url                            String?               @db.VarChar(512)
+  channelId                      String?               @db.VarChar(32)
+  threadId                       String?               @db.VarChar(256)
+  reactionAcceptance             String?               @db.VarChar(64)
+  channel_note_pining            channel_note_pining[]
+  clip_note                      clip_note[]
+  muted_note                     muted_note[]
+  note_note_replyIdTonote        note?                 @relation("note_replyIdTonote", fields: [replyId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_17cb3553c700a4985dff5a30ff5")
+  other_note_note_replyIdTonote  note[]                @relation("note_replyIdTonote")
+  note_note_renoteIdTonote       note?                 @relation("note_renoteIdTonote", fields: [renoteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_52ccc804d7c69037d558bac4c96")
+  other_note_note_renoteIdTonote note[]                @relation("note_renoteIdTonote")
+  user                           user                  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5b87d9d19127bd5d92026017a7b")
+  channel                        channel?              @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f22169eb10657bded6d875ac8f9")
+  note_favorite                  note_favorite[]
+  note_reaction                  note_reaction[]
+  note_unread                    note_unread[]
+  note_watching                  note_watching[]
+  poll                           poll?
+  poll_vote                      poll_vote[]
+  promo_note                     promo_note?
+  promo_read                     promo_read[]
+  user_note_pining               user_note_pining[]
+
+  @@index([replyId], map: "IDX_17cb3553c700a4985dff5a30ff")
+  @@index([attachedFileTypes], map: "IDX_25dfc71b0369b003a4cd434d0b")
+  @@index([fileIds], map: "IDX_51c063b6a133a9cb87145450f5")
+  @@index([renoteId], map: "IDX_52ccc804d7c69037d558bac4c9")
+  @@index([mentions], map: "IDX_54ebcb6d27222913b908d56fd8")
+  @@index([userId], map: "IDX_5b87d9d19127bd5d92026017a7")
+  @@index([userHost], map: "IDX_7125a826ab192eb27e11d358a5")
+  @@index([visibleUserIds], map: "IDX_796a8c03959361f97dc2be1d5c")
+  @@index([tags], map: "IDX_88937d94d7443d9a99a76fa5c0")
+  @@index([mentions], map: "IDX_NOTE_MENTIONS", type: Gin)
+  @@index([tags], map: "IDX_NOTE_TAGS", type: Gin)
+  @@index([visibleUserIds], map: "IDX_NOTE_VISIBLE_USER_IDS", type: Gin)
+  @@index([threadId], map: "IDX_d4ebdef929896d6dc4a3c5bb48")
+  @@index([createdAt], map: "IDX_e7c0567f5261063592f022e9b5")
+  @@index([channelId], map: "IDX_f22169eb10657bded6d875ac8f")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model note_favorite {
+  id        String   @id(map: "PK_af0da35a60b9fa4463a62082b36") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  noteId    String   @db.VarChar(32)
+  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e00498f180193423c992bc4370")
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_47f4b1892f5d6ba8efb3057d81a")
+
+  @@unique([userId, noteId], map: "IDX_0f4fb9ad355f3effff221ef245")
+  @@index([userId], map: "IDX_47f4b1892f5d6ba8efb3057d81")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model note_reaction {
+  id        String   @id(map: "PK_767ec729b108799b587a3fcc9cf") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  noteId    String   @db.VarChar(32)
+  reaction  String   @db.VarChar(260)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_13761f64257f40c5636d0ff95ee")
+  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_45145e4953780f3cd5656f0ea6a")
+
+  @@unique([userId, noteId], map: "IDX_ad0c221b25672daf2df320a817")
+  @@index([createdAt], map: "IDX_01f4581f114e0ebd2bbb876f0b")
+  @@index([userId], map: "IDX_13761f64257f40c5636d0ff95e")
+  @@index([noteId], map: "IDX_45145e4953780f3cd5656f0ea6")
+}
+
+model note_thread_muting {
+  id        String   @id(map: "PK_ec5936d94d1a0369646d12a3a47") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  threadId  String   @db.VarChar(256)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_29c11c7deb06615076f8c95b80a")
+
+  @@unique([userId, threadId], map: "IDX_ae7aab18a2641d3e5f25e0c4ea")
+  @@index([userId], map: "IDX_29c11c7deb06615076f8c95b80")
+  @@index([threadId], map: "IDX_c426394644267453e76f036926")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model note_unread {
+  id            String  @id(map: "PK_1904eda61a784f57e6e51fa9c1f") @db.VarChar(32)
+  userId        String  @db.VarChar(32)
+  noteId        String  @db.VarChar(32)
+  noteUserId    String  @db.VarChar(32)
+  isSpecified   Boolean
+  isMentioned   Boolean
+  noteChannelId String? @db.VarChar(32)
+  user          user    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_56b0166d34ddae49d8ef7610bb9")
+  note          note    @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e637cba4dc4410218c4251260e4")
+
+  @@unique([userId, noteId], map: "IDX_d908433a4953cc13216cd9c274")
+  @@index([isMentioned], map: "IDX_25b1dd384bec391b07b74b861c")
+  @@index([noteUserId], map: "IDX_29e8c1d579af54d4232939f994")
+  @@index([userId], map: "IDX_56b0166d34ddae49d8ef7610bb")
+  @@index([noteChannelId], map: "IDX_6a57f051d82c6d4036c141e107")
+  @@index([isSpecified], map: "IDX_89a29c9237b8c3b6b3cbb4cb30")
+  @@index([noteId], map: "IDX_e637cba4dc4410218c4251260e")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model note_watching {
+  id         String   @id(map: "PK_49286fdb23725945a74aa27d757") @db.VarChar(32)
+  createdAt  DateTime @db.Timestamptz(6)
+  userId     String   @db.VarChar(32)
+  noteId     String   @db.VarChar(32)
+  noteUserId String   @db.VarChar(32)
+  note       note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_03e7028ab8388a3f5e3ce2a8619")
+  user       user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b0134ec406e8d09a540f8182888")
+
+  @@unique([userId, noteId], map: "IDX_a42c93c69989ce1d09959df4cf")
+  @@index([noteId], map: "IDX_03e7028ab8388a3f5e3ce2a861")
+  @@index([createdAt], map: "IDX_318cdf42a9cfc11f479bd802bb")
+  @@index([noteUserId], map: "IDX_44499765eec6b5489d72c4253b")
+  @@index([userId], map: "IDX_b0134ec406e8d09a540f818288")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model page {
+  id                  String               @id(map: "PK_742f4117e065c5b6ad21b37ba1f") @db.VarChar(32)
+  createdAt           DateTime             @db.Timestamptz(6)
+  updatedAt           DateTime             @db.Timestamptz(6)
+  title               String               @db.VarChar(256)
+  name                String               @db.VarChar(256)
+  summary             String?              @db.VarChar(256)
+  alignCenter         Boolean
+  font                String               @db.VarChar(32)
+  userId              String               @db.VarChar(32)
+  eyeCatchingImageId  String?              @db.VarChar(32)
+  content             Json                 @default("[]")
+  variables           Json                 @default("[]")
+  visibility          page_visibility_enum
+  visibleUserIds      String[]             @default([]) @db.VarChar(32)
+  likedCount          Int                  @default(0)
+  hideTitleWhenPinned Boolean              @default(false)
+  script              String               @default("") @db.VarChar(16384)
+  drive_file          drive_file?          @relation(fields: [eyeCatchingImageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9ca79ad939bf06066b81c9d3aa")
+  user                user                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ae1d917992dd0c9d9bbdad06c4a")
+  page_like           page_like[]
+  user_profile        user_profile?
+
+  @@unique([userId, name], map: "IDX_2133ef8317e4bdb839c0dcbf13")
+  @@index([visibleUserIds], map: "IDX_90148bbc2bf0854428786bfc15")
+  @@index([userId], map: "IDX_ae1d917992dd0c9d9bbdad06c4")
+  @@index([updatedAt], map: "IDX_af639b066dfbca78b01a920f8a")
+  @@index([name], map: "IDX_b82c19c08afb292de4600d99e4")
+  @@index([createdAt], map: "IDX_fbb4297c927a9b85e9cefa2eb1")
+}
+
+model page_like {
+  id        String   @id(map: "PK_813f034843af992d3ae0f43c64c") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  pageId    String   @db.VarChar(32)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e61efab7f88dbb79c9166dbb48")
+  page      page     @relation(fields: [pageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cf8782626dced3176038176a847")
+
+  @@unique([userId, pageId], map: "IDX_4ce6fb9c70529b4c8ac46c9bfa")
+  @@index([userId], map: "IDX_0e61efab7f88dbb79c9166dbb4")
+}
+
+model password_reset_request {
+  id        String   @id(map: "PK_fcf4b02eae1403a2edaf87fd074") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  token     String   @unique(map: "IDX_0b575fa9a4cfe638a925949285") @db.VarChar(256)
+  userId    String   @db.VarChar(32)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_4bb7fd4a34492ae0e6cc8d30ac8")
+
+  @@index([userId], map: "IDX_4bb7fd4a34492ae0e6cc8d30ac")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model poll {
+  noteId         String                   @id(map: "PK_da851e06d0dfe2ef397d8b1bf1b") @unique(map: "UQ_da851e06d0dfe2ef397d8b1bf1b") @db.VarChar(32)
+  expiresAt      DateTime?                @db.Timestamptz(6)
+  multiple       Boolean
+  choices        String[]                 @default([]) @db.VarChar(256)
+  votes          Int[]
+  noteVisibility poll_notevisibility_enum
+  userId         String                   @db.VarChar(32)
+  userHost       String?                  @db.VarChar(128)
+  note           note                     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_da851e06d0dfe2ef397d8b1bf1b")
+
+  @@index([userId], map: "IDX_0610ebcfcfb4a18441a9bcdab2")
+  @@index([userHost], map: "IDX_7fa20a12319c7f6dc3aed98c0a")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model poll_vote {
+  id        String   @id(map: "PK_fd002d371201c472490ba89c6a0") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  noteId    String   @db.VarChar(32)
+  choice    Int
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_66d2bd2ee31d14bcc23069a89f8")
+  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_aecfbd5ef60374918e63ee95fa7")
+
+  @@unique([userId, noteId, choice], map: "IDX_50bd7164c5b78f1f4a42c4d21f")
+  @@index([createdAt], map: "IDX_0fb627e1c2f753262a74f0562d")
+  @@index([userId], map: "IDX_66d2bd2ee31d14bcc23069a89f")
+  @@index([noteId], map: "IDX_aecfbd5ef60374918e63ee95fa")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model promo_note {
+  noteId    String   @id(map: "PK_e263909ca4fe5d57f8d4230dd5c") @unique(map: "UQ_e263909ca4fe5d57f8d4230dd5c") @db.VarChar(32)
+  expiresAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e263909ca4fe5d57f8d4230dd5c")
+
+  @@index([userId], map: "IDX_83f0862e9bae44af52ced7099e")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model promo_read {
+  id        String   @id(map: "PK_61917c1541002422b703318b7c9") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  noteId    String   @db.VarChar(32)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9657d55550c3d37bfafaf7d4b05")
+  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a46a1a603ecee695d7db26da5f4")
+
+  @@unique([userId, noteId], map: "IDX_2882b8a1a07c7d281a98b6db16")
+  @@index([userId], map: "IDX_9657d55550c3d37bfafaf7d4b0")
+}
+
+model registration_ticket {
+  id                                         String    @id(map: "PK_f11696b6fafcf3662d4292734f8") @db.VarChar(32)
+  createdAt                                  DateTime  @db.Timestamptz(6)
+  code                                       String    @unique(map: "IDX_0ff69e8dfa9fe31bb4a4660f59") @db.VarChar(64)
+  expiresAt                                  DateTime? @db.Timestamptz(6)
+  usedAt                                     DateTime? @db.Timestamptz(6)
+  pendingUserId                              String?   @db.VarChar(32)
+  createdById                                String?   @db.VarChar(32)
+  usedById                                   String?   @unique(map: "UQ_b6f93f2f30bdbb9a5ebdc7c7189") @db.VarChar(32)
+  user_registration_ticket_usedByIdTouser    user?     @relation("registration_ticket_usedByIdTouser", fields: [usedById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b6f93f2f30bdbb9a5ebdc7c7189")
+  user_registration_ticket_createdByIdTouser user?     @relation("registration_ticket_createdByIdTouser", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_beba993576db0261a15364ea96e")
+
+  @@index([usedById], map: "IDX_b6f93f2f30bdbb9a5ebdc7c718")
+  @@index([createdById], map: "IDX_beba993576db0261a15364ea96")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model registry_item {
+  id        String   @id(map: "PK_64b3f7e6008b4d89b826cd3af95") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  updatedAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  key       String   @db.VarChar(1024)
+  scope     String[] @default([]) @db.VarChar(1024)
+  domain    String?  @db.VarChar(512)
+  value     Json?    @default("{}")
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fb9d21ba0abb83223263df6bcb3")
+
+  @@index([domain], map: "IDX_0a72bdfcdb97c0eca11fe7ecad")
+  @@index([scope], map: "IDX_22baca135bb8a3ea1a83d13df3")
+  @@index([userId], map: "IDX_fb9d21ba0abb83223263df6bcb")
+}
+
+model relay {
+  id     String            @id(map: "PK_78ebc9cfddf4292633b7ba57aee") @db.VarChar(32)
+  inbox  String            @unique(map: "IDX_0d9a1738f2cf7f3b1c3334dfab") @db.VarChar(512)
+  status relay_status_enum
+}
+
+model renote_muting {
+  id        String   @id(map: "PK_renoteMuting_id") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  muteeId   String   @db.VarChar(32)
+  muterId   String   @db.VarChar(32)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model retention_aggregation {
+  id         String   @id(map: "PK_22aad3e8640b15fb3b90ee02d18") @db.VarChar(32)
+  createdAt  DateTime @db.Timestamptz(6)
+  userIds    String[] @db.VarChar(32)
+  data       Json     @default("{}")
+  updatedAt  DateTime @db.Timestamptz(6)
+  usersCount Int
+  dateKey    String   @unique(map: "IDX_f7c3576b37bd2eec966ae24477") @db.VarChar(512)
+
+  @@index([createdAt], map: "IDX_09f4e5b9e4a2f268d3e284e4b3")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model reversi_game {
+  id                              String    @id(map: "PK_76b30eeba71b1193ad7c5311c3f") @db.VarChar(32)
+  createdAt                       DateTime  @db.Timestamptz(6)
+  startedAt                       DateTime? @db.Timestamptz(6)
+  user1Id                         String    @db.VarChar(32)
+  user2Id                         String    @db.VarChar(32)
+  user1Accepted                   Boolean   @default(false)
+  user2Accepted                   Boolean   @default(false)
+  black                           Int?
+  isStarted                       Boolean   @default(false)
+  isEnded                         Boolean   @default(false)
+  winnerId                        String?   @db.VarChar(32)
+  surrendered                     String?   @db.VarChar(32)
+  logs                            Json      @default("[]")
+  map                             String[]  @db.VarChar(64)
+  bw                              String    @db.VarChar(32)
+  isLlotheo                       Boolean   @default(false)
+  canPutEverywhere                Boolean   @default(false)
+  loopedBoard                     Boolean   @default(false)
+  form1                           Json?
+  form2                           Json?
+  crc32                           String?   @db.VarChar(32)
+  user_reversi_game_user2IdTouser user      @relation("reversi_game_user2IdTouser", fields: [user2Id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6649a4e8c5d5cf32fb03b5da9f6")
+  user_reversi_game_user1IdTouser user      @relation("reversi_game_user1IdTouser", fields: [user1Id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f7467510c60a45ce5aca6292743")
+
+  @@index([createdAt], map: "IDX_b46ec40746efceac604142be1c")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model reversi_matching {
+  id                                   String   @id(map: "PK_880bd0afbab232f21c8b9d146cf") @db.VarChar(32)
+  createdAt                            DateTime @db.Timestamptz(6)
+  parentId                             String   @db.VarChar(32)
+  childId                              String   @db.VarChar(32)
+  user_reversi_matching_parentIdTouser user     @relation("reversi_matching_parentIdTouser", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3b25402709dd9882048c2bbade0")
+  user_reversi_matching_childIdTouser  user     @relation("reversi_matching_childIdTouser", fields: [childId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e247b23a3c9b45f89ec1299d066")
+
+  @@index([parentId], map: "IDX_3b25402709dd9882048c2bbade")
+  @@index([createdAt], map: "IDX_b604d92d6c7aec38627f6eaf16")
+  @@index([childId], map: "IDX_e247b23a3c9b45f89ec1299d06")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model role {
+  id                        String            @id(map: "PK_b36bcfe02fc8de3c57a8b2391c2") @db.VarChar(32)
+  createdAt                 DateTime          @db.Timestamptz(6)
+  updatedAt                 DateTime          @db.Timestamptz(6)
+  name                      String            @db.VarChar(256)
+  description               String            @db.VarChar(1024)
+  isPublic                  Boolean           @default(false)
+  isModerator               Boolean           @default(false)
+  isAdministrator           Boolean           @default(false)
+  policies                  Json              @default("{}")
+  color                     String?           @db.VarChar(256)
+  canEditMembersByModerator Boolean           @default(false)
+  lastUsedAt                DateTime          @db.Timestamptz(6)
+  target                    role_target_enum  @default(manual)
+  condFormula               Json              @default("{}")
+  iconUrl                   String?           @db.VarChar(512)
+  asBadge                   Boolean           @default(false)
+  displayOrder              Int               @default(0)
+  isExplorable              Boolean           @default(false)
+  role_assignment           role_assignment[]
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model role_assignment {
+  id        String    @id(map: "PK_7e79671a8a5db18936173148cb4") @db.VarChar(32)
+  createdAt DateTime  @db.Timestamptz(6)
+  userId    String    @db.VarChar(32)
+  roleId    String    @db.VarChar(32)
+  expiresAt DateTime? @db.Timestamptz(6)
+  user      user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_db5b72c16227c97ca88734d5c2b")
+  role      role      @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f0de67fd09cd3cd0aabca79994d")
+
+  @@unique([userId, roleId], map: "IDX_0953deda7ce6e1448e935859e5")
+  @@index([expiresAt], map: "IDX_539b6c08c05067599743bb6389")
+  @@index([userId], map: "IDX_db5b72c16227c97ca88734d5c2")
+  @@index([roleId], map: "IDX_f0de67fd09cd3cd0aabca79994")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model signin {
+  id        String   @id(map: "PK_9e96ddc025712616fc492b3b588") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  ip        String   @db.VarChar(128)
+  headers   Json
+  success   Boolean
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c308dbdc50d94dc625670055f7")
+
+  @@index([userId], map: "IDX_2c308dbdc50d94dc625670055f")
+}
+
+model sw_subscription {
+  id              String   @id(map: "PK_e8f763631530051b95eb6279b91") @db.VarChar(32)
+  createdAt       DateTime @db.Timestamptz(6)
+  userId          String   @db.VarChar(32)
+  endpoint        String   @db.VarChar(512)
+  auth            String   @db.VarChar(256)
+  publickey       String   @db.VarChar(128)
+  sendReadMessage Boolean  @default(false)
+  user            user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_97754ca6f2baff9b4abb7f853dd")
+
+  @@index([userId], map: "IDX_97754ca6f2baff9b4abb7f853d")
+}
+
+model used_username {
+  username  String   @id(map: "PK_78fd79d2d24c6ac2f4cc9a31a5d") @db.VarChar(128)
+  createdAt DateTime @db.Timestamptz(6)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user {
+  id                                                        String                   @id(map: "PK_cace4a159ff9f2512dd42373760") @db.VarChar(32)
+  createdAt                                                 DateTime                 @db.Timestamptz(6)
+  updatedAt                                                 DateTime?                @db.Timestamptz(6)
+  lastFetchedAt                                             DateTime?                @db.Timestamptz(6)
+  username                                                  String                   @db.VarChar(128)
+  usernameLower                                             String                   @db.VarChar(128)
+  name                                                      String?                  @db.VarChar(128)
+  followersCount                                            Int                      @default(0)
+  followingCount                                            Int                      @default(0)
+  notesCount                                                Int                      @default(0)
+  avatarId                                                  String?                  @unique(map: "REL_58f5c71eaab331645112cf8cfa") @db.VarChar(32)
+  bannerId                                                  String?                  @unique(map: "REL_afc64b53f8db3707ceb34eb28e") @db.VarChar(32)
+  tags                                                      String[]                 @default([]) @db.VarChar(128)
+  isSuspended                                               Boolean                  @default(false)
+  isLocked                                                  Boolean                  @default(false)
+  isBot                                                     Boolean                  @default(false)
+  isCat                                                     Boolean                  @default(false)
+  isRoot                                                    Boolean                  @default(false)
+  emojis                                                    String[]                 @default([]) @db.VarChar(128)
+  host                                                      String?                  @db.VarChar(128)
+  inbox                                                     String?                  @db.VarChar(512)
+  sharedInbox                                               String?                  @db.VarChar(512)
+  featured                                                  String?                  @db.VarChar(512)
+  uri                                                       String?                  @db.VarChar(512)
+  token                                                     String?                  @unique(map: "IDX_a854e557b1b14814750c7c7b0c") @db.Char(16)
+  isExplorable                                              Boolean                  @default(true)
+  followersUri                                              String?                  @db.VarChar(512)
+  lastActiveDate                                            DateTime?                @db.Timestamptz(6)
+  hideOnlineStatus                                          Boolean                  @default(false)
+  isDeleted                                                 Boolean                  @default(false)
+  avatarUrl                                                 String?                  @db.VarChar(512)
+  bannerUrl                                                 String?                  @db.VarChar(512)
+  avatarBlurhash                                            String?                  @db.VarChar(128)
+  bannerBlurhash                                            String?                  @db.VarChar(128)
+  movedToUri                                                String?                  @db.VarChar(512)
+  alsoKnownAs                                               String?
+  movedAt                                                   DateTime?                @db.Timestamptz(6)
+  abuse_user_report_abuse_user_report_reporterIdTouser      abuse_user_report[]      @relation("abuse_user_report_reporterIdTouser")
+  abuse_user_report_abuse_user_report_assigneeIdTouser      abuse_user_report[]      @relation("abuse_user_report_assigneeIdTouser")
+  abuse_user_report_abuse_user_report_targetUserIdTouser    abuse_user_report[]      @relation("abuse_user_report_targetUserIdTouser")
+  access_token                                              access_token[]
+  announcement_read                                         announcement_read[]
+  antenna                                                   antenna[]
+  app                                                       app[]
+  attestation_challenge                                     attestation_challenge[]
+  auth_session                                              auth_session[]
+  blocking_blocking_blockerIdTouser                         blocking[]               @relation("blocking_blockerIdTouser")
+  blocking_blocking_blockeeIdTouser                         blocking[]               @relation("blocking_blockeeIdTouser")
+  channel                                                   channel[]
+  channel_favorite                                          channel_favorite[]
+  channel_following                                         channel_following[]
+  clip                                                      clip[]
+  clip_favorite                                             clip_favorite[]
+  drive_file_drive_file_userIdTouser                        drive_file[]             @relation("drive_file_userIdTouser")
+  drive_folder                                              drive_folder[]
+  flash                                                     flash[]
+  flash_like                                                flash_like[]
+  follow_request_follow_request_followeeIdTouser            follow_request[]         @relation("follow_request_followeeIdTouser")
+  follow_request_follow_request_followerIdTouser            follow_request[]         @relation("follow_request_followerIdTouser")
+  following_following_followeeIdTouser                      following[]              @relation("following_followeeIdTouser")
+  following_following_followerIdTouser                      following[]              @relation("following_followerIdTouser")
+  gallery_like                                              gallery_like[]
+  gallery_post                                              gallery_post[]
+  messaging_message_messaging_message_userIdTouser          messaging_message[]      @relation("messaging_message_userIdTouser")
+  messaging_message_messaging_message_recipientIdTouser     messaging_message[]      @relation("messaging_message_recipientIdTouser")
+  meta                                                      meta[]
+  moderation_log                                            moderation_log[]
+  muted_note                                                muted_note[]
+  muting_muting_muterIdTouser                               muting[]                 @relation("muting_muterIdTouser")
+  muting_muting_muteeIdTouser                               muting[]                 @relation("muting_muteeIdTouser")
+  note                                                      note[]
+  note_favorite                                             note_favorite[]
+  note_reaction                                             note_reaction[]
+  note_thread_muting                                        note_thread_muting[]
+  note_unread                                               note_unread[]
+  note_watching                                             note_watching[]
+  page                                                      page[]
+  page_like                                                 page_like[]
+  password_reset_request                                    password_reset_request[]
+  poll_vote                                                 poll_vote[]
+  promo_read                                                promo_read[]
+  registration_ticket_registration_ticket_usedByIdTouser    registration_ticket?     @relation("registration_ticket_usedByIdTouser")
+  registration_ticket_registration_ticket_createdByIdTouser registration_ticket[]    @relation("registration_ticket_createdByIdTouser")
+  registry_item                                             registry_item[]
+  reversi_game_reversi_game_user2IdTouser                   reversi_game[]           @relation("reversi_game_user2IdTouser")
+  reversi_game_reversi_game_user1IdTouser                   reversi_game[]           @relation("reversi_game_user1IdTouser")
+  reversi_matching_reversi_matching_parentIdTouser          reversi_matching[]       @relation("reversi_matching_parentIdTouser")
+  reversi_matching_reversi_matching_childIdTouser           reversi_matching[]       @relation("reversi_matching_childIdTouser")
+  role_assignment                                           role_assignment[]
+  signin                                                    signin[]
+  sw_subscription                                           sw_subscription[]
+  drive_file_user_avatarIdTodrive_file                      drive_file?              @relation("user_avatarIdTodrive_file", fields: [avatarId], references: [id], onUpdate: NoAction, map: "FK_58f5c71eaab331645112cf8cfa5")
+  drive_file_user_bannerIdTodrive_file                      drive_file?              @relation("user_bannerIdTodrive_file", fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_afc64b53f8db3707ceb34eb28e2")
+  user_group                                                user_group[]
+  user_group_invitation                                     user_group_invitation[]
+  user_group_invite                                         user_group_invite[]
+  user_group_joining                                        user_group_joining[]
+  user_keypair                                              user_keypair?
+  user_list                                                 user_list[]
+  user_list_favorite                                        user_list_favorite[]
+  user_list_joining                                         user_list_joining[]
+  user_memo_user_memo_userIdTouser                          user_memo[]              @relation("user_memo_userIdTouser")
+  user_memo_user_memo_targetUserIdTouser                    user_memo[]              @relation("user_memo_targetUserIdTouser")
+  user_note_pining                                          user_note_pining[]
+  user_profile                                              user_profile?
+  user_publickey                                            user_publickey?
+  user_security_key                                         user_security_key[]
+  webhook                                                   webhook[]
+
+  @@unique([usernameLower, host], map: "IDX_5deb01ae162d1d70b80d064c27")
+  @@index([host], map: "IDX_3252a5df8d5bbd16b281f7799e")
+  @@index([updatedAt], map: "IDX_80ca6e6ef65fb9ef34ea8c90f4")
+  @@index([usernameLower], map: "IDX_a27b942a0d6dcff90e3ee9b5e8")
+  @@index([uri], map: "IDX_be623adaa4c566baf5d29ce0c8")
+  @@index([lastActiveDate], map: "IDX_c8cc87bd0f2f4487d17c651fbf")
+  @@index([isExplorable], map: "IDX_d5a1b83c7cab66f167e6888188")
+  @@index([createdAt], map: "IDX_e11e649824a45d8ed01d597fd9")
+  @@index([tags], map: "IDX_fa99d777623947a5b05f394cae")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_group {
+  id                    String                  @id(map: "PK_3c29fba6fe013ec8724378ce7c9") @db.VarChar(32)
+  createdAt             DateTime                @db.Timestamptz(6)
+  name                  String                  @db.VarChar(256)
+  userId                String                  @db.VarChar(32)
+  isPrivate             Boolean                 @default(false)
+  messaging_message     messaging_message[]
+  user                  user                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3d6b372788ab01be58853003c93")
+  user_group_invitation user_group_invitation[]
+  user_group_invite     user_group_invite[]
+  user_group_joining    user_group_joining[]
+
+  @@index([createdAt], map: "IDX_20e30aa35180e317e133d75316")
+  @@index([userId], map: "IDX_3d6b372788ab01be58853003c9")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_group_invitation {
+  id          String     @id(map: "PK_160c63ec02bf23f6a5c5e8140d6") @db.VarChar(32)
+  createdAt   DateTime   @db.Timestamptz(6)
+  userId      String     @db.VarChar(32)
+  userGroupId String     @db.VarChar(32)
+  user_group  user_group @relation(fields: [userGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5cc8c468090e129857e9fecce5a")
+  user        user       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bfbc6305547539369fe73eb144a")
+
+  @@unique([userId, userGroupId], map: "IDX_e9793f65f504e5a31fbaedbf2f")
+  @@index([userGroupId], map: "IDX_5cc8c468090e129857e9fecce5")
+  @@index([userId], map: "IDX_bfbc6305547539369fe73eb144")
+}
+
+model user_group_invite {
+  id          String     @id(map: "PK_3893884af0d3a5f4d01e7921a97") @db.VarChar(32)
+  createdAt   DateTime   @db.Timestamptz(6)
+  userId      String     @db.VarChar(32)
+  userGroupId String     @db.VarChar(32)
+  user        user       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1039988afa3bf991185b277fe03")
+  user_group  user_group @relation(fields: [userGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e10924607d058004304611a436a")
+
+  @@unique([userId, userGroupId], map: "IDX_78787741f9010886796f2320a4")
+  @@index([userId], map: "IDX_1039988afa3bf991185b277fe0")
+  @@index([userGroupId], map: "IDX_e10924607d058004304611a436")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_group_joining {
+  id          String     @id(map: "PK_15f2425885253c5507e1599cfe7") @db.VarChar(32)
+  createdAt   DateTime   @db.Timestamptz(6)
+  userId      String     @db.VarChar(32)
+  userGroupId String     @db.VarChar(32)
+  user_group  user_group @relation(fields: [userGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_67dc758bc0566985d1b3d399865")
+  user        user       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f3a1b4bd0c7cabba958a0c0b231")
+
+  @@unique([userId, userGroupId], map: "IDX_d9ecaed8c6dc43f3592c229282")
+  @@index([userGroupId], map: "IDX_67dc758bc0566985d1b3d39986")
+  @@index([userId], map: "IDX_f3a1b4bd0c7cabba958a0c0b23")
+}
+
+model user_ip {
+  id        Int      @id(map: "PK_2c44ddfbf7c0464d028dcef325e") @default(autoincrement())
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  ip        String   @db.VarChar(128)
+
+  @@unique([userId, ip], map: "IDX_361b500e06721013c124b7b6c5")
+  @@index([userId], map: "IDX_7f7f1c66f48e9a8e18a33bc515")
+}
+
+model user_keypair {
+  userId     String @id(map: "PK_f4853eb41ab722fe05f81cedeb6") @unique(map: "UQ_f4853eb41ab722fe05f81cedeb6") @db.VarChar(32)
+  publicKey  String @db.VarChar(4096)
+  privateKey String @db.VarChar(4096)
+  user       user   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f4853eb41ab722fe05f81cedeb6")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_list {
+  id                 String               @id(map: "PK_87bab75775fd9b1ff822b656402") @db.VarChar(32)
+  createdAt          DateTime             @db.Timestamptz(6)
+  userId             String               @db.VarChar(32)
+  name               String               @db.VarChar(128)
+  isPublic           Boolean              @default(false)
+  antenna            antenna[]
+  user               user                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b7fcefbdd1c18dce86687531f99")
+  user_list_favorite user_list_favorite[]
+  user_list_joining  user_list_joining[]
+
+  @@index([isPublic], map: "IDX_48a00f08598662b9ca540521eb")
+  @@index([userId], map: "IDX_b7fcefbdd1c18dce86687531f9")
+}
+
+model user_list_favorite {
+  id         String    @id(map: "PK_c0974b21e18502a4c8178e09fe6") @db.VarChar(32)
+  createdAt  DateTime  @db.Timestamptz(6)
+  userId     String    @db.VarChar(32)
+  userListId String    @db.VarChar(32)
+  user       user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_016f613dc4feb807e03e3e7da92")
+  user_list  user_list @relation(fields: [userListId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_4d52b20bfe32c8552e7a61e80d2")
+
+  @@unique([userId, userListId], map: "IDX_d6765a8c2a4c17c33f9d7f948b")
+  @@index([userId], map: "IDX_016f613dc4feb807e03e3e7da9")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_list_joining {
+  id         String    @id(map: "PK_11abb3768da1c5f8de101c9df45") @db.VarChar(32)
+  createdAt  DateTime  @db.Timestamptz(6)
+  userId     String    @db.VarChar(32)
+  userListId String    @db.VarChar(32)
+  user_list  user_list @relation(fields: [userListId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_605472305f26818cc93d1baaa74")
+  user       user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d844bfc6f3f523a05189076efaa")
+
+  @@unique([userId, userListId], map: "IDX_90f7da835e4c10aca6853621e1")
+  @@index([userListId], map: "IDX_605472305f26818cc93d1baaa7")
+  @@index([userId], map: "IDX_d844bfc6f3f523a05189076efa")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_memo {
+  id                                String @id(map: "PK_e9aaa58f7d3699a84d79078f4d9") @db.VarChar(32)
+  userId                            String @db.VarChar(32)
+  targetUserId                      String @db.VarChar(32)
+  memo                              String @db.VarChar(2048)
+  user_user_memo_userIdTouser       user   @relation("user_memo_userIdTouser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_650b49c5639b5840ee6a2b8f83e")
+  user_user_memo_targetUserIdTouser user   @relation("user_memo_targetUserIdTouser", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_66ac4a82894297fd09ba61f3d35")
+
+  @@unique([userId, targetUserId], map: "IDX_faef300913c738265638ba3ebc")
+  @@index([userId], map: "IDX_650b49c5639b5840ee6a2b8f83")
+  @@index([targetUserId], map: "IDX_66ac4a82894297fd09ba61f3d3")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_note_pining {
+  id        String   @id(map: "PK_a6a2dad4ae000abce2ea9d9b103") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  userId    String   @db.VarChar(32)
+  noteId    String   @db.VarChar(32)
+  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_68881008f7c3588ad7ecae471cf")
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bfbc6f79ba4007b4ce5097f08d6")
+
+  @@unique([userId, noteId], map: "IDX_410cd649884b501c02d6e72738")
+  @@index([userId], map: "IDX_bfbc6f79ba4007b4ce5097f08d")
+}
+
+model user_pending {
+  id        String   @id(map: "PK_d4c84e013c98ec02d19b8fbbafa") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
+  code      String   @unique(map: "IDX_4e5c4c99175638ec0761714ab0") @db.VarChar(128)
+  username  String   @db.VarChar(128)
+  email     String   @db.VarChar(128)
+  password  String   @db.VarChar(128)
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_profile {
+  userId                   String                                      @id(map: "PK_51cb79b5555effaf7d69ba1cff9") @unique(map: "UQ_51cb79b5555effaf7d69ba1cff9") @db.VarChar(32)
+  location                 String?                                     @db.VarChar(128)
+  birthday                 String?                                     @db.Char(10)
+  description              String?                                     @db.VarChar(2048)
+  fields                   Json                                        @default("[]")
+  url                      String?                                     @db.VarChar(512)
+  email                    String?                                     @db.VarChar(128)
+  emailVerifyCode          String?                                     @db.VarChar(128)
+  emailVerified            Boolean                                     @default(false)
+  twoFactorTempSecret      String?                                     @db.VarChar(128)
+  twoFactorSecret          String?                                     @db.VarChar(128)
+  twoFactorEnabled         Boolean                                     @default(false)
+  password                 String?                                     @db.VarChar(128)
+  clientData               Json                                        @default("{}")
+  autoAcceptFollowed       Boolean                                     @default(false)
+  alwaysMarkNsfw           Boolean                                     @default(false)
+  carefulBot               Boolean                                     @default(false)
+  userHost                 String?                                     @db.VarChar(128)
+  securityKeysAvailable    Boolean                                     @default(false)
+  usePasswordLessLogin     Boolean                                     @default(false)
+  pinnedPageId             String?                                     @unique(map: "UQ_6dc44f1ceb65b1e72bacef2ca27") @db.VarChar(32)
+  room                     Json                                        @default("{}")
+  injectFeaturedNote       Boolean                                     @default(true)
+  enableWordMute           Boolean                                     @default(false)
+  mutedWords               Json                                        @default("[]")
+  mutingNotificationTypes  user_profile_mutingnotificationtypes_enum[] @default([])
+  noCrawle                 Boolean                                     @default(false)
+  receiveAnnouncementEmail Boolean                                     @default(true)
+  emailNotificationTypes   Json                                        @default("[\"follow\", \"receiveFollowRequest\"]")
+  lang                     String?                                     @db.VarChar(32)
+  mutedInstances           Json                                        @default("[]")
+  publicReactions          Boolean                                     @default(true)
+  ffVisibility             user_profile_ffvisibility_enum              @default(public)
+  autoSensitive            Boolean                                     @default(false)
+  moderationNote           String                                      @default("") @db.VarChar(8192)
+  achievements             Json                                        @default("[]")
+  loggedInDates            String[]                                    @default([]) @db.VarChar(32)
+  preventAiLearning        Boolean                                     @default(true)
+  user                     user                                        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_51cb79b5555effaf7d69ba1cff9")
+  page                     page?                                       @relation(fields: [pinnedPageId], references: [id], onUpdate: NoAction, map: "FK_6dc44f1ceb65b1e72bacef2ca27")
+
+  @@index([enableWordMute], map: "IDX_3befe6f999c86aff06eb0257b4")
+  @@index([userHost], map: "IDX_dce530b98e454793dac5ec2f5a")
+}
+
+model user_publickey {
+  userId String @id(map: "PK_10c146e4b39b443ede016f6736d") @unique(map: "UQ_10c146e4b39b443ede016f6736d") @db.VarChar(32)
+  keyId  String @unique(map: "IDX_171e64971c780ebd23fae140bb") @db.VarChar(256)
+  keyPem String @db.VarChar(4096)
+  user   user   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_10c146e4b39b443ede016f6736d")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_security_key {
+  id        String   @id(map: "PK_3e508571121ab39c5f85d10c166") @db.VarChar
+  userId    String   @db.VarChar(32)
+  publicKey String   @db.VarChar
+  lastUsed  DateTime @db.Timestamptz(6)
+  name      String   @db.VarChar(30)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ff9ca3b5f3ee3d0681367a9b447")
+
+  @@index([publicKey], map: "IDX_0d7718e562dcedd0aa5cf2c9f7")
+  @@index([userId], map: "IDX_ff9ca3b5f3ee3d0681367a9b44")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model webhook {
+  id           String    @id(map: "PK_e6765510c2d078db49632b59020") @db.VarChar(32)
+  createdAt    DateTime  @db.Timestamptz(6)
+  userId       String    @db.VarChar(32)
+  name         String    @db.VarChar(128)
+  on           String[]  @default([]) @db.VarChar(128)
+  url          String    @db.VarChar(1024)
+  secret       String    @db.VarChar(1024)
+  active       Boolean   @default(true)
+  latestSentAt DateTime? @db.Timestamptz(6)
+  latestStatus Int?
+  user         user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f272c8c8805969e6a6449c77b3c")
+
+  @@index([active], map: "IDX_5a056076f76b2efe08216ba655")
+  @@index([on], map: "IDX_8063a0586ed1dfbe86e982d961")
+  @@index([userId], map: "IDX_f272c8c8805969e6a6449c77b3")
+}
+
+enum antenna_src_enum {
+  home
+  all
+  users
+  list
+}
+
+enum log_level_enum {
+  error
+  warning
+  info
+  success
+  debug
+}
+
+enum meta_sensitivemediadetection_enum {
+  none
+  all
+  local
+  remote
+}
+
+enum meta_sensitivemediadetectionsensitivity_enum {
+  medium
+  low
+  high
+  veryLow
+  veryHigh
+}
+
+enum muted_note_reason_enum {
+  word
+  manual
+  spam
+  other
+}
+
+enum note_visibility_enum {
+  public
+  home
+  followers
+  specified
+}
+
+enum notification_type_enum {
+  follow
+  mention
+  reply
+  renote
+  quote
+  reaction
+  pollVote
+  pollEnded
+  receiveFollowRequest
+  followRequestAccepted
+  groupInvited
+  achievementEarned
+  app
+}
+
+enum page_visibility_enum {
+  public
+  followers
+  specified
+}
+
+enum poll_notevisibility_enum {
+  public
+  home
+  followers
+  specified
+}
+
+enum relay_status_enum {
+  requesting
+  accepted
+  rejected
+}
+
+enum role_target_enum {
+  manual
+  conditional
+}
+
+enum user_profile_ffvisibility_enum {
+  public
+  followers
+  private
+}
+
+enum user_profile_mutingnotificationtypes_enum {
+  follow
+  mention
+  reply
+  renote
+  quote
+  reaction
+  pollVote
+  pollEnded
+  receiveFollowRequest
+  followRequestAccepted
+  groupInvited
+  achievementEarned
+  app
+}
