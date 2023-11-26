@@ -50,7 +50,7 @@ export default class extends Endpoint<
 			const token = randomUUID();
 
 			// Create session token document
-			const doc = await this.prismaService.client.auth_session.create({
+			const doc = await this.prismaService.client.authSession.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),

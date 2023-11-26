@@ -32,7 +32,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch token
-			const session = await this.prismaService.client.auth_session.findFirst({
+			const session = await this.prismaService.client.authSession.findFirst({
 				where: { token: ps.token },
 				include: { app: true },
 			});
@@ -74,7 +74,7 @@ export default class extends Endpoint<
 			}
 
 			// Update session
-			await this.prismaService.client.auth_session.update({
+			await this.prismaService.client.authSession.update({
 				where: { id: session.id },
 				data: { userId: me.id },
 			});

@@ -6,7 +6,7 @@ import type {
 } from '@/models/zod/AppSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { AppEntityService } from './AppEntityService.js';
-import type { auth_session, user } from '@prisma/client';
+import type { AuthSession, user } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class AuthSessionEntityService {
 	) {}
 
 	public async pack(
-		src: auth_session,
+		src: AuthSession,
 		me?: Pick<user, 'id'> | null | undefined,
 	): Promise<{
 		id: string;
@@ -28,7 +28,7 @@ export class AuthSessionEntityService {
 		token: string;
 	}> {
 		const session =
-			await this.prismaService.client.auth_session.findUniqueOrThrow({
+			await this.prismaService.client.authSession.findUniqueOrThrow({
 				where: { id: src.id },
 				include: { app: { include: { accessTokens: true } } },
 			});

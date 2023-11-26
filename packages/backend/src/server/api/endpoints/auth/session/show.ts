@@ -34,7 +34,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const session = await this.prismaService.client.auth_session.findFirst({
+			const session = await this.prismaService.client.authSession.findFirst({
 				where: { token: ps.token },
 			});
 
