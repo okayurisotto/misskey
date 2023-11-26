@@ -59,7 +59,7 @@ export default class extends Endpoint<
 			} else {
 				const app = await this.prismaService.client.app.findUnique({
 					where: { id: ps.appId },
-					include: { access_token: { where: { userId: user.id } } },
+					include: { accessTokens: { where: { userId: user.id } } },
 				});
 
 				if (app === null) {
@@ -68,7 +68,7 @@ export default class extends Endpoint<
 
 				const data = {
 					app: new EntityMap('id', [app]),
-					access_token: new EntityMap('id', app.access_token),
+					access_token: new EntityMap('id', app.accessTokens),
 				};
 
 				const includeSecret = isSecure && app.userId === user.id;

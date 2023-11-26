@@ -610,7 +610,7 @@ model access_token {
   fetched     Boolean   @default(false) // `/api/miauth/:session/check`と関連。MiAuthのみ？
   //
   appId       String?   @db.VarChar(32)
-  app         app?      @relation(fields: [appId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a3ff16c90cc87a82a0b5959e560")
+  app         App?      @relation(fields: [appId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a3ff16c90cc87a82a0b5959e560")
   //
   userId      String    @db.VarChar(32)
   user        user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9949557d0e1b2c19e5344c171e9")
@@ -701,11 +701,11 @@ model Antenna {
   @@index([lastUsedAt], map: "IDX_084c2abb8948ef59a37dce6ac1")
   @@index([isActive], map: "IDX_36ef5192a1ce55ed0e40aa4db5")
   @@index([userId], map: "IDX_6446c571a0e8d0f05f01c78909")
-	@@map("antenna")
+  @@map("antenna")
 }
 
 // 3rdパーティアプリ？
-model app {
+model App {
   id          String   @id(map: "PK_9478629fc093d229df09e560aea") @db.VarChar(32)
   createdAt   DateTime @db.Timestamptz(6)
   name        String   @db.VarChar(128)
@@ -717,12 +717,13 @@ model app {
   userId      String?  @db.VarChar(32)
   user        user?    @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_3f5b0899ef90527a3462d7c2cb3")
 
-  access_token access_token[]
-  auth_session auth_session[]
+  accessTokens access_token[]
+  authSessions auth_session[]
 
   @@index([createdAt], map: "IDX_048a757923ed8b157e9895da53")
   @@index([userId], map: "IDX_3f5b0899ef90527a3462d7c2cb")
   @@index([secret], map: "IDX_f49922d511d666848f250663c4")
+  @@map("app")
 }
 
 // 2FA
@@ -750,7 +751,7 @@ model auth_session {
   user      user?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c072b729d71697f959bde66ade0")
   //
   appId     String   @db.VarChar(32)
-  app       app      @relation(fields: [appId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dbe037d4bddd17b03a1dc778dee")
+  app       App      @relation(fields: [appId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dbe037d4bddd17b03a1dc778dee")
 
   @@index([token], map: "IDX_62cb09e1129f6ec024ef66e183")
 }
@@ -1899,7 +1900,7 @@ model user {
   access_token                                              access_token[]
   announcement_read                                         AnnouncementRead[]
   antenna                                                   Antenna[]
-  app                                                       app[]
+  app                                                       App[]
   attestation_challenge                                     attestation_challenge[]
   auth_session                                              auth_session[]
   blocking_blocking_blockerIdTouser                         blocking[]               @relation("blocking_blockerIdTouser")

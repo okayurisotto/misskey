@@ -48,7 +48,7 @@ import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { RenoteCountService } from './entities/RenoteCountService.js';
 import type {
 	Prisma,
-	app,
+	App,
 	channel,
 	drive_file,
 	note,
@@ -146,7 +146,7 @@ type Option = {
 	apEmojis?: string[] | null;
 	uri?: string | null;
 	url?: string | null;
-	app?: app | null;
+	app?: App | null;
 };
 
 @Injectable()

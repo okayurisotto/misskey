@@ -36,7 +36,7 @@ export default class extends Endpoint<
 		super(meta, paramDef, async (ps, me) => {
 			const results = await this.prismaService.client.app.findMany({
 				where: { userId: me.id },
-				include: { access_token: { where: { userId: me.id } } },
+				include: { accessTokens: { where: { userId: me.id } } },
 				skip: ps.offset,
 				take: ps.limit,
 			});
@@ -45,7 +45,7 @@ export default class extends Endpoint<
 				app: new EntityMap('id', results),
 				access_token: new EntityMap(
 					'id',
-					results.map(({ access_token }) => access_token).flat(),
+					results.map(({ accessTokens }) => accessTokens).flat(),
 				),
 			};
 

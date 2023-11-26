@@ -11,7 +11,7 @@ import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { unique } from '@/misc/prelude/array.js';
 import { IdService } from '../IdService.js';
 import type { z } from 'zod';
-import type { Prisma, access_token, app, user } from '@prisma/client';
+import type { Prisma, access_token, App, user } from '@prisma/client';
 
 @Injectable()
 export class AppEntityService {
@@ -22,7 +22,7 @@ export class AppEntityService {
 
 	public async create(
 		data: Pick<
-			Prisma.appCreateInput,
+			Prisma.AppCreateInput,
 			'name' | 'description' | 'callbackUrl'
 		> & {
 			permission: string[];
@@ -63,7 +63,7 @@ export class AppEntityService {
 	}
 
 	public isAuthorized(
-		appId: app['id'],
+		appId: App['id'],
 		userId: user['id'],
 		tokens: access_token[],
 	): boolean {
@@ -75,23 +75,23 @@ export class AppEntityService {
 	}
 
 	public packLite(
-		id: app['id'],
-		data: { app: EntityMap<'id', app> },
+		id: App['id'],
+		data: { app: EntityMap<'id', App> },
 	): z.infer<typeof AppLiteSchema> {
 		const app = data.app.get(id);
 		return pick(app, ['id', 'name', 'callbackUrl', 'permission']);
 	}
 
 	public packSecretOnly(
-		id: app['id'],
-		data: { app: EntityMap<'id', app> },
+		id: App['id'],
+		data: { app: EntityMap<'id', App> },
 	): z.infer<typeof AppSecretOnlySchema> {
 		const app = data.app.get(id);
 		return pick(app, ['secret']);
 	}
 
 	public packAuthorizedOnly(
-		appId: app['id'],
+		appId: App['id'],
 		userId: user['id'],
 		data: {
 			access_token: EntityMap<'id', access_token>;

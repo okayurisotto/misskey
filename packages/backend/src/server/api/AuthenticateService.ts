@@ -4,7 +4,7 @@ import { MemoryKVCache } from '@/misc/cache.js';
 import { CacheService } from '@/core/CacheService.js';
 import isNativeToken from '@/misc/is-native-token.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { access_token, app } from '@prisma/client';
+import type { access_token, App } from '@prisma/client';
 
 export class AuthenticationError extends Error {
 	constructor(message: string) {
@@ -15,13 +15,13 @@ export class AuthenticationError extends Error {
 
 @Injectable()
 export class AuthenticateService implements OnApplicationShutdown {
-	private readonly appCache: MemoryKVCache<app>;
+	private readonly appCache: MemoryKVCache<App>;
 
 	constructor(
 		private readonly cacheService: CacheService,
 		private readonly prismaService: PrismaService,
 	) {
-		this.appCache = new MemoryKVCache<app>(Infinity);
+		this.appCache = new MemoryKVCache<App>(Infinity);
 	}
 
 	public async authenticate(token: string | null | undefined): Promise<[LocalUser | null, access_token | null]> {

@@ -30,12 +30,12 @@ export class AuthSessionEntityService {
 		const session =
 			await this.prismaService.client.auth_session.findUniqueOrThrow({
 				where: { id: src.id },
-				include: { app: { include: { access_token: true } } },
+				include: { app: { include: { accessTokens: true } } },
 			});
 
 		const data = {
 			app: new EntityMap('id', [session.app]),
-			access_token: new EntityMap('id', session.app.access_token),
+			access_token: new EntityMap('id', session.app.accessTokens),
 		};
 
 		if (me == null) {
