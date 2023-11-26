@@ -31,7 +31,7 @@ export class ExportBlockingProcessorService {
 			where: { id: job.data.user.id },
 			include: {
 				blocking_blocking_blockerIdTouser: {
-					include: { user_blocking_blockeeIdTouser: true },
+					include: { blockee: true },
 				},
 			},
 		});
@@ -43,7 +43,7 @@ export class ExportBlockingProcessorService {
 		try {
 			const content = user.blocking_blocking_blockerIdTouser
 				.map((blocking) => {
-					const user = blocking.user_blocking_blockeeIdTouser;
+					const user = blocking.blockee;
 					return this.utilityService.getFullApAccount(user.username, user.host);
 				})
 				.map((entry) => entry + '\n')

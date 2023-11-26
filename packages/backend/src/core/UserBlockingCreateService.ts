@@ -10,7 +10,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { UserFollowingDeleteService } from './UserFollowingDeleteService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { blocking, user } from '@prisma/client';
+import type { Blocking, user } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -41,7 +41,7 @@ export class UserBlockingCreateService {
 			this.removeFromList(blockee, blocker),
 		]);
 
-		const blocking: blocking = {
+		const blocking: Blocking = {
 			id: this.idService.genId(),
 			createdAt: new Date(),
 			blockerId: blocker.id,

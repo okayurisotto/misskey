@@ -50,7 +50,7 @@ import type {
 	relay,
 	note_reaction,
 	emoji,
-	blocking,
+	Blocking,
 	drive_file,
 	note,
 	poll,
@@ -136,7 +136,7 @@ export class ApRendererService {
 	 *
 	 * @param block The block to be rendered. The blockee relation must be loaded.
 	 */
-	public renderBlock(block: blocking & { blockee: user }): IBlock {
+	public renderBlock(block: Blocking & { blockee: user }): IBlock {
 		if (block.blockee.uri == null) {
 			throw new Error('renderBlock: missing blockee uri');
 		}

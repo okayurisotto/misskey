@@ -755,24 +755,25 @@ model AuthSession {
   app       App      @relation(fields: [appId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dbe037d4bddd17b03a1dc778dee")
 
   @@index([token], map: "IDX_62cb09e1129f6ec024ef66e183")
-	@@map("auth_session")
+  @@map("auth_session")
 }
 
 // ユーザーブロック
-model blocking {
-  id                            String   @id(map: "PK_e5d9a541cc1965ee7e048ea09dd") @db.VarChar(32)
-  createdAt                     DateTime @db.Timestamptz(6)
+model Blocking {
+  id        String   @id(map: "PK_e5d9a541cc1965ee7e048ea09dd") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
   //
-  blockerId                     String   @db.VarChar(32)
-  user_blocking_blockerIdTouser user     @relation("blocking_blockerIdTouser", fields: [blockerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0627125f1a8a42c9a1929edb552")
+  blockerId String   @db.VarChar(32)
+  blocker   user     @relation("blocking_blockerIdTouser", fields: [blockerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0627125f1a8a42c9a1929edb552")
   //
-  blockeeId                     String   @db.VarChar(32)
-  user_blocking_blockeeIdTouser user     @relation("blocking_blockeeIdTouser", fields: [blockeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2cd4a2743a99671308f5417759e")
+  blockeeId String   @db.VarChar(32)
+  blockee   user     @relation("blocking_blockeeIdTouser", fields: [blockeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2cd4a2743a99671308f5417759e")
 
   @@unique([blockerId, blockeeId], map: "IDX_98a1bc5cb30dfd159de056549f")
   @@index([blockerId], map: "IDX_0627125f1a8a42c9a1929edb55")
   @@index([blockeeId], map: "IDX_2cd4a2743a99671308f5417759")
   @@index([createdAt], map: "IDX_b9a354f7941c1e779f3b33aea6")
+  @@map("blocking")
 }
 
 // チャンネル
@@ -1905,8 +1906,8 @@ model user {
   app                                                       App[]
   attestation_challenge                                     AttestationChallenge[]
   auth_session                                              AuthSession[]
-  blocking_blocking_blockerIdTouser                         blocking[]               @relation("blocking_blockerIdTouser")
-  blocking_blocking_blockeeIdTouser                         blocking[]               @relation("blocking_blockeeIdTouser")
+  blocking_blocking_blockerIdTouser                         Blocking[]               @relation("blocking_blockerIdTouser")
+  blocking_blocking_blockeeIdTouser                         Blocking[]               @relation("blocking_blockeeIdTouser")
   channel                                                   channel[]
   channel_favorite                                          channel_favorite[]
   channel_following                                         channel_following[]

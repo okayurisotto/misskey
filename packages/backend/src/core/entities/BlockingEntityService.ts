@@ -3,7 +3,7 @@ import { pick } from 'omick';
 import type { BlockingSchema } from '@/models/zod/BlockingSchema.js';
 import { UserEntityService } from './UserEntityService.js';
 import type z from 'zod';
-import type { blocking, user } from '@prisma/client';
+import type { Blocking, user } from '@prisma/client';
 
 @Injectable()
 export class BlockingEntityService {
@@ -17,7 +17,7 @@ export class BlockingEntityService {
 	 * @returns
 	 */
 	public async pack(
-		blocking: blocking,
+		blocking: Blocking,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof BlockingSchema>> {
 		return {
