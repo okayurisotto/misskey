@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
 	Prisma,
 	type Announcement,
-	type announcement_read,
+	type AnnouncementRead,
 } from '@prisma/client';
 import { z } from 'zod';
 import { pick } from 'omick';
@@ -14,7 +14,7 @@ import { PaginationQuery } from '../PrismaQueryService.js';
 
 type AnnouncementPackData = {
 	announcement: EntityMap<'id', Announcement>;
-	announcement_read: EntityMap<'id', announcement_read>;
+	announcement_read: EntityMap<'id', AnnouncementRead>;
 };
 
 @Injectable()

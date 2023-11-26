@@ -47,7 +47,7 @@ export default class extends Endpoint<
 
 			// Check if already read
 			const alreadyRead =
-				(await this.prismaService.client.announcement_read.count({
+				(await this.prismaService.client.announcementRead.count({
 					where: {
 						announcementId: ps.announcementId,
 						userId: me.id,
@@ -58,7 +58,7 @@ export default class extends Endpoint<
 			if (alreadyRead) return;
 
 			// Create read
-			await this.prismaService.client.announcement_read.create({
+			await this.prismaService.client.announcementRead.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),

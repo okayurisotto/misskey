@@ -649,14 +649,14 @@ model Announcement {
   text      String    @db.VarChar(8192)
   imageUrl  String?   @db.VarChar(1024)
 
-  reads announcement_read[]
+  reads AnnouncementRead[]
 
   @@index([createdAt], map: "IDX_118ec703e596086fc4515acb39")
   @@map("announcement")
 }
 
 // お知らせの既読
-model announcement_read {
+model AnnouncementRead {
   id             String       @id(map: "PK_4b90ad1f42681d97b2683890c5e") @db.VarChar(32)
   createdAt      DateTime     @db.Timestamptz(6)
   //
@@ -669,6 +669,7 @@ model announcement_read {
   @@unique([userId, announcementId], map: "IDX_924fa71815cfa3941d003702a0")
   @@index([announcementId], map: "IDX_603a7b1e7aa0533c6c88e9bfaf")
   @@index([userId], map: "IDX_8288151386172b8109f7239ab2")
+  @@map("announcement_read")
 }
 
 // アンテナ
@@ -1893,7 +1894,7 @@ model user {
   abuse_user_report_abuse_user_report_assigneeIdTouser      AbuseUserReport[]        @relation("abuse_user_report_assigneeIdTouser")
   abuse_user_report_abuse_user_report_targetUserIdTouser    AbuseUserReport[]        @relation("abuse_user_report_targetUserIdTouser")
   access_token                                              access_token[]
-  announcement_read                                         announcement_read[]
+  announcement_read                                         AnnouncementRead[]
   antenna                                                   antenna[]
   app                                                       app[]
   attestation_challenge                                     attestation_challenge[]
