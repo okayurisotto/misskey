@@ -49,7 +49,7 @@ import { RenoteCountService } from './entities/RenoteCountService.js';
 import type {
 	Prisma,
 	App,
-	channel,
+	Channel,
 	drive_file,
 	note,
 	user,
@@ -140,7 +140,7 @@ type Option = {
 	cw?: string | null;
 	visibility?: string;
 	visibleUsers?: MinimumUser[] | null;
-	channel?: channel | null;
+	channel?: Channel | null;
 	apMentions?: MinimumUser[] | null;
 	apHashtags?: string[] | null;
 	apEmojis?: string[] | null;
@@ -780,30 +780,8 @@ export class NoteCreateService implements OnApplicationShutdown {
 		if (data.channel) {
 			this.prismaService.client.channel.update({
 				where: { id: data.channel.id },
-				data: { notesCount: { increment: 1 } },
-			});
-			this.prismaService.client.channel.update({
-				where: { id: data.channel.id },
 				data: { lastNotedAt: new Date() },
 			});
-
-			this.prismaService.client.note
-				.count({
-					where: {
-						userId: user.id,
-						channelId: data.channel.id,
-					},
-				})
-				.then((count) => {
-					// この処理が行われるのはノート作成後なので、ノートが一つしかなかったら最初の投稿だと判断できる
-					// TODO: とはいえノートを削除して何回も投稿すればその分だけインクリメントされる雑さもあるのでどうにかしたい
-					if (count === 1) {
-						this.prismaService.client.channel.update({
-							where: { id: data.channel!.id },
-							data: { usersCount: { increment: 1 } },
-						});
-					}
-				});
 		}
 
 		// Register to search database

@@ -19,7 +19,7 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
-import type { channel, drive_file, note, user } from '@prisma/client';
+import type { Channel, drive_file, note, user } from '@prisma/client';
 
 const res = z.object({ createdNote: NoteSchema });
 export const meta = {
@@ -210,7 +210,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			let channel: channel | null = null;
+			let channel: Channel | null = null;
 			if (ps.channelId != null) {
 				channel = await this.prismaService.client.channel.findUnique({
 					where: {

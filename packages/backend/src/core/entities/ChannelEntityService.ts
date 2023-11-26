@@ -4,7 +4,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { NoteEntityPackService } from './NoteEntityPackService.js';
 import { DriveFilePublicUrlGenerationService } from './DriveFilePublicUrlGenerationService.js';
 import type { z } from 'zod';
-import type { channel, user } from '@prisma/client';
+import type { Channel, user } from '@prisma/client';
 
 @Injectable()
 export class ChannelEntityService {
@@ -18,74 +18,80 @@ export class ChannelEntityService {
 	 * `channel`をpackする。
 	 *
 	 * @param src
-	 * @param me       渡された場合、返り値に`isFollowing`と`isFavorited`と`hasUnreadNote`が含まれるようになる。
+	 * @param me       渡された場合、返り値に`isFavorited`と`isFollowing`と`hasUnreadNote`が含まれるようになる。
 	 * @param detailed `true`だった場合、返り値に`pinnedNotes`が含まれるようになる。
 	 * @returns
 	 */
 	public async pack(
-		src: channel['id'] | channel,
+		src: Channel['id'] | Channel,
 		me?: { id: user['id'] } | null | undefined,
 		detailed?: boolean,
 	): Promise<z.infer<typeof ChannelSchema>> {
-		const channel =
-			typeof src === 'object'
-				? src
-				: await this.prismaService.client.channel.findUniqueOrThrow({
-						where: { id: src },
-				  });
 		const meId = me ? me.id : null;
 
-		const banner = channel.bannerId
-			? await this.prismaService.client.drive_file.findUnique({
-					where: { id: channel.bannerId },
-			  })
-			: null;
+		// Channelとそのbannerを取得する。
+		const { banner, ...channel } =
+			await this.prismaService.client.channel.findUniqueOrThrow({
+				where: { id: typeof src === 'string' ? src : src.id },
+				include: { banner: true },
+			});
 
-		const hasUnreadNote = meId
-			? (await this.prismaService.client.note_unread.count({
-					where: {
-						noteChannelId: channel.id,
-						userId: meId,
-					},
-					take: 1,
-			  })) > 0
-			: undefined;
+		// 当該Channelと関連したNoteについて集計する。
+		// Channel取得クエリとまとめたかったものの、書き方が分からなかったため別に取得することにした。
+		const {
+			_count: notesCount,
+			_max: { createdAt: lastNotedAt },
+		} = await this.prismaService.client.note.aggregate({
+			where: { channelId: channel.id },
+			_count: true,
+			_max: { createdAt: true },
+		});
 
-		const isFollowing = meId
-			? (await this.prismaService.client.channel_following.count({
-					where: {
-						followerId: meId,
-						followeeId: channel.id,
-					},
-					take: 1,
-			  })) > 0
-			: false;
+		// 当該Channelと関連したNoteを作成したUserを数え上げる。
+		// Channel取得クエリとまとめたかったものの、書き方が分からなかったため別に取得することにした。
+		// `distinct`を使ってuserIdについてユニークになったNote[]を取得した上で`.length`すればよかった？
+		// しかし数え上げることが目的なのに値を取得してしまうのはどうなんだろうか？
+		const usersCount = await this.prismaService.client.user.count({
+			where: { note: { some: { channelId: channel.id } } },
+		});
 
-		const isFavorited = meId
-			? (await this.prismaService.client.channel_favorite.count({
-					where: {
-						userId: meId,
-						channelId: channel.id,
-					},
-					take: 1,
-			  })) > 0
-			: false;
+		// 当該Channelとmeとの関係性を取得する。
+		// Channel取得クエリとまとめてもよかったが、`meId`が`null`になり得ることを考えたとき面倒だったため別に取得することにした。
+		const [isFavorited, isFollowing, hasUnreadNote] = await (async (): Promise<
+			[boolean, boolean, boolean] | []
+		> => {
+			if (meId === null) return [];
 
+			// 存在確認が目的なので`aggregate`などで済ませられたらよかったが、`aggregate`には`_exist`のようなものはなく、またそもそも`include`が使えないようなので断念した。
+			const result = await this.prismaService.client.user.findUniqueOrThrow({
+				where: { id: meId },
+				include: {
+					channel_favorite: { where: { channelId: channel.id }, take: 1 },
+					channel_following: { where: { followeeId: channel.id }, take: 1 },
+					note_unread: { where: { noteChannelId: channel.id }, take: 1 },
+				},
+			});
+
+			return [
+				result.channel_favorite.length > 0,
+				result.channel_following.length > 0,
+				result.note_unread.length > 0,
+			];
+		})();
+
+		// 当該Channelにピン留めされたNoteを取得する。
+		// 非正規化されているためこうするしかなかった。
 		const pinnedNotes =
 			channel.pinnedNoteIds.length > 0
 				? await this.prismaService.client.note.findMany({
-						where: {
-							id: { in: channel.pinnedNoteIds },
-						},
+						where: { id: { in: channel.pinnedNoteIds } },
 				  })
 				: [];
 
 		return {
 			id: channel.id,
 			createdAt: channel.createdAt.toISOString(),
-			lastNotedAt: channel.lastNotedAt
-				? channel.lastNotedAt.toISOString()
-				: null,
+			lastNotedAt: lastNotedAt?.toISOString() ?? null,
 			name: channel.name,
 			description: channel.description,
 			userId: channel.userId,
@@ -95,26 +101,22 @@ export class ChannelEntityService {
 			pinnedNoteIds: channel.pinnedNoteIds,
 			color: channel.color,
 			isArchived: channel.isArchived,
-			usersCount: channel.usersCount,
-			notesCount: channel.notesCount,
+			usersCount: usersCount,
+			notesCount: notesCount,
 
-			...(me
-				? {
-						isFollowing,
-						isFavorited,
-						hasUnreadNote,
-				  }
-				: {}),
+			...{ hasUnreadNote, isFavorited, isFollowing },
 
 			...(detailed
 				? {
 						pinnedNotes: (
 							await this.noteEntityService.packMany(pinnedNotes, me)
-						).sort(
-							(a, b) =>
+						).sort((a, b) => {
+							// データベースから取得した`pinnedNotes`は`pinnedNoteIds`と並び順が変わってしまっているのでソートし直す必要がある。
+							return (
 								channel.pinnedNoteIds.indexOf(a.id) -
-								channel.pinnedNoteIds.indexOf(b.id),
-						),
+								channel.pinnedNoteIds.indexOf(b.id)
+							);
+						}),
 				  }
 				: {}),
 		};

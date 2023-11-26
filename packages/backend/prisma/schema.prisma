@@ -777,7 +777,7 @@ model Blocking {
 }
 
 // チャンネル
-model channel {
+model Channel {
   id            String      @id(map: "PK_590f33ee6ee7d76437acf362e39") @db.VarChar(32)
   createdAt     DateTime    @db.Timestamptz(6)
   name          String      @db.VarChar(128)
@@ -785,20 +785,21 @@ model channel {
   description   String?     @db.VarChar(2048)
   isArchived    Boolean     @default(false)
   pinnedNoteIds String[]    @default([]) @db.VarChar(128) // 外部キー制約忘れ
-  // 集計
-  lastNotedAt   DateTime?   @db.Timestamptz(6)
-  notesCount    Int         @default(0)
-  usersCount    Int         @default(0)
   //
   userId        String?     @db.VarChar(32)
   user          user?       @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_823bae55bd81b3be6e05cff4383")
   //
   bannerId      String?     @db.VarChar(32)
-  drive_file    drive_file? @relation(fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_999da2bcc7efadbfe0e92d3bc19")
+  banner        drive_file? @relation(fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_999da2bcc7efadbfe0e92d3bc19")
 
-  channel_favorite  channel_favorite[]
-  channel_following channel_following[]
-  note              note[]
+  favorites  channel_favorite[]
+  followings channel_following[]
+  notes      note[]
+
+  // aggregate
+  lastNotedAt DateTime? @ignore @db.Timestamptz(6)
+  notesCount  Int       @default(0) @ignore
+  usersCount  Int       @default(0) @ignore
 
   // deprecated
   channel_note_pining channel_note_pining[] @ignore
@@ -809,6 +810,7 @@ model channel {
   @@index([createdAt], map: "IDX_71cb7b435b7c0d4843317e7e16")
   @@index([userId], map: "IDX_823bae55bd81b3be6e05cff438")
   @@index([isArchived], map: "IDX_cc7c72974f1b2f385a8921f094")
+  @@map("channel")
 }
 
 // チャンネルのお気に入り
@@ -821,7 +823,7 @@ model channel_favorite {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8302bd27226605ece14842fb25a")
   //
   channelId String   @db.VarChar(32)
-  channel   channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d3ca0db011b75ac2a940a2337d2")
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d3ca0db011b75ac2a940a2337d2")
 
   @@index([createdAt], map: "IDX_735a5544f9249d412255f47f95")
   @@index([userId], map: "IDX_8302bd27226605ece14842fb25")
@@ -837,7 +839,7 @@ model channel_following {
   user       user     @relation(fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6d8084ec9496e7334a4602707e1")
   //
   followeeId String   @db.VarChar(32)
-  channel    channel  @relation(fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e43068c3f92cab197c3d3cd86e")
+  channel    Channel  @relation(fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e43068c3f92cab197c3d3cd86e")
 
   @@unique([followerId, followeeId], map: "IDX_2e230dd45a10e671d781d99f3e")
   @@index([followeeId], map: "IDX_0e43068c3f92cab197c3d3cd86")
@@ -852,7 +854,7 @@ model channel_note_pining {
   channelId String   @db.VarChar(32)
   noteId    String   @db.VarChar(32)
   note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_10b19ef67d297ea9de325cd4502")
-  channel   channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8125f950afd3093acb10d2db8a8")
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8125f950afd3093acb10d2db8a8")
 
   @@unique([channelId, noteId], map: "IDX_f36fed37d6d4cdcc68c803cd9c")
   @@index([channelId], map: "IDX_8125f950afd3093acb10d2db8a")
@@ -943,7 +945,7 @@ model drive_file {
   folderId                     String?       @db.VarChar(32)
   drive_folder                 drive_folder? @relation(fields: [folderId], references: [id], onUpdate: NoAction, map: "FK_bb90d1956dafc4068c28aa7560a")
 
-  channel                        channel[]
+  channel                        Channel[]
   page                           page[]
   user_user_avatarIdTodrive_file user?     @relation("user_avatarIdTodrive_file")
   user_user_bannerIdTodrive_file user?     @relation("user_bannerIdTodrive_file")
@@ -1402,7 +1404,7 @@ model note {
   user                           user                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5b87d9d19127bd5d92026017a7b")
   //
   channelId                      String?              @db.VarChar(32)
-  channel                        channel?             @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f22169eb10657bded6d875ac8f9")
+  channel                        Channel?             @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f22169eb10657bded6d875ac8f9")
   //
   replyId                        String?              @db.VarChar(32)
   note_note_replyIdTonote        note?                @relation("note_replyIdTonote", fields: [replyId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_17cb3553c700a4985dff5a30ff5")
@@ -1908,7 +1910,7 @@ model user {
   auth_session                                              AuthSession[]
   blocking_blocking_blockerIdTouser                         Blocking[]               @relation("blocking_blockerIdTouser")
   blocking_blocking_blockeeIdTouser                         Blocking[]               @relation("blocking_blockeeIdTouser")
-  channel                                                   channel[]
+  channel                                                   Channel[]
   channel_favorite                                          channel_favorite[]
   channel_following                                         channel_following[]
   clip                                                      clip[]
