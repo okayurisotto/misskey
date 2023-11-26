@@ -64,7 +64,7 @@ export class ImportAntennasProcessorService {
 				}
 				return true;
 			})
-			.map<Prisma.antennaCreateManyInput>((antenna) => ({
+			.map<Prisma.AntennaCreateManyInput>((antenna) => ({
 				id: this.idService.genId(),
 				createdAt: now,
 				lastUsedAt: now,

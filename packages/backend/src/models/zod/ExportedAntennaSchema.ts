@@ -1,8 +1,8 @@
 import { z } from 'zod';
-import type { antenna } from '@prisma/client';
+import type { Antenna } from '@prisma/client';
 
 type ExportedAntennaSchemaType = Omit<
-	antenna,
+	Antenna,
 	| 'id'
 	| 'createdAt'
 	| 'userId'

@@ -673,7 +673,7 @@ model AnnouncementRead {
 }
 
 // アンテナ
-model antenna {
+model Antenna {
   id              String           @id(map: "PK_c170b99775e1dccca947c9f2d5f") @db.VarChar(32)
   createdAt       DateTime         @db.Timestamptz(6)
   lastUsedAt      DateTime         @default(dbgenerated("'2023-08-02 03:03:37.55099+00'::timestamp with time zone")) @db.Timestamptz(6)
@@ -686,7 +686,6 @@ model antenna {
   withReplies     Boolean          @default(false)
   notify          Boolean
   isActive        Boolean          @default(true)
-  expression      String?          @db.VarChar(2048) // TODO (unused)
   //
   userId          String           @db.VarChar(32)
   user            user             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6446c571a0e8d0f05f01c789096")
@@ -694,11 +693,15 @@ model antenna {
   users           String[]         @default([]) @db.VarChar(1024)
   // `src`が`list`の場合、これらは非nullになる（単一テーブル継承）
   userListId      String?          @db.VarChar(32)
-  user_list       user_list?       @relation(fields: [userListId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_709d7d32053d0dd7620f678eeb9")
+  userList        user_list?       @relation(fields: [userListId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_709d7d32053d0dd7620f678eeb9")
+
+  // unused
+  expression String? @ignore @db.VarChar(2048)
 
   @@index([lastUsedAt], map: "IDX_084c2abb8948ef59a37dce6ac1")
   @@index([isActive], map: "IDX_36ef5192a1ce55ed0e40aa4db5")
   @@index([userId], map: "IDX_6446c571a0e8d0f05f01c78909")
+	@@map("antenna")
 }
 
 // 3rdパーティアプリ？
@@ -1895,7 +1898,7 @@ model user {
   abuse_user_report_abuse_user_report_targetUserIdTouser    AbuseUserReport[]        @relation("abuse_user_report_targetUserIdTouser")
   access_token                                              access_token[]
   announcement_read                                         AnnouncementRead[]
-  antenna                                                   antenna[]
+  antenna                                                   Antenna[]
   app                                                       app[]
   attestation_challenge                                     attestation_challenge[]
   auth_session                                              auth_session[]
@@ -2062,7 +2065,7 @@ model user_list {
   createdAt DateTime  @db.Timestamptz(6)
   name      String    @db.VarChar(128)
   isPublic  Boolean   @default(false)
-  antenna   antenna[]
+  antenna   Antenna[]
   //
   userId    String    @db.VarChar(32)
   user      user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b7fcefbdd1c18dce86687531f99")

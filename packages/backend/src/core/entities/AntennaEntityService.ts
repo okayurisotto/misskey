@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { pick } from 'omick';
 import type { AntennaSchema } from '@/models/zod/AntennaSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
-import type { antenna } from '@prisma/client';
+import type { Antenna } from '@prisma/client';
 
 const AntennaKeywordsSchema = z.array(z.array(z.string()));
 
@@ -14,8 +14,8 @@ export class AntennaEntityService {
 	 * 現状、`hasUnreadNote`は常に`false`になる。
 	 */
 	public pack(
-		id: antenna['id'],
-		data: { antenna: EntityMap<'id', antenna> },
+		id: Antenna['id'],
+		data: { antenna: EntityMap<'id', Antenna> },
 	): z.infer<typeof AntennaSchema> {
 		const antenna = data.antenna.get(id);
 

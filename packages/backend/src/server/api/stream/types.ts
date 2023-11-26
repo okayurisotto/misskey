@@ -15,7 +15,7 @@ import type { EventEmitter } from 'events';
 import type Emitter from 'strict-event-emitter-types';
 import type {
 	AbuseUserReport,
-	antenna,
+	Antenna,
 	drive_file,
 	drive_folder,
 	note,
@@ -30,9 +30,9 @@ import type {
 
 //#region Stream type-body definitions
 export interface InternalStreamTypes {
-	antennaCreated: antenna;
-	antennaDeleted: antenna;
-	antennaUpdated: antenna;
+	antennaCreated: Antenna;
+	antennaDeleted: Antenna;
+	antennaUpdated: Antenna;
 	blockingCreated: { blockerId: user['id']; blockeeId: user['id'] };
 	blockingDeleted: { blockerId: user['id']; blockeeId: user['id'] };
 	follow: { followerId: user['id']; followeeId: user['id'] };
@@ -181,7 +181,7 @@ export type StreamMessages = {
 		payload: EventUnionFromDictionary<Jsonify<RoleTimelineStreamTypes>>;
 	};
 	antenna: {
-		name: `antennaStream:${antenna['id']}`;
+		name: `antennaStream:${Antenna['id']}`;
 		payload: EventUnionFromDictionary<Jsonify<AntennaStreamTypes>>;
 	};
 	admin: {

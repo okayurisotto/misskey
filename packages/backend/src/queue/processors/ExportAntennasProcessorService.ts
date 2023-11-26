@@ -33,7 +33,7 @@ export class ExportAntennasProcessorService {
 			include: {
 				antenna: {
 					include: {
-						user_list: {
+						userList: {
 							include: { user_list_joining: { include: { user: true } } },
 						},
 					},
@@ -48,7 +48,7 @@ export class ExportAntennasProcessorService {
 			const data = user.antenna.map<z.infer<typeof ExportedAntennaSchema>>(
 				(antenna) => {
 					const userListAccts =
-						antenna.user_list?.user_list_joining.map(({ user }) => {
+						antenna.userList?.user_list_joining.map(({ user }) => {
 							return this.utilityService.getFullApAccount(
 								user.username,
 								user.host,

@@ -10,12 +10,12 @@ import { RedisService } from '@/core/RedisService.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
 import { bindThis } from '@/decorators.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
-import type { antenna, note, user } from '@prisma/client';
+import type { Antenna, note, user } from '@prisma/client';
 
 @Injectable()
 export class AntennaService implements OnApplicationShutdown {
 	private antennasFetched = false;
-	private antennas: antenna[] = [];
+	private antennas: Antenna[] = [];
 
 	constructor(
 		private readonly globalEventService: GlobalEventService,
@@ -97,7 +97,7 @@ export class AntennaService implements OnApplicationShutdown {
 	// NOTE: フォローしているユーザーのノート、リストのユーザーのノート、グループのユーザーのノート指定はパフォーマンス上の理由で無効になっている
 
 	public async checkHitAntenna(
-		antenna: antenna,
+		antenna: Antenna,
 		note: note | z.infer<typeof NoteSchema>,
 		noteUser: { id: user['id']; username: string; host: string | null },
 	): Promise<boolean> {
@@ -190,7 +190,7 @@ export class AntennaService implements OnApplicationShutdown {
 		return true;
 	}
 
-	public async getAntennas(): Promise<antenna[]> {
+	public async getAntennas(): Promise<Antenna[]> {
 		if (!this.antennasFetched) {
 			this.antennas = await this.prismaService.client.antenna.findMany({
 				where: { isActive: true },

@@ -15,7 +15,7 @@ import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { RedisPubService } from '@/core/RedisPubService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { z } from 'zod';
-import type { role, note, antenna, user, user_list } from '@prisma/client';
+import type { role, note, Antenna, user, user_list } from '@prisma/client';
 
 @Injectable()
 export class GlobalEventService {
@@ -111,7 +111,7 @@ export class GlobalEventService {
 	}
 
 	public publishAntennaStream<K extends keyof AntennaStreamTypes>(
-		antennaId: antenna['id'],
+		antennaId: Antenna['id'],
 		type: K,
 		value?: AntennaStreamTypes[K],
 	): void {
