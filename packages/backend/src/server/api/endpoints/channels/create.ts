@@ -26,8 +26,8 @@ export const meta = {
 
 export const paramDef = z.object({
 	name: z.string().min(1).max(128),
-	description: z.string().min(1).max(2048).nullable().optional(),
-	bannerId: MisskeyIdSchema.optional(),
+	description: z.string().min(1).max(2048).nullish(),
+	bannerId: MisskeyIdSchema.nullish(),
 	color: z.string().min(1).max(16).optional(),
 });
 
