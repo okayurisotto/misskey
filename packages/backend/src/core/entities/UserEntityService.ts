@@ -119,7 +119,7 @@ export class UserEntityService {
 	 */
 	public async getHasUnreadAnnouncement(userId: user['id']): Promise<boolean> {
 		const count = await this.prismaService.client.announcement.count({
-			where: { announcement_read: { none: { userId: userId } } },
+			where: { reads: { none: { userId: userId } } },
 			take: 1,
 		});
 

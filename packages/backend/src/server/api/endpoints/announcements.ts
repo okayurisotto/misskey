@@ -44,17 +44,11 @@ export default class extends Endpoint<
 						where: {
 							AND: [
 								paginationQuery.where,
-								ps.withUnreads
-									? {
-											announcement_read: { none: { userId: me.id } },
-									  }
-									: {},
+								ps.withUnreads ? { reads: { none: { userId: me.id } } } : {},
 							],
 						},
 						include: {
-							_count: {
-								select: { announcement_read: { where: { userId: me.id } } },
-							},
+							_count: { select: { reads: { where: { userId: me.id } } } },
 						},
 						orderBy: paginationQuery.orderBy,
 						take: ps.limit,
@@ -64,7 +58,7 @@ export default class extends Endpoint<
 					...pick(announcement, ['id', 'title', 'text', 'imageUrl']),
 					createdAt: announcement.createdAt.toISOString(),
 					updatedAt: announcement.updatedAt?.toISOString() ?? null,
-					isRead: announcement._count.announcement_read !== 0,
+					isRead: announcement._count.reads !== 0,
 				}));
 			} else {
 				const announcements =

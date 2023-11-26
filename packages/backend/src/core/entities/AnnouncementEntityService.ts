@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma, announcement, announcement_read } from '@prisma/client';
+import {
+	Prisma,
+	type Announcement,
+	type announcement_read,
+} from '@prisma/client';
 import { z } from 'zod';
 import { pick } from 'omick';
 import type { AnnouncementForAdminSchema } from '@/models/zod/AnnouncementForAdminSchema.js';
@@ -9,7 +13,7 @@ import { IdService } from '../IdService.js';
 import { PaginationQuery } from '../PrismaQueryService.js';
 
 type AnnouncementPackData = {
-	announcement: EntityMap<'id', announcement>;
+	announcement: EntityMap<'id', Announcement>;
 	announcement_read: EntityMap<'id', announcement_read>;
 };
 
@@ -21,8 +25,8 @@ export class AnnouncementEntityService {
 	) {}
 
 	public async create(
-		data: Omit<Prisma.announcementCreateInput, 'id' | 'createdAt'>,
-	): Promise<announcement> {
+		data: Omit<Prisma.AnnouncementCreateInput, 'id' | 'createdAt'>,
+	): Promise<Announcement> {
 		return await this.prismaService.client.announcement.create({
 			data: {
 				...data,
@@ -33,7 +37,7 @@ export class AnnouncementEntityService {
 	}
 
 	public async showMany(
-		where: Prisma.announcementWhereInput,
+		where: Prisma.AnnouncementWhereInput,
 		paginationQuery?: PaginationQuery,
 	): Promise<z.infer<typeof AnnouncementForAdminSchema>[]> {
 		const results = await this.prismaService.client.announcement.findMany({
@@ -42,7 +46,7 @@ export class AnnouncementEntityService {
 				paginationQuery === undefined
 					? where
 					: { AND: [where, paginationQuery.where] },
-			include: { announcement_read: true },
+			include: { reads: true },
 		});
 
 		return this.packMany(
@@ -51,15 +55,15 @@ export class AnnouncementEntityService {
 				announcement: new EntityMap('id', results),
 				announcement_read: new EntityMap(
 					'id',
-					results.map((v) => v.announcement_read).flat(),
+					results.map((v) => v.reads).flat(),
 				),
 			},
 		);
 	}
 
 	public async update(
-		where: Prisma.announcementWhereUniqueInput,
-		data: Pick<Prisma.announcementUpdateInput, 'imageUrl' | 'text' | 'title'>,
+		where: Prisma.AnnouncementWhereUniqueInput,
+		data: Pick<Prisma.AnnouncementUpdateInput, 'imageUrl' | 'text' | 'title'>,
 	): Promise<void> {
 		await this.prismaService.client.announcement.update({
 			where,
@@ -72,13 +76,13 @@ export class AnnouncementEntityService {
 	}
 
 	public async delete(
-		where: Prisma.announcementWhereUniqueInput,
+		where: Prisma.AnnouncementWhereUniqueInput,
 	): Promise<void> {
 		await this.prismaService.client.announcement.delete({ where });
 	}
 
 	public pack(
-		id: announcement['id'],
+		id: Announcement['id'],
 		data: AnnouncementPackData,
 	): z.infer<typeof AnnouncementForAdminSchema> {
 		const announcement = data.announcement.get(id);
@@ -102,7 +106,7 @@ export class AnnouncementEntityService {
 	}
 
 	public packMany(
-		ids: announcement['id'][],
+		ids: Announcement['id'][],
 		data: AnnouncementPackData,
 	): z.infer<typeof AnnouncementForAdminSchema>[] {
 		return ids.map((target) => this.pack(target, data));

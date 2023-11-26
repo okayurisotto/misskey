@@ -641,7 +641,7 @@ model Ad {
 }
 
 // お知らせ
-model announcement {
+model Announcement {
   id        String    @id(map: "PK_e0ef0550174fd1099a308fd18a0") @db.VarChar(32)
   createdAt DateTime  @db.Timestamptz(6)
   updatedAt DateTime? @db.Timestamptz(6)
@@ -649,9 +649,10 @@ model announcement {
   text      String    @db.VarChar(8192)
   imageUrl  String?   @db.VarChar(1024)
 
-  announcement_read announcement_read[]
+  reads announcement_read[]
 
   @@index([createdAt], map: "IDX_118ec703e596086fc4515acb39")
+  @@map("announcement")
 }
 
 // お知らせの既読
@@ -660,7 +661,7 @@ model announcement_read {
   createdAt      DateTime     @db.Timestamptz(6)
   //
   announcementId String       @db.VarChar(32)
-  announcement   announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_603a7b1e7aa0533c6c88e9bfafe")
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_603a7b1e7aa0533c6c88e9bfafe")
   //
   userId         String       @db.VarChar(32)
   user           user         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8288151386172b8109f7239ab28")
