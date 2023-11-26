@@ -11,7 +11,7 @@ export class JanitorService implements OnApplicationShutdown {
 	constructor(private readonly prismaService: PrismaService) {}
 
 	private async tick(): Promise<void> {
-		await this.prismaService.client.attestation_challenge.deleteMany({
+		await this.prismaService.client.attestationChallenge.deleteMany({
 			where: {
 				createdAt: { lt: new Date(new Date().getTime() - 5 * 60 * 1000) },
 			},

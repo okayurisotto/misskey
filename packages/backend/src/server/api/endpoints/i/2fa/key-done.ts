@@ -128,7 +128,7 @@ export default class extends Endpoint<
 			if (!verificationData.valid) throw new Error('signature invalid');
 
 			const attestationChallenge =
-				await this.prismaService.client.attestation_challenge.findUnique({
+				await this.prismaService.client.attestationChallenge.findUnique({
 					where: {
 						id_userId: {
 							userId: me.id,
@@ -145,7 +145,7 @@ export default class extends Endpoint<
 				throw new Error('non-existent challenge');
 			}
 
-			await this.prismaService.client.attestation_challenge.delete({
+			await this.prismaService.client.attestationChallenge.delete({
 				where: {
 					id_userId: {
 						userId: me.id,

@@ -727,7 +727,7 @@ model App {
 }
 
 // 2FA
-model attestation_challenge {
+model AttestationChallenge {
   id                    String   @db.VarChar(32)
   createdAt             DateTime @db.Timestamptz(6)
   challenge             String   @db.VarChar(64)
@@ -739,6 +739,7 @@ model attestation_challenge {
   @@id([id, userId], map: "PK_d0ba6786e093f1bcb497572a6b5")
   @@index([challenge], map: "IDX_47efb914aed1f72dd39a306c7b")
   @@index([userId], map: "IDX_f1a461a618fa1755692d0e0d59")
+  @@map("attestation_challenge")
 }
 
 // ?
@@ -1901,7 +1902,7 @@ model user {
   announcement_read                                         AnnouncementRead[]
   antenna                                                   Antenna[]
   app                                                       App[]
-  attestation_challenge                                     attestation_challenge[]
+  attestation_challenge                                     AttestationChallenge[]
   auth_session                                              auth_session[]
   blocking_blocking_blockerIdTouser                         blocking[]               @relation("blocking_blockerIdTouser")
   blocking_blocking_blockeeIdTouser                         blocking[]               @relation("blocking_blockeeIdTouser")

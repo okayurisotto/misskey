@@ -63,7 +63,7 @@ export default class extends Endpoint<
 
 			const challengeId = this.idService.genId();
 
-			await this.prismaService.client.attestation_challenge.create({
+			await this.prismaService.client.attestationChallenge.create({
 				data: {
 					userId: me.id,
 					id: challengeId,

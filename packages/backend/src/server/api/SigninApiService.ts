@@ -180,7 +180,7 @@ export class SigninApiService {
 
 			const clientDataJSON = Buffer.from(body.clientDataJSON, 'hex');
 			const clientData = JSON.parse(clientDataJSON.toString('utf-8'));
-			const challenge = await this.prismaService.client.attestation_challenge.findFirst({
+			const challenge = await this.prismaService.client.attestationChallenge.findFirst({
 				where: {
 					userId: user.id,
 					id: body.challengeId,
@@ -195,7 +195,7 @@ export class SigninApiService {
 				});
 			}
 
-			await this.prismaService.client.attestation_challenge.deleteMany({
+			await this.prismaService.client.attestationChallenge.deleteMany({
 				where: {
 					userId: user.id,
 					id: body.challengeId,
@@ -268,7 +268,7 @@ export class SigninApiService {
 
 			const challengeId = this.idService.genId();
 
-			await this.prismaService.client.attestation_challenge.create({
+			await this.prismaService.client.attestationChallenge.create({
 				data: {
 					userId: user.id,
 					id: challengeId,
