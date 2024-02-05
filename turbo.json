@@ -5,10 +5,6 @@
 			"dependsOn": ["^build"],
 			"outputs": ["built/"]
 		},
-		"build:type": {
-			"dependsOn": ["^build:type"],
-			"outputs": ["types/"]
-		},
 		"lint": {},
 		"test": {},
 		"test-and-coverage": {}
