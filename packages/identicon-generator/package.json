@@ -4,13 +4,13 @@
 	"version": "0.0.0",
 	"type": "module",
 	"main": "./built/index.js",
-	"types": "./types/index.d.ts",
+	"types": "./built/index.d.ts",
 	"scripts": {
-		"build": "swc --out-dir ./built ./src",
-		"build:type": "tsc --declaration --emitDeclarationOnly --outDir ./types"
+		"build": "tsup"
 	},
 	"devDependencies": {
-		"@types/random-seed": "^0.3.5"
+		"@types/random-seed": "^0.3.5",
+		"tsup": "^8.0.1"
 	},
 	"optionalDependencies": {
 		"@hono/node-server": "^1.2.2",
