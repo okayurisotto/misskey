@@ -13,10 +13,10 @@
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^20.8.10",
+    "@types/node": "^20.11.16",
     "tsup": "^8.0.1"
   },
   "dependencies": {
-    "type-fest": "^4.6.0"
+    "type-fest": "^4.10.2"
   }
 }
