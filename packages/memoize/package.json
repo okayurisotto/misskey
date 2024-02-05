@@ -5,9 +5,11 @@
 	"license": "CC0-1.0",
 	"type": "module",
 	"main": "./built/index.js",
-	"types": "./types/index.d.ts",
+	"types": "./built/index.d.ts",
 	"scripts": {
-		"build": "swc --out-dir ./built ./src",
-		"build:type": "tsc --declaration --emitDeclarationOnly --outDir ./types"
+		"build": "tsup"
+	},
+	"devDependencies": {
+		"tsup": "^8.0.1"
 	}
 }
