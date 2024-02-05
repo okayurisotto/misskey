@@ -6,12 +6,12 @@
   "types": "./built/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "swc -d built src",
-    "build:type": "tsc --declaration --emitDeclarationOnly --outDir built src/index.ts",
+    "build": "tsup",
     "test": "vitest"
   },
   "devDependencies": {
-    "@types/node": "^20.8.10"
+    "@types/node": "^20.8.10",
+    "tsup": "^8.0.1"
   },
   "dependencies": {
     "openapi3-ts": "^4.1.2",
