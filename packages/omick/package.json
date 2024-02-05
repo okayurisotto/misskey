@@ -4,21 +4,17 @@
   "version": "0.0.0",
   "license": "CC0-1.0",
   "main": "./built/index.js",
-  "types": "./types/index.d.ts",
-  "files": [
-    "./built",
-    "./types"
-  ],
+  "types": "./built/index.d.ts",
   "type": "module",
   "scripts": {
-    "build": "swc -d built src",
-    "build:type": "tsc --declaration --emitDeclarationOnly --outDir ./types",
+    "build": "tsup",
     "format": "prettier -w ./src",
     "test": "vitest",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
-    "@types/node": "^20.8.10"
+    "@types/node": "^20.8.10",
+    "tsup": "^8.0.1"
   },
   "dependencies": {
     "type-fest": "^4.6.0"
