@@ -15,7 +15,6 @@ import type { RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
-import { AbuseUserReportFetchingService } from '../entities/AbuseUserReportFetchingService.js';
 import { UserFollowingCreateService } from '../UserFollowingCreateService.js';
 import { UserFollowingDeleteService } from '../UserFollowingDeleteService.js';
 import { UserFollowRequestCancelService } from '../UserFollowRequestCancelService.js';

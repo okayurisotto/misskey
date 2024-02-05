@@ -1,19 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { CacheService } from '@/core/CacheService.js';
-import { LocalUser, RemoteUser } from '@/models/entities/User.js';
+import { RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApPersonResolveService } from './models/ApPersonResolveService.js';
 import { ApDbResolverCacheService } from './ApDbResolverCacheService.js';
-import { ApUriParseService } from './ApUriParseService.js';
-import type { note, user_publickey } from '@prisma/client';
-import type { IObject } from './type.js';
+import type { user_publickey } from '@prisma/client';
 
 @Injectable()
 export class ApDbResolverService {
 	constructor(
 		private readonly apDbResolverCacheService: ApDbResolverCacheService,
 		private readonly apPersonResolveService: ApPersonResolveService,
-		private readonly apUriParseService: ApUriParseService,
 		private readonly cacheService: CacheService,
 		private readonly prismaService: PrismaService,
 	) {}
