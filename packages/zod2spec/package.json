@@ -10,11 +10,11 @@
     "test": "vitest"
   },
   "devDependencies": {
-    "@types/node": "^20.8.10",
+    "@types/node": "^20.11.16",
     "tsup": "^8.0.1"
   },
   "dependencies": {
-    "openapi3-ts": "^4.1.2",
+    "openapi3-ts": "^4.2.1",
     "zod": "^3.22.4"
   }
 }
