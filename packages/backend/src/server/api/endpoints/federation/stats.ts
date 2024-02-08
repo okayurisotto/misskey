@@ -49,10 +49,10 @@ export default class extends Endpoint<
 						take: ps.limit,
 					}),
 					this.prismaService.client.following.count({
-						where: { followeeHost: { not: null } },
+						where: { followee: { host: { not: null } } },
 					}),
 					this.prismaService.client.following.count({
-						where: { followerHost: { not: null } },
+						where: { follower: { host: { not: null } } },
 					}),
 				]);
 

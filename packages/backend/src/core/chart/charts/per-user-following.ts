@@ -43,16 +43,16 @@ export default class PerUserFollowingChart extends Chart<typeof schema> {
 			remoteFollowersCount,
 		] = await Promise.all([
 			this.prismaService.client.following.count({
-				where: { followerId: group, followeeHost: null },
+				where: { followerId: group, followee: { host: null } },
 			}),
 			this.prismaService.client.following.count({
-				where: { followeeId: group, followerHost: null },
+				where: { followeeId: group, follower: { host: null } },
 			}),
 			this.prismaService.client.following.count({
-				where: { followerId: group, followeeHost: { not: null } },
+				where: { followerId: group, followee: { host: { not: null } } },
 			}),
 			this.prismaService.client.following.count({
-				where: { followeeId: group, followerHost: { not: null } },
+				where: { followeeId: group, follower: { host: { not: null } } },
 			}),
 		]);
 

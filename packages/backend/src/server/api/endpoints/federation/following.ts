@@ -40,7 +40,9 @@ export default class extends Endpoint<
 			});
 
 			const followings = await this.prismaService.client.following.findMany({
-				where: { AND: [paginationQuery.where, { followerHost: ps.host }] },
+				where: {
+					AND: [paginationQuery.where, { follower: { host: ps.host } }],
+				},
 				orderBy: paginationQuery.orderBy,
 				take: ps.limit,
 			});

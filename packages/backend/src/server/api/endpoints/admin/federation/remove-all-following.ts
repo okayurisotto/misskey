@@ -26,18 +26,18 @@ export default class extends Endpoint<
 		super(meta, paramDef, async (ps) => {
 			const followings = await this.prismaService.client.following.findMany({
 				where: {
-					followerHost: ps.host,
+					follower: { host: ps.host },
 				},
 				include: {
-					user_following_followeeIdTouser: true,
-					user_following_followerIdTouser: true,
+					followee: true,
+					follower: true,
 				},
 			});
 
 			await this.queueService.createUnfollowJob(
 				followings.map((f) => {
-					const from = f.user_following_followerIdTouser;
-					const to = f.user_following_followeeIdTouser;
+					const from = f.follower;
+					const to = f.followee;
 					return { from: { id: from.id }, to: { id: to.id }, silent: true };
 				}),
 			);

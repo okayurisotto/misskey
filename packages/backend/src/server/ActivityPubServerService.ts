@@ -145,7 +145,7 @@ export class ActivityPubServerService {
 		);
 
 		if (page) {
-			const query: Prisma.followingWhereInput = {
+			const query: Prisma.FollowingWhereInput = {
 				followeeId: user.id,
 			};
 
@@ -256,7 +256,7 @@ export class ActivityPubServerService {
 		);
 
 		if (page) {
-			const query: Prisma.followingWhereInput = {
+			const query: Prisma.FollowingWhereInput = {
 				followerId: user.id,
 			};
 

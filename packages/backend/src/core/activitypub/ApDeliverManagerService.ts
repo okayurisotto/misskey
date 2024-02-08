@@ -104,14 +104,16 @@ class DeliverManager {
 			const followers = await this.prismaService.client.following.findMany({
 				where: {
 					followeeId: this.actor.id,
-					followerHost: { not: null },
+					follower: { host: { not: null } },
 				},
+				include: { follower: true },
 			});
 
 			for (const following of followers) {
-				const inbox = following.followerSharedInbox ?? following.followerInbox;
+				const inbox =
+					following.follower.sharedInbox ?? following.follower.inbox;
 				if (inbox === null) throw new Error('inbox is null');
-				inboxes.set(inbox, following.followerSharedInbox != null);
+				inboxes.set(inbox, following.follower.sharedInbox != null);
 			}
 		}
 

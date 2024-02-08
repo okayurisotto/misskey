@@ -47,29 +47,29 @@ export default class FederationChart extends Chart<typeof schema> {
 
 		const followerHosts = (
 			await this.prismaService.client.following.findMany({
-				where: { followerHost: { not: null } },
-				select: { followerHost: true },
+				where: { follower: { host: { not: null } } },
+				select: { follower: { select: { host: true } } },
 			})
 		)
-			.map((host) => host.followerHost)
+			.map((host) => host.follower.host)
 			.filter((v): v is string => v !== null);
 
 		const followeeHosts = (
 			await this.prismaService.client.following.findMany({
-				where: { followeeHost: { not: null } },
-				select: { followeeHost: true },
+				where: { followee: { host: { not: null } } },
+				select: { followee: { select: { host: true } } },
 			})
 		)
-			.map((host) => host.followeeHost)
+			.map((host) => host.followee.host)
 			.filter((v): v is string => v !== null);
 
 		const pubInstances = (
 			await this.prismaService.client.following.findMany({
-				where: { followerHost: { not: null } },
-				select: { followerHost: true },
+				where: { follower: { host: { not: null } } },
+				select: { follower: { select: { host: true } } },
 			})
 		)
-			.map((host) => host.followerHost)
+			.map((host) => host.follower.host)
 			.filter((v): v is string => v !== null);
 
 		const [sub, pub, pubsub, subActive, pubActive] = await Promise.all([
@@ -77,19 +77,21 @@ export default class FederationChart extends Chart<typeof schema> {
 				.findMany({
 					where: {
 						AND: [
-							{ followeeHost: { not: null } },
+							{ followee: { host: { not: null } } },
 							meta.blockedHosts.length === 0
 								? {}
 								: {
-										followeeHost: {
-											mode: 'insensitive',
-											notIn: meta.blockedHosts.flatMap((host) => [
-												host,
-												`%.${host}%`,
-											]),
+										followee: {
+											host: {
+												mode: 'insensitive',
+												notIn: meta.blockedHosts.flatMap((host) => [
+													host,
+													`%.${host}%`,
+												]),
+											},
 										},
 								  },
-							{ followeeHost: { notIn: suspendedInstances } },
+							{ followee: { host: { notIn: suspendedInstances } } },
 						],
 					},
 					distinct: 'followeeHost',
@@ -99,19 +101,21 @@ export default class FederationChart extends Chart<typeof schema> {
 				.findMany({
 					where: {
 						AND: [
-							{ followerHost: { not: null } },
+							{ follower: { host: { not: null } } },
 							meta.blockedHosts.length === 0
 								? {}
 								: {
-										followerHost: {
-											mode: 'insensitive',
-											notIn: meta.blockedHosts.flatMap((host) => [
-												host,
-												`%.${host}%`,
-											]),
+										follower: {
+											host: {
+												mode: 'insensitive',
+												notIn: meta.blockedHosts.flatMap((host) => [
+													host,
+													`%.${host}%`,
+												]),
+											},
 										},
 								  },
-							{ followerHost: { notIn: suspendedInstances } },
+							{ follower: { host: { notIn: suspendedInstances } } },
 						],
 					},
 					distinct: 'followerHost',
@@ -121,20 +125,22 @@ export default class FederationChart extends Chart<typeof schema> {
 				.findMany({
 					where: {
 						AND: [
-							{ followeeHost: { not: null } },
+							{ followee: { host: { not: null } } },
 							meta.blockedHosts.length === 0
 								? {}
 								: {
-										followeeHost: {
-											mode: 'insensitive',
-											notIn: meta.blockedHosts.flatMap((host) => [
-												host,
-												`%.${host}%`,
-											]),
+										followee: {
+											host: {
+												mode: 'insensitive',
+												notIn: meta.blockedHosts.flatMap((host) => [
+													host,
+													`%.${host}%`,
+												]),
+											},
 										},
 								  },
-							{ followeeHost: { notIn: suspendedInstances } },
-							{ followeeHost: { in: followerHosts } },
+							{ followee: { host: { notIn: suspendedInstances } } },
+							{ followee: { host: { in: followerHosts } } },
 						],
 					},
 					distinct: 'followeeHost',

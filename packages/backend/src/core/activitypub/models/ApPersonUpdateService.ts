@@ -190,15 +190,6 @@ export class ApPersonUpdateService {
 		// ハッシュタグ更新
 		this.hashtagService.updateUsertags(exist, tags);
 
-		// 該当ユーザーが既にフォロワーになっていた場合はFollowingもアップデートする
-		await this.prismaService.client.following.updateMany({
-			where: { followerId: exist.id },
-			data: {
-				followerSharedInbox:
-					person.sharedInbox ?? person.endpoints?.sharedInbox,
-			},
-		});
-
 		await this.apPersonFeaturedUpdateService
 			.update(exist.id, resolver)
 			.catch((err) => {

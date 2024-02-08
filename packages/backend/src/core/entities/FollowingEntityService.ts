@@ -4,7 +4,7 @@ import type { FollowingSchema } from '@/models/zod/FollowingSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
-import type { following, user } from '@prisma/client';
+import type { Following, user } from '@prisma/client';
 
 @Injectable()
 export class FollowingEntityService {
@@ -23,7 +23,7 @@ export class FollowingEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: following['id'] | following,
+		src: Following['id'] | Following,
 		me?: { id: user['id'] } | null | undefined,
 		opts: {
 			populateFollowee?: boolean;

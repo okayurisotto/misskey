@@ -57,7 +57,7 @@ export default class extends Endpoint<
 					AND: [
 						paginationQuery.where,
 						{
-							user_following_followeeIdTouser:
+							followee:
 								'userId' in ps
 									? { id: ps.userId }
 									: {
@@ -66,7 +66,7 @@ export default class extends Endpoint<
 									  },
 						},
 						{
-							user_following_followeeIdTouser: {
+							followee: {
 								OR: [
 									{
 										AND: [

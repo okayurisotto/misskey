@@ -52,8 +52,8 @@ export class UserFollowingDeleteService {
 				},
 			},
 			include: {
-				user_following_followerIdTouser: true,
-				user_following_followeeIdTouser: true,
+				follower: true,
+				followee: true,
 			},
 		});
 
@@ -70,10 +70,7 @@ export class UserFollowingDeleteService {
 
 		this.cacheService.userFollowingsCache.refresh(follower.id);
 
-		await this.decrementFollowing(
-			following.user_following_followerIdTouser,
-			following.user_following_followeeIdTouser,
-		);
+		await this.decrementFollowing(following.follower, following.followee);
 
 		// Publish unfollow event
 		if (!silent && this.userEntityUtilService.isLocalUser(follower)) {
@@ -201,18 +198,14 @@ export class UserFollowingDeleteService {
 					await this.prismaService.client.following.count({
 						where: {
 							followerId: user.id,
-							user_following_followeeIdTouser: {
-								movedToUri: null,
-							},
+							followee: { movedToUri: null },
 						},
 					});
 				const nonMovedFollowers =
 					await this.prismaService.client.following.count({
 						where: {
 							followeeId: user.id,
-							user_following_followerIdTouser: {
-								movedToUri: null,
-							},
+							follower: { movedToUri: null },
 						},
 					});
 				await this.prismaService.client.user.update({

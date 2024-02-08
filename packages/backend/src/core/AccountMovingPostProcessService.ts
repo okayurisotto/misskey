@@ -46,7 +46,6 @@ export class AccountMovingPostProcessService {
 		const followings = await this.prismaService.client.following.findMany({
 			where: {
 				followeeId: src.id,
-				followerHost: null, // follower is local
 				followerId: { not: proxy?.id },
 			},
 		});

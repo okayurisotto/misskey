@@ -35,7 +35,7 @@ export class ExportFollowingProcessorService {
 				muting_muting_muterIdTouser: true,
 				following_following_followeeIdTouser: {
 					orderBy: { id: 'asc' },
-					include: { user_following_followerIdTouser: true },
+					include: { follower: true },
 				},
 			},
 		});
@@ -51,7 +51,7 @@ export class ExportFollowingProcessorService {
 				return !muteeIds.has(following.followeeId);
 			})
 			.map((following) => {
-				const user = following.user_following_followerIdTouser;
+				const user = following.follower;
 
 				if (
 					job.data.excludeInactive &&

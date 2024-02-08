@@ -68,22 +68,6 @@ export class UserFollowingCreateProcessService {
 					createdAt: new Date(),
 					followerId: follower.id,
 					followeeId: followee.id,
-
-					// 非正規化
-					followerHost: follower.host,
-					followerInbox: this.userEntityUtilService.isRemoteUser(follower)
-						? follower.inbox
-						: null,
-					followerSharedInbox: this.userEntityUtilService.isRemoteUser(follower)
-						? follower.sharedInbox
-						: null,
-					followeeHost: followee.host,
-					followeeInbox: this.userEntityUtilService.isRemoteUser(followee)
-						? followee.inbox
-						: null,
-					followeeSharedInbox: this.userEntityUtilService.isRemoteUser(followee)
-						? followee.sharedInbox
-						: null,
 				},
 			})
 			.catch((err) => {

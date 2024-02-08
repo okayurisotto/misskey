@@ -39,14 +39,15 @@ export class UserSuspendService {
 			const followings = await this.prismaService.client.following.findMany({
 				where: {
 					OR: [
-						{ followerSharedInbox: { not: null } },
-						{ followeeSharedInbox: { not: null } },
+						{ follower: { sharedInbox: { not: null } } },
+						{ followee: { sharedInbox: { not: null } } },
 					],
 				},
+				include: { followee: true, follower: true },
 			});
 
 			const inboxes = followings.map(
-				(x) => x.followerSharedInbox ?? x.followeeSharedInbox,
+				(x) => x.follower.sharedInbox ?? x.followee.sharedInbox,
 			);
 
 			for (const inbox of inboxes) {
@@ -82,14 +83,15 @@ export class UserSuspendService {
 			const followings = await this.prismaService.client.following.findMany({
 				where: {
 					OR: [
-						{ followerSharedInbox: { not: null } },
-						{ followeeSharedInbox: { not: null } },
+						{ follower: { sharedInbox: { not: null } } },
+						{ followee: { sharedInbox: { not: null } } },
 					],
 				},
+				include: { followee: true, follower: true },
 			});
 
 			const inboxes = followings.map(
-				(x) => x.followerSharedInbox ?? x.followeeSharedInbox,
+				(x) => x.follower.sharedInbox ?? x.followee.sharedInbox,
 			);
 
 			for (const inbox of inboxes) {

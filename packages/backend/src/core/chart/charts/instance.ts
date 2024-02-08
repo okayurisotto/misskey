@@ -41,10 +41,10 @@ export default class InstanceChart extends Chart<typeof schema> {
 				this.prismaService.client.note.count({ where: { userHost: group } }),
 				this.prismaService.client.user.count({ where: { host: group } }),
 				this.prismaService.client.following.count({
-					where: { followerHost: group },
+					where: { follower: { host: group } },
 				}),
 				this.prismaService.client.following.count({
-					where: { followeeHost: group },
+					where: { followee: { host: group } },
 				}),
 				this.prismaService.client.driveFile.count({
 					where: { userHost: group },

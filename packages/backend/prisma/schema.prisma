@@ -1090,22 +1090,23 @@ model FollowRequest {
 }
 
 // ユーザーフォロー
-model following {
-  id                              String   @id(map: "PK_c76c6e044bdf76ecf8bfb82a645") @db.VarChar(32)
-  createdAt                       DateTime @db.Timestamptz(6)
+model Following {
+  id         String   @id(map: "PK_c76c6e044bdf76ecf8bfb82a645") @db.VarChar(32)
+  createdAt  DateTime @db.Timestamptz(6)
+  //
+  followeeId String   @db.VarChar(32)
+  followee   user     @relation("following_followeeIdTouser", fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_24e0042143a18157b234df186c3")
+  //
+  followerId String   @db.VarChar(32)
+  follower   user     @relation("following_followerIdTouser", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6516c5a6f3c015b4eed39978be5")
+
   // 非正規化
-  followerHost                    String?  @db.VarChar(128)
-  followerInbox                   String?  @db.VarChar(512)
-  followerSharedInbox             String?  @db.VarChar(512)
-  followeeHost                    String?  @db.VarChar(128)
-  followeeInbox                   String?  @db.VarChar(512)
-  followeeSharedInbox             String?  @db.VarChar(512)
-  //
-  followeeId                      String   @db.VarChar(32)
-  user_following_followeeIdTouser user     @relation("following_followeeIdTouser", fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_24e0042143a18157b234df186c3")
-  //
-  followerId                      String   @db.VarChar(32)
-  user_following_followerIdTouser user     @relation("following_followerIdTouser", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6516c5a6f3c015b4eed39978be5")
+  followerHost        String? @ignore @db.VarChar(128)
+  followerInbox       String? @ignore @db.VarChar(512)
+  followerSharedInbox String? @ignore @db.VarChar(512)
+  followeeHost        String? @ignore @db.VarChar(128)
+  followeeInbox       String? @ignore @db.VarChar(512)
+  followeeSharedInbox String? @ignore @db.VarChar(512)
 
   @@unique([followerId, followeeId], map: "IDX_307be5f1d1252e0388662acb96")
   @@index([followeeId], map: "IDX_24e0042143a18157b234df186c")
@@ -1113,6 +1114,7 @@ model following {
   @@index([createdAt], map: "IDX_582f8fab771a9040a12961f3e7")
   @@index([followerId], map: "IDX_6516c5a6f3c015b4eed39978be")
   @@index([followeeHost], map: "IDX_fcdafee716dfe9c3b5fde90f30")
+  @@map("following")
 }
 
 // ギャラリーのお気に入り
@@ -1938,8 +1940,8 @@ model user {
   flash_like                                                FlashLike[]
   follow_request_follow_request_followeeIdTouser            FollowRequest[]          @relation("follow_request_followeeIdTouser")
   follow_request_follow_request_followerIdTouser            FollowRequest[]          @relation("follow_request_followerIdTouser")
-  following_following_followeeIdTouser                      following[]              @relation("following_followeeIdTouser")
-  following_following_followerIdTouser                      following[]              @relation("following_followerIdTouser")
+  following_following_followeeIdTouser                      Following[]              @relation("following_followeeIdTouser")
+  following_following_followerIdTouser                      Following[]              @relation("following_followerIdTouser")
   gallery_like                                              gallery_like[]
   gallery_post                                              gallery_post[]
   meta                                                      meta[]
