@@ -777,13 +777,6 @@ export class NoteCreateService implements OnApplicationShutdown {
 			//#endregion
 		}
 
-		if (data.channel) {
-			this.prismaService.client.channel.update({
-				where: { id: data.channel.id },
-				data: { lastNotedAt: new Date() },
-			});
-		}
-
 		// Register to search database
 		this.index(note);
 	}
