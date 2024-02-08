@@ -47,7 +47,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const orderBy = ((): Prisma.hashtagOrderByWithRelationInput => {
+			const orderBy = ((): Prisma.HashtagOrderByWithRelationInput => {
 				switch (ps.sort) {
 					case '+mentionedUsers':
 						return { mentionedUsersCount: 'desc' };

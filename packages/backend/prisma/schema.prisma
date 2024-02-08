@@ -1164,8 +1164,7 @@ model Gallery {
 }
 
 // ハッシュタグ
-// ユニーク制約忘れ
-model hashtag {
+model Hashtag {
   id                        String   @id(map: "PK_cb36eb8af8412bfa978f1165d78") @db.VarChar(32)
   name                      String   @unique(map: "IDX_347fec870eafea7b26c8a73bac") @db.VarChar(128)
   // 非正規化
@@ -1189,6 +1188,7 @@ model hashtag {
   @@index([mentionedUsersCount], map: "IDX_2710a55f826ee236ea1a62698f")
   @@index([mentionedRemoteUsersCount], map: "IDX_4c02d38a976c3ae132228c6fce")
   @@index([attachedUsersCount], map: "IDX_d57f9030cd3af7f63ffb1c267c")
+  @@map("hashtag")
 }
 
 // 連合先インスタンス（サーバ）

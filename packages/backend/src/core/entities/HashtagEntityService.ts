@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { HashtagSchema } from '@/models/zod/HashtagSchema.js';
 import type { z } from 'zod';
-import type { hashtag } from '@prisma/client';
+import type { Hashtag } from '@prisma/client';
 
 @Injectable()
 export class HashtagEntityService {
@@ -11,7 +11,7 @@ export class HashtagEntityService {
 	 * @param src
 	 * @returns
 	 */
-	public async pack(src: hashtag): Promise<z.infer<typeof HashtagSchema>> {
+	public async pack(src: Hashtag): Promise<z.infer<typeof HashtagSchema>> {
 		return {
 			tag: src.name,
 			mentionedUsersCount: src.mentionedUsersCount,
