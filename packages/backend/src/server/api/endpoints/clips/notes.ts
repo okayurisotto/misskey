@@ -41,7 +41,7 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			const clipNotes = await this.prismaService.client.clip_note.findMany({
+			const clipNotes = await this.prismaService.client.clipNote.findMany({
 				where: {
 					AND: [
 						{

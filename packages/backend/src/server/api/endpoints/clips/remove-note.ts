@@ -25,12 +25,9 @@ export default class extends Endpoint<
 > {
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			await this.prismaService.client.clip_note.delete({
+			await this.prismaService.client.clipNote.delete({
 				where: {
-					noteId_clipId: {
-						noteId: ps.noteId,
-						clipId: ps.clipId,
-					},
+					noteId_clipId: { noteId: ps.noteId, clipId: ps.clipId },
 					clip: { userId: me.id },
 				},
 			});

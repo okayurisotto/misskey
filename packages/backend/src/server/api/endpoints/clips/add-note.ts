@@ -40,7 +40,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const [currentCount, policies] = await Promise.all([
-				this.prismaService.client.clip_note.count({
+				this.prismaService.client.clipNote.count({
 					where: { clipId: ps.clipId },
 				}),
 				this.roleService.getUserPolicies(me.id),
@@ -50,7 +50,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.tooManyClipNotes);
 			}
 
-			await this.prismaService.client.clip_note.create({
+			await this.prismaService.client.clipNote.create({
 				data: {
 					id: this.idService.genId(),
 					noteId: ps.noteId,
