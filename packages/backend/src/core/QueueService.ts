@@ -24,7 +24,7 @@ import type {
 } from '../queue/types.js';
 import type httpSignature from '@peertube/http-signature';
 import type * as Bull from 'bullmq';
-import type { drive_file, webhook } from '@prisma/client';
+import type { DriveFile, webhook } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -317,7 +317,7 @@ export class QueueService {
 
 	public createImportFollowingJob(
 		user: ThinUser,
-		fileId: drive_file['id'],
+		fileId: DriveFile['id'],
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importFollowing',
@@ -344,7 +344,7 @@ export class QueueService {
 
 	public createImportMutingJob(
 		user: ThinUser,
-		fileId: drive_file['id'],
+		fileId: DriveFile['id'],
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importMuting',
@@ -361,7 +361,7 @@ export class QueueService {
 
 	public createImportBlockingJob(
 		user: ThinUser,
-		fileId: drive_file['id'],
+		fileId: DriveFile['id'],
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importBlocking',
@@ -409,7 +409,7 @@ export class QueueService {
 
 	public createImportUserListsJob(
 		user: ThinUser,
-		fileId: drive_file['id'],
+		fileId: DriveFile['id'],
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importUserLists',
@@ -426,7 +426,7 @@ export class QueueService {
 
 	public createImportCustomEmojisJob(
 		user: ThinUser,
-		fileId: drive_file['id'],
+		fileId: DriveFile['id'],
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importCustomEmojis',

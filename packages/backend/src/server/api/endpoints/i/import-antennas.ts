@@ -58,7 +58,7 @@ export default class extends Endpoint<
 				})) > 0;
 			if (!userExist) throw new ApiError(meta.errors.noSuchUser);
 
-			const file = await this.prismaService.client.drive_file.findUnique({
+			const file = await this.prismaService.client.driveFile.findUnique({
 				where: { id: ps.fileId },
 			});
 			if (file === null) throw new ApiError(meta.errors.noSuchFile);

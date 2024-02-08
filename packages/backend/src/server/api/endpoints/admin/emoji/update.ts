@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { drive_file } from '@prisma/client';
+import { DriveFile } from '@prisma/client';
 import {
 	noSuchEmoji__,
 	noSuchFile__,
@@ -51,10 +51,10 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const driveFile = await (async (): Promise<drive_file | undefined> => {
+			const driveFile = await (async (): Promise<DriveFile | undefined> => {
 				if (!ps.fileId) return undefined;
 
-				const result = await this.prismaService.client.drive_file.findUnique({
+				const result = await this.prismaService.client.driveFile.findUnique({
 					where: { id: ps.fileId },
 				});
 				if (result === null) {

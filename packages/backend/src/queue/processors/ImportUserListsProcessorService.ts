@@ -62,7 +62,7 @@ export class ImportUserListsProcessorService {
 		});
 		if (me === null) return;
 
-		const file = await this.prismaService.client.drive_file.findUnique({
+		const file = await this.prismaService.client.driveFile.findUnique({
 			where: { id: job.data.fileId },
 		});
 		if (file === null) return;

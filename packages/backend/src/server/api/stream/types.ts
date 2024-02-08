@@ -16,7 +16,7 @@ import type Emitter from 'strict-event-emitter-types';
 import type {
 	AbuseUserReport,
 	Antenna,
-	drive_file,
+	DriveFile,
 	drive_folder,
 	note,
 	page,
@@ -97,7 +97,7 @@ export interface MainStreamTypes {
 
 export interface DriveStreamTypes {
 	fileCreated: z.infer<typeof DriveFileSchema>;
-	fileDeleted: drive_file['id'];
+	fileDeleted: DriveFile['id'];
 	fileUpdated: z.infer<typeof DriveFileSchema>;
 	folderCreated: z.infer<typeof DriveFolderSchema>;
 	folderDeleted: drive_folder['id'];

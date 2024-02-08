@@ -235,7 +235,7 @@ export default class extends Endpoint<
 			}
 
 			if (ps.avatarId) {
-				const avatar = await this.prismaService.client.drive_file.findUnique({
+				const avatar = await this.prismaService.client.driveFile.findUnique({
 					where: { id: ps.avatarId },
 				});
 
@@ -259,7 +259,7 @@ export default class extends Endpoint<
 			}
 
 			if (ps.bannerId) {
-				const banner = await this.prismaService.client.drive_file.findUnique({
+				const banner = await this.prismaService.client.driveFile.findUnique({
 					where: { id: ps.bannerId },
 				});
 

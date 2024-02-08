@@ -48,7 +48,7 @@ export default class extends Endpoint<
 
 			const getSensitiveDriveFileIds = async (): Promise<string[]> => {
 				return (
-					await this.prismaService.client.drive_file.findMany({
+					await this.prismaService.client.driveFile.findMany({
 						where: { isSensitive: true },
 						select: { id: true },
 					})

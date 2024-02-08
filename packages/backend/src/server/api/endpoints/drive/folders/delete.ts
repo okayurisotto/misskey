@@ -49,7 +49,7 @@ export default class extends Endpoint<
 				this.prismaService.client.drive_folder.count({
 					where: { parentId: folder.id },
 				}),
-				this.prismaService.client.drive_file.count({
+				this.prismaService.client.driveFile.count({
 					where: { folderId: folder.id },
 				}),
 			]);

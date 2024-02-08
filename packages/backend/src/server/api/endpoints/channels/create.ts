@@ -46,7 +46,7 @@ export default class extends Endpoint<
 		super(meta, paramDef, async (ps, me) => {
 			let banner = null;
 			if (ps.bannerId != null) {
-				banner = await this.prismaService.client.drive_file.findUnique({
+				banner = await this.prismaService.client.driveFile.findUnique({
 					where: {
 						id: ps.bannerId,
 						userId: me.id,

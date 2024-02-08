@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { RemoteUser } from '@/models/entities/User.js';
 import { ApImageCreateService } from './ApImageCreateService.js';
 import type { IObject } from '../type.js';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 @Injectable()
 export class ApImageResolveService {
@@ -17,7 +17,7 @@ export class ApImageResolveService {
 	public async resolve(
 		actor: RemoteUser,
 		value: string | IObject,
-	): Promise<drive_file> {
+	): Promise<DriveFile> {
 		// TODO
 
 		// リモートサーバーからフェッチしてきて登録

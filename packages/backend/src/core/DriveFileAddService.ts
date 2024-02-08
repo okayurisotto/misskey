@@ -21,7 +21,7 @@ import { DriveFileDeleteService } from './DriveFileDeleteService.js';
 import { DriveFileNameValidationService } from './entities/DriveFileNameValidationService.js';
 import { DriveUsageCalcService } from './entities/DriveUsageCalcService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { Prisma, drive_file, drive_folder, user } from '@prisma/client';
+import type { Prisma, DriveFile, drive_folder, user } from '@prisma/client';
 
 type AddFileArgs = {
 	/** User who wish to add file */
@@ -88,7 +88,7 @@ export class DriveFileAddService {
 		user: RemoteUser,
 		driveCapacity: number,
 	): Promise<void> {
-		const fileList = await this.prismaService.client.drive_file.findMany({
+		const fileList = await this.prismaService.client.driveFile.findMany({
 			where: {
 				userId: user.id,
 				isLink: false,
@@ -113,7 +113,7 @@ export class DriveFileAddService {
 		const exceedFileIds = fileList.slice(index).map((file) => file.id);
 
 		for (const fileId of exceedFileIds) {
-			const file = await this.prismaService.client.drive_file.findUnique({
+			const file = await this.prismaService.client.driveFile.findUnique({
 				where: { id: fileId },
 			});
 			if (file == null) continue;
@@ -135,7 +135,7 @@ export class DriveFileAddService {
 		requestIp = null,
 		requestHeaders = null,
 		ext = null,
-	}: AddFileArgs): Promise<drive_file> {
+	}: AddFileArgs): Promise<DriveFile> {
 		let skipNsfwCheck = false;
 		const instance = await this.metaService.fetch();
 		const userRoleNSFW =
@@ -195,7 +195,7 @@ export class DriveFileAddService {
 
 		if (user && !force) {
 			// Check if there is a file with the same hash
-			const much = await this.prismaService.client.drive_file.findFirst({
+			const much = await this.prismaService.client.driveFile.findFirst({
 				where: { md5: info.md5, userId: user.id },
 			});
 
@@ -303,7 +303,7 @@ export class DriveFileAddService {
 			}
 		})();
 
-		let file: Prisma.drive_fileUncheckedCreateInput = {
+		let file: Prisma.DriveFileUncheckedCreateInput = {
 			id: this.idService.genId(),
 			createdAt: new Date(),
 			userId: user ? user.id : null,
@@ -344,7 +344,7 @@ export class DriveFileAddService {
 				file.type = info.type.mime;
 				file.storedInternal = false;
 
-				const result = await this.prismaService.client.drive_file.create({
+				const result = await this.prismaService.client.driveFile.create({
 					data: {
 						...file,
 						requestHeaders: file.requestHeaders ?? undefined,
@@ -364,7 +364,7 @@ export class DriveFileAddService {
 					this.registerLogger.info(`already registered ${file.uri}`);
 
 					const result =
-						await this.prismaService.client.drive_file.findFirstOrThrow({
+						await this.prismaService.client.driveFile.findFirstOrThrow({
 							where: {
 								uri: file.uri!,
 								userId: user ? user.id : null,

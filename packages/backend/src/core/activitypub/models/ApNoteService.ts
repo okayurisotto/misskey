@@ -32,7 +32,7 @@ import { ApNoteEmojiExtractService } from './ApNoteEmojiExtractService.js';
 import { ApNoteFetchService } from './ApNoteFetchService.js';
 import type { Resolver } from '../ApResolverService.js';
 import type { IObject, IPost } from '../type.js';
-import type { drive_file, note } from '@prisma/client';
+import type { DriveFile, note } from '@prisma/client';
 
 @Injectable()
 export class ApNoteService {
@@ -174,7 +174,7 @@ export class ApNoteService {
 		// 添付ファイル
 		// TODO: attachmentは必ずしもImageではない
 		// TODO: attachmentは必ずしも配列ではない
-		const limit = promiseLimit<drive_file>(2);
+		const limit = promiseLimit<DriveFile>(2);
 		const files = await Promise.all(
 			toArray(note.attachment).map((attach) =>
 				limit(() =>

@@ -19,7 +19,7 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
-import type { Channel, drive_file, note, user } from '@prisma/client';
+import type { Channel, DriveFile, note, user } from '@prisma/client';
 
 const res = z.object({ createdNote: NoteSchema });
 export const meta = {
@@ -111,7 +111,7 @@ export default class extends Endpoint<
 				});
 			}
 
-			let files: drive_file[] = [];
+			let files: DriveFile[] = [];
 			const fileIds =
 				ps.fileIds != null
 					? ps.fileIds
@@ -120,7 +120,7 @@ export default class extends Endpoint<
 					: null;
 			if (fileIds != null) {
 				files = (
-					await this.prismaService.client.drive_file.findMany({
+					await this.prismaService.client.driveFile.findMany({
 						where: { userId: me.id, id: { in: fileIds } },
 					})
 				).sort(({ id: a }, { id: b }) => {

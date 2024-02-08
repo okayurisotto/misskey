@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { DriveFileProxiedUrlGenerationService } from './DriveFileProxiedUrlGenerationService.js';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 @Injectable()
 export class DriveFilePublicUrlGenerationService {
@@ -10,7 +10,7 @@ export class DriveFilePublicUrlGenerationService {
 		private readonly driveFileProxiedUrlGenerationService: DriveFileProxiedUrlGenerationService,
 	) {}
 
-	public generate(file: drive_file, mode?: 'avatar'): string {
+	public generate(file: DriveFile, mode?: 'avatar'): string {
 		// リモートのファイル && 外部のメディアプロキシを経由する設定になっている
 		if (
 			file.uri !== null &&

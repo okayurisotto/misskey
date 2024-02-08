@@ -18,7 +18,7 @@ import { correctFilename } from '@/misc/correct-filename.js';
 import { isMimeImage } from '@/misc/is-mime-image.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 const FilePropertiesSchema = z.object({
 	width: z.number().optional(),
@@ -53,7 +53,7 @@ export class DriveFileSaveService {
 	 * @param size Size for original
 	 */
 	public async save(
-		file: Omit<drive_file, 'properties' | 'requestHeaders'> & {
+		file: Omit<DriveFile, 'properties' | 'requestHeaders'> & {
 			properties: {
 				width?: number;
 				height?: number;
@@ -68,7 +68,7 @@ export class DriveFileSaveService {
 		hash: string,
 		size: number,
 	): Promise<
-		Omit<drive_file, 'properties' | 'requestHeaders'> & {
+		Omit<DriveFile, 'properties' | 'requestHeaders'> & {
 			properties: {
 				width?: number;
 				height?: number;
@@ -179,7 +179,7 @@ export class DriveFileSaveService {
 			file.size = size;
 			file.storedInternal = false;
 
-			const result = await this.prismaService.client.drive_file.create({
+			const result = await this.prismaService.client.driveFile.create({
 				data: {
 					...file,
 					requestHeaders: file.requestHeaders ?? undefined,
@@ -233,7 +233,7 @@ export class DriveFileSaveService {
 			file.md5 = hash;
 			file.size = size;
 
-			const result = await this.prismaService.client.drive_file.create({
+			const result = await this.prismaService.client.driveFile.create({
 				data: {
 					...file,
 					requestHeaders: file.requestHeaders ?? undefined,

@@ -27,7 +27,7 @@ export class UserEntityPackLiteService {
 	private async migrate(user: user): Promise<void> {
 		if (user.avatarId !== null && user.avatarUrl === null) {
 			const avatar =
-				await this.prismaService.client.drive_file.findUniqueOrThrow({
+				await this.prismaService.client.driveFile.findUniqueOrThrow({
 					where: { id: user.avatarId },
 				});
 			const avatarUrl = this.driveFilePublicUrlGenerationService.generate(
@@ -45,7 +45,7 @@ export class UserEntityPackLiteService {
 
 		if (user.bannerId !== null && user.bannerUrl === null) {
 			const banner =
-				await this.prismaService.client.drive_file.findUniqueOrThrow({
+				await this.prismaService.client.driveFile.findUniqueOrThrow({
 					where: { id: user.bannerId },
 				});
 			const bannerUrl =

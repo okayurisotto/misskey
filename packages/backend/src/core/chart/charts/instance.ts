@@ -7,7 +7,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/instance.js';
 import type { KVs } from '../core.js';
-import type { drive_file, note } from '@prisma/client';
+import type { DriveFile, note } from '@prisma/client';
 
 /**
  * インスタンスごとのチャート
@@ -46,7 +46,7 @@ export default class InstanceChart extends Chart<typeof schema> {
 				this.prismaService.client.following.count({
 					where: { followeeHost: group },
 				}),
-				this.prismaService.client.drive_file.count({
+				this.prismaService.client.driveFile.count({
 					where: { userHost: group },
 				}),
 			]);
@@ -148,7 +148,7 @@ export default class InstanceChart extends Chart<typeof schema> {
 	}
 
 	public async updateDrive(
-		file: drive_file,
+		file: DriveFile,
 		isAdditional: boolean,
 	): Promise<void> {
 		const fileSizeKb = file.size / 1000;

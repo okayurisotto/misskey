@@ -51,7 +51,7 @@ import type {
 	note_reaction,
 	emoji,
 	Blocking,
-	drive_file,
+	DriveFile,
 	note,
 	poll,
 	poll_vote,
@@ -176,7 +176,7 @@ export class ApRendererService {
 		};
 	}
 
-	public renderDocument(file: drive_file): IApDocument {
+	public renderDocument(file: DriveFile): IApDocument {
 		return {
 			type: 'Document',
 			mediaType: file.webpublicType ?? file.type,
@@ -262,7 +262,7 @@ export class ApRendererService {
 		};
 	}
 
-	public renderImage(file: drive_file): IApImage {
+	public renderImage(file: DriveFile): IApImage {
 		return {
 			type: 'Image',
 			url: this.driveFilePublicUrlGenerationService.generate(file),
@@ -340,14 +340,14 @@ export class ApRendererService {
 	}
 
 	public async renderNote(note: note, dive = true): Promise<IPost> {
-		const getPromisedFiles = async (ids: string[]): Promise<drive_file[]> => {
+		const getPromisedFiles = async (ids: string[]): Promise<DriveFile[]> => {
 			if (ids.length === 0) return [];
-			const items = await this.prismaService.client.drive_file.findMany({
+			const items = await this.prismaService.client.driveFile.findMany({
 				where: { id: { in: ids } },
 			});
 			return ids
 				.map((id) => items.find((item) => item.id === id))
-				.filter((item): item is drive_file => item != null);
+				.filter((item): item is DriveFile => item != null);
 		};
 
 		let inReplyTo;
@@ -515,12 +515,12 @@ export class ApRendererService {
 
 		const [avatar, banner, profile] = await Promise.all([
 			user.avatarId
-				? this.prismaService.client.drive_file.findUnique({
+				? this.prismaService.client.driveFile.findUnique({
 						where: { id: user.avatarId },
 				  })
 				: undefined,
 			user.bannerId
-				? this.prismaService.client.drive_file.findUnique({
+				? this.prismaService.client.driveFile.findUnique({
 						where: { id: user.bannerId },
 				  })
 				: undefined,

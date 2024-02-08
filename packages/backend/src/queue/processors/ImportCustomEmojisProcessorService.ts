@@ -61,7 +61,7 @@ export class ImportCustomEmojisProcessorService {
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		this.logger.info('Importing custom emojis ...');
 
-		const file = await this.prismaService.client.drive_file.findUnique({
+		const file = await this.prismaService.client.driveFile.findUnique({
 			where: { id: job.data.fileId },
 		});
 		if (file === null) return;

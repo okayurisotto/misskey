@@ -10,7 +10,7 @@ import { DriveFileAddFromUrlService } from '@/core/DriveFileAddFromUrlService.js
 import { ApResolverService } from '../ApResolverService.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import type { IObject } from '../type.js';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 @Injectable()
 export class ApImageCreateService {
@@ -32,7 +32,7 @@ export class ApImageCreateService {
 	public async create(
 		actor: RemoteUser,
 		value: string | IObject,
-	): Promise<drive_file> {
+	): Promise<DriveFile> {
 		// 投稿者が凍結されていたらスキップ
 		if (actor.isSuspended) {
 			throw new Error('actor has been suspended');
@@ -77,11 +77,11 @@ export class ApImageCreateService {
 		if (!file.isLink || file.url === image.url) return file;
 
 		// URLが異なっている場合、同じ画像が以前に異なるURLで登録されていたということなので、URLを更新する
-		await this.prismaService.client.drive_file.update({
+		await this.prismaService.client.driveFile.update({
 			where: { id: file.id },
 			data: { url: image.url, uri: image.url },
 		});
-		return await this.prismaService.client.drive_file.findUniqueOrThrow({
+		return await this.prismaService.client.driveFile.findUniqueOrThrow({
 			where: { id: file.id },
 		});
 	}

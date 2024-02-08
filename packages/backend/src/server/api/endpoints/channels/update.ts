@@ -65,7 +65,7 @@ export default class extends Endpoint<
 			// eslint:disable-next-line:no-unnecessary-initializer
 			let banner = undefined;
 			if (ps.bannerId != null) {
-				banner = await this.prismaService.client.drive_file.findUnique({
+				banner = await this.prismaService.client.driveFile.findUnique({
 					where: {
 						id: ps.bannerId,
 						userId: me.id,

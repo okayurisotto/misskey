@@ -35,7 +35,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch file
-			const file = await this.prismaService.client.drive_file.findUnique({
+			const file = await this.prismaService.client.driveFile.findUnique({
 				where: {
 					id: ps.fileId,
 					userId: me.id,

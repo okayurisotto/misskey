@@ -50,7 +50,7 @@ import type {
 	Prisma,
 	App,
 	Channel,
-	drive_file,
+	DriveFile,
 	note,
 	user,
 	user_profile,
@@ -133,7 +133,7 @@ type Option = {
 	text?: string | null;
 	reply?: note | null;
 	renote?: note | null;
-	files?: drive_file[] | null;
+	files?: DriveFile[] | null;
 	poll?: IPoll | null;
 	localOnly?: boolean | null;
 	reactionAcceptance?: note['reactionAcceptance'];

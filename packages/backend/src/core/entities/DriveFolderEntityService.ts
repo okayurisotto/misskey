@@ -50,7 +50,7 @@ export class DriveFolderEntityService {
 						where: { parentId: folder.id },
 					}),
 				filesCount: () =>
-					this.prismaService.client.drive_file.count({
+					this.prismaService.client.driveFile.count({
 						where: { folderId: folder.id },
 					}),
 			});

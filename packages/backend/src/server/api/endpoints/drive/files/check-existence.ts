@@ -27,7 +27,7 @@ export default class extends Endpoint<
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
 			const exist =
-				(await this.prismaService.client.drive_file.count({
+				(await this.prismaService.client.driveFile.count({
 					where: {
 						md5: ps.md5,
 						userId: me.id,

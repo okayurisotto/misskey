@@ -7,7 +7,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-drive.js';
 import type { KVs } from '../core.js';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 /**
  * ユーザーごとのドライブに関するチャート
@@ -37,7 +37,7 @@ export default class PerUserDriveChart extends Chart<typeof schema> {
 		group: string,
 	): Promise<Partial<KVs<typeof schema>>> {
 		const [count, size] = await Promise.all([
-			this.prismaService.client.drive_file.count({ where: { userId: group } }),
+			this.prismaService.client.driveFile.count({ where: { userId: group } }),
 			this.driveUsageCalcService.calcUser(group),
 		]);
 
@@ -51,7 +51,7 @@ export default class PerUserDriveChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	public async update(file: drive_file, isAdditional: boolean): Promise<void> {
+	public async update(file: DriveFile, isAdditional: boolean): Promise<void> {
 		const fileSizeKb = file.size / 1000;
 		await this.commit(
 			{

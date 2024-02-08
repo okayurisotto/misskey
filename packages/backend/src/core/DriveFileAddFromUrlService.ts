@@ -3,7 +3,7 @@ import Logger from '@/misc/logger.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { DriveFileAddService } from './DriveFileAddService.js';
-import type { drive_file, drive_folder, user } from '@prisma/client';
+import type { DriveFile, drive_folder, user } from '@prisma/client';
 
 type UploadFromUrlArgs = {
 	url: string;
@@ -41,7 +41,7 @@ export class DriveFileAddFromUrlService {
 		comment = null,
 		requestIp = null,
 		requestHeaders = null,
-	}: UploadFromUrlArgs): Promise<drive_file> {
+	}: UploadFromUrlArgs): Promise<DriveFile> {
 		// Create temp file
 		const [path, cleanup] = await createTemp();
 

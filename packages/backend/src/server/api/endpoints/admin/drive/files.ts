@@ -51,7 +51,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const files = await this.prismaService.client.drive_file.findMany({
+			const files = await this.prismaService.client.driveFile.findMany({
 				where: {
 					AND: [
 						paginationQuery.where,

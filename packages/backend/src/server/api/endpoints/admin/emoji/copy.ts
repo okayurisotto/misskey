@@ -10,7 +10,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { DriveFileAddFromUrlService } from '@/core/DriveFileAddFromUrlService.js';
 import { ApiError } from '../../../error.js';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 const res = z.object({ id: MisskeyIdSchema });
 export const meta = {
@@ -46,7 +46,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchEmoji);
 			}
 
-			let driveFile: drive_file;
+			let driveFile: DriveFile;
 
 			try {
 				// Create file

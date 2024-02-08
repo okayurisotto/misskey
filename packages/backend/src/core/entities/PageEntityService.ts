@@ -7,7 +7,7 @@ import { PageContentSchema } from '@/models/zod/PageContentSchema.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
-import type { drive_file, page, user } from '@prisma/client';
+import type { DriveFile, page, user } from '@prisma/client';
 
 @Injectable()
 export class PageEntityService {
@@ -37,13 +37,13 @@ export class PageEntityService {
 		const collectFiles = (
 			xs: z.infer<typeof PageContentSchema>,
 			userId: user['id'],
-		): Promise<drive_file | null>[] => {
+		): Promise<DriveFile | null>[] => {
 			return xs
 				.map((x) => {
 					return [
 						...(x.type === 'image' && x.fileId !== undefined
 							? [
-									this.prismaService.client.drive_file.findUnique({
+									this.prismaService.client.driveFile.findUnique({
 										where: { id: x.fileId, userId },
 									}),
 							  ]

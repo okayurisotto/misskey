@@ -8,7 +8,7 @@ import { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../../error.js';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 const res = DriveFileSchema;
 export const meta = {
@@ -38,14 +38,14 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			let file: drive_file | null = null;
+			let file: DriveFile | null = null;
 
 			if ('fileId' in ps) {
-				file = await this.prismaService.client.drive_file.findUnique({
+				file = await this.prismaService.client.driveFile.findUnique({
 					where: { id: ps.fileId },
 				});
 			} else if (ps.url) {
-				file = await this.prismaService.client.drive_file.findFirst({
+				file = await this.prismaService.client.driveFile.findFirst({
 					where: {
 						OR: [
 							{ url: ps.url },

@@ -778,19 +778,19 @@ model Blocking {
 
 // チャンネル
 model Channel {
-  id            String      @id(map: "PK_590f33ee6ee7d76437acf362e39") @db.VarChar(32)
-  createdAt     DateTime    @db.Timestamptz(6)
-  name          String      @db.VarChar(128)
-  color         String      @default("#86b300") @db.VarChar(16) // 16進カラーコード
-  description   String?     @db.VarChar(2048)
-  isArchived    Boolean     @default(false)
-  pinnedNoteIds String[]    @default([]) @db.VarChar(128) // 外部キー制約忘れ
+  id            String     @id(map: "PK_590f33ee6ee7d76437acf362e39") @db.VarChar(32)
+  createdAt     DateTime   @db.Timestamptz(6)
+  name          String     @db.VarChar(128)
+  color         String     @default("#86b300") @db.VarChar(16) // 16進カラーコード
+  description   String?    @db.VarChar(2048)
+  isArchived    Boolean    @default(false)
+  pinnedNoteIds String[]   @default([]) @db.VarChar(128) // 外部キー制約忘れ
   //
-  userId        String?     @db.VarChar(32)
-  user          user?       @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_823bae55bd81b3be6e05cff4383")
+  userId        String?    @db.VarChar(32)
+  user          user?      @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_823bae55bd81b3be6e05cff4383")
   //
-  bannerId      String?     @db.VarChar(32)
-  banner        drive_file? @relation(fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_999da2bcc7efadbfe0e92d3bc19")
+  bannerId      String?    @db.VarChar(32)
+  banner        DriveFile? @relation(fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_999da2bcc7efadbfe0e92d3bc19")
 
   favorites  ChannelFavorite[]
   followings ChannelFollowing[]
@@ -918,44 +918,44 @@ model ClipNote {
 }
 
 // ドライブのファイル
-model drive_file {
-  id                           String        @id(map: "PK_43ddaaaf18c9e68029b7cbb032e") @db.VarChar(32)
-  createdAt                    DateTime      @db.Timestamptz(6)
-  userHost                     String?       @db.VarChar(128)
-  md5                          String        @db.VarChar(32)
-  name                         String        @db.VarChar(256)
-  type                         String        @db.VarChar(128)
-  size                         Int
-  comment                      String?       @db.VarChar(512)
-  properties                   Json          @default("{}")
-  storedInternal               Boolean
-  url                          String        @db.VarChar(512)
-  thumbnailUrl                 String?       @db.VarChar(512)
-  webpublicUrl                 String?       @db.VarChar(512)
-  accessKey                    String?       @unique(map: "IDX_d85a184c2540d2deba33daf642") @db.VarChar(256)
-  thumbnailAccessKey           String?       @unique(map: "IDX_e74022ce9a074b3866f70e0d27") @db.VarChar(256)
-  webpublicAccessKey           String?       @unique(map: "IDX_c55b2b7c284d9fef98026fc88e") @db.VarChar(256)
-  uri                          String?       @db.VarChar(512)
-  src                          String?       @db.VarChar(512)
-  isSensitive                  Boolean       @default(false)
-  isLink                       Boolean       @default(false)
-  blurhash                     String?       @db.VarChar(128)
-  webpublicType                String?       @db.VarChar(128) // Enum?
-  requestHeaders               Json?         @default("{}")
-  requestIp                    String?       @db.VarChar(128)
-  maybeSensitive               Boolean       @default(false)
-  maybePorn                    Boolean       @default(false)
+model DriveFile {
+  id                 String        @id(map: "PK_43ddaaaf18c9e68029b7cbb032e") @db.VarChar(32)
+  createdAt          DateTime      @db.Timestamptz(6)
+  userHost           String?       @db.VarChar(128)
+  md5                String        @db.VarChar(32)
+  name               String        @db.VarChar(256)
+  type               String        @db.VarChar(128)
+  size               Int
+  comment            String?       @db.VarChar(512)
+  properties         Json          @default("{}")
+  storedInternal     Boolean
+  url                String        @db.VarChar(512)
+  thumbnailUrl       String?       @db.VarChar(512)
+  webpublicUrl       String?       @db.VarChar(512)
+  accessKey          String?       @unique(map: "IDX_d85a184c2540d2deba33daf642") @db.VarChar(256)
+  thumbnailAccessKey String?       @unique(map: "IDX_e74022ce9a074b3866f70e0d27") @db.VarChar(256)
+  webpublicAccessKey String?       @unique(map: "IDX_c55b2b7c284d9fef98026fc88e") @db.VarChar(256)
+  uri                String?       @db.VarChar(512)
+  src                String?       @db.VarChar(512)
+  isSensitive        Boolean       @default(false)
+  isLink             Boolean       @default(false)
+  blurhash           String?       @db.VarChar(128)
+  webpublicType      String?       @db.VarChar(128) // Enum?
+  requestHeaders     Json?         @default("{}")
+  requestIp          String?       @db.VarChar(128)
+  maybeSensitive     Boolean       @default(false)
+  maybePorn          Boolean       @default(false)
   //
-  userId                       String?       @db.VarChar(32)
-  user_drive_file_userIdTouser user?         @relation("drive_file_userIdTouser", fields: [userId], references: [id], onUpdate: NoAction, map: "FK_860fa6f6c7df5bb887249fba22e")
+  userId             String?       @db.VarChar(32)
+  user               user?         @relation("drive_file_userIdTouser", fields: [userId], references: [id], onUpdate: NoAction, map: "FK_860fa6f6c7df5bb887249fba22e")
   //
-  folderId                     String?       @db.VarChar(32)
-  drive_folder                 drive_folder? @relation(fields: [folderId], references: [id], onUpdate: NoAction, map: "FK_bb90d1956dafc4068c28aa7560a")
+  folderId           String?       @db.VarChar(32)
+  folder             drive_folder? @relation(fields: [folderId], references: [id], onUpdate: NoAction, map: "FK_bb90d1956dafc4068c28aa7560a")
 
-  channel                        Channel[]
-  page                           page[]
-  user_user_avatarIdTodrive_file user?     @relation("user_avatarIdTodrive_file")
-  user_user_bannerIdTodrive_file user?     @relation("user_bannerIdTodrive_file")
+  channel    Channel[]
+  page       page[]
+  avatarUser user?     @relation("user_avatarIdTodrive_file")
+  bannerUser user?     @relation("user_bannerIdTodrive_file")
 
   // deprecated
   messaging_message messaging_message[] @ignore
@@ -972,6 +972,7 @@ model drive_file {
   @@index([folderId], map: "IDX_bb90d1956dafc4068c28aa7560")
   @@index([createdAt], map: "IDX_c8dfad3b72196dd1d6b5db168a")
   @@index([uri], map: "IDX_e5848eac4940934e23dbc17581")
+  @@map("drive_file")
 }
 
 // ドライブのフォルダ
@@ -987,7 +988,7 @@ model drive_folder {
   parentId           String?        @db.VarChar(32)
   drive_folder       drive_folder?  @relation("drive_folderTodrive_folder", fields: [parentId], references: [id], onUpdate: NoAction, map: "FK_00ceffb0cdc238b3233294f08f2")
 
-  drive_file drive_file[]
+  drive_file DriveFile[]
 
   @@index([parentId], map: "IDX_00ceffb0cdc238b3233294f08f")
   @@index([createdAt], map: "IDX_02878d441ceae15ce060b73daf")
@@ -1218,7 +1219,7 @@ model messaging_message {
   reads                                    String[]    @default([]) @db.VarChar(32)
   uri                                      String?     @db.VarChar(512)
   user_group                               user_group? @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c4be03b446884f9e9c502135be") @ignore
-  drive_file                               drive_file? @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_535def119223ac05ad3fa9ef64b")
+  drive_file                               DriveFile?  @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_535def119223ac05ad3fa9ef64b")
   user_messaging_message_userIdTouser      user        @relation("messaging_message_userIdTouser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5377c307783fce2b6d352e1203b")
   user_messaging_message_recipientIdTouser user?       @relation("messaging_message_recipientIdTouser", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cac14a4e3944454a5ce7daa5142")
 
@@ -1566,7 +1567,7 @@ model page {
   user                user                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ae1d917992dd0c9d9bbdad06c4a")
   //
   eyeCatchingImageId  String?              @db.VarChar(32)
-  drive_file          drive_file?          @relation(fields: [eyeCatchingImageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9ca79ad939bf06066b81c9d3aa")
+  drive_file          DriveFile?           @relation(fields: [eyeCatchingImageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9ca79ad939bf06066b81c9d3aa")
 
   page_like    page_like[]
   user_profile user_profile?
@@ -1862,49 +1863,49 @@ model used_username {
 
 // ユーザー
 model user {
-  id                                   String      @id(map: "PK_cace4a159ff9f2512dd42373760") @db.VarChar(32)
-  createdAt                            DateTime    @db.Timestamptz(6)
-  updatedAt                            DateTime?   @db.Timestamptz(6)
-  lastFetchedAt                        DateTime?   @db.Timestamptz(6)
-  username                             String      @db.VarChar(128)
-  usernameLower                        String      @db.VarChar(128) // 手動generated column
-  name                                 String?     @db.VarChar(128)
-  tags                                 String[]    @default([]) @db.VarChar(128) // 非正規化？
-  isSuspended                          Boolean     @default(false)
-  isLocked                             Boolean     @default(false)
-  isBot                                Boolean     @default(false)
-  isCat                                Boolean     @default(false)
-  isRoot                               Boolean     @default(false)
-  emojis                               String[]    @default([]) @db.VarChar(128) // 非正規化？
-  host                                 String?     @db.VarChar(128)
-  inbox                                String?     @db.VarChar(512)
-  sharedInbox                          String?     @db.VarChar(512)
-  featured                             String?     @db.VarChar(512)
-  uri                                  String?     @db.VarChar(512)
-  token                                String?     @unique(map: "IDX_a854e557b1b14814750c7c7b0c") @db.Char(16)
-  isExplorable                         Boolean     @default(true)
-  followersUri                         String?     @db.VarChar(512)
-  lastActiveDate                       DateTime?   @db.Timestamptz(6)
-  hideOnlineStatus                     Boolean     @default(false)
-  isDeleted                            Boolean     @default(false) // そのユーザーの削除が進行中かどうか
-  movedToUri                           String?     @db.VarChar(512)
+  id                                   String     @id(map: "PK_cace4a159ff9f2512dd42373760") @db.VarChar(32)
+  createdAt                            DateTime   @db.Timestamptz(6)
+  updatedAt                            DateTime?  @db.Timestamptz(6)
+  lastFetchedAt                        DateTime?  @db.Timestamptz(6)
+  username                             String     @db.VarChar(128)
+  usernameLower                        String     @db.VarChar(128) // 手動generated column
+  name                                 String?    @db.VarChar(128)
+  tags                                 String[]   @default([]) @db.VarChar(128) // 非正規化？
+  isSuspended                          Boolean    @default(false)
+  isLocked                             Boolean    @default(false)
+  isBot                                Boolean    @default(false)
+  isCat                                Boolean    @default(false)
+  isRoot                               Boolean    @default(false)
+  emojis                               String[]   @default([]) @db.VarChar(128) // 非正規化？
+  host                                 String?    @db.VarChar(128)
+  inbox                                String?    @db.VarChar(512)
+  sharedInbox                          String?    @db.VarChar(512)
+  featured                             String?    @db.VarChar(512)
+  uri                                  String?    @db.VarChar(512)
+  token                                String?    @unique(map: "IDX_a854e557b1b14814750c7c7b0c") @db.Char(16)
+  isExplorable                         Boolean    @default(true)
+  followersUri                         String?    @db.VarChar(512)
+  lastActiveDate                       DateTime?  @db.Timestamptz(6)
+  hideOnlineStatus                     Boolean    @default(false)
+  isDeleted                            Boolean    @default(false) // そのユーザーの削除が進行中かどうか
+  movedToUri                           String?    @db.VarChar(512)
   alsoKnownAs                          String? // CSV
-  movedAt                              DateTime?   @db.Timestamptz(6)
+  movedAt                              DateTime?  @db.Timestamptz(6)
   // 非正規化
-  avatarBlurhash                       String?     @db.VarChar(128)
-  bannerBlurhash                       String?     @db.VarChar(128)
-  avatarUrl                            String?     @db.VarChar(512)
-  bannerUrl                            String?     @db.VarChar(512)
+  avatarBlurhash                       String?    @db.VarChar(128)
+  bannerBlurhash                       String?    @db.VarChar(128)
+  avatarUrl                            String?    @db.VarChar(512)
+  bannerUrl                            String?    @db.VarChar(512)
   // 集計
-  followersCount                       Int         @default(0)
-  followingCount                       Int         @default(0)
-  notesCount                           Int         @default(0)
+  followersCount                       Int        @default(0)
+  followingCount                       Int        @default(0)
+  notesCount                           Int        @default(0)
   //
-  avatarId                             String?     @unique(map: "REL_58f5c71eaab331645112cf8cfa") @db.VarChar(32)
-  drive_file_user_avatarIdTodrive_file drive_file? @relation("user_avatarIdTodrive_file", fields: [avatarId], references: [id], onUpdate: NoAction, map: "FK_58f5c71eaab331645112cf8cfa5")
+  avatarId                             String?    @unique(map: "REL_58f5c71eaab331645112cf8cfa") @db.VarChar(32)
+  drive_file_user_avatarIdTodrive_file DriveFile? @relation("user_avatarIdTodrive_file", fields: [avatarId], references: [id], onUpdate: NoAction, map: "FK_58f5c71eaab331645112cf8cfa5")
   //
-  bannerId                             String?     @unique(map: "REL_afc64b53f8db3707ceb34eb28e") @db.VarChar(32)
-  drive_file_user_bannerIdTodrive_file drive_file? @relation("user_bannerIdTodrive_file", fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_afc64b53f8db3707ceb34eb28e2")
+  bannerId                             String?    @unique(map: "REL_afc64b53f8db3707ceb34eb28e") @db.VarChar(32)
+  drive_file_user_bannerIdTodrive_file DriveFile? @relation("user_bannerIdTodrive_file", fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_afc64b53f8db3707ceb34eb28e2")
 
   abuse_user_report_abuse_user_report_reporterIdTouser      AbuseUserReport[]        @relation("abuse_user_report_reporterIdTouser")
   abuse_user_report_abuse_user_report_assigneeIdTouser      AbuseUserReport[]        @relation("abuse_user_report_assigneeIdTouser")
@@ -1922,7 +1923,7 @@ model user {
   channel_following                                         ChannelFollowing[]
   clip                                                      Clip[]
   clip_favorite                                             ClipFavorite[]
-  drive_file_drive_file_userIdTouser                        drive_file[]             @relation("drive_file_userIdTouser")
+  drive_file_drive_file_userIdTouser                        DriveFile[]              @relation("drive_file_userIdTouser")
   drive_folder                                              drive_folder[]
   flash                                                     flash[]
   flash_like                                                flash_like[]

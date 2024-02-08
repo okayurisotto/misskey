@@ -30,7 +30,7 @@ import type {
 	FastifyReply,
 	FastifyPluginOptions,
 } from 'fastify';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 const _filename = fileURLToPath(import.meta.url);
 const _dirname = dirname(_filename);
@@ -476,7 +476,7 @@ export class FileServerService {
 		| {
 				state: 'remote';
 				fileRole?: 'thumbnail' | 'webpublic' | 'original';
-				file?: drive_file;
+				file?: DriveFile;
 				mime: string;
 				ext: string | null;
 				path: string;
@@ -486,7 +486,7 @@ export class FileServerService {
 		| {
 				state: 'stored_internal';
 				fileRole: 'thumbnail' | 'webpublic' | 'original';
-				file: drive_file;
+				file: DriveFile;
 				filename: string;
 				mime: string;
 				ext: string | null;
@@ -541,7 +541,7 @@ export class FileServerService {
 		| {
 				state: 'remote';
 				fileRole: 'thumbnail' | 'webpublic' | 'original';
-				file: drive_file;
+				file: DriveFile;
 				filename: string;
 				url: string;
 				mime: string;
@@ -552,7 +552,7 @@ export class FileServerService {
 		| {
 				state: 'stored_internal';
 				fileRole: 'thumbnail' | 'webpublic' | 'original';
-				file: drive_file;
+				file: DriveFile;
 				filename: string;
 				mime: string;
 				ext: string | null;
@@ -562,7 +562,7 @@ export class FileServerService {
 		| '204'
 	> {
 		// Fetch drive file
-		const file = await this.prismaService.client.drive_file.findFirst({
+		const file = await this.prismaService.client.driveFile.findFirst({
 			where: {
 				OR: [
 					{ accessKey: key },

@@ -65,7 +65,7 @@ export class FeedService {
 			copyright: user.name ?? user.username,
 		});
 
-		const allFiles = await this.prismaService.client.drive_file.findMany({
+		const allFiles = await this.prismaService.client.driveFile.findMany({
 			where: {
 				id: { in: unique(user.note.map(({ fileIds }) => fileIds).flat()) },
 				type: { startsWith: 'image/' },

@@ -7,7 +7,7 @@ import InstanceChart from '@/core/chart/charts/instance.js';
 import { InternalStorageService } from '@/core/InternalStorageService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ObjectStorageFileDeleteService } from './ObjectStorageFileDeleteService.js';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 @Injectable()
 export class DriveFileDeleteService {
@@ -21,7 +21,7 @@ export class DriveFileDeleteService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	public async delete(file: drive_file, isExpired = false): Promise<void> {
+	public async delete(file: DriveFile, isExpired = false): Promise<void> {
 		if (file.storedInternal) {
 			if (file.accessKey === null) throw new Error();
 			this.internalStorageService.del(file.accessKey);
@@ -64,7 +64,7 @@ export class DriveFileDeleteService {
 
 		// リモートファイル期限切れ削除後は直リンクにする
 		if (isExpired && file.userHost !== null && file.uri != null) {
-			this.prismaService.client.drive_file.update({
+			this.prismaService.client.driveFile.update({
 				where: { id: file.id },
 				data: {
 					isLink: true,
@@ -79,7 +79,7 @@ export class DriveFileDeleteService {
 				},
 			});
 		} else {
-			this.prismaService.client.drive_file.delete({ where: { id: file.id } });
+			this.prismaService.client.driveFile.delete({ where: { id: file.id } });
 		}
 
 		this.driveChart.update(file, false);

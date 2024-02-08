@@ -71,11 +71,11 @@ export default class extends Endpoint<
 		super(meta, paramDef, async (ps, me) => {
 			const file =
 				'fileId' in ps
-					? await this.prismaService.client.drive_file.findUnique({
+					? await this.prismaService.client.driveFile.findUnique({
 							where: { id: ps.fileId },
-							include: { user_drive_file_userIdTouser: true },
+							include: { user: true },
 					  })
-					: await this.prismaService.client.drive_file.findFirst({
+					: await this.prismaService.client.driveFile.findFirst({
 							where: {
 								OR: [
 									{ url: ps.url },
@@ -83,19 +83,17 @@ export default class extends Endpoint<
 									{ webpublicUrl: ps.url },
 								],
 							},
-							include: { user_drive_file_userIdTouser: true },
+							include: { user: true },
 					  });
 
 			if (file === null) {
 				throw new ApiError(meta.errors.noSuchFile);
 			}
 
-			const owner = file.user_drive_file_userIdTouser;
-
 			const [iAmModerator, ownerIsModerator] = await Promise.all([
 				this.roleService.isModerator(me),
 				(async (): Promise<boolean> =>
-					owner ? await this.roleService.isModerator(owner) : false)(),
+					file.user ? await this.roleService.isModerator(file.user) : false)(),
 			]);
 
 			return {

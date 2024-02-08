@@ -44,7 +44,7 @@ export default class extends Endpoint<
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const orderBy = ((): Prisma.drive_fileOrderByWithRelationInput => {
+			const orderBy = ((): Prisma.DriveFileOrderByWithRelationInput => {
 				switch (ps.sort) {
 					case '+createdAt':
 						return { createdAt: 'desc' };
@@ -68,7 +68,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const files = await this.prismaService.client.drive_file.findMany({
+			const files = await this.prismaService.client.driveFile.findMany({
 				where: {
 					AND: [
 						paginationQuery.where,

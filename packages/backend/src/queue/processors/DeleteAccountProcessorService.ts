@@ -7,7 +7,7 @@ import { DriveFileDeleteService } from '@/core/DriveFileDeleteService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbUserDeleteJobData } from '../types.js';
-import type { drive_file, note } from '@prisma/client';
+import type { DriveFile, note } from '@prisma/client';
 
 @Injectable()
 export class DeleteAccountProcessorService {
@@ -38,7 +38,7 @@ export class DeleteAccountProcessorService {
 		);
 	}
 
-	async deleteFiles(files: drive_file[]): Promise<void> {
+	async deleteFiles(files: DriveFile[]): Promise<void> {
 		await Promise.all(
 			files.map(async (file) => {
 				await this.driveFileDeleteService.delete(file);

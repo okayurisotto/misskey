@@ -29,19 +29,18 @@ export class ImportBlockingProcessorService {
 	public async process(job: Bull.Job<DbUserImportJobData>): Promise<void> {
 		this.logger.info(`Importing blocking of ${job.data.user.id} ...`);
 
-		const file = await this.prismaService.client.drive_file.findUnique({
+		const file = await this.prismaService.client.driveFile.findUnique({
 			where: { id: job.data.fileId, userId: job.data.user.id },
-			include: { user_drive_file_userIdTouser: true },
+			include: { user: true },
 		});
 		if (file === null) return;
-		const user = file.user_drive_file_userIdTouser;
-		if (user === null) return;
+		if (file.user === null) return;
 
 		const csv = await this.downloadService.downloadTextFile(file.url);
 		const targets = csv.trim().split('\n');
 
 		await this.queueService.createImportBlockingToDbJob(
-			{ id: user.id },
+			{ id: file.user.id },
 			targets,
 		);
 

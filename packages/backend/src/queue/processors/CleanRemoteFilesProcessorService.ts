@@ -21,7 +21,7 @@ export class CleanRemoteFilesProcessorService {
 	public async process(job: Bull.Job<Record<string, unknown>>): Promise<void> {
 		this.logger.info('Deleting cached remote files...');
 
-		const files = await this.prismaService.client.drive_file.findMany({
+		const files = await this.prismaService.client.driveFile.findMany({
 			where: { userHost: { not: null }, isLink: false },
 		});
 

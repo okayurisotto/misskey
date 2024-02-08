@@ -70,7 +70,7 @@ export default class extends Endpoint<
 			let eyeCatchingImage = null;
 			if (ps.eyeCatchingImageId != null) {
 				eyeCatchingImage =
-					await this.prismaService.client.drive_file.findUnique({
+					await this.prismaService.client.driveFile.findUnique({
 						where: {
 							id: ps.eyeCatchingImageId,
 							userId: me.id,

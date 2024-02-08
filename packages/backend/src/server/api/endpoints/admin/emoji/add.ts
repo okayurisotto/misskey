@@ -49,7 +49,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const driveFile = await this.prismaService.client.drive_file.findUnique({
+			const driveFile = await this.prismaService.client.driveFile.findUnique({
 				where: { id: ps.fileId },
 			});
 			if (driveFile === null) throw new ApiError(meta.errors.noSuchFile);

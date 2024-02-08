@@ -1,7 +1,7 @@
 import type { IActivity } from '@/core/activitypub/type.js';
 import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
 import type httpSignature from '@peertube/http-signature';
-import type { note, webhook, drive_file, user } from '@prisma/client';
+import type { note, webhook, DriveFile, user } from '@prisma/client';
 import type { z } from 'zod';
 
 export type DeliverJobData = {
@@ -71,7 +71,7 @@ export type DbUserDeleteJobData = {
 
 export type DbUserImportJobData = {
 	user: ThinUser;
-	fileId: drive_file['id'];
+	fileId: DriveFile['id'];
 };
 
 export type DBAntennaImportJobData = {

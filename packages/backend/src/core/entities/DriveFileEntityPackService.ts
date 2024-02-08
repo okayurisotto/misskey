@@ -11,7 +11,7 @@ import { DriveFolderEntityService } from './DriveFolderEntityService.js';
 import { DriveFileProxiedUrlGenerationService } from './DriveFileProxiedUrlGenerationService.js';
 import { DriveFilePublicUrlGenerationService } from './DriveFilePublicUrlGenerationService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
-import type { drive_file } from '@prisma/client';
+import type { DriveFile } from '@prisma/client';
 
 type PackOptions = {
 	detail?: boolean;
@@ -39,16 +39,16 @@ export class DriveFileEntityPackService {
 	) {}
 
 	/**
-	 * `drive_file.properties`を整形する。
+	 * `DriveFile.properties`を整形する。
 	 *
-	 * `drive_file.properties.orientation`（画像の向き）が5以上だった場合、画像のwidthとheightが交換される。
+	 * `DriveFile.properties.orientation`（画像の向き）が5以上だった場合、画像のwidthとheightが交換される。
 	 * 交換の際、引数として渡した`file`は書き換えられない（immutable）。
 	 *
 	 * @param file
 	 * @returns
 	 */
 	private getPublicProperties(
-		file: drive_file,
+		file: DriveFile,
 	): z.infer<typeof DriveFilePropertiesSchema> {
 		const properties = DriveFilePropertiesSchema.parse(file.properties);
 
@@ -71,7 +71,7 @@ export class DriveFileEntityPackService {
 	 * @param file
 	 * @returns 動画でも画像でもなかった場合などは`null`が返される。
 	 */
-	private getThumbnailUrl(file: drive_file): string | null {
+	private getThumbnailUrl(file: DriveFile): string | null {
 		// 動画ファイル
 		if (file.type.startsWith('video')) {
 			if (file.thumbnailUrl) return file.thumbnailUrl;
@@ -117,7 +117,7 @@ export class DriveFileEntityPackService {
 	}
 
 	/**
-	 * `drive_file`をpackする。
+	 * `DriveFile`をpackする。
 	 *
 	 * @param src
 	 * @param options.detail   `true`だった場合、返り値に`folder`が含まれるようになる場合がある。含まれる場合、それは再帰的に親フォルダを解決する。
@@ -126,7 +126,7 @@ export class DriveFileEntityPackService {
 	 * @returns
 	 */
 	public async pack(
-		src: drive_file['id'] | drive_file,
+		src: DriveFile['id'] | DriveFile,
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema>> {
 		const opts = {
@@ -135,21 +135,18 @@ export class DriveFileEntityPackService {
 			...options,
 		};
 
-		const file = await this.prismaService.client.drive_file.findUniqueOrThrow({
+		const file = await this.prismaService.client.driveFile.findUniqueOrThrow({
 			where: { id: typeof src === 'string' ? src : src.id },
-			include: { user_drive_file_userIdTouser: true },
+			include: { user: true },
 		});
-		if (file.user_drive_file_userIdTouser === null)
-			throw new Error('file.user_drive_file_userIdTouser is null');
+		if (file.user === null) throw new Error('file.user is null');
 
 		const [folder, user] = await Promise.all([
 			opts.detail && file.folderId
 				? this.driveFolderEntityService.pack(file.folderId, { detail: true })
 				: null,
 			opts.withUser && file.userId
-				? this.userEntityPackLiteService.packLite(
-						file.user_drive_file_userIdTouser,
-				  )
+				? this.userEntityPackLiteService.packLite(file.user)
 				: null,
 		]);
 
@@ -178,29 +175,29 @@ export class DriveFileEntityPackService {
 	}
 
 	/**
-	 * 複数の`drive_file`を並列でpackする。
+	 * 複数の`DriveFile`を並列でpackする。
 	 *
 	 * @param files   ファイルの配列。IDの配列ではない。
 	 * @param options
 	 * @returns
 	 */
 	public async packMany(
-		files: drive_file[],
+		files: DriveFile[],
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema>[]> {
 		return await Promise.all(files.map((f) => this.pack(f, options)));
 	}
 
 	/**
-	 * IDによって指定された複数の`drive_file`を並列でpackし、IDとpack結果の`Map`として返す。
-	 * `fileIds`として渡された`drive_file`のIDがデータベースに存在しなかった場合、それは`null`として`Map`に含められる。
+	 * IDによって指定された複数の`DriveFile`を並列でpackし、IDとpack結果の`Map`として返す。
+	 * `fileIds`として渡された`DriveFile`のIDがデータベースに存在しなかった場合、それは`null`として`Map`に含められる。
 	 *
 	 * @param fileIds
 	 * @param options
 	 * @returns
 	 */
 	public async packManyByIdsMap(
-		fileIds: drive_file['id'][],
+		fileIds: DriveFile['id'][],
 		options?: PackOptions,
 	): Promise<
 		Map<
@@ -210,7 +207,7 @@ export class DriveFileEntityPackService {
 	> {
 		if (fileIds.length === 0) return new Map();
 
-		const files = await this.prismaService.client.drive_file.findMany({
+		const files = await this.prismaService.client.driveFile.findMany({
 			where: { id: { in: fileIds } },
 		});
 		const packedFiles = await this.packMany(files, options);
@@ -220,7 +217,7 @@ export class DriveFileEntityPackService {
 		>(packedFiles.map((f) => [f.id, f]));
 
 		for (const id of fileIds) {
-			// データベースに`id`で指定される`drive_file`が存在しなかった場合、`null`をセットする。
+			// データベースに`id`で指定される`DriveFile`が存在しなかった場合、`null`をセットする。
 			if (!map.has(id)) map.set(id, null);
 		}
 
@@ -228,15 +225,15 @@ export class DriveFileEntityPackService {
 	}
 
 	/**
-	 * IDによって指定された複数の`drive_file`を並列でpackする。
-	 * IDで指定された`drive_file`がデータベースに存在しなかった場合、それは返り値から除かれる。そのため返り値の要素数は`fileIds`の要素数と異なる場合がある。
+	 * IDによって指定された複数の`DriveFile`を並列でpackする。
+	 * IDで指定された`DriveFile`がデータベースに存在しなかった場合、それは返り値から除かれる。そのため返り値の要素数は`fileIds`の要素数と異なる場合がある。
 	 *
 	 * @param fileIds
 	 * @param options
 	 * @returns
 	 */
 	public async packManyByIds(
-		fileIds: drive_file['id'][],
+		fileIds: DriveFile['id'][],
 		options?: PackOptions,
 	): Promise<z.infer<typeof DriveFileSchema>[]> {
 		if (fileIds.length === 0) return [];

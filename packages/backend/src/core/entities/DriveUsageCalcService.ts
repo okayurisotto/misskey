@@ -19,7 +19,7 @@ export class DriveUsageCalcService {
 
 		const {
 			_sum: { size },
-		} = await this.prismaService.client.drive_file.aggregate({
+		} = await this.prismaService.client.driveFile.aggregate({
 			where: { userId: id, isLink: false },
 			_sum: { size: true },
 		});

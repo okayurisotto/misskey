@@ -56,7 +56,7 @@ export default class extends Endpoint<
 		private readonly driveFileNameValidationService: DriveFileNameValidationService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const file = await this.prismaService.client.drive_file.findUnique({
+			const file = await this.prismaService.client.driveFile.findUnique({
 				where: { id: ps.fileId },
 			});
 			const alwaysMarkNsfw = (await this.roleService.getUserPolicies(me.id))
@@ -107,7 +107,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			await this.prismaService.client.drive_file.update({
+			await this.prismaService.client.driveFile.update({
 				where: { id: file.id },
 				data: {
 					name: file.name,

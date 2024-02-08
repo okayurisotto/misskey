@@ -24,7 +24,7 @@ export default class extends Endpoint<
 		private readonly driveFileDeleteService: DriveFileDeleteService,
 	) {
 		super(meta, paramDef, async () => {
-			const files = await this.prismaService.client.drive_file.findMany({
+			const files = await this.prismaService.client.driveFile.findMany({
 				where: { userId: null },
 			});
 
