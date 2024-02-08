@@ -41,11 +41,6 @@ export default class extends Endpoint<
 					},
 				},
 			});
-
-			await this.prismaService.client.gallery_post.update({
-				where: { id: ps.postId },
-				data: { likedCount: { increment: 1 } },
-			});
 		});
 	}
 }

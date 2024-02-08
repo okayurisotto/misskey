@@ -52,7 +52,7 @@ export default class extends Endpoint<
 				throw new ApiError();
 			}
 
-			const post = await this.prismaService.client.gallery_post.update({
+			const post = await this.prismaService.client.gallery.update({
 				where: {
 					id: ps.postId,
 					userId: me.id,

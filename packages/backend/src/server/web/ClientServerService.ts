@@ -722,7 +722,7 @@ export class ClientServerService {
 		fastify.get<{ Params: { post: string } }>(
 			'/gallery/:post',
 			async (request, reply) => {
-				const post = await this.prismaService.client.gallery_post.findUnique({
+				const post = await this.prismaService.client.gallery.findUnique({
 					where: { id: request.params.post },
 				});
 

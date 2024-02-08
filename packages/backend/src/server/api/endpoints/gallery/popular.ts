@@ -26,14 +26,16 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const posts = await this.prismaService.client.gallery_post.findMany({
-				where: { likedCount: { gt: 0 } },
-				orderBy: { likedCount: 'desc' },
+			const posts = await this.prismaService.client.gallery.findMany({
+				include: { likes: true },
+				orderBy: { likes: { _count: 'desc' } },
 				take: 10,
 			});
 
 			return await Promise.all(
-				posts.map((post) => this.galleryPostEntityService.pack(post, me)),
+				posts
+					.filter((post) => post.likes.length > 0)
+					.map((post) => this.galleryPostEntityService.pack(post, me)),
 			);
 		});
 	}

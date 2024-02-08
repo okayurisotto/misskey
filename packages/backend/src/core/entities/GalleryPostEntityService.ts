@@ -5,7 +5,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
-import type { gallery_post, user } from '@prisma/client';
+import type { Gallery, user } from '@prisma/client';
 
 @Injectable()
 export class GalleryPostEntityService {
@@ -16,23 +16,21 @@ export class GalleryPostEntityService {
 	) {}
 
 	/**
-	 * `gallery_post`をpackする。
+	 * `Gallery`をpackする。
 	 *
 	 * @param src
 	 * @param me 渡された場合、返り値の`isLiked`が`boolean`になる。
 	 * @returns
 	 */
 	public async pack(
-		src: gallery_post['id'] | gallery_post,
+		src: Gallery['id'] | Gallery,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof GalleryPostSchema>> {
 		const meId = me ? me.id : null;
-		const post = await this.prismaService.client.gallery_post.findUniqueOrThrow(
-			{
-				where: { id: typeof src === 'string' ? src : src.id },
-				include: { user: true },
-			},
-		);
+		const post = await this.prismaService.client.gallery.findUniqueOrThrow({
+			where: { id: typeof src === 'string' ? src : src.id },
+			include: { user: true, _count: { select: { likes: true } } },
+		});
 
 		const result = await awaitAll({
 			user: () => this.userEntityPackLiteService.packLite(post.user),
@@ -58,7 +56,7 @@ export class GalleryPostEntityService {
 			files: result.files,
 			tags: post.tags.length > 0 ? post.tags : undefined,
 			isSensitive: post.isSensitive,
-			likedCount: post.likedCount,
+			likedCount: post._count.likes,
 			isLiked: result.isLiked,
 		};
 	}

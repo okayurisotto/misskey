@@ -27,11 +27,6 @@ export default class extends Endpoint<
 			await this.prismaService.client.galleryLike.delete({
 				where: { id: ps.postId, userId: me.id },
 			});
-
-			await this.prismaService.client.gallery_post.update({
-				where: { id: ps.postId },
-				data: { likedCount: { decrement: 1 } },
-			});
 		});
 	}
 }

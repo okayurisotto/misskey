@@ -37,7 +37,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const posts = await this.prismaService.client.gallery_post.findMany({
+			const posts = await this.prismaService.client.gallery.findMany({
 				where: { AND: [paginationQuery.where, { userId: me.id }] },
 				orderBy: paginationQuery.orderBy,
 				take: ps.limit,

@@ -32,7 +32,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const post = await this.prismaService.client.gallery_post.findUnique({
+			const post = await this.prismaService.client.gallery.findUnique({
 				where: { id: ps.postId },
 			});
 

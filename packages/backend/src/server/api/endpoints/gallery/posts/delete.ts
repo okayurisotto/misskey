@@ -23,7 +23,7 @@ export default class extends Endpoint<
 > {
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			await this.prismaService.client.gallery_post.delete({
+			await this.prismaService.client.gallery.delete({
 				where: { id: ps.postId, userId: me.id },
 			});
 		});

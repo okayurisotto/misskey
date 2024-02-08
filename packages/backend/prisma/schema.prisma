@@ -1119,14 +1119,14 @@ model Following {
 
 // ギャラリーのお気に入り
 model GalleryLike {
-  id        String       @id(map: "PK_853ab02be39b8de45cd720cc15f") @db.VarChar(32)
-  createdAt DateTime     @db.Timestamptz(6)
+  id        String   @id(map: "PK_853ab02be39b8de45cd720cc15f") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
   //
-  userId    String       @db.VarChar(32)
-  user      user         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8fd5215095473061855ceb948cf")
+  userId    String   @db.VarChar(32)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8fd5215095473061855ceb948cf")
   //
-  galleryId String       @map("postId") @db.VarChar(32)
-  gallery   gallery_post @relation(fields: [galleryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b1cb568bfe569e47b7051699fc8")
+  galleryId String   @map("postId") @db.VarChar(32)
+  gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b1cb568bfe569e47b7051699fc8")
 
   @@unique([userId, galleryId], map: "IDX_df1b5f4099e99fb0bc5eae53b6")
   @@index([userId], map: "IDX_8fd5215095473061855ceb948c")
@@ -1134,7 +1134,7 @@ model GalleryLike {
 }
 
 // ギャラリー
-model gallery_post {
+model Gallery {
   id          String   @id(map: "PK_8e90d7b6015f2c4518881b14753") @db.VarChar(32)
   createdAt   DateTime @db.Timestamptz(6)
   updatedAt   DateTime @db.Timestamptz(6)
@@ -1144,13 +1144,14 @@ model gallery_post {
   // 非正規化
   fileIds     String[] @default([]) @db.VarChar(32)
   tags        String[] @default([]) @db.VarChar(128)
-  // 集計
-  likedCount  Int      @default(0)
   //
   userId      String   @db.VarChar(32)
   user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_985b836dddd8615e432d7043ddb")
 
-  gallery_like GalleryLike[]
+  likes GalleryLike[]
+
+  // 集計
+  likedCount Int @default(0) @ignore
 
   @@index([tags], map: "IDX_05cca34b985d1b8edc1d1e28df")
   @@index([likedCount], map: "IDX_1a165c68a49d08f11caffbd206")
@@ -1159,6 +1160,7 @@ model gallery_post {
   @@index([userId], map: "IDX_985b836dddd8615e432d7043dd")
   @@index([isSensitive], map: "IDX_f2d744d9a14d0dfb8b96cb7fc5")
   @@index([updatedAt], map: "IDX_f631d37835adb04792e361807c")
+  @@map("gallery_post")
 }
 
 // ハッシュタグ
@@ -1944,7 +1946,7 @@ model user {
   following_following_followeeIdTouser                      Following[]              @relation("following_followeeIdTouser")
   following_following_followerIdTouser                      Following[]              @relation("following_followerIdTouser")
   gallery_like                                              GalleryLike[]
-  gallery_post                                              gallery_post[]
+  gallery_post                                              Gallery[]
   meta                                                      meta[]
   moderation_log                                            moderation_log[]
   muted_note                                                muted_note[]

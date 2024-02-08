@@ -50,7 +50,7 @@ export default class extends Endpoint<
 				throw new ApiError();
 			}
 
-			const post = await this.prismaService.client.gallery_post.create({
+			const post = await this.prismaService.client.gallery.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
