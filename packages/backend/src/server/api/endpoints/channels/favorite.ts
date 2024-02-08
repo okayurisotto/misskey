@@ -39,7 +39,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			await this.prismaService.client.channel_favorite.create({
+			await this.prismaService.client.channelFavorite.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),

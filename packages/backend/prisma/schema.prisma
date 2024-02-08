@@ -792,7 +792,7 @@ model Channel {
   bannerId      String?     @db.VarChar(32)
   banner        drive_file? @relation(fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_999da2bcc7efadbfe0e92d3bc19")
 
-  favorites  channel_favorite[]
+  favorites  ChannelFavorite[]
   followings channel_following[]
   notes      note[]
 
@@ -815,7 +815,7 @@ model Channel {
 
 // チャンネルのお気に入り
 // ユニーク制約忘れ
-model channel_favorite {
+model ChannelFavorite {
   id        String   @id(map: "PK_59bddfd54d48689a298d41af00c") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   //
@@ -828,6 +828,7 @@ model channel_favorite {
   @@index([createdAt], map: "IDX_735a5544f9249d412255f47f95")
   @@index([userId], map: "IDX_8302bd27226605ece14842fb25")
   @@index([channelId], map: "IDX_d3ca0db011b75ac2a940a2337d")
+  @@map("channel_favorite")
 }
 
 // チャンネルのフォロー
@@ -1911,7 +1912,7 @@ model user {
   blocking_blocking_blockerIdTouser                         Blocking[]               @relation("blocking_blockerIdTouser")
   blocking_blocking_blockeeIdTouser                         Blocking[]               @relation("blocking_blockeeIdTouser")
   channel                                                   Channel[]
-  channel_favorite                                          channel_favorite[]
+  channel_favorite                                          ChannelFavorite[]
   channel_following                                         channel_following[]
   clip                                                      clip[]
   clip_favorite                                             clip_favorite[]

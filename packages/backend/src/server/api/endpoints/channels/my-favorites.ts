@@ -28,7 +28,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const favorites =
-				await this.prismaService.client.channel_favorite.findMany({
+				await this.prismaService.client.channelFavorite.findMany({
 					where: { userId: me.id },
 					include: { channel: true },
 				});
