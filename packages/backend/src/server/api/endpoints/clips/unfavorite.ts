@@ -24,7 +24,7 @@ export default class extends Endpoint<
 > {
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			await this.prismaService.client.clip_favorite.delete({
+			await this.prismaService.client.clipFavorite.delete({
 				where: { userId_clipId: { clipId: ps.clipId, userId: me.id } },
 			});
 		});

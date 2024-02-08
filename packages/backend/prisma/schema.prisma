@@ -874,7 +874,7 @@ model Clip {
   userId      String   @db.VarChar(32)
   user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2b5ec6c574d6802c94c80313fb2")
 
-  favorites clip_favorite[]
+  favorites ClipFavorite[]
   notes     clip_note[]
 
   // TODO: 本当は`clip_note`側に`createdAt`カラムを作成したい
@@ -886,7 +886,7 @@ model Clip {
 }
 
 // クリップのお気に入り
-model clip_favorite {
+model ClipFavorite {
   id        String   @id(map: "PK_1b539f43906f05ebcabe752a977") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   //
@@ -898,6 +898,7 @@ model clip_favorite {
 
   @@unique([userId, clipId], map: "IDX_b1754a39d0b281e07ed7c078ec")
   @@index([userId], map: "IDX_25a31662b0b0cc9af6549a9d71")
+  @@map("clip_favorite")
 }
 
 // クリップされたノート
@@ -1919,7 +1920,7 @@ model user {
   channel_favorite                                          ChannelFavorite[]
   channel_following                                         ChannelFollowing[]
   clip                                                      Clip[]
-  clip_favorite                                             clip_favorite[]
+  clip_favorite                                             ClipFavorite[]
   drive_file_drive_file_userIdTouser                        drive_file[]             @relation("drive_file_userIdTouser")
   drive_folder                                              drive_folder[]
   flash                                                     flash[]

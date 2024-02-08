@@ -26,7 +26,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			await this.prismaService.client.clip_favorite.create({
+			await this.prismaService.client.clipFavorite.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
