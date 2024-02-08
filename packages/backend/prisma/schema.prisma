@@ -1218,7 +1218,7 @@ model Instance {
 
   @@index([firstRetrievedAt], map: "IDX_2cd3b2a6b4cf0b910b260afe08")
   @@index([isSuspended], map: "IDX_34500da2e38ac393f7bb6b299c")
-	@@map("instance")
+  @@map("instance")
 }
 
 // deprecated
@@ -1247,7 +1247,7 @@ model messaging_message {
 
 // 自サーバのメタデータ
 // レコードは1つのみ？
-model meta {
+model Meta {
   id                                     String                                       @id(map: "PK_c4c17a6c2bd7651338b60fc590b") @db.VarChar(32)
   name                                   String?                                      @db.VarChar(1024)
   description                            String?                                      @db.VarChar(1024)
@@ -1327,6 +1327,8 @@ model meta {
   //
   proxyAccountId                         String?                                      @db.VarChar(32)
   user                                   user?                                        @relation(fields: [proxyAccountId], references: [id], onUpdate: NoAction, map: "FK_ab1bc0c1e209daa77b8e8d212ad")
+
+  @@map("meta")
 }
 
 // TypeORMのものだと思われるため無視
@@ -1948,7 +1950,7 @@ model user {
   following_following_followerIdTouser                      Following[]              @relation("following_followerIdTouser")
   gallery_like                                              GalleryLike[]
   gallery_post                                              Gallery[]
-  meta                                                      meta[]
+  meta                                                      Meta[]
   moderation_log                                            moderation_log[]
   muted_note                                                muted_note[]
   muting_muting_muterIdTouser                               muting[]                 @relation("muting_muterIdTouser")

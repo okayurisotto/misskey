@@ -54,7 +54,7 @@ import type {
 	FastifyPluginOptions,
 	FastifyReply,
 } from 'fastify';
-import type { meta } from '@prisma/client';
+import type { Meta } from '@prisma/client';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 
 type Manifest = {
@@ -140,7 +140,7 @@ export class ClientServerService {
 		return res;
 	}
 
-	private generateCommonPugData(meta: meta): CommonPugData {
+	private generateCommonPugData(meta: Meta): CommonPugData {
 		return {
 			instanceName: meta.name ?? 'Misskey',
 			icon: meta.iconUrl,

@@ -16,13 +16,13 @@ import type {
 	DeleteObjectCommandOutput,
 	PutObjectCommandInput,
 } from '@aws-sdk/client-s3';
-import type { meta } from '@prisma/client';
+import type { Meta } from '@prisma/client';
 
 @Injectable()
 export class S3Service {
 	constructor(private readonly httpRequestService: HttpRequestService) {}
 
-	public getS3Client(meta: meta): S3Client {
+	public getS3Client(meta: Meta): S3Client {
 		const u = meta.objectStorageEndpoint
 			? `${meta.objectStorageUseSSL ? 'https' : 'http'}://${
 					meta.objectStorageEndpoint
@@ -60,7 +60,7 @@ export class S3Service {
 	}
 
 	public async upload(
-		meta: meta,
+		meta: Meta,
 		input: PutObjectCommandInput,
 	): Promise<
 		AbortMultipartUploadCommandOutput | CompleteMultipartUploadCommandOutput
@@ -78,7 +78,7 @@ export class S3Service {
 	}
 
 	public async delete(
-		meta: meta,
+		meta: Meta,
 		input: DeleteObjectCommandInput,
 	): Promise<DeleteObjectCommandOutput> {
 		const client = this.getS3Client(meta);

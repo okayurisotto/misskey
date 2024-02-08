@@ -4,7 +4,7 @@ import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { MetaService } from '@/core/MetaService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
-import type { meta as meta_ } from '@prisma/client';
+import type { Meta } from '@prisma/client';
 
 export const meta = {
 	tags: ['admin'],
@@ -110,7 +110,7 @@ export default class extends Endpoint<
 		private readonly moderationLogService: ModerationLogService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const set: Partial<meta_> = {};
+			const set: Partial<Meta> = {};
 
 			if (typeof ps.disableRegistration === 'boolean') {
 				set.disableRegistration = ps.disableRegistration;

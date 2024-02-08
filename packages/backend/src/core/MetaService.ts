@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { NODE_ENV } from '@/env.js';
-import { Meta } from '@/models/entities/Meta.js';
+import { Meta as MetaEntity } from '@/models/entities/Meta.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
 import { TypeORMService } from '@/core/TypeORMService.js';
 import { bindThis } from '@/decorators.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
-import type { meta } from '@prisma/client';
+import type { Meta } from '@prisma/client';
 
 @Injectable()
 export class MetaService implements OnApplicationShutdown {
-	private cache: meta | undefined;
+	private cache: Meta | undefined;
 	private readonly intervalId: NodeJS.Timer;
 
 	constructor(
@@ -56,12 +56,12 @@ export class MetaService implements OnApplicationShutdown {
 		}
 	}
 
-	public async fetch(noCache = false): Promise<meta> {
+	public async fetch(noCache = false): Promise<Meta> {
 		if (!noCache && this.cache) return this.cache;
 
 		return await this.db.transaction(async (transactionalEntityManager) => {
 			// 過去のバグでレコードが複数出来てしまっている可能性があるので新しいIDを優先する
-			const metas = await transactionalEntityManager.find(Meta, {
+			const metas = await transactionalEntityManager.find(MetaEntity, {
 				order: {
 					id: 'DESC',
 				},
@@ -76,14 +76,14 @@ export class MetaService implements OnApplicationShutdown {
 				// metaが空のときfetchMetaが同時に呼ばれるとここが同時に呼ばれてしまうことがあるのでフェイルセーフなupsertを使う
 				const saved = await transactionalEntityManager
 					.upsert(
-						Meta,
+						MetaEntity,
 						{
 							id: 'x',
 						},
 						['id'],
 					)
 					.then((x) =>
-						transactionalEntityManager.findOneByOrFail(Meta, x.identifiers[0]),
+						transactionalEntityManager.findOneByOrFail(MetaEntity, x.identifiers[0]),
 					);
 
 				this.cache = saved;
@@ -92,10 +92,10 @@ export class MetaService implements OnApplicationShutdown {
 		});
 	}
 
-	public async update(data: Partial<meta>): Promise<Meta> {
+	public async update(data: Partial<Meta>): Promise<MetaEntity> {
 		const updated = await this.db.transaction(
 			async (transactionalEntityManager) => {
-				const metas = await transactionalEntityManager.find(Meta, {
+				const metas = await transactionalEntityManager.find(MetaEntity, {
 					order: {
 						id: 'DESC',
 					},
@@ -104,7 +104,7 @@ export class MetaService implements OnApplicationShutdown {
 				const meta = metas[0];
 
 				if (meta) {
-					await transactionalEntityManager.update(Meta, meta.id, {
+					await transactionalEntityManager.update(MetaEntity, meta.id, {
 						...data,
 						policies: z
 							.record(z.string(), z.any())
@@ -112,7 +112,7 @@ export class MetaService implements OnApplicationShutdown {
 							.parse(data.policies),
 					});
 
-					const metas = await transactionalEntityManager.find(Meta, {
+					const metas = await transactionalEntityManager.find(MetaEntity, {
 						order: {
 							id: 'DESC',
 						},
@@ -120,7 +120,7 @@ export class MetaService implements OnApplicationShutdown {
 
 					return metas[0];
 				} else {
-					return await transactionalEntityManager.save(Meta, {
+					return await transactionalEntityManager.save(MetaEntity, {
 						...data,
 						policies: z
 							.record(z.string(), z.any())
