@@ -34,7 +34,7 @@ export class FlashEntityService {
 			user: () => this.userEntityPackLiteService.packLite(flash.user),
 			isLiked: async () =>
 				meId
-					? (await this.prismaService.client.flash_like.count({
+					? (await this.prismaService.client.flashLike.count({
 							where: { flashId: flash.id, userId: meId },
 							take: 1,
 					  })) > 0

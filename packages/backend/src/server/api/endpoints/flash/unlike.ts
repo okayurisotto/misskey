@@ -34,7 +34,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchFlash);
 			}
 
-			const exist = await this.prismaService.client.flash_like.findUnique({
+			const exist = await this.prismaService.client.flashLike.findUnique({
 				where: {
 					userId_flashId: {
 						flashId: flash.id,
@@ -48,7 +48,7 @@ export default class extends Endpoint<
 			}
 
 			// Delete like
-			await this.prismaService.client.flash_like.delete({
+			await this.prismaService.client.flashLike.delete({
 				where: { id: exist.id },
 			});
 		});

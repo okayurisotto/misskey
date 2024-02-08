@@ -42,7 +42,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const likes = await this.prismaService.client.flash_like.findMany({
+			const likes = await this.prismaService.client.flashLike.findMany({
 				where: {
 					AND: [paginationQuery.where, { userId: me.id }],
 				},

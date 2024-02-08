@@ -1036,7 +1036,7 @@ model Flash {
   userId      String   @db.VarChar(32)
   user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9b88250fc2fd009b8f1b5623ed5")
 
-  likes flash_like[]
+  likes FlashLike[]
 
   // aggregate
   likedCount Int @default(0) @ignore
@@ -1048,7 +1048,7 @@ model Flash {
 }
 
 // Playのお気に入り
-model flash_like {
+model FlashLike {
   id        String   @id(map: "PK_d110109ee310588d63d6183b233") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   //
@@ -1060,6 +1060,7 @@ model flash_like {
 
   @@unique([userId, flashId], map: "IDX_cfbfeeccb0cbedcd660b17eb07")
   @@index([userId], map: "IDX_60c4af1c19a7a75f1592f93b28")
+  @@map("flash_like")
 }
 
 // ユーザーフォローのリクエスト
@@ -1932,7 +1933,7 @@ model user {
   drive_file_drive_file_userIdTouser                        DriveFile[]              @relation("drive_file_userIdTouser")
   drive_folder                                              DriveFolder[]
   flash                                                     Flash[]
-  flash_like                                                flash_like[]
+  flash_like                                                FlashLike[]
   follow_request_follow_request_followeeIdTouser            follow_request[]         @relation("follow_request_followeeIdTouser")
   follow_request_follow_request_followerIdTouser            follow_request[]         @relation("follow_request_followerIdTouser")
   following_following_followeeIdTouser                      following[]              @relation("following_followeeIdTouser")

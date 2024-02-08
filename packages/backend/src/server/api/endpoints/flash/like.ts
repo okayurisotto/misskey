@@ -48,7 +48,7 @@ export default class extends Endpoint<
 
 			// if already liked
 			const exist =
-				(await this.prismaService.client.flash_like.count({
+				(await this.prismaService.client.flashLike.count({
 					where: {
 						flashId: flash.id,
 						userId: me.id,
@@ -61,7 +61,7 @@ export default class extends Endpoint<
 			}
 
 			// Create like
-			await this.prismaService.client.flash_like.create({
+			await this.prismaService.client.flashLike.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
