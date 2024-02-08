@@ -826,7 +826,7 @@ export class ActivityPubServerService {
 				// check if the following exists and only check if the follow request exists.
 
 				const followRequest =
-					await this.prismaService.client.follow_request.findUnique({
+					await this.prismaService.client.followRequest.findUnique({
 						where: {
 							id: request.params.followRequestId,
 						},

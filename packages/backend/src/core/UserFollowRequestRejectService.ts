@@ -57,7 +57,7 @@ export class UserFollowRequestRejectService {
 		followee: Local,
 		follower: Remote,
 	): Promise<void> {
-		const request = await this.prismaService.client.follow_request.findUnique({
+		const request = await this.prismaService.client.followRequest.findUnique({
 			where: {
 				followerId_followeeId: {
 					followeeId: followee.id,

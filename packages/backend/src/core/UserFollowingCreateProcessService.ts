@@ -104,7 +104,7 @@ export class UserFollowingCreateProcessService {
 		this.cacheService.userFollowingsCache.refresh(follower.id);
 
 		const requestExist =
-			(await this.prismaService.client.follow_request.count({
+			(await this.prismaService.client.followRequest.count({
 				where: {
 					followeeId: followee.id,
 					followerId: follower.id,
@@ -113,7 +113,7 @@ export class UserFollowingCreateProcessService {
 			})) > 0;
 
 		if (requestExist) {
-			await this.prismaService.client.follow_request.delete({
+			await this.prismaService.client.followRequest.delete({
 				where: {
 					followerId_followeeId: {
 						followeeId: followee.id,

@@ -43,7 +43,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const requests = await this.prismaService.client.follow_request.findMany({
+			const requests = await this.prismaService.client.followRequest.findMany({
 				where: { AND: [paginationQuery.where, { followeeId: me.id }] },
 				take: ps.limit,
 			});

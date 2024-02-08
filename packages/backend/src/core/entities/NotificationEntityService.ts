@@ -163,7 +163,7 @@ export class NotificationEntityService  {
 			(x) => x.type === 'receiveFollowRequest',
 		);
 		if (followRequestNotifications.length > 0) {
-			const reqs = await this.prismaService.client.follow_request.findMany({
+			const reqs = await this.prismaService.client.followRequest.findMany({
 				where: {
 					followerId: {
 						in: followRequestNotifications.map((x) => x.notifierId!),

@@ -45,7 +45,7 @@ export class UserFollowRequestCancelService {
 		}
 
 		const requestExist =
-			(await this.prismaService.client.follow_request.count({
+			(await this.prismaService.client.followRequest.count({
 				where: {
 					followeeId: followee.id,
 					followerId: follower.id,
@@ -60,7 +60,7 @@ export class UserFollowRequestCancelService {
 			);
 		}
 
-		await this.prismaService.client.follow_request.delete({
+		await this.prismaService.client.followRequest.delete({
 			where: {
 				followerId_followeeId: {
 					followeeId: followee.id,

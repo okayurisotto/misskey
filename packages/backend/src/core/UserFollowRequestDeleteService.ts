@@ -24,7 +24,7 @@ export class UserFollowRequestDeleteService {
 	constructor(private readonly prismaService: PrismaService) {}
 
 	public async delete(followee: Both, follower: Both): Promise<void> {
-		const request = await this.prismaService.client.follow_request.findUnique({
+		const request = await this.prismaService.client.followRequest.findUnique({
 			where: {
 				followerId_followeeId: {
 					followeeId: followee.id,
@@ -35,7 +35,7 @@ export class UserFollowRequestDeleteService {
 
 		if (!request) return;
 
-		await this.prismaService.client.follow_request.delete({
+		await this.prismaService.client.followRequest.delete({
 			where: { id: request.id },
 		});
 	}

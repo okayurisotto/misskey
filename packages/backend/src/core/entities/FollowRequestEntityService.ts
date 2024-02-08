@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
-import type { follow_request, user } from '@prisma/client';
+import type { FollowRequest, user } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class FollowRequestEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: follow_request['id'] | follow_request,
+		src: FollowRequest['id'] | FollowRequest,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<{
 		id: string;
@@ -28,22 +28,15 @@ export class FollowRequestEntityService {
 		followee: z.infer<typeof UserLiteSchema>;
 	}> {
 		const request =
-			await this.prismaService.client.follow_request.findUniqueOrThrow({
+			await this.prismaService.client.followRequest.findUniqueOrThrow({
 				where: { id: typeof src === 'string' ? src : src.id },
-				include: {
-					user_follow_request_followeeIdTouser: true,
-					user_follow_request_followerIdTouser: true,
-				},
+				include: { followee: true, follower: true },
 			});
 
 		return {
 			id: request.id,
-			follower: await this.userEntityPackLiteService.packLite(
-				request.user_follow_request_followerIdTouser,
-			),
-			followee: await this.userEntityPackLiteService.packLite(
-				request.user_follow_request_followeeIdTouser,
-			),
+			follower: await this.userEntityPackLiteService.packLite(request.follower),
+			followee: await this.userEntityPackLiteService.packLite(request.followee),
 		};
 	}
 }

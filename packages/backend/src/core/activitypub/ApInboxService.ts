@@ -810,7 +810,7 @@ export class ApInboxService {
 		}
 
 		const requestExist =
-			(await this.prismaService.client.follow_request.count({
+			(await this.prismaService.client.followRequest.count({
 				where: {
 					followerId: actor.id,
 					followeeId: followee.id,

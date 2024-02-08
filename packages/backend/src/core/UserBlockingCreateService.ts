@@ -77,7 +77,7 @@ export class UserBlockingCreateService {
 		followee: user,
 		silent = false,
 	): Promise<void> {
-		const request = await this.prismaService.client.follow_request.findUnique({
+		const request = await this.prismaService.client.followRequest.findUnique({
 			where: {
 				followerId_followeeId: {
 					followeeId: followee.id,
@@ -90,7 +90,7 @@ export class UserBlockingCreateService {
 			return;
 		}
 
-		await this.prismaService.client.follow_request.delete({
+		await this.prismaService.client.followRequest.delete({
 			where: {
 				followerId_followeeId: {
 					followeeId: followee.id,

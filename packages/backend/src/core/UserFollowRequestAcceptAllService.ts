@@ -17,7 +17,7 @@ export class UserFollowRequestAcceptAllService {
 		inbox: user['inbox'];
 		sharedInbox: user['sharedInbox'];
 	}): Promise<void> {
-		const requests = await this.prismaService.client.follow_request.findMany({
+		const requests = await this.prismaService.client.followRequest.findMany({
 			where: { followeeId: user.id },
 		});
 

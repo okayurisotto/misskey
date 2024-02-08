@@ -32,7 +32,7 @@ export class UserFollowRequestAcceptService {
 		},
 		follower: user,
 	): Promise<void> {
-		const request = await this.prismaService.client.follow_request.findUnique({
+		const request = await this.prismaService.client.followRequest.findUnique({
 			where: {
 				followerId_followeeId: {
 					followeeId: followee.id,

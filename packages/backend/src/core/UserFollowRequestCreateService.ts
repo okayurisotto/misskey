@@ -48,33 +48,15 @@ export class UserFollowRequestCreateService {
 		if (blocking) throw new Error('blocking');
 		if (blocked) throw new Error('blocked');
 
-		const followRequest = await this.prismaService.client.follow_request.create(
-			{
-				data: {
-					id: this.idService.genId(),
-					createdAt: new Date(),
-					followerId: follower.id,
-					followeeId: followee.id,
-					requestId,
-
-					// 非正規化
-					followerHost: follower.host,
-					followerInbox: this.userEntityUtilService.isRemoteUser(follower)
-						? follower.inbox
-						: undefined,
-					followerSharedInbox: this.userEntityUtilService.isRemoteUser(follower)
-						? follower.sharedInbox
-						: undefined,
-					followeeHost: followee.host,
-					followeeInbox: this.userEntityUtilService.isRemoteUser(followee)
-						? followee.inbox
-						: undefined,
-					followeeSharedInbox: this.userEntityUtilService.isRemoteUser(followee)
-						? followee.sharedInbox
-						: undefined,
-				},
+		const followRequest = await this.prismaService.client.followRequest.create({
+			data: {
+				id: this.idService.genId(),
+				createdAt: new Date(),
+				followerId: follower.id,
+				followeeId: followee.id,
+				requestId,
 			},
-		);
+		});
 
 		// Publish receiveRequest event
 		if (this.userEntityUtilService.isLocalUser(followee)) {
