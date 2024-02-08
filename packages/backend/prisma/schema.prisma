@@ -877,7 +877,7 @@ model Clip {
   favorites ClipFavorite[]
   notes     ClipNote[]
 
-  // TODO: 本当は`clip_note`側に`createdAt`カラムを作成したい
+  // TODO: 本当は`ClipNote`側に`createdAt`カラムを作成したい
   lastClippedAt DateTime? @db.Timestamptz(6)
 
   @@index([userId], map: "IDX_2b5ec6c574d6802c94c80313fb")
