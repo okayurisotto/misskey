@@ -56,7 +56,7 @@ export default class extends Endpoint<
 			});
 
 			// Check not muting
-			const exist = await this.prismaService.client.muting.findUnique({
+			const exist = await this.prismaService.client.userMuting.findUnique({
 				where: {
 					muterId_muteeId: {
 						muterId: muter.id,

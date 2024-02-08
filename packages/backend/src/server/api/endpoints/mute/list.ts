@@ -37,7 +37,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const mutings = await this.prismaService.client.muting.findMany({
+			const mutings = await this.prismaService.client.userMuting.findMany({
 				where: { AND: [paginationQuery.where, { muterId: me.id }] },
 				orderBy: paginationQuery.orderBy,
 				take: ps.limit,

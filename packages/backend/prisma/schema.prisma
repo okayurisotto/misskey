@@ -1373,16 +1373,16 @@ model MutedNote {
 }
 
 // ユーザーミュート
-model muting {
-  id                        String    @id(map: "PK_2e92d06c8b5c602eeb27ca9ba48") @db.VarChar(32)
-  createdAt                 DateTime  @db.Timestamptz(6)
-  expiresAt                 DateTime? @db.Timestamptz(6)
+model UserMuting {
+  id        String    @id(map: "PK_2e92d06c8b5c602eeb27ca9ba48") @db.VarChar(32)
+  createdAt DateTime  @db.Timestamptz(6)
+  expiresAt DateTime? @db.Timestamptz(6)
   //
-  muterId                   String    @db.VarChar(32)
-  user_muting_muterIdTouser user      @relation("muting_muterIdTouser", fields: [muterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_93060675b4a79a577f31d260c67")
+  muterId   String    @db.VarChar(32)
+  muter     user      @relation("muting_muterIdTouser", fields: [muterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_93060675b4a79a577f31d260c67")
   //
-  muteeId                   String    @db.VarChar(32)
-  user_muting_muteeIdTouser user      @relation("muting_muteeIdTouser", fields: [muteeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ec96b4fed9dae517e0dbbe0675c")
+  muteeId   String    @db.VarChar(32)
+  mutee     user      @relation("muting_muteeIdTouser", fields: [muteeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ec96b4fed9dae517e0dbbe0675c")
 
   @@unique([muterId, muteeId], map: "IDX_1eb9d9824a630321a29fd3b290")
   @@index([muterId], map: "IDX_93060675b4a79a577f31d260c6")
@@ -1392,6 +1392,7 @@ model muting {
   @@index([createdAt], map: "IDX_renote_muting_createdAt")
   @@index([muteeId], map: "IDX_renote_muting_muteeId")
   @@index([muterId], map: "IDX_renote_muting_muterId")
+  @@map("muting")
 }
 
 // ノート
@@ -1955,8 +1956,8 @@ model user {
   meta                                                      Meta[]
   moderation_log                                            ModerationLog[]
   muted_note                                                MutedNote[]
-  muting_muting_muterIdTouser                               muting[]                 @relation("muting_muterIdTouser")
-  muting_muting_muteeIdTouser                               muting[]                 @relation("muting_muteeIdTouser")
+  muting_muting_muterIdTouser                               UserMuting[]             @relation("muting_muterIdTouser")
+  muting_muting_muteeIdTouser                               UserMuting[]             @relation("muting_muteeIdTouser")
   note                                                      note[]
   note_favorite                                             note_favorite[]
   note_reaction                                             note_reaction[]

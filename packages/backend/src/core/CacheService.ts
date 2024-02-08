@@ -112,7 +112,7 @@ export class CacheService implements OnApplicationShutdown {
 				lifetime: 1000 * 60 * 30, // 30m
 				memoryCacheLifetime: 1000 * 60, // 1m
 				fetcher: async (key): Promise<Set<string>> => {
-					const xs = await this.prismaService.client.muting.findMany({
+					const xs = await this.prismaService.client.userMuting.findMany({
 						where: { muterId: key },
 					});
 					return new Set(xs.map((x) => x.muteeId));

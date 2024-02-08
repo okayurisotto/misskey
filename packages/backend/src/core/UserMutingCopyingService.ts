@@ -12,11 +12,11 @@ export class UserMutingCopyingService {
 	) {}
 
 	public async copy(src: ThinUser, dst: ThinUser): Promise<void> {
-		const dstMutings = await this.prismaService.client.muting.findMany({
+		const dstMutings = await this.prismaService.client.userMuting.findMany({
 			where: { muteeId: dst.id, expiresAt: null },
 		});
 
-		const srcMutings = await this.prismaService.client.muting.findMany({
+		const srcMutings = await this.prismaService.client.userMuting.findMany({
 			where: {
 				muteeId: src.id,
 				OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
@@ -27,7 +27,7 @@ export class UserMutingCopyingService {
 
 		const newMutings = new Map<
 			string,
-			Omit<Prisma.mutingCreateManyInput, 'id'>
+			Omit<Prisma.UserMutingCreateManyInput, 'id'>
 		>();
 
 		// 重複しないようにIDを生成
@@ -47,10 +47,10 @@ export class UserMutingCopyingService {
 			});
 		}
 
-		const arrayToCreateMany: Prisma.mutingCreateManyInput[] = [
+		const arrayToCreateMany: Prisma.UserMutingCreateManyInput[] = [
 			...newMutings,
 		].map((entry) => ({ ...entry[1], id: entry[0] }));
-		await this.prismaService.client.muting.createMany({
+		await this.prismaService.client.userMuting.createMany({
 			data: arrayToCreateMany,
 		});
 	}

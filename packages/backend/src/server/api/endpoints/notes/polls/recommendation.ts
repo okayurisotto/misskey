@@ -30,7 +30,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const mutings = await this.prismaService.client.muting.findMany({
+			const mutings = await this.prismaService.client.userMuting.findMany({
 				where: { muterId: me.id },
 				select: { muteeId: true },
 			});

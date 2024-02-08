@@ -27,7 +27,7 @@ export class NoteReadService implements OnApplicationShutdown {
 		},
 	): Promise<void> {
 		//#region ミュートしているなら無視
-		const mute = await this.prismaService.client.muting.findMany({
+		const mute = await this.prismaService.client.userMuting.findMany({
 			where: { muterId: userId },
 		});
 		if (mute.map((m) => m.muteeId).includes(note.userId)) return;

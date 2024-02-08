@@ -71,7 +71,7 @@ export default class extends Endpoint<
 
 			// Check if already muting
 			const exist =
-				(await this.prismaService.client.muting.count({
+				(await this.prismaService.client.userMuting.count({
 					where: {
 						muterId: muter.id,
 						muteeId: mutee.id,

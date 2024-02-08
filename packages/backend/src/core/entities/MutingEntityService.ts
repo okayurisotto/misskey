@@ -3,7 +3,7 @@ import type { MutingSchema } from '@/models/zod/MutingSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
-import type { muting, user } from '@prisma/client';
+import type { UserMuting, user } from '@prisma/client';
 
 @Injectable()
 export class MutingEntityService {
@@ -20,13 +20,13 @@ export class MutingEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: muting['id'] | muting,
+		src: UserMuting['id'] | UserMuting,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof MutingSchema>> {
 		const muting =
 			typeof src === 'object'
 				? src
-				: await this.prismaService.client.muting.findUniqueOrThrow({
+				: await this.prismaService.client.userMuting.findUniqueOrThrow({
 						where: { id: src },
 				  });
 

@@ -31,7 +31,7 @@ export class ExportMutingProcessorService {
 			where: { id: job.data.user.id },
 			include: {
 				muting_muting_muterIdTouser: {
-					include: { user_muting_muteeIdTouser: true },
+					include: { mutee: true },
 				},
 			},
 		});
@@ -39,8 +39,10 @@ export class ExportMutingProcessorService {
 
 		const content = user.muting_muting_muterIdTouser
 			.map((mute) => {
-				const user = mute.user_muting_muteeIdTouser;
-				return this.utilityService.getFullApAccount(user.username, user.host);
+				return this.utilityService.getFullApAccount(
+					mute.mutee.username,
+					mute.mutee.host,
+				);
 			})
 			.map((entry) => entry + '\n')
 			.join('');

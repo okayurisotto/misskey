@@ -103,7 +103,7 @@ class NotificationManager {
 	public async deliver(): Promise<void> {
 		for (const x of this.queue) {
 			// ミュート情報を取得
-			const mentioneeMutes = await this.prismaService.client.muting.findMany({
+			const mentioneeMutes = await this.prismaService.client.userMuting.findMany({
 				where: { muterId: x.target },
 			});
 

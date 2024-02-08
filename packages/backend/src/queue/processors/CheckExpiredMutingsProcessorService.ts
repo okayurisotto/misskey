@@ -19,7 +19,7 @@ export class CheckExpiredMutingsProcessorService {
 	public async process(): Promise<void> {
 		this.logger.info('Checking expired mutings...');
 
-		const expired = await this.prismaService.client.muting.findMany({
+		const expired = await this.prismaService.client.userMuting.findMany({
 			where: {
 				expiresAt: { not: null, lt: new Date() },
 			},
