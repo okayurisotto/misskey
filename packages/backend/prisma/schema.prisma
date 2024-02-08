@@ -1354,8 +1354,8 @@ model ModerationLog {
   @@map("moderation_log")
 }
 
-// ?
-model muted_note {
+// 現時点ではワードミュート（ハード）によって隠されたノートでしか使われていない？
+model MutedNote {
   id     String                 @id(map: "PK_897e2eff1c0b9b64e55ca1418a4") @db.VarChar(32)
   reason muted_note_reason_enum
   //
@@ -1369,6 +1369,7 @@ model muted_note {
   @@index([reason], map: "IDX_636e977ff90b23676fb5624b25")
   @@index([noteId], map: "IDX_70ab9786313d78e4201d81cdb8")
   @@index([userId], map: "IDX_d8e07aa18c2d64e86201601aec")
+  @@map("muted_note")
 }
 
 // ユーザーミュート
@@ -1443,7 +1444,7 @@ model note {
   poll             poll?
   promo_note       promo_note?
   clip_note        ClipNote[]
-  muted_note       muted_note[]
+  muted_note       MutedNote[]
   note_favorite    note_favorite[]
   note_reaction    note_reaction[]
   note_unread      note_unread[]
@@ -1953,7 +1954,7 @@ model user {
   gallery_post                                              Gallery[]
   meta                                                      Meta[]
   moderation_log                                            ModerationLog[]
-  muted_note                                                muted_note[]
+  muted_note                                                MutedNote[]
   muting_muting_muterIdTouser                               muting[]                 @relation("muting_muterIdTouser")
   muting_muting_muteeIdTouser                               muting[]                 @relation("muting_muteeIdTouser")
   note                                                      note[]

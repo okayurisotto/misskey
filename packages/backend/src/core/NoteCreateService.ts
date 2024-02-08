@@ -561,7 +561,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 						z.array(z.array(z.string())).parse(u.mutedWords),
 					);
 					if (shouldMute) {
-						this.prismaService.client.muted_note.create({
+						this.prismaService.client.mutedNote.create({
 							data: {
 								id: this.idService.genId(),
 								userId: u.userId,

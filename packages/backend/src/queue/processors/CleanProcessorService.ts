@@ -27,7 +27,7 @@ export class CleanProcessorService {
 			this.prismaService.client.user_ip.deleteMany({
 				where: { createdAt: { lt: untilDate90 } },
 			}),
-			this.prismaService.client.muted_note.deleteMany({
+			this.prismaService.client.mutedNote.deleteMany({
 				where: {
 					id: { lt: this.idService.genId(untilDate90) },
 					reason: 'word',

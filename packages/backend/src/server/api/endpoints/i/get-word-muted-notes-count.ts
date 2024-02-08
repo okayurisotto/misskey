@@ -25,7 +25,7 @@ export default class extends Endpoint<
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
 			return {
-				count: await this.prismaService.client.muted_note.count({
+				count: await this.prismaService.client.mutedNote.count({
 					where: { userId: me.id, reason: 'word' },
 				}),
 			};
