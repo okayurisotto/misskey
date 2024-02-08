@@ -33,16 +33,10 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			await this.prismaService.client.channelFavorite.delete({
+			await this.prismaService.client.channelFavorite.deleteMany({
 				where: {
-					id: (
-						await this.prismaService.client.channelFavorite.findFirstOrThrow({
-							where: {
-								userId: me.id,
-								channelId: channel.id,
-							},
-						})
-					).id,
+					userId: me.id,
+					channelId: channel.id,
 				},
 			});
 		});
