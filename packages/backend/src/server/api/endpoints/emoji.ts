@@ -34,7 +34,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const emoji = await this.prismaService.client.emoji.findFirst({
+			const emoji = await this.prismaService.client.customEmoji.findFirst({
 				where: {
 					name: ps.name,
 					host: null,

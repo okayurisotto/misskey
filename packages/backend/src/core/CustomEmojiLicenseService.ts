@@ -4,7 +4,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
-import type { emoji } from '@prisma/client';
+import type { CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiLicenseService {
@@ -16,10 +16,10 @@ export class CustomEmojiLicenseService {
 	) {}
 
 	public async setBulk(
-		ids: emoji['id'][],
+		ids: CustomEmoji['id'][],
 		license: string | null,
 	): Promise<void> {
-		await this.prismaService.client.emoji.updateMany({
+		await this.prismaService.client.customEmoji.updateMany({
 			where: { id: { in: ids } },
 			data: {
 				updatedAt: new Date(),
@@ -29,7 +29,7 @@ export class CustomEmojiLicenseService {
 
 		await this.customEmojiLocalCacheService.refresh();
 
-		const emojis = await this.prismaService.client.emoji.findMany({
+		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { id: { in: ids } },
 		});
 		const data = { emoji: new EntityMap('id', emojis) };

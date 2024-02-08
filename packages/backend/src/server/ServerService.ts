@@ -158,7 +158,7 @@ export class ServerService implements OnApplicationShutdown {
 			const name = segments[0].replace('.webp', '');
 			const host = segments[1]?.replace('.webp', '');
 
-			const emoji = await this.prismaService.client.emoji.findFirst({
+			const emoji = await this.prismaService.client.customEmoji.findFirst({
 				where: {
 					// `@.` is the spec of ReactionService.decodeReaction
 					host: host === undefined || host === '.' ? null : host,

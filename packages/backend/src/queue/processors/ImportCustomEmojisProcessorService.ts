@@ -98,7 +98,7 @@ export class ImportCustomEmojisProcessorService {
 
 			// 同じ名前の既存のカスタム絵文字をデータベースから削除
 			// TODO: 削除するかどうか選べるようにする
-			await this.prismaService.client.emoji.deleteMany({
+			await this.prismaService.client.customEmoji.deleteMany({
 				where: { name: { in: unique(emojis).map(({ emoji }) => emoji.name) } },
 			});
 

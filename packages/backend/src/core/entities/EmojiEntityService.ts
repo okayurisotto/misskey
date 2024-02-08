@@ -3,13 +3,13 @@ import type { EmojiSimpleSchema } from '@/models/zod/EmojiSimpleSchema.js';
 import type { EmojiDetailedSchema } from '@/models/zod/EmojiDetailedSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import type { z } from 'zod';
-import type { emoji } from '@prisma/client';
+import type { CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class EmojiEntityService {
 	public packSimple(
-		id: emoji['id'],
-		data: { emoji: EntityMap<'id', emoji> },
+		id: CustomEmoji['id'],
+		data: { emoji: EntityMap<'id', CustomEmoji> },
 	): z.infer<typeof EmojiSimpleSchema> {
 		const emoji = data.emoji.get(id);
 
@@ -27,8 +27,8 @@ export class EmojiEntityService {
 	}
 
 	public packDetailed(
-		id: emoji['id'],
-		data: { emoji: EntityMap<'id', emoji> },
+		id: CustomEmoji['id'],
+		data: { emoji: EntityMap<'id', CustomEmoji> },
 	): z.infer<typeof EmojiDetailedSchema> {
 		const emoji = data.emoji.get(id);
 

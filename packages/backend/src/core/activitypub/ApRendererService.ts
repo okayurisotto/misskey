@@ -49,7 +49,7 @@ import type {
 import type {
 	relay,
 	note_reaction,
-	emoji,
+	CustomEmoji,
 	Blocking,
 	DriveFile,
 	note,
@@ -185,7 +185,7 @@ export class ApRendererService {
 		};
 	}
 
-	public renderEmoji(emoji: emoji): IApEmoji {
+	public renderEmoji(emoji: CustomEmoji): IApEmoji {
 		return {
 			id: `${this.configLoaderService.data.url}/emojis/${emoji.name}`,
 			type: 'Emoji',
@@ -826,7 +826,7 @@ export class ApRendererService {
 		return page;
 	}
 
-	private async getEmojis(names: string[]): Promise<emoji[]> {
+	private async getEmojis(names: string[]): Promise<CustomEmoji[]> {
 		if (names.length === 0) return [];
 
 		const allEmojis = await this.customEmojiLocalCacheService.fetch();

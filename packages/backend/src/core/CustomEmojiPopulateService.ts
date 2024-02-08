@@ -34,7 +34,7 @@ export class CustomEmojiPopulateService {
 			})
 			.filter(isNotNull);
 
-		const emojis = await this.prismaService.client.emoji.findMany({
+		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { OR: parsedEmojiNames.map(({ result: specifier }) => specifier) },
 		});
 

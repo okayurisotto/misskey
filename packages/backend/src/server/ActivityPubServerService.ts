@@ -732,7 +732,7 @@ export class ActivityPubServerService {
 		fastify.get<{ Params: { emoji: string } }>(
 			'/emojis/:emoji',
 			async (request, reply) => {
-				const emoji = await this.prismaService.client.emoji.findFirst({
+				const emoji = await this.prismaService.client.customEmoji.findFirst({
 					where: {
 						host: null,
 						name: request.params.emoji,

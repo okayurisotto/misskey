@@ -7,7 +7,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { isEmoji } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import type { IObject } from '../type.js';
-import type { emoji } from '@prisma/client';
+import type { CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class ApNoteEmojiExtractService {
@@ -25,18 +25,20 @@ export class ApNoteEmojiExtractService {
 	public async extractEmojis(
 		tags: IObject | IObject[],
 		host: string,
-	): Promise<emoji[]> {
+	): Promise<CustomEmoji[]> {
 		// eslint-disable-next-line no-param-reassign
 		host = this.utilityService.toPuny(host);
 
 		const eomjiTags = toArray(tags).filter(isEmoji);
 
-		const existingEmojis = await this.prismaService.client.emoji.findMany({
-			where: {
-				host,
-				name: { in: eomjiTags.map((tag) => tag.name.replaceAll(':', '')) },
+		const existingEmojis = await this.prismaService.client.customEmoji.findMany(
+			{
+				where: {
+					host,
+					name: { in: eomjiTags.map((tag) => tag.name.replaceAll(':', '')) },
+				},
 			},
-		});
+		);
 
 		return await Promise.all(
 			eomjiTags.map(async (tag) => {
@@ -52,7 +54,7 @@ export class ApNoteEmojiExtractService {
 						new Date(tag.updated) > exists.updatedAt ||
 						tag.icon.url !== exists.originalUrl
 					) {
-						await this.prismaService.client.emoji.update({
+						await this.prismaService.client.customEmoji.update({
 							where: { name_host: { host, name } },
 							data: {
 								uri: tag.id,
@@ -62,9 +64,10 @@ export class ApNoteEmojiExtractService {
 							},
 						});
 
-						const emoji = await this.prismaService.client.emoji.findUnique({
-							where: { name_host: { host, name } },
-						});
+						const emoji =
+							await this.prismaService.client.customEmoji.findUnique({
+								where: { name_host: { host, name } },
+							});
 						if (emoji == null) throw new Error('emoji update failed');
 						return emoji;
 					}
@@ -74,7 +77,7 @@ export class ApNoteEmojiExtractService {
 
 				this.logger.info(`register emoji host=${host}, name=${name}`);
 
-				return await this.prismaService.client.emoji.create({
+				return await this.prismaService.client.customEmoji.create({
 					data: {
 						id: this.idService.genId(),
 						host,

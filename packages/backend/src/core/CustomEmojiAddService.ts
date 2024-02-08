@@ -5,7 +5,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
-import type { role, DriveFile, emoji } from '@prisma/client';
+import type { role, DriveFile, CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiAddService {
@@ -27,8 +27,8 @@ export class CustomEmojiAddService {
 		isSensitive: boolean;
 		localOnly: boolean;
 		roleIdsThatCanBeUsedThisEmojiAsReaction: role['id'][];
-	}): Promise<emoji> {
-		const emoji = await this.prismaService.client.emoji.create({
+	}): Promise<CustomEmoji> {
+		const emoji = await this.prismaService.client.customEmoji.create({
 			data: {
 				id: this.idService.genId(),
 				updatedAt: new Date(),

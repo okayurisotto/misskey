@@ -4,7 +4,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
-import type { emoji } from '@prisma/client';
+import type { CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiDeleteService {
@@ -15,8 +15,8 @@ export class CustomEmojiDeleteService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	public async delete(id: emoji['id']): Promise<void> {
-		const emoji = await this.prismaService.client.emoji.delete({
+	public async delete(id: CustomEmoji['id']): Promise<void> {
+		const emoji = await this.prismaService.client.customEmoji.delete({
 			where: { id },
 		});
 
@@ -31,13 +31,13 @@ export class CustomEmojiDeleteService {
 		});
 	}
 
-	public async deleteBulk(ids: emoji['id'][]): Promise<void> {
-		const emojis = await this.prismaService.client.emoji.findMany({
+	public async deleteBulk(ids: CustomEmoji['id'][]): Promise<void> {
+		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { id: { in: ids } },
 		});
 
 		for (const emoji of emojis) {
-			await this.prismaService.client.emoji.delete({ where: { id: emoji.id } });
+			await this.prismaService.client.customEmoji.delete({ where: { id: emoji.id } });
 		}
 
 		await this.customEmojiLocalCacheService.refresh();

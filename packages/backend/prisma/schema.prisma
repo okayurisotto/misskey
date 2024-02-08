@@ -999,7 +999,7 @@ model DriveFolder {
 }
 
 // カスタム絵文字
-model emoji {
+model CustomEmoji {
   id                                      String    @id(map: "PK_df74ce05e24999ee01ea0bc50a3") @db.VarChar(32)
   updatedAt                               DateTime? @db.Timestamptz(6)
   name                                    String    @db.VarChar(128)
@@ -1020,6 +1020,7 @@ model emoji {
   @@unique([name, host], map: "IDX_4f4d35e1256c84ae3d1f0eab10")
   @@index([host], map: "IDX_5900e907bb46516ddf2871327c")
   @@index([name], map: "IDX_b37dafc86e9af007e3295c2781")
+  @@map("emoji")
 }
 
 // Play

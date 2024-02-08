@@ -48,7 +48,7 @@ export class ExportCustomEmojisProcessorService {
 
 		// Download all custom emojis
 
-		const customEmojis = await this.prismaService.client.emoji.findMany({
+		const customEmojis = await this.prismaService.client.customEmoji.findMany({
 			where: { host: null },
 			orderBy: { id: 'asc' },
 		});

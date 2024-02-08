@@ -108,7 +108,7 @@ export class ReactionCreateService {
 				const emoji =
 					reacterHost == null
 						? (await this.customEmojiLocalCacheService.fetch()).get(name)
-						: await this.prismaService.client.emoji.findUnique({
+						: await this.prismaService.client.customEmoji.findUnique({
 								where: { name_host: { host: reacterHost, name } },
 						  });
 
@@ -220,7 +220,7 @@ export class ReactionCreateService {
 				? (await this.customEmojiLocalCacheService.fetch()).get(
 						decodedReaction.name,
 				  )
-				: await this.prismaService.client.emoji.findUnique({
+				: await this.prismaService.client.customEmoji.findUnique({
 						where: {
 							name_host: {
 								name: decodedReaction.name,

@@ -38,7 +38,7 @@ export default class extends Endpoint<
 		private readonly driveFileAddFromUrlService: DriveFileAddFromUrlService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const emoji = await this.prismaService.client.emoji.findUnique({
+			const emoji = await this.prismaService.client.customEmoji.findUnique({
 				where: { id: ps.emojiId },
 			});
 
@@ -59,7 +59,7 @@ export default class extends Endpoint<
 				throw new ApiError();
 			}
 
-			const copied = await this.prismaService.client.emoji.create({
+			const copied = await this.prismaService.client.customEmoji.create({
 				data: {
 					id: this.idService.genId(),
 					updatedAt: new Date(),

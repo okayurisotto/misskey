@@ -4,7 +4,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
-import type { emoji } from '@prisma/client';
+import type { CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiAliasService {
@@ -15,8 +15,8 @@ export class CustomEmojiAliasService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	public async setBulk(ids: emoji['id'][], aliases: string[]): Promise<void> {
-		await this.prismaService.client.emoji.updateMany({
+	public async setBulk(ids: CustomEmoji['id'][], aliases: string[]): Promise<void> {
+		await this.prismaService.client.customEmoji.updateMany({
 			where: { id: { in: ids } },
 			data: {
 				updatedAt: new Date(),
@@ -26,7 +26,7 @@ export class CustomEmojiAliasService {
 
 		await this.customEmojiLocalCacheService.refresh();
 
-		const emojis = await this.prismaService.client.emoji.findMany({
+		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { id: { in: ids } },
 		});
 		const data = { emoji: new EntityMap('id', emojis) };
@@ -38,13 +38,13 @@ export class CustomEmojiAliasService {
 		});
 	}
 
-	public async addBulk(ids: emoji['id'][], aliases: string[]): Promise<void> {
-		const emojis = await this.prismaService.client.emoji.findMany({
+	public async addBulk(ids: CustomEmoji['id'][], aliases: string[]): Promise<void> {
+		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { id: { in: ids } },
 		});
 
 		for (const emoji of emojis) {
-			await this.prismaService.client.emoji.update({
+			await this.prismaService.client.customEmoji.update({
 				where: { id: emoji.id },
 				data: {
 					updatedAt: new Date(),
@@ -67,15 +67,15 @@ export class CustomEmojiAliasService {
 	}
 
 	public async removeBulk(
-		ids: emoji['id'][],
+		ids: CustomEmoji['id'][],
 		aliases: string[],
 	): Promise<void> {
-		const emojis = await this.prismaService.client.emoji.findMany({
+		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { id: { in: ids } },
 		});
 
 		for (const emoji of emojis) {
-			await this.prismaService.client.emoji.update({
+			await this.prismaService.client.customEmoji.update({
 				where: { id: emoji.id },
 				data: {
 					updatedAt: new Date(),

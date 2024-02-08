@@ -4,7 +4,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
-import type { role, DriveFile, emoji } from '@prisma/client';
+import type { role, DriveFile, CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiUpdateService {
@@ -16,7 +16,7 @@ export class CustomEmojiUpdateService {
 	) {}
 
 	public async update(
-		id: emoji['id'],
+		id: CustomEmoji['id'],
 		data: {
 			driveFile?: DriveFile;
 			name?: string;
@@ -28,16 +28,16 @@ export class CustomEmojiUpdateService {
 			roleIdsThatCanBeUsedThisEmojiAsReaction?: role['id'][];
 		},
 	): Promise<void> {
-		const emoji = await this.prismaService.client.emoji.findUniqueOrThrow({
+		const emoji = await this.prismaService.client.customEmoji.findUniqueOrThrow({
 			where: { id: id },
 		});
-		const sameNameEmoji = await this.prismaService.client.emoji.findFirst({
+		const sameNameEmoji = await this.prismaService.client.customEmoji.findFirst({
 			where: { name: data.name, host: null },
 		});
 		if (sameNameEmoji != null && sameNameEmoji.id !== id)
 			throw new Error('name already exists');
 
-		await this.prismaService.client.emoji.update({
+		await this.prismaService.client.customEmoji.update({
 			where: { id: emoji.id },
 			data: {
 				updatedAt: new Date(),
