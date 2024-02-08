@@ -15,7 +15,7 @@ export class ModerationLogService {
 		type: string,
 		info?: Record<string, any>,
 	): Promise<void> {
-		await this.prismaService.client.moderation_log.create({
+		await this.prismaService.client.moderationLog.create({
 			data: {
 				id: this.idService.genId(),
 				createdAt: new Date(),

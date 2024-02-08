@@ -1341,7 +1341,7 @@ model migrations {
 }
 
 // モデレーションの記録
-model moderation_log {
+model ModerationLog {
   id        String   @id(map: "PK_d0adca6ecfd068db83e4526cc26") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   type      String   @db.VarChar(128) // Enum?
@@ -1351,6 +1351,7 @@ model moderation_log {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a08ad074601d204e0f69da9a954")
 
   @@index([userId], map: "IDX_a08ad074601d204e0f69da9a95")
+  @@map("moderation_log")
 }
 
 // ?
@@ -1951,7 +1952,7 @@ model user {
   gallery_like                                              GalleryLike[]
   gallery_post                                              Gallery[]
   meta                                                      Meta[]
-  moderation_log                                            moderation_log[]
+  moderation_log                                            ModerationLog[]
   muted_note                                                muted_note[]
   muting_muting_muterIdTouser                               muting[]                 @relation("muting_muterIdTouser")
   muting_muting_muteeIdTouser                               muting[]                 @relation("muting_muteeIdTouser")

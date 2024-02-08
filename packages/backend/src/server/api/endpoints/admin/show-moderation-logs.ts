@@ -46,7 +46,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const reports = await this.prismaService.client.moderation_log.findMany({
+			const reports = await this.prismaService.client.moderationLog.findMany({
 				where: { AND: [paginationQuery.where] },
 				orderBy: paginationQuery.orderBy,
 				take: ps.limit,
