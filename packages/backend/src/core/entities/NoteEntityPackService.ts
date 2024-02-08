@@ -53,7 +53,7 @@ export class NoteEntityPackService {
 		private readonly driveFileEntityPackService: DriveFileEntityPackService,
 		private readonly legacyReactionConvertService: LegacyReactionConvertService,
 		private readonly prismaService: PrismaService,
-		private readonly reactionDemodeService: ReactionDecodeService,
+		private readonly reactionDecodeService: ReactionDecodeService,
 		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
 
@@ -313,8 +313,8 @@ export class NoteEntityPackService {
 		)
 			.filter((x) => x.startsWith(':') && x.includes('@') && !x.includes('@.')) // リモートのカスタム絵文字のみ
 			.map((x) => {
-				return this.reactionDemodeService
-					.decodeReaction(x)
+				return this.reactionDecodeService
+					.decode(x)
 					.reaction.replaceAll(':', '');
 			});
 		const packedFiles = options?._hint_?.packedFiles;
