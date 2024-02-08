@@ -919,38 +919,38 @@ model ClipNote {
 
 // ドライブのファイル
 model DriveFile {
-  id                 String        @id(map: "PK_43ddaaaf18c9e68029b7cbb032e") @db.VarChar(32)
-  createdAt          DateTime      @db.Timestamptz(6)
-  userHost           String?       @db.VarChar(128)
-  md5                String        @db.VarChar(32)
-  name               String        @db.VarChar(256)
-  type               String        @db.VarChar(128)
+  id                 String       @id(map: "PK_43ddaaaf18c9e68029b7cbb032e") @db.VarChar(32)
+  createdAt          DateTime     @db.Timestamptz(6)
+  userHost           String?      @db.VarChar(128)
+  md5                String       @db.VarChar(32)
+  name               String       @db.VarChar(256)
+  type               String       @db.VarChar(128)
   size               Int
-  comment            String?       @db.VarChar(512)
-  properties         Json          @default("{}")
+  comment            String?      @db.VarChar(512)
+  properties         Json         @default("{}")
   storedInternal     Boolean
-  url                String        @db.VarChar(512)
-  thumbnailUrl       String?       @db.VarChar(512)
-  webpublicUrl       String?       @db.VarChar(512)
-  accessKey          String?       @unique(map: "IDX_d85a184c2540d2deba33daf642") @db.VarChar(256)
-  thumbnailAccessKey String?       @unique(map: "IDX_e74022ce9a074b3866f70e0d27") @db.VarChar(256)
-  webpublicAccessKey String?       @unique(map: "IDX_c55b2b7c284d9fef98026fc88e") @db.VarChar(256)
-  uri                String?       @db.VarChar(512)
-  src                String?       @db.VarChar(512)
-  isSensitive        Boolean       @default(false)
-  isLink             Boolean       @default(false)
-  blurhash           String?       @db.VarChar(128)
-  webpublicType      String?       @db.VarChar(128) // Enum?
-  requestHeaders     Json?         @default("{}")
-  requestIp          String?       @db.VarChar(128)
-  maybeSensitive     Boolean       @default(false)
-  maybePorn          Boolean       @default(false)
+  url                String       @db.VarChar(512)
+  thumbnailUrl       String?      @db.VarChar(512)
+  webpublicUrl       String?      @db.VarChar(512)
+  accessKey          String?      @unique(map: "IDX_d85a184c2540d2deba33daf642") @db.VarChar(256)
+  thumbnailAccessKey String?      @unique(map: "IDX_e74022ce9a074b3866f70e0d27") @db.VarChar(256)
+  webpublicAccessKey String?      @unique(map: "IDX_c55b2b7c284d9fef98026fc88e") @db.VarChar(256)
+  uri                String?      @db.VarChar(512)
+  src                String?      @db.VarChar(512)
+  isSensitive        Boolean      @default(false)
+  isLink             Boolean      @default(false)
+  blurhash           String?      @db.VarChar(128)
+  webpublicType      String?      @db.VarChar(128) // Enum?
+  requestHeaders     Json?        @default("{}")
+  requestIp          String?      @db.VarChar(128)
+  maybeSensitive     Boolean      @default(false)
+  maybePorn          Boolean      @default(false)
   //
-  userId             String?       @db.VarChar(32)
-  user               user?         @relation("drive_file_userIdTouser", fields: [userId], references: [id], onUpdate: NoAction, map: "FK_860fa6f6c7df5bb887249fba22e")
+  userId             String?      @db.VarChar(32)
+  user               user?        @relation("drive_file_userIdTouser", fields: [userId], references: [id], onUpdate: NoAction, map: "FK_860fa6f6c7df5bb887249fba22e")
   //
-  folderId           String?       @db.VarChar(32)
-  folder             drive_folder? @relation(fields: [folderId], references: [id], onUpdate: NoAction, map: "FK_bb90d1956dafc4068c28aa7560a")
+  folderId           String?      @db.VarChar(32)
+  folder             DriveFolder? @relation(fields: [folderId], references: [id], onUpdate: NoAction, map: "FK_bb90d1956dafc4068c28aa7560a")
 
   channel    Channel[]
   page       page[]
@@ -976,23 +976,26 @@ model DriveFile {
 }
 
 // ドライブのフォルダ
-model drive_folder {
-  id                 String         @id(map: "PK_7a0c089191f5ebdc214e0af808a") @db.VarChar(32)
-  createdAt          DateTime       @db.Timestamptz(6)
-  name               String         @db.VarChar(128)
-  other_drive_folder drive_folder[] @relation("drive_folderTodrive_folder") // unused?
+model DriveFolder {
+  id        String       @id(map: "PK_7a0c089191f5ebdc214e0af808a") @db.VarChar(32)
+  createdAt DateTime     @db.Timestamptz(6)
+  name      String       @db.VarChar(128)
   //
-  userId             String?        @db.VarChar(32)
-  user               user?          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f4fc06e49c0171c85f1c48060d2")
+  userId    String?      @db.VarChar(32)
+  user      user?        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f4fc06e49c0171c85f1c48060d2")
   //
-  parentId           String?        @db.VarChar(32)
-  drive_folder       drive_folder?  @relation("drive_folderTodrive_folder", fields: [parentId], references: [id], onUpdate: NoAction, map: "FK_00ceffb0cdc238b3233294f08f2")
+  parentId  String?      @db.VarChar(32)
+  parent    DriveFolder? @relation("drive_folderTodrive_folder", fields: [parentId], references: [id], onUpdate: NoAction, map: "FK_00ceffb0cdc238b3233294f08f2")
 
-  drive_file DriveFile[]
+  files DriveFile[]
+
+  // unused
+  other_drive_folder DriveFolder[] @relation("drive_folderTodrive_folder") @ignore
 
   @@index([parentId], map: "IDX_00ceffb0cdc238b3233294f08f")
   @@index([createdAt], map: "IDX_02878d441ceae15ce060b73daf")
   @@index([userId], map: "IDX_f4fc06e49c0171c85f1c48060d")
+  @@map("drive_folder")
 }
 
 // カスタム絵文字
@@ -1924,7 +1927,7 @@ model user {
   clip                                                      Clip[]
   clip_favorite                                             ClipFavorite[]
   drive_file_drive_file_userIdTouser                        DriveFile[]              @relation("drive_file_userIdTouser")
-  drive_folder                                              drive_folder[]
+  drive_folder                                              DriveFolder[]
   flash                                                     flash[]
   flash_like                                                flash_like[]
   follow_request_follow_request_followeeIdTouser            follow_request[]         @relation("follow_request_followeeIdTouser")

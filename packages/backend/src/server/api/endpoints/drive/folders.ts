@@ -40,7 +40,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const folders = await this.prismaService.client.drive_folder.findMany({
+			const folders = await this.prismaService.client.driveFolder.findMany({
 				where: {
 					AND: [
 						paginationQuery.where,

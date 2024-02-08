@@ -17,7 +17,7 @@ import type {
 	AbuseUserReport,
 	Antenna,
 	DriveFile,
-	drive_folder,
+	DriveFolder,
 	note,
 	page,
 	role_assignment,
@@ -100,7 +100,7 @@ export interface DriveStreamTypes {
 	fileDeleted: DriveFile['id'];
 	fileUpdated: z.infer<typeof DriveFileSchema>;
 	folderCreated: z.infer<typeof DriveFolderSchema>;
-	folderDeleted: drive_folder['id'];
+	folderDeleted: DriveFolder['id'];
 	folderUpdated: z.infer<typeof DriveFolderSchema>;
 }
 

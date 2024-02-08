@@ -46,7 +46,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Fetch folder
-			const folder = await this.prismaService.client.drive_folder.findUnique({
+			const folder = await this.prismaService.client.driveFolder.findUnique({
 				where: {
 					id: ps.folderId,
 					userId: me.id,
@@ -67,7 +67,7 @@ export default class extends Endpoint<
 				} else {
 					// Get parent folder
 					const parent =
-						await this.prismaService.client.drive_folder.findUnique({
+						await this.prismaService.client.driveFolder.findUnique({
 							where: {
 								id: ps.parentId,
 								userId: me.id,
@@ -82,7 +82,7 @@ export default class extends Endpoint<
 					const checkCircle = async (folderId: string): Promise<boolean> => {
 						// Fetch folder
 						const folder2 =
-							await this.prismaService.client.drive_folder.findUnique({
+							await this.prismaService.client.driveFolder.findUnique({
 								where: {
 									id: folderId,
 								},
@@ -108,7 +108,7 @@ export default class extends Endpoint<
 			}
 
 			// Update
-			await this.prismaService.client.drive_folder.update({
+			await this.prismaService.client.driveFolder.update({
 				where: { id: folder.id },
 				data: {
 					name: folder.name,

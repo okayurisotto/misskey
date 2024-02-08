@@ -47,7 +47,7 @@ export default class extends Endpoint<
 			let parent = null;
 			if (ps.parentId) {
 				// Fetch parent folder
-				parent = await this.prismaService.client.drive_folder.findUnique({
+				parent = await this.prismaService.client.driveFolder.findUnique({
 					where: {
 						id: ps.parentId,
 						userId: me.id,
@@ -60,7 +60,7 @@ export default class extends Endpoint<
 			}
 
 			// Create folder
-			const folder = await this.prismaService.client.drive_folder.create({
+			const folder = await this.prismaService.client.driveFolder.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),

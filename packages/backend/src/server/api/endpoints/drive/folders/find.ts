@@ -31,7 +31,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const folders = await this.prismaService.client.drive_folder.findMany({
+			const folders = await this.prismaService.client.driveFolder.findMany({
 				where: {
 					name: ps.name,
 					userId: me.id,

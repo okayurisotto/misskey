@@ -34,7 +34,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Get folder
-			const folder = await this.prismaService.client.drive_folder.findUnique({
+			const folder = await this.prismaService.client.driveFolder.findUnique({
 				where: {
 					id: ps.folderId,
 					userId: me.id,
@@ -46,7 +46,7 @@ export default class extends Endpoint<
 			}
 
 			const [childFoldersCount, childFilesCount] = await Promise.all([
-				this.prismaService.client.drive_folder.count({
+				this.prismaService.client.driveFolder.count({
 					where: { parentId: folder.id },
 				}),
 				this.prismaService.client.driveFile.count({
@@ -58,7 +58,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.hasChildFilesOrFolders);
 			}
 
-			await this.prismaService.client.drive_folder.delete({
+			await this.prismaService.client.driveFolder.delete({
 				where: { id: folder.id },
 			});
 

@@ -3,7 +3,7 @@ import { awaitAll } from '@/misc/prelude/await-all.js';
 import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
-import type { drive_folder } from '@prisma/client';
+import type { DriveFolder } from '@prisma/client';
 
 @Injectable()
 export class DriveFolderEntityService {
@@ -17,7 +17,7 @@ export class DriveFolderEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: drive_folder['id'] | drive_folder,
+		src: DriveFolder['id'] | DriveFolder,
 		options?: {
 			detail: boolean;
 		},
@@ -30,7 +30,7 @@ export class DriveFolderEntityService {
 		const folder =
 			typeof src === 'object'
 				? src
-				: await this.prismaService.client.drive_folder.findUniqueOrThrow({
+				: await this.prismaService.client.driveFolder.findUniqueOrThrow({
 						where: { id: src },
 				  });
 
@@ -46,7 +46,7 @@ export class DriveFolderEntityService {
 
 			const result = await awaitAll({
 				foldersCount: () =>
-					this.prismaService.client.drive_folder.count({
+					this.prismaService.client.driveFolder.count({
 						where: { parentId: folder.id },
 					}),
 				filesCount: () =>

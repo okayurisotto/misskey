@@ -34,7 +34,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Get folder
-			const folder = await this.prismaService.client.drive_folder.findUnique({
+			const folder = await this.prismaService.client.driveFolder.findUnique({
 				where: {
 					id: ps.folderId,
 					userId: me.id,

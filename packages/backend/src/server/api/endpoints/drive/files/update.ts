@@ -91,13 +91,14 @@ export default class extends Endpoint<
 				if (ps.folderId === null) {
 					file.folderId = null;
 				} else {
-					const folder =
-						await this.prismaService.client.drive_folder.findUnique({
+					const folder = await this.prismaService.client.driveFolder.findUnique(
+						{
 							where: {
 								id: ps.folderId,
 								userId: me.id,
 							},
-						});
+						},
+					);
 
 					if (folder == null) {
 						throw new ApiError(meta.errors.noSuchFolder);

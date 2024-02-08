@@ -21,7 +21,7 @@ import { DriveFileDeleteService } from './DriveFileDeleteService.js';
 import { DriveFileNameValidationService } from './entities/DriveFileNameValidationService.js';
 import { DriveUsageCalcService } from './entities/DriveUsageCalcService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { Prisma, DriveFile, drive_folder, user } from '@prisma/client';
+import type { Prisma, DriveFile, DriveFolder, user } from '@prisma/client';
 
 type AddFileArgs = {
 	/** User who wish to add file */
@@ -243,11 +243,11 @@ export class DriveFileAddService {
 		}
 		//#endregion
 
-		const fetchFolder = async (): Promise<drive_folder | null> => {
+		const fetchFolder = async (): Promise<DriveFolder | null> => {
 			if (!folderId) return null;
 
 			const driveFolder =
-				await this.prismaService.client.drive_folder.findUnique({
+				await this.prismaService.client.driveFolder.findUnique({
 					where: {
 						id: folderId,
 						userId: user ? user.id : null,
