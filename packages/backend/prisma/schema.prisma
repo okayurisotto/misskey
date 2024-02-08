@@ -1118,18 +1118,19 @@ model Following {
 }
 
 // ギャラリーのお気に入り
-model gallery_like {
-  id           String       @id(map: "PK_853ab02be39b8de45cd720cc15f") @db.VarChar(32)
-  createdAt    DateTime     @db.Timestamptz(6)
+model GalleryLike {
+  id        String       @id(map: "PK_853ab02be39b8de45cd720cc15f") @db.VarChar(32)
+  createdAt DateTime     @db.Timestamptz(6)
   //
-  userId       String       @db.VarChar(32)
-  user         user         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8fd5215095473061855ceb948cf")
+  userId    String       @db.VarChar(32)
+  user      user         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8fd5215095473061855ceb948cf")
   //
-  postId       String       @db.VarChar(32)
-  gallery_post gallery_post @relation(fields: [postId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b1cb568bfe569e47b7051699fc8")
+  galleryId String       @map("postId") @db.VarChar(32)
+  gallery   gallery_post @relation(fields: [galleryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b1cb568bfe569e47b7051699fc8")
 
-  @@unique([userId, postId], map: "IDX_df1b5f4099e99fb0bc5eae53b6")
+  @@unique([userId, galleryId], map: "IDX_df1b5f4099e99fb0bc5eae53b6")
   @@index([userId], map: "IDX_8fd5215095473061855ceb948c")
+  @@map("gallery_like")
 }
 
 // ギャラリー
@@ -1149,7 +1150,7 @@ model gallery_post {
   userId      String   @db.VarChar(32)
   user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_985b836dddd8615e432d7043ddb")
 
-  gallery_like gallery_like[]
+  gallery_like GalleryLike[]
 
   @@index([tags], map: "IDX_05cca34b985d1b8edc1d1e28df")
   @@index([likedCount], map: "IDX_1a165c68a49d08f11caffbd206")
@@ -1942,7 +1943,7 @@ model user {
   follow_request_follow_request_followerIdTouser            FollowRequest[]          @relation("follow_request_followerIdTouser")
   following_following_followeeIdTouser                      Following[]              @relation("following_followeeIdTouser")
   following_following_followerIdTouser                      Following[]              @relation("following_followerIdTouser")
-  gallery_like                                              gallery_like[]
+  gallery_like                                              GalleryLike[]
   gallery_post                                              gallery_post[]
   meta                                                      meta[]
   moderation_log                                            moderation_log[]

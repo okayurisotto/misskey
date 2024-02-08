@@ -39,8 +39,8 @@ export class GalleryPostEntityService {
 			files: () => this.driveFileEntityPackService.packManyByIds(post.fileIds),
 			isLiked: async () =>
 				meId
-					? (await this.prismaService.client.gallery_like.count({
-							where: { postId: post.id, userId: meId },
+					? (await this.prismaService.client.galleryLike.count({
+							where: { galleryId: post.id, userId: meId },
 							take: 1,
 					  })) > 0
 					: undefined,

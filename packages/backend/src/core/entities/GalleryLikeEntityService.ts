@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { GalleryPostEntityService } from './GalleryPostEntityService.js';
-import type { gallery_like, user } from '@prisma/client';
+import type { GalleryLike, user } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -20,19 +20,19 @@ export class GalleryLikeEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: gallery_like['id'] | gallery_like,
+		src: GalleryLike['id'] | GalleryLike,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<{ id: string; post: z.infer<typeof GalleryPostSchema> }> {
 		const like =
 			typeof src === 'object'
 				? src
-				: await this.prismaService.client.gallery_like.findUniqueOrThrow({
+				: await this.prismaService.client.galleryLike.findUniqueOrThrow({
 						where: { id: src },
 				  });
 
 		return {
 			id: like.id,
-			post: await this.galleryPostEntityService.pack(like.postId, me),
+			post: await this.galleryPostEntityService.pack(like.galleryId, me),
 		};
 	}
 }

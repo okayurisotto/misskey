@@ -28,12 +28,12 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			await this.prismaService.client.gallery_like.create({
+			await this.prismaService.client.galleryLike.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
 					user: { connect: { id: me.id } },
-					gallery_post: {
+					gallery: {
 						connect: {
 							id: ps.postId,
 							userId: { not: me.id },
