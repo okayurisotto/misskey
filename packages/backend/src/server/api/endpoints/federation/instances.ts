@@ -44,7 +44,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps) => {
 			const where_blocked =
-				await (async (): Promise<Prisma.instanceWhereInput> => {
+				await (async (): Promise<Prisma.InstanceWhereInput> => {
 					if (ps.blocked == null) return {};
 					const meta = await this.metaService.fetch(true);
 
@@ -55,17 +55,17 @@ export default class extends Endpoint<
 					}
 				})();
 
-			const where_notResponding = ((): Prisma.instanceWhereInput => {
+			const where_notResponding = ((): Prisma.InstanceWhereInput => {
 				if (ps.notResponding == null) return {};
 				return { isNotResponding: ps.notResponding };
 			})();
 
-			const where_suspended = ((): Prisma.instanceWhereInput => {
+			const where_suspended = ((): Prisma.InstanceWhereInput => {
 				if (ps.suspended == null) return {};
 				return { isSuspended: ps.suspended };
 			})();
 
-			const where_federating = ((): Prisma.instanceWhereInput => {
+			const where_federating = ((): Prisma.InstanceWhereInput => {
 				if (ps.federating == null) return {};
 
 				if (ps.federating) {
@@ -77,7 +77,7 @@ export default class extends Endpoint<
 				}
 			})();
 
-			const where_subscribing = ((): Prisma.instanceWhereInput => {
+			const where_subscribing = ((): Prisma.InstanceWhereInput => {
 				if (ps.subscribing == null) return {};
 
 				if (ps.subscribing) {
@@ -87,7 +87,7 @@ export default class extends Endpoint<
 				}
 			})();
 
-			const where_publishing = ((): Prisma.instanceWhereInput => {
+			const where_publishing = ((): Prisma.InstanceWhereInput => {
 				if (ps.publishing == null) return {};
 
 				if (ps.publishing) {
@@ -97,14 +97,14 @@ export default class extends Endpoint<
 				}
 			})();
 
-			const where_host = ((): Prisma.instanceWhereInput => {
+			const where_host = ((): Prisma.InstanceWhereInput => {
 				if (ps.host == null) return {};
 				return { host: { contains: ps.host.toLowerCase() } };
 			})();
 
 			const orderBy = (():
-				| Prisma.instanceOrderByWithRelationInput
-				| Prisma.instanceOrderByWithRelationInput[] => {
+				| Prisma.InstanceOrderByWithRelationInput
+				| Prisma.InstanceOrderByWithRelationInput[] => {
 				switch (ps.sort) {
 					case '+pubSub':
 						return [{ followingCount: 'desc' }, { followersCount: 'desc' }];

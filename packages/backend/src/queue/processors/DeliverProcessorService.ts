@@ -12,11 +12,11 @@ import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { DeliverJobData } from '../types.js';
-import type { instance } from '@prisma/client';
+import type { Instance } from '@prisma/client';
 
 @Injectable()
 export class DeliverProcessorService {
-	private readonly suspendedHostsCache: MemorySingleCache<instance[]>;
+	private readonly suspendedHostsCache: MemorySingleCache<Instance[]>;
 
 	constructor(
 		private readonly metaService: MetaService,
@@ -29,7 +29,7 @@ export class DeliverProcessorService {
 		private readonly federationChart: FederationChart,
 		private readonly prismaService: PrismaService,
 	) {
-		this.suspendedHostsCache = new MemorySingleCache<instance[]>(1000 * 60 * 60);
+		this.suspendedHostsCache = new MemorySingleCache<Instance[]>(1000 * 60 * 60);
 	}
 
 	public async process(job: Bull.Job<DeliverJobData>): Promise<string> {

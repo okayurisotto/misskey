@@ -8,7 +8,7 @@ import { BadgeRoleService } from '../BadgeRoleService.js';
 import { InstanceEntityService } from './InstanceEntityService.js';
 import { DriveFilePublicUrlGenerationService } from './DriveFilePublicUrlGenerationService.js';
 import { UserEntityUtilService } from './UserEntityUtilService.js';
-import type { instance, user } from '@prisma/client';
+import type { Instance, user } from '@prisma/client';
 
 @Injectable()
 export class UserEntityPackLiteService {
@@ -60,7 +60,7 @@ export class UserEntityPackLiteService {
 		}
 	}
 
-	private async getInstance(user: user): Promise<instance | null> {
+	private async getInstance(user: user): Promise<Instance | null> {
 		if (user.host === null) return null;
 
 		return await this.prismaService.client.instance.findUniqueOrThrow({

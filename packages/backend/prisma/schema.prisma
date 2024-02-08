@@ -1192,7 +1192,7 @@ model Hashtag {
 }
 
 // 連合先インスタンス（サーバ）
-model instance {
+model Instance {
   id                      String    @id(map: "PK_eaf60e4a0c399c9935413e06474") @db.VarChar(32)
   firstRetrievedAt        DateTime  @db.Timestamptz(6)
   latestRequestReceivedAt DateTime? @db.Timestamptz(6)
@@ -1210,7 +1210,7 @@ model instance {
   iconUrl                 String?   @db.VarChar(256)
   themeColor              String?   @db.VarChar(64)
   faviconUrl              String?   @db.VarChar(256)
-  // 集計
+  // 集計だが、適切なリレーションがないため消す訳にはいかない
   usersCount              Int       @default(0)
   notesCount              Int       @default(0)
   followingCount          Int       @default(0)
@@ -1218,6 +1218,7 @@ model instance {
 
   @@index([firstRetrievedAt], map: "IDX_2cd3b2a6b4cf0b910b260afe08")
   @@index([isSuspended], map: "IDX_34500da2e38ac393f7bb6b299c")
+	@@map("instance")
 }
 
 // deprecated

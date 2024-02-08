@@ -4,11 +4,11 @@ import { IdService } from '@/core/IdService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
-import type { instance } from '@prisma/client';
+import type { Instance } from '@prisma/client';
 
 @Injectable()
 export class FederatedInstanceService implements OnApplicationShutdown {
-	public federatedInstanceCache: RedisKVCache<instance | null>;
+	public federatedInstanceCache: RedisKVCache<Instance | null>;
 
 	constructor(
 		private readonly idService: IdService,
@@ -16,19 +16,19 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 		private readonly redisClient: RedisService,
 		private readonly utilityService: UtilityService,
 	) {
-		this.federatedInstanceCache = new RedisKVCache<instance | null>(
+		this.federatedInstanceCache = new RedisKVCache<Instance | null>(
 			this.redisClient,
 			'federatedInstance',
 			{
 				lifetime: 1000 * 60 * 30, // 30m
 				memoryCacheLifetime: 1000 * 60 * 3, // 3m
-				fetcher: async (key): Promise<instance | null> => {
+				fetcher: async (key): Promise<Instance | null> => {
 					return await this.prismaService.client.instance.findUnique({
 						where: { host: key },
 					});
 				},
 				toRedisConverter: (value): string => JSON.stringify(value),
-				fromRedisConverter: (value): instance | null => {
+				fromRedisConverter: (value): Instance | null => {
 					const parsed = JSON.parse(value);
 					if (parsed == null) return null;
 					return {
@@ -46,7 +46,7 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 		);
 	}
 
-	public async fetch(host_: string): Promise<instance> {
+	public async fetch(host_: string): Promise<Instance> {
 		const host = this.utilityService.toPuny(host_);
 
 		const cached = await this.federatedInstanceCache.get(host);
@@ -74,8 +74,8 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 	}
 
 	public async update(
-		id: instance['id'],
-		data: Partial<instance>,
+		id: Instance['id'],
+		data: Partial<Instance>,
 	): Promise<void> {
 		const result = await this.prismaService.client.instance.update({
 			where: { id },

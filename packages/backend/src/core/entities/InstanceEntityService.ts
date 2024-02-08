@@ -5,7 +5,7 @@ import type { FederationInstanceSchema } from '@/models/zod/FederationInstanceSc
 import type { FederationInstanceLiteSchema } from '@/models/zod/FederationInstanceLiteSchema.js';
 import { UtilityService } from '../UtilityService.js';
 import type { z } from 'zod';
-import type { instance } from '@prisma/client';
+import type { Instance } from '@prisma/client';
 
 @Injectable()
 export class InstanceEntityService {
@@ -15,7 +15,7 @@ export class InstanceEntityService {
 	) {}
 
 	public packLite(
-		instance: instance,
+		instance: Instance,
 	): z.infer<typeof FederationInstanceLiteSchema> {
 		return pick(instance, [
 			'name',
@@ -28,7 +28,7 @@ export class InstanceEntityService {
 	}
 
 	public async pack(
-		instance: instance,
+		instance: Instance,
 	): Promise<z.infer<typeof FederationInstanceSchema>> {
 		const meta = await this.metaService.fetch();
 		return {

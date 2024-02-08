@@ -7,7 +7,7 @@ import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { RedisService } from '@/core/RedisService.js';
 import type { DOMWindow } from 'jsdom';
-import type { instance } from '@prisma/client';
+import type { Instance } from '@prisma/client';
 
 type NodeInfo = {
 	openRegistrations?: unknown;
@@ -52,7 +52,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	public async fetchInstanceMetadata(
-		instance: instance,
+		instance: Instance,
 		force = false,
 	): Promise<void> {
 		const host = instance.host;
@@ -131,7 +131,7 @@ export class FetchInstanceMetadataService {
 		}
 	}
 
-	private async fetchNodeinfo(instance: instance): Promise<NodeInfo> {
+	private async fetchNodeinfo(instance: Instance): Promise<NodeInfo> {
 		this.logger.info(`Fetching nodeinfo of ${instance.host} ...`);
 
 		try {
@@ -185,7 +185,7 @@ export class FetchInstanceMetadataService {
 		}
 	}
 
-	private async fetchDom(instance: instance): Promise<DOMWindow['document']> {
+	private async fetchDom(instance: Instance): Promise<DOMWindow['document']> {
 		this.logger.info(`Fetching HTML of ${instance.host} ...`);
 
 		const url = 'https://' + instance.host;
@@ -199,7 +199,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	private async fetchManifest(
-		instance: instance,
+		instance: Instance,
 	): Promise<Record<string, unknown> | null> {
 		const url = 'https://' + instance.host;
 
@@ -212,7 +212,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	private async fetchFaviconUrl(
-		instance: instance,
+		instance: Instance,
 		doc: DOMWindow['document'] | null,
 	): Promise<string | null> {
 		const url = 'https://' + instance.host;
@@ -246,7 +246,7 @@ export class FetchInstanceMetadataService {
 	}
 
 	private async fetchIconUrl(
-		instance: instance,
+		instance: Instance,
 		doc: DOMWindow['document'] | null,
 		manifest: Record<string, unknown> | null,
 	): Promise<string | null> {
