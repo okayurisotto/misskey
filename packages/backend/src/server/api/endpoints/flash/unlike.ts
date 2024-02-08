@@ -51,11 +51,6 @@ export default class extends Endpoint<
 			await this.prismaService.client.flash_like.delete({
 				where: { id: exist.id },
 			});
-
-			await this.prismaService.client.flash.update({
-				where: { id: flash.id },
-				data: { likedCount: { decrement: 1 } },
-			});
 		});
 	}
 }

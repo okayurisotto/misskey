@@ -4,7 +4,7 @@ import type { FlashSchema } from '@/models/zod/FlashSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
-import type { flash, user } from '@prisma/client';
+import type { Flash, user } from '@prisma/client';
 
 @Injectable()
 export class FlashEntityService {
@@ -21,13 +21,13 @@ export class FlashEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: flash['id'] | flash,
+		src: Flash['id'] | Flash,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof FlashSchema>> {
 		const meId = me ? me.id : null;
 		const flash = await this.prismaService.client.flash.findUniqueOrThrow({
 			where: { id: typeof src === 'string' ? src : src.id },
-			include: { user: true },
+			include: { user: true, _count: { select: { likes: true } } },
 		});
 
 		const result = await awaitAll({
@@ -50,7 +50,7 @@ export class FlashEntityService {
 			title: flash.title,
 			summary: flash.summary,
 			script: flash.script,
-			likedCount: flash.likedCount,
+			likedCount: flash._count.likes,
 			isLiked: result.isLiked,
 		};
 	}

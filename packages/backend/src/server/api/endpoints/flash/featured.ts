@@ -27,13 +27,15 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const flashs = await this.prismaService.client.flash.findMany({
-				where: { likedCount: { gt: 0 } },
-				orderBy: { likedCount: 'desc' },
+				orderBy: { likes: { _count: 'desc' } },
+				include: { _count: { select: { likes: true } } },
 				take: 10,
 			});
 
 			return await Promise.all(
-				flashs.map((flash) => this.flashEntityService.pack(flash, me)),
+				flashs
+					.filter((flash) => flash._count.likes > 0)
+					.map((flash) => this.flashEntityService.pack(flash, me)),
 			);
 		});
 	}

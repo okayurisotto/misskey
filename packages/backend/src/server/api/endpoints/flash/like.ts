@@ -69,11 +69,6 @@ export default class extends Endpoint<
 					userId: me.id,
 				},
 			});
-
-			await this.prismaService.client.flash.update({
-				where: { id: flash.id },
-				data: { likedCount: { increment: 1 } },
-			});
 		});
 	}
 }
