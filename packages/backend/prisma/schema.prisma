@@ -793,7 +793,7 @@ model Channel {
   banner        drive_file? @relation(fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_999da2bcc7efadbfe0e92d3bc19")
 
   favorites  ChannelFavorite[]
-  followings channel_following[]
+  followings ChannelFollowing[]
   notes      note[]
 
   // aggregate
@@ -832,20 +832,21 @@ model ChannelFavorite {
 }
 
 // チャンネルのフォロー
-model channel_following {
-  id         String   @id(map: "PK_8b104be7f7415113f2a02cd5bdd") @db.VarChar(32)
-  createdAt  DateTime @db.Timestamptz(6)
+model ChannelFollowing {
+  id        String   @id(map: "PK_8b104be7f7415113f2a02cd5bdd") @db.VarChar(32)
+  createdAt DateTime @db.Timestamptz(6)
   //
-  followerId String   @db.VarChar(32)
-  user       user     @relation(fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6d8084ec9496e7334a4602707e1")
+  userId    String   @map("followerId") @db.VarChar(32)
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6d8084ec9496e7334a4602707e1")
   //
-  followeeId String   @db.VarChar(32)
-  channel    Channel  @relation(fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e43068c3f92cab197c3d3cd86e")
+  channelId String   @map("followeeId") @db.VarChar(32)
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e43068c3f92cab197c3d3cd86e")
 
-  @@unique([followerId, followeeId], map: "IDX_2e230dd45a10e671d781d99f3e")
-  @@index([followeeId], map: "IDX_0e43068c3f92cab197c3d3cd86")
+  @@unique([userId, channelId], map: "IDX_2e230dd45a10e671d781d99f3e")
+  @@index([channelId], map: "IDX_0e43068c3f92cab197c3d3cd86")
   @@index([createdAt], map: "IDX_11e71f2511589dcc8a4d3214f9")
-  @@index([followerId], map: "IDX_6d8084ec9496e7334a4602707e")
+  @@index([userId], map: "IDX_6d8084ec9496e7334a4602707e")
+  @@map("channel_following")
 }
 
 // deprecated
@@ -1913,7 +1914,7 @@ model user {
   blocking_blocking_blockeeIdTouser                         Blocking[]               @relation("blocking_blockeeIdTouser")
   channel                                                   Channel[]
   channel_favorite                                          ChannelFavorite[]
-  channel_following                                         channel_following[]
+  channel_following                                         ChannelFollowing[]
   clip                                                      clip[]
   clip_favorite                                             clip_favorite[]
   drive_file_drive_file_userIdTouser                        drive_file[]             @relation("drive_file_userIdTouser")

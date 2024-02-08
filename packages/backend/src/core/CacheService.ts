@@ -197,12 +197,10 @@ export class CacheService implements OnApplicationShutdown {
 				lifetime: 1000 * 60 * 30, // 30m
 				memoryCacheLifetime: 1000 * 60, // 1m
 				fetcher: async (key): Promise<Set<string>> => {
-					const xs = await this.prismaService.client.channel_following.findMany(
-						{
-							where: { followerId: key },
-						},
-					);
-					return new Set(xs.map((x) => x.followeeId));
+					const xs = await this.prismaService.client.channelFollowing.findMany({
+						where: { channelId: key },
+					});
+					return new Set(xs.map((x) => x.channelId));
 				},
 				toRedisConverter: (value): string => JSON.stringify(Array.from(value)),
 				fromRedisConverter: (value): Set<string> => new Set(JSON.parse(value)),

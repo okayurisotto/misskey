@@ -136,7 +136,7 @@ export class PrismaQueryService {
 		return {
 			OR: [
 				{ channelId: null },
-				{ channel: { followings: { some: { followerId: userId } } } },
+				{ channel: { followings: { some: { userId } } } },
 			],
 		};
 	}

@@ -38,14 +38,14 @@ export default class extends Endpoint<
 			});
 
 			const followings =
-				await this.prismaService.client.channel_following.findMany({
-					where: { AND: [paginationQuery.where, { followerId: me.id }] },
+				await this.prismaService.client.channelFollowing.findMany({
+					where: { AND: [paginationQuery.where, { userId: me.id }] },
 					orderBy: paginationQuery.orderBy,
 					take: ps.limit,
 				});
 
 			return await Promise.all(
-				followings.map((x) => this.channelEntityService.pack(x.followeeId, me)),
+				followings.map((x) => this.channelEntityService.pack(x.channelId, me)),
 			);
 		});
 	}

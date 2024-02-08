@@ -67,7 +67,7 @@ export class ChannelEntityService {
 				where: { id: meId },
 				include: {
 					channel_favorite: { where: { channelId: channel.id }, take: 1 },
-					channel_following: { where: { followeeId: channel.id }, take: 1 },
+					channel_following: { where: { channelId: channel.id }, take: 1 },
 					note_unread: { where: { noteChannelId: channel.id }, take: 1 },
 				},
 			});

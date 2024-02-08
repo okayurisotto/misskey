@@ -35,11 +35,11 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			await this.prismaService.client.channel_following.delete({
+			await this.prismaService.client.channelFollowing.delete({
 				where: {
-					followerId_followeeId: {
-						followerId: me.id,
-						followeeId: channel.id,
+					userId_channelId: {
+						userId: me.id,
+						channelId: channel.id,
 					},
 				},
 			});

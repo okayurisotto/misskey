@@ -39,12 +39,12 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			await this.prismaService.client.channel_following.create({
+			await this.prismaService.client.channelFollowing.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
-					followerId: me.id,
-					followeeId: channel.id,
+					userId: me.id,
+					channelId: channel.id,
 				},
 			});
 		});
