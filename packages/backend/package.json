@@ -2,9 +2,6 @@
 	"name": "backend",
 	"private": true,
 	"type": "module",
-	"engines": {
-		"node": ">=18.17.0"
-	},
 	"scripts": {
 		"start": "node ./built/boot/index.js",
 		"start:test": "cross-env NODE_ENV=test node ./built/boot/index.js",
