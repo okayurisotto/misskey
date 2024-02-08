@@ -864,22 +864,25 @@ model channel_note_pining {
 }
 
 // ノートのクリップ
-model clip {
-  id            String    @id(map: "PK_f0685dac8d4dd056d7255670b75") @db.VarChar(32)
-  createdAt     DateTime  @db.Timestamptz(6)
-  lastClippedAt DateTime? @db.Timestamptz(6)
-  name          String    @db.VarChar(128)
-  isPublic      Boolean   @default(false)
-  description   String?   @db.VarChar(2048)
+model Clip {
+  id          String   @id(map: "PK_f0685dac8d4dd056d7255670b75") @db.VarChar(32)
+  createdAt   DateTime @db.Timestamptz(6)
+  name        String   @db.VarChar(128)
+  isPublic    Boolean  @default(false)
+  description String?  @db.VarChar(2048)
   //
-  userId        String    @db.VarChar(32)
-  user          user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2b5ec6c574d6802c94c80313fb2")
+  userId      String   @db.VarChar(32)
+  user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2b5ec6c574d6802c94c80313fb2")
 
-  clip_favorite clip_favorite[]
-  clip_note     clip_note[]
+  favorites clip_favorite[]
+  notes     clip_note[]
+
+  // TODO: 本当は`clip_note`側に`createdAt`カラムを作成したい
+  lastClippedAt DateTime? @db.Timestamptz(6)
 
   @@index([userId], map: "IDX_2b5ec6c574d6802c94c80313fb")
   @@index([lastClippedAt], map: "IDX_a3eac04ae2aa9e221e7596114a")
+  @@map("clip")
 }
 
 // クリップのお気に入り
@@ -891,7 +894,7 @@ model clip_favorite {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_25a31662b0b0cc9af6549a9d711")
   //
   clipId    String   @db.VarChar(32)
-  clip      clip     @relation(fields: [clipId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fce61c7986cee54393e79f1d849")
+  clip      Clip     @relation(fields: [clipId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fce61c7986cee54393e79f1d849")
 
   @@unique([userId, clipId], map: "IDX_b1754a39d0b281e07ed7c078ec")
   @@index([userId], map: "IDX_25a31662b0b0cc9af6549a9d71")
@@ -905,7 +908,7 @@ model clip_note {
   note   note   @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a012eaf5c87c65da1deb5fdbfa3")
   //
   clipId String @db.VarChar(32)
-  clip   clip   @relation(fields: [clipId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ebe99317bbbe9968a0c6f579adf")
+  clip   Clip   @relation(fields: [clipId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ebe99317bbbe9968a0c6f579adf")
 
   @@unique([noteId, clipId], map: "IDX_6fc0ec357d55a18646262fdfff")
   @@index([noteId], map: "IDX_a012eaf5c87c65da1deb5fdbfa")
@@ -1915,7 +1918,7 @@ model user {
   channel                                                   Channel[]
   channel_favorite                                          ChannelFavorite[]
   channel_following                                         ChannelFollowing[]
-  clip                                                      clip[]
+  clip                                                      Clip[]
   clip_favorite                                             clip_favorite[]
   drive_file_drive_file_userIdTouser                        drive_file[]             @relation("drive_file_userIdTouser")
   drive_folder                                              drive_folder[]

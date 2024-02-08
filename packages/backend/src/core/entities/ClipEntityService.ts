@@ -4,7 +4,7 @@ import type { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
-import type { clip, user } from '@prisma/client';
+import type { Clip, user } from '@prisma/client';
 
 @Injectable()
 export class ClipEntityService {
@@ -21,7 +21,7 @@ export class ClipEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: clip['id'] | clip,
+		src: Clip['id'] | Clip,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof ClipSchema>> {
 		const meId = me ? me.id : null;
