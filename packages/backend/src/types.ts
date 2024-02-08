@@ -1,3 +1,8 @@
+export type PartiallyPartial<
+	T extends Record<PropertyKey, unknown>,
+	K extends keyof T,
+> = Omit<T, K> & Partial<Pick<T, K>>;
+
 export const notificationTypes = ['follow', 'mention', 'reply', 'renote', 'quote', 'reaction', 'pollEnded', 'receiveFollowRequest', 'followRequestAccepted', 'achievementEarned', 'app'] as const;
 export const obsoleteNotificationTypes = ['pollVote', 'groupInvited'] as const;
 

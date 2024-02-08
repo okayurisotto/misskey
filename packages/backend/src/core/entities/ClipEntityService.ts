@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { awaitAll } from '@/misc/prelude/await-all.js';
+import { pick } from 'omick';
 import type { ClipSchema } from '@/models/zod/ClipSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import type { PartiallyPartial } from '@/types.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
 import type { Clip, user } from '@prisma/client';
@@ -25,37 +26,28 @@ export class ClipEntityService {
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof ClipSchema>> {
 		const meId = me ? me.id : null;
-		const clip = await this.prismaService.client.clip.findUniqueOrThrow({
+		const clip_ = await this.prismaService.client.clip.findUniqueOrThrow({
 			where: { id: typeof src === 'string' ? src : src.id },
-			include: { user: true },
+			include: {
+				user: true,
+				...(meId !== null ? { favorites: { where: { userId: meId } } } : {}),
+				_count: { select: { favorites: true } },
+			},
 		});
+		// Prismaによる型定義が間違っているので
+		const clip = clip_ as PartiallyPartial<typeof clip_, 'favorites'>;
 
-		const result = await awaitAll({
-			user: () => this.userEntityPackLiteService.packLite(clip.user),
-			favoritedCount: () =>
-				this.prismaService.client.clip_favorite.count({
-					where: { clipId: clip.id },
-				}),
-			isFavorited: async () =>
-				meId
-					? (await this.prismaService.client.clip_favorite.count({
-							where: { clipId: clip.id, userId: meId },
-							take: 1,
-					  })) > 0
-					: undefined,
-		});
+		const packedUser = await this.userEntityPackLiteService.packLite(clip.user);
 
 		return {
-			id: clip.id,
+			...pick(clip, ['id', 'userId', 'name', 'description', 'isPublic']),
 			createdAt: clip.createdAt.toISOString(),
 			lastClippedAt: clip.lastClippedAt?.toISOString() ?? null,
-			userId: clip.userId,
-			user: result.user,
-			name: clip.name,
-			description: clip.description,
-			isPublic: clip.isPublic,
-			favoritedCount: result.favoritedCount,
-			isFavorited: result.isFavorited,
+			favoritedCount: clip._count.favorites,
+			user: packedUser,
+			...(meId !== null
+				? { isFavorited: clip.favorites ? clip.favorites.length > 0 : false }
+				: {}),
 		};
 	}
 }
