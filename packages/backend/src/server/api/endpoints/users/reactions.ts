@@ -43,7 +43,7 @@ export default class extends Endpoint<
 				take: ps.limit,
 			});
 
-			const reactions = await this.prismaService.client.note_reaction.findMany({
+			const reactions = await this.prismaService.client.noteReaction.findMany({
 				where: {
 					AND: [
 						paginationQuery.where,

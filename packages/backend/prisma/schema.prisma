@@ -1447,7 +1447,7 @@ model Note {
   clipNotes     ClipNote[]
   mutedNotes    MutedNote[]
   noteFavorites NoteFavorite[]
-  noteReactions note_reaction[]
+  noteReactions NoteReaction[]
   noteUnreads   note_unread[]
   pollVotes     poll_vote[]
   promoReads    promo_read[]
@@ -1492,7 +1492,7 @@ model NoteFavorite {
 }
 
 // ノートへのリアクション
-model note_reaction {
+model NoteReaction {
   id        String   @id(map: "PK_767ec729b108799b587a3fcc9cf") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   reaction  String   @db.VarChar(260)
@@ -1507,6 +1507,7 @@ model note_reaction {
   @@index([createdAt], map: "IDX_01f4581f114e0ebd2bbb876f0b")
   @@index([userId], map: "IDX_13761f64257f40c5636d0ff95e")
   @@index([noteId], map: "IDX_45145e4953780f3cd5656f0ea6")
+  @@map("note_reaction")
 }
 
 // スレッドミュート
@@ -1962,7 +1963,7 @@ model user {
   muting_muting_muteeIdTouser                               UserMuting[]             @relation("muting_muteeIdTouser")
   note                                                      Note[]
   note_favorite                                             NoteFavorite[]
-  note_reaction                                             note_reaction[]
+  note_reaction                                             NoteReaction[]
   note_thread_muting                                        note_thread_muting[]
   note_unread                                               note_unread[]
   page                                                      page[]

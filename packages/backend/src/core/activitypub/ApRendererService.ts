@@ -48,7 +48,7 @@ import type {
 } from './type.js';
 import type {
 	relay,
-	note_reaction,
+	NoteReaction,
 	CustomEmoji,
 	Blocking,
 	DriveFile,
@@ -286,7 +286,7 @@ export class ApRendererService {
 	}
 
 	public async renderLike(
-		noteReaction: note_reaction,
+		noteReaction: NoteReaction,
 		note: { uri: string | null },
 	): Promise<ILike> {
 		const reaction = noteReaction.reaction;

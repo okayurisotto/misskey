@@ -757,7 +757,7 @@ export class ActivityPubServerService {
 			'/likes/:like',
 			async (request, reply) => {
 				const reaction =
-					await this.prismaService.client.note_reaction.findUnique({
+					await this.prismaService.client.noteReaction.findUnique({
 						where: { id: request.params.like },
 					});
 

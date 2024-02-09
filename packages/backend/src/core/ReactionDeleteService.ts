@@ -26,7 +26,7 @@ export class ReactionDeleteService {
 		note: Note,
 	): Promise<void> {
 		// if already unreacted
-		const exist = await this.prismaService.client.note_reaction.findUnique({
+		const exist = await this.prismaService.client.noteReaction.findUnique({
 			where: {
 				userId_noteId: {
 					noteId: note.id,
@@ -43,7 +43,7 @@ export class ReactionDeleteService {
 		}
 
 		// Delete reaction
-		await this.prismaService.client.note_reaction
+		await this.prismaService.client.noteReaction
 			.delete({ where: { id: exist.id } })
 			.catch(() => {
 				throw new IdentifiableError(

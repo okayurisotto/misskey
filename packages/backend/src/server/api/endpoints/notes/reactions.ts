@@ -39,7 +39,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const query: Prisma.note_reactionWhereInput = {
+			const query: Prisma.NoteReactionWhereInput = {
 				noteId: ps.noteId,
 			};
 
@@ -53,7 +53,7 @@ export default class extends Endpoint<
 				query.reaction = type;
 			}
 
-			const reactions = await this.prismaService.client.note_reaction.findMany({
+			const reactions = await this.prismaService.client.noteReaction.findMany({
 				where: query,
 				take: ps.limit,
 				skip: ps.offset,

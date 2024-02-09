@@ -305,7 +305,7 @@ export class PrismaQueryService {
 
 	public getVisibilityWhereForNoteReaction(
 		userId: user['id'] | null,
-	): Prisma.note_reactionWhereInput {
+	): Prisma.NoteReactionWhereInput {
 		if (userId === null) {
 			return {
 				OR: [

@@ -154,7 +154,7 @@ export class Resolver {
 					),
 				);
 			case 'likes':
-				return this.prismaService.client.note_reaction
+				return this.prismaService.client.noteReaction
 					.findUniqueOrThrow({ where: { id: parsed.id } })
 					.then(async (reaction) =>
 						this.apRendererService.addContext(

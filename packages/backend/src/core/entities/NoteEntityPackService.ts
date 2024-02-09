@@ -12,7 +12,7 @@ import { LegacyReactionConvertService } from '../LegacyReactionConvertService.js
 import { CustomEmojiPopulateService } from '../CustomEmojiPopulateService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
-import type { Note, note_reaction, user } from '@prisma/client';
+import type { Note, NoteReaction, user } from '@prisma/client';
 
 type PollChoice = {
 	text: string;
@@ -194,7 +194,7 @@ export class NoteEntityPackService {
 		note: Note,
 		meId: user['id'],
 		_hint_?: {
-			myReactions: Map<Note['id'], note_reaction | null>;
+			myReactions: Map<Note['id'], NoteReaction | null>;
 		},
 	): Promise<string | undefined> {
 		if (_hint_?.myReactions) {
@@ -212,7 +212,7 @@ export class NoteEntityPackService {
 			return undefined;
 		}
 
-		const reaction = await this.prismaService.client.note_reaction.findUnique({
+		const reaction = await this.prismaService.client.noteReaction.findUnique({
 			where: {
 				userId_noteId: {
 					userId: meId,
@@ -273,7 +273,7 @@ export class NoteEntityPackService {
 			detail?: boolean;
 			skipHide?: boolean;
 			_hint_?: {
-				myReactions: Map<Note['id'], note_reaction | null>;
+				myReactions: Map<Note['id'], NoteReaction | null>;
 				packedFiles: Map<
 					Note['fileIds'][number],
 					z.infer<typeof DriveFileSchema> | null
@@ -452,7 +452,7 @@ export class NoteEntityPackService {
 		const meId = me ? me.id : null;
 
 		/** `_hint_.myReactions`として渡すためのもの */
-		const myReactionsMap = new Map<Note['id'], note_reaction | null>();
+		const myReactionsMap = new Map<Note['id'], NoteReaction | null>();
 		if (meId) {
 			const renoteIds = notes.map((n) => n.renoteId).filter(isNotNull);
 			// パフォーマンスのためノートが作成されてから1秒以上経っていない場合はリアクションを取得しない
@@ -465,7 +465,7 @@ export class NoteEntityPackService {
 
 			/** データベースからまとめて取得されたリアクション情報 */
 			const myReactions =
-				await this.prismaService.client.note_reaction.findMany({
+				await this.prismaService.client.noteReaction.findMany({
 					where: {
 						userId: meId,
 						noteId: { in: targets },

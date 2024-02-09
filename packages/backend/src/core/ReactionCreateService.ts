@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
 	Prisma,
 	type Note,
-	type note_reaction,
+	type NoteReaction,
 	type user,
 } from '@prisma/client';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
@@ -140,7 +140,7 @@ export class ReactionCreateService {
 			}
 		}
 
-		const record: note_reaction = {
+		const record: NoteReaction = {
 			id: this.idService.genId(),
 			createdAt: new Date(),
 			noteId: note.id,
@@ -150,19 +150,19 @@ export class ReactionCreateService {
 
 		// Create reaction
 		try {
-			await this.prismaService.client.note_reaction.create({ data: record });
+			await this.prismaService.client.noteReaction.create({ data: record });
 		} catch (e) {
 			if (e instanceof Prisma.PrismaClientKnownRequestError) {
 				if (e.code === 'P2002') {
 					const exists =
-						await this.prismaService.client.note_reaction.findUniqueOrThrow({
+						await this.prismaService.client.noteReaction.findUniqueOrThrow({
 							where: { userId_noteId: { noteId: note.id, userId: user.id } },
 						});
 
 					if (exists.reaction !== reaction) {
 						// 別のリアクションがすでにされていたら置き換える
 						await this.reactionDeleteService.delete(user, note);
-						await this.prismaService.client.note_reaction.create({
+						await this.prismaService.client.noteReaction.create({
 							data: record,
 						});
 					} else {
