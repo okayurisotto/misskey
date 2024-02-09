@@ -134,11 +134,11 @@ export function getJsonSchema<S extends Schema>(
  */
 // eslint-disable-next-line import/no-default-export
 export default abstract class Chart<T extends Schema> {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	public schema: T;
 
-	private readonly name: string;
+	private readonly name;
 	private buffer: {
 		diff: Commit<T>;
 		group: string | null;

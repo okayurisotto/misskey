@@ -15,7 +15,7 @@ import { ApUserIdResolverService } from './activitypub/ApUserIdResolverService.j
 
 @Injectable()
 export class RemoteUserResolveService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly apPersonCreateService: ApPersonCreateService,

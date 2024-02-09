@@ -16,7 +16,7 @@ import type { ExportedCustomEmojisMetaSchema } from './ImportCustomEmojisProcess
 
 @Injectable()
 export class ExportCustomEmojisProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,

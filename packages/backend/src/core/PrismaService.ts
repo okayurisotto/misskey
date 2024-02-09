@@ -4,7 +4,7 @@ import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 
 @Injectable()
 export class PrismaService implements OnApplicationShutdown {
-	public readonly client: PrismaClient;
+	public readonly client;
 
 	constructor(private readonly configLoaderService: ConfigLoaderService) {
 		this.client = new PrismaClient({

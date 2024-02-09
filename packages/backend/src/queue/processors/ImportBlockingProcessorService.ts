@@ -12,7 +12,7 @@ import type { DbUserImportJobData, DbUserImportToDbJobData } from '../types.js';
 
 @Injectable()
 export class ImportBlockingProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly queueService: QueueService,

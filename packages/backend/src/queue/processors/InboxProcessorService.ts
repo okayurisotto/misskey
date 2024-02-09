@@ -23,7 +23,7 @@ import { ApPersonResolveService } from '@/core/activitypub/models/ApPersonResolv
 
 @Injectable()
 export class InboxProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly utilityService: UtilityService,

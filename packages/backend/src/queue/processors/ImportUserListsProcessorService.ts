@@ -36,7 +36,7 @@ const getUserFromAcct = (users: user[]) => {
 
 @Injectable()
 export class ImportUserListsProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly utilityService: UtilityService,

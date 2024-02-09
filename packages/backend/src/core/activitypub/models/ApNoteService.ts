@@ -36,7 +36,7 @@ import type { DriveFile, Note } from '@prisma/client';
 
 @Injectable()
 export class ApNoteService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly apAudienceParseService: ApAudienceParseService,

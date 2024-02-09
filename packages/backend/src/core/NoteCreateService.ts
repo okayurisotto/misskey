@@ -64,7 +64,7 @@ type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
 class NotificationManager {
 	private readonly notifier: { id: user['id'] };
-	private readonly note: Note;
+	private readonly note;
 	private readonly queue: {
 		target: LocalUser['id'];
 		reason: NotificationType;

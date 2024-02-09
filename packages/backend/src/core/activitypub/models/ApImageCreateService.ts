@@ -14,7 +14,7 @@ import type { DriveFile } from '@prisma/client';
 
 @Injectable()
 export class ApImageCreateService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly apLoggerService: ApLoggerService,

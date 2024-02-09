@@ -33,7 +33,7 @@ const summaryLength = 2048;
 
 @Injectable()
 export class ApPersonCreateService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly apActorValidateService: ApActorValidateService,

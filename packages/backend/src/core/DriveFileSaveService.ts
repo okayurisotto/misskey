@@ -29,7 +29,7 @@ const FilePropertiesSchema = z.object({
 
 @Injectable()
 export class DriveFileSaveService {
-	private readonly registerLogger: Logger;
+	private readonly registerLogger;
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,

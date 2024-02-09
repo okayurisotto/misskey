@@ -12,7 +12,7 @@ import type { DbJobDataWithUser } from '../types.js';
 
 @Injectable()
 export class ExportFavoritesProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly queueLoggerService: QueueLoggerService,

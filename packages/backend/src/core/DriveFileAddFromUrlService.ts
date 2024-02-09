@@ -20,7 +20,7 @@ type UploadFromUrlArgs = {
 
 @Injectable()
 export class DriveFileAddFromUrlService {
-	private readonly downloaderLogger: Logger;
+	private readonly downloaderLogger;
 
 	constructor(
 		private readonly downloadService: DownloadService,

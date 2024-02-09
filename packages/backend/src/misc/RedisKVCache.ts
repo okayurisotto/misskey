@@ -3,8 +3,8 @@ import { MemoryKVCache } from './MemoryKVCache.js';
 
 export class RedisKVCache<T> {
 	private readonly redisClient: Redis.Redis;
-	private readonly name: string;
-	private readonly lifetime: number;
+	private readonly name;
+	private readonly lifetime;
 	private readonly memoryCache: MemoryKVCache<T>;
 	private readonly fetcher: (key: string) => Promise<T>;
 	private readonly toRedisConverter: (value: T) => string;
@@ -12,9 +12,9 @@ export class RedisKVCache<T> {
 
 	constructor(
 		redisClient: RedisKVCache<T>['redisClient'],
-		name: RedisKVCache<T>['name'],
+		name: string,
 		opts: {
-			lifetime: RedisKVCache<T>['lifetime'];
+			lifetime: number;
 			memoryCacheLifetime: number;
 			fetcher: RedisKVCache<T>['fetcher'];
 			toRedisConverter: RedisKVCache<T>['toRedisConverter'];

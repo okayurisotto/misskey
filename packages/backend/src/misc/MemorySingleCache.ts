@@ -1,9 +1,9 @@
 export class MemorySingleCache<T> {
 	private cachedAt: number | null = null;
 	private value: T | undefined;
-	private readonly lifetime: number;
+	private readonly lifetime;
 
-	constructor(lifetime: MemorySingleCache<never>['lifetime']) {
+	constructor(lifetime: number) {
 		this.lifetime = lifetime;
 	}
 

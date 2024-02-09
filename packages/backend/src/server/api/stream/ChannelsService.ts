@@ -52,7 +52,7 @@ export type ChannelServiceName = (typeof channelServiceNames)[number];
 
 @Injectable()
 export class ChannelsService {
-	private readonly services: ChannelServices;
+	private readonly services;
 
 	constructor(
 		mainChannelService: MainChannelService,

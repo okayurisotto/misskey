@@ -16,7 +16,7 @@ import { QueueLoggerService } from '../QueueLoggerService.js';
 
 @Injectable()
 export class TickChartsProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly federationChart: FederationChart,

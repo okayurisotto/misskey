@@ -3,8 +3,8 @@ import { MemorySingleCache } from './MemorySingleCache.js';
 
 export class RedisSingleCache<T> {
 	private readonly redisClient: Redis.Redis;
-	private readonly name: string;
-	private readonly lifetime: number;
+	private readonly name;
+	private readonly lifetime;
 	private readonly memoryCache: MemorySingleCache<T>;
 	private readonly fetcher: () => Promise<T>;
 	private readonly toRedisConverter: (value: T) => string;
@@ -12,9 +12,9 @@ export class RedisSingleCache<T> {
 
 	constructor(
 		redisClient: RedisSingleCache<T>['redisClient'],
-		name: RedisSingleCache<T>['name'],
+		name: string,
 		opts: {
-			lifetime: RedisSingleCache<T>['lifetime'];
+			lifetime: number;
 			memoryCacheLifetime: number;
 			fetcher: RedisSingleCache<T>['fetcher'];
 			toRedisConverter: RedisSingleCache<T>['toRedisConverter'];

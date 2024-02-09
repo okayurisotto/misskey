@@ -11,7 +11,7 @@ import type { DriveFile, Note } from '@prisma/client';
 
 @Injectable()
 export class DeleteAccountProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly emailService: EmailService,

@@ -6,7 +6,7 @@ import { QueueLoggerService } from '../QueueLoggerService.js';
 
 @Injectable()
 export class CleanProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly queueLoggerService: QueueLoggerService,

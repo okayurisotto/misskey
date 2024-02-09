@@ -14,7 +14,7 @@ const INACTIVE_BORDER = 1000 * 60 * 60 * 24 * 90;
 
 @Injectable()
 export class ExportFollowingProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly utilityService: UtilityService,

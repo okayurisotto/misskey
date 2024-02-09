@@ -62,7 +62,7 @@ function getJobInfo(job: Bull.Job | undefined, increment = false): string {
 
 @Injectable()
 export class QueueProcessorService implements OnApplicationShutdown {
-	private readonly logger: Logger;
+	private readonly logger;
 	private readonly systemQueueWorker: Bull.Worker;
 	private readonly dbQueueWorker: Bull.Worker;
 	private readonly deliverQueueWorker: Bull.Worker;

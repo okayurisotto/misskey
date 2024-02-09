@@ -11,7 +11,7 @@ import type { CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class ApNoteEmojiExtractService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly apLoggerService: ApLoggerService,

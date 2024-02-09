@@ -19,7 +19,7 @@ import type { Note, user } from '@prisma/client';
 
 @Injectable()
 export class ApPersonFeaturedUpdateService implements OnModuleInit {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	private apNoteService: ApNoteService;
 

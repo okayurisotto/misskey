@@ -12,7 +12,7 @@ import type * as Bull from 'bullmq';
 
 @Injectable()
 export class RelationshipProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly queueLoggerService: QueueLoggerService,

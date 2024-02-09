@@ -7,7 +7,7 @@ import { QueueLoggerService } from '../QueueLoggerService.js';
 
 @Injectable()
 export class ResyncChartsProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly notesChart: NotesChart,

@@ -9,7 +9,7 @@ import type { StreamEventEmitter } from './types.js';
 export default abstract class Channel {
 	protected readonly connection: Connection;
 	public abstract readonly chName: string;
-	public readonly id: string;
+	public readonly id;
 	public static readonly requireCredential: boolean;
 	public static readonly shouldShare: boolean;
 

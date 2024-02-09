@@ -9,7 +9,7 @@ import type { IObject, IQuestion } from '../type.js';
 
 @Injectable()
 export class ApQuestionUpdateService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly apLoggerService: ApLoggerService,

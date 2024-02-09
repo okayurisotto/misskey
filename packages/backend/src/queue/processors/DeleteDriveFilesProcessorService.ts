@@ -8,7 +8,7 @@ import type { DbJobDataWithUser } from '../types.js';
 
 @Injectable()
 export class DeleteDriveFilesProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly queueLoggerService: QueueLoggerService,

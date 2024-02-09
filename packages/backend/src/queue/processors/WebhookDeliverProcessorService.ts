@@ -10,7 +10,7 @@ import type { WebhookDeliverJobData } from '../types.js';
 
 @Injectable()
 export class WebhookDeliverProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,

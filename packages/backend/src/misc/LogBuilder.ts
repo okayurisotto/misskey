@@ -28,7 +28,7 @@ export class LogBuilder {
 	/** ログ種別に応じた接頭辞の最大長。これより短いものは空白によって位置を調整される。 */
 	private readonly LOG_PREFIX_MAX_LENGTH = 4;
 
-	private readonly levelPrefix: string;
+	private readonly levelPrefix;
 	private _withTimestamp: boolean | null;
 	private worker = '?';
 	private contexts: string | null = null;

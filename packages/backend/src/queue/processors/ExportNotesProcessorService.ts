@@ -14,7 +14,7 @@ import type { DbJobDataWithUser } from '../types.js';
 
 @Injectable()
 export class ExportNotesProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly queueLoggerService: QueueLoggerService,

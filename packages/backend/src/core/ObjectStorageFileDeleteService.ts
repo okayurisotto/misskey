@@ -6,7 +6,7 @@ import { S3Service } from '@/core/S3Service.js';
 
 @Injectable()
 export class ObjectStorageFileDeleteService {
-	private readonly deleteLogger: Logger;
+	private readonly deleteLogger;
 
 	constructor(
 		private readonly metaService: MetaService,

@@ -15,7 +15,7 @@ import type * as Bull from 'bullmq';
 
 @Injectable()
 export class ExportAntennasProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly utilityService: UtilityService,

@@ -44,7 +44,7 @@ export const ExportedCustomEmojisMetaSchema = z.object({
 
 @Injectable()
 export class ImportCustomEmojisProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly customEmojiAddService: CustomEmojiAddService,

@@ -6,7 +6,7 @@ import { QueueLoggerService } from '../QueueLoggerService.js';
 
 @Injectable()
 export class CheckExpiredMutingsProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly userMutingService: UserMutingService,

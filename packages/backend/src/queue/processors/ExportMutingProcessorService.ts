@@ -12,7 +12,7 @@ import type { DbJobDataWithUser } from '../types.js';
 
 @Injectable()
 export class ExportMutingProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly utilityService: UtilityService,

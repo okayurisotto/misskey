@@ -26,7 +26,7 @@ const validate = z.object({
 
 @Injectable()
 export class ImportAntennasProcessorService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly queueLoggerService: QueueLoggerService,

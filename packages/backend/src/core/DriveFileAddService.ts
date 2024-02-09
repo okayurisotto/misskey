@@ -60,7 +60,7 @@ const FilePropertiesSchema = z.object({
 
 @Injectable()
 export class DriveFileAddService {
-	private readonly registerLogger: Logger;
+	private readonly registerLogger;
 
 	constructor(
 		private readonly driveChart: DriveChart,

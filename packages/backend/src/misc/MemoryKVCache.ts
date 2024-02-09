@@ -4,13 +4,13 @@ function nothingToDo<T, V = T>(value: T): V {
 
 export class MemoryKVCache<T, V = T> {
 	public cache: Map<string, { date: number; value: V }>;
-	private readonly lifetime: number;
+	private readonly lifetime;
 	private readonly gcIntervalHandle: NodeJS.Timer;
 	private readonly toMapConverter: (value: T) => V;
 	private readonly fromMapConverter: (cached: V) => T | undefined;
 
 	constructor(
-		lifetime: MemoryKVCache<never>['lifetime'],
+		lifetime: number,
 		options: {
 			toMapConverter: (value: T) => V;
 			fromMapConverter: (cached: V) => T | undefined;

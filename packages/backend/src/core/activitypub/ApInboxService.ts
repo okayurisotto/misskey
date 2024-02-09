@@ -84,7 +84,7 @@ import { AbuseUserReportCreationService } from '../entities/AbuseUserReportCreat
 
 @Injectable()
 export class ApInboxService {
-	private readonly logger: Logger;
+	private readonly logger;
 
 	constructor(
 		private readonly abuseUserReportCreationService: AbuseUserReportCreationService,
