@@ -10,7 +10,7 @@ import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import { NoteEntityPackService } from './NoteEntityPackService.js';
 import type { z } from 'zod';
-import type { access_token, Note, user } from '@prisma/client';
+import type { access_token } from '@prisma/client';
 
 const NOTE_REQUIRED_NOTIFICATION_TYPES = new Set<
 	(typeof notificationTypes)[number]

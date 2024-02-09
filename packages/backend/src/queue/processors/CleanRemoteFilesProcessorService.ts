@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type Logger from '@/misc/logger.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { DriveFileDeleteService } from '@/core/DriveFileDeleteService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';

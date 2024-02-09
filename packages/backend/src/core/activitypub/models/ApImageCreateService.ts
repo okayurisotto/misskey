@@ -3,7 +3,6 @@ import type { RemoteUser } from '@/models/entities/User.js';
 import { MetaService } from '@/core/MetaService.js';
 import { truncate } from '@/misc/truncate.js';
 import { DB_MAX_IMAGE_COMMENT_LENGTH } from '@/const.js';
-import type Logger from '@/misc/logger.js';
 import { checkHttps } from '@/misc/check-https.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { DriveFileAddFromUrlService } from '@/core/DriveFileAddFromUrlService.js';

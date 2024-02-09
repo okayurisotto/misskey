@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { toArray, toSingle } from '@/misc/prelude/array.js';
-import type Logger from '@/misc/logger.js';
 import { IdService } from '@/core/IdService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';

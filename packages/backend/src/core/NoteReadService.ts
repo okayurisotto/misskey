@@ -5,7 +5,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
-import type { Note, user } from '@prisma/client';
+import type { Note } from '@prisma/client';
 
 @Injectable()
 export class NoteReadService implements OnApplicationShutdown {

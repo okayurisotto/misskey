@@ -8,7 +8,7 @@ import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { Note, user } from '@prisma/client';
+import type { user } from '@prisma/client';
 
 @Injectable()
 export class NotePiningService {

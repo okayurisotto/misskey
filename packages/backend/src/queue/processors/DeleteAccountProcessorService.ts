@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import type Logger from '@/misc/logger.js';
 import { EmailService } from '@/core/EmailService.js';
 import { SearchService } from '@/core/SearchService.js';
 import { PrismaService } from '@/core/PrismaService.js';

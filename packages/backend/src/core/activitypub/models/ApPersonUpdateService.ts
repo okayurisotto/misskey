@@ -3,7 +3,6 @@ import type { RemoteUser } from '@/models/entities/User.js';
 import { truncate } from '@/misc/truncate.js';
 import { CacheService } from '@/core/CacheService.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
-import type Logger from '@/misc/logger.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { HashtagService } from '@/core/HashtagService.js';
 import { checkHttps } from '@/misc/check-https.js';

@@ -6,7 +6,6 @@ import { generateOpenApiSpec } from 'zod2spec';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library.js';
 import { getIpHash } from '@/misc/get-ip-hash.js';
 import type { LocalUser } from '@/models/entities/User.js';
-import type Logger from '@/misc/logger.js';
 import { MetaService } from '@/core/MetaService.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { RoleService } from '@/core/RoleService.js';
@@ -19,7 +18,7 @@ import { AuthenticateService, AuthenticationError } from './AuthenticateService.
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { IEndpointMeta, IEndpoint } from './endpoints.js';
-import type { access_token, user } from '@prisma/client';
+import type { access_token } from '@prisma/client';
 
 const accessDenied = {
 	message: 'Access denied.',

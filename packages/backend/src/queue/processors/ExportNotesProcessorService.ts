@@ -2,7 +2,6 @@ import * as fs from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
 import { pick } from 'omick';
-import type Logger from '@/misc/logger.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { DriveFileEntityPackService } from '@/core/entities/DriveFileEntityPackService.js';
 import { PrismaService } from '@/core/PrismaService.js';

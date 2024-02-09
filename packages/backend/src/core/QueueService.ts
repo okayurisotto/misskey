@@ -24,7 +24,7 @@ import type {
 } from '../queue/types.js';
 import type httpSignature from '@peertube/http-signature';
 import type * as Bull from 'bullmq';
-import type { DriveFile, webhook } from '@prisma/client';
+import type { webhook } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()

@@ -11,7 +11,7 @@ import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { unique } from '@/misc/prelude/array.js';
 import { IdService } from '../IdService.js';
 import type { z } from 'zod';
-import type { Prisma, access_token, App, user } from '@prisma/client';
+import type { Prisma, access_token, App } from '@prisma/client';
 
 @Injectable()
 export class AppEntityService {

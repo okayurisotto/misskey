@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import promiseLimit from 'promise-limit';
 import { ModuleRef } from '@nestjs/core';
-import type Logger from '@/misc/logger.js';
 import { IdService } from '@/core/IdService.js';
 import { toArray } from '@/misc/prelude/array.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -15,7 +14,7 @@ import { ApLoggerService } from '../ApLoggerService.js';
 import { ApResolverService, type Resolver } from '../ApResolverService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { ApNoteService } from './ApNoteService.js';
-import type { Note, user } from '@prisma/client';
+import type { Note } from '@prisma/client';
 
 @Injectable()
 export class ApPersonFeaturedUpdateService implements OnModuleInit {

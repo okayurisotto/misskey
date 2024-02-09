@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { CacheService } from '@/core/CacheService.js';
-import type { user } from '@prisma/client';
 
 @Injectable()
 export class UserBlockingCheckService {

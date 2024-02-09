@@ -2,7 +2,6 @@ import { URL } from 'node:url';
 import { Injectable } from '@nestjs/common';
 import chalk from 'chalk';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
-import type Logger from '@/misc/logger.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { ILink, WebfingerService } from '@/core/WebfingerService.js';
 import { RemoteLoggerService } from '@/core/RemoteLoggerService.js';

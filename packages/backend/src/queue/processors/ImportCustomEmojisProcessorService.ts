@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { ZipReader } from 'slacc';
 import { z } from 'zod';
 import { pick } from 'omick';
-import type Logger from '@/misc/logger.js';
 import { createTempDir } from '@/misc/create-temp.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { PrismaService } from '@/core/PrismaService.js';

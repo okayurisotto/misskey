@@ -4,7 +4,6 @@ import { pick } from 'omick';
 import { Prisma } from '@prisma/client';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import Logger from '@/misc/logger.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';

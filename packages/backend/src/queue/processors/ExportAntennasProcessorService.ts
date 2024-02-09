@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import { format as DateFormat } from 'date-fns';
 import { z } from 'zod';
 import { pick } from 'omick';
-import Logger from '@/misc/logger.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';

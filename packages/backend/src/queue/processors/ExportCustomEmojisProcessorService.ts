@@ -4,7 +4,6 @@ import { format as dateFormat } from 'date-fns';
 import mime from 'mime-types';
 import archiver from 'archiver';
 import { z } from 'zod';
-import type Logger from '@/misc/logger.js';
 import { createTemp, createTempDir } from '@/misc/create-temp.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { PrismaService } from '@/core/PrismaService.js';

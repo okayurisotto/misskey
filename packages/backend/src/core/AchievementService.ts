@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { NotificationService } from '@/core/NotificationService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user } from '@prisma/client';
 
 const AchievementSchema = z.object({
 	name: z.string(),

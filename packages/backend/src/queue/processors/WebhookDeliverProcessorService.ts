@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import * as Bull from 'bullmq';
-import type Logger from '@/misc/logger.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { StatusError } from '@/misc/status-error.js';
 import { PrismaService } from '@/core/PrismaService.js';
