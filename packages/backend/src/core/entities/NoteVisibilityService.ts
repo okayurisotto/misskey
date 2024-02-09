@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { note, user } from '@prisma/client';
+import type { Note, user } from '@prisma/client';
 
 @Injectable()
 export class NoteVisibilityService {
@@ -14,7 +14,7 @@ export class NoteVisibilityService {
 	 * @returns
 	 */
 	public async isVisibleForMe(
-		note: note,
+		note: Note,
 		meId: user['id'] | null,
 	): Promise<boolean> {
 		// This code must always be synchronized with the checks in generateVisibilityQuery.

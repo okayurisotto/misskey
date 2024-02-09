@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import {
 	Prisma,
-	type note,
+	type Note,
 	type note_reaction,
 	type user,
 } from '@prisma/client';
@@ -67,7 +67,7 @@ export class ReactionCreateService {
 
 	public async create(
 		user: { id: user['id']; host: user['host']; isBot: user['isBot'] },
-		note: note,
+		note: Note,
 		_reaction?: string | null,
 	): Promise<void> {
 		// Check blocking

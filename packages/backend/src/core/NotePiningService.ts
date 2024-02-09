@@ -8,7 +8,7 @@ import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { note, user } from '@prisma/client';
+import type { Note, user } from '@prisma/client';
 
 @Injectable()
 export class NotePiningService {
@@ -30,7 +30,7 @@ export class NotePiningService {
 	 */
 	public async addPinned(
 		user: { id: user['id']; host: user['host'] },
-		noteId: note['id'],
+		noteId: Note['id'],
 	): Promise<void> {
 		// Fetch pinee
 		const note = await this.prismaService.client.note.findUnique({
@@ -90,7 +90,7 @@ export class NotePiningService {
 	 */
 	public async removePinned(
 		user: { id: user['id']; host: user['host'] },
-		noteId: note['id'],
+		noteId: Note['id'],
 	): Promise<void> {
 		// Fetch unpinee
 		const note = await this.prismaService.client.note.findUnique({
@@ -124,7 +124,7 @@ export class NotePiningService {
 
 	public async deliverPinnedChange(
 		userId: user['id'],
-		noteId: note['id'],
+		noteId: Note['id'],
 		isAddition: boolean,
 	): Promise<void> {
 		const user = await this.prismaService.client.user.findUnique({

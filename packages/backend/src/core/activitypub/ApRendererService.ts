@@ -52,7 +52,7 @@ import type {
 	CustomEmoji,
 	Blocking,
 	DriveFile,
-	note,
+	Note,
 	poll,
 	poll_vote,
 	user,
@@ -99,7 +99,7 @@ export class ApRendererService {
 		};
 	}
 
-	public renderAnnounce(object: string | IObject, note: note): IAnnounce {
+	public renderAnnounce(object: string | IObject, note: Note): IAnnounce {
 		const attributedTo = this.userEntityUtilService.genLocalUserUri(
 			note.userId,
 		);
@@ -149,7 +149,7 @@ export class ApRendererService {
 		};
 	}
 
-	public renderCreate(object: IObject, note: note): ICreate {
+	public renderCreate(object: IObject, note: Note): ICreate {
 		const activity: ICreate = {
 			id: `${this.configLoaderService.data.url}/notes/${note.id}/activity`,
 			actor: this.userEntityUtilService.genLocalUserUri(note.userId),
@@ -339,7 +339,7 @@ export class ApRendererService {
 		};
 	}
 
-	public async renderNote(note: note, dive = true): Promise<IPost> {
+	public async renderNote(note: Note, dive = true): Promise<IPost> {
 		const getPromisedFiles = async (ids: string[]): Promise<DriveFile[]> => {
 			if (ids.length === 0) return [];
 			const items = await this.prismaService.client.driveFile.findMany({
@@ -351,7 +351,7 @@ export class ApRendererService {
 		};
 
 		let inReplyTo;
-		let inReplyToNote: note | null;
+		let inReplyToNote: Note | null;
 
 		if (note.replyId) {
 			inReplyToNote = await this.prismaService.client.note.findUnique({
@@ -602,7 +602,7 @@ export class ApRendererService {
 
 	public renderQuestion(
 		user: { id: user['id'] },
-		note: note,
+		note: Note,
 		poll: poll,
 	): IQuestion {
 		return {
@@ -688,7 +688,7 @@ export class ApRendererService {
 	public renderVote(
 		user: { id: user['id'] },
 		vote: poll_vote,
-		note: note,
+		note: Note,
 		poll: poll,
 		pollOwner: RemoteUser,
 	): ICreate {

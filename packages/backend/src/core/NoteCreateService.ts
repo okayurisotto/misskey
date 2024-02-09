@@ -51,7 +51,7 @@ import type {
 	App,
 	Channel,
 	DriveFile,
-	note,
+	Note,
 	user,
 	user_profile,
 } from '@prisma/client';
@@ -64,7 +64,7 @@ type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
 class NotificationManager {
 	private readonly notifier: { id: user['id'] };
-	private readonly note: note;
+	private readonly note: Note;
 	private readonly queue: {
 		target: LocalUser['id'];
 		reason: NotificationType;
@@ -74,7 +74,7 @@ class NotificationManager {
 		private readonly notificationService: NotificationService,
 		private readonly prismaService: PrismaService,
 		notifier: { id: user['id'] },
-		note: note,
+		note: Note,
 	) {
 		this.notifier = notifier;
 		this.note = note;
@@ -103,9 +103,10 @@ class NotificationManager {
 	public async deliver(): Promise<void> {
 		for (const x of this.queue) {
 			// ミュート情報を取得
-			const mentioneeMutes = await this.prismaService.client.userMuting.findMany({
-				where: { muterId: x.target },
-			});
+			const mentioneeMutes =
+				await this.prismaService.client.userMuting.findMany({
+					where: { muterId: x.target },
+				});
 
 			const mentioneesMutedUserIds = mentioneeMutes.map((m) => m.muteeId);
 
@@ -131,12 +132,12 @@ type Option = {
 	createdAt?: Date | null;
 	name?: string | null;
 	text?: string | null;
-	reply?: note | null;
-	renote?: note | null;
+	reply?: Note | null;
+	renote?: Note | null;
 	files?: DriveFile[] | null;
 	poll?: IPoll | null;
 	localOnly?: boolean | null;
-	reactionAcceptance?: note['reactionAcceptance'];
+	reactionAcceptance?: Note['reactionAcceptance'];
 	cw?: string | null;
 	visibility?: string;
 	visibleUsers?: MinimumUser[] | null;
@@ -192,7 +193,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		},
 		data: Option,
 		silent = false,
-	): Promise<note> {
+	): Promise<Note> {
 		// チャンネル外にリプライしたら対象のスコープに合わせる
 		// (クライアントサイドでやっても良い処理だと思うけどとりあえずサーバーサイドで)
 		if (
@@ -387,8 +388,8 @@ export class NoteCreateService implements OnApplicationShutdown {
 		tags: string[],
 		emojis: string[],
 		mentionedUsers: MinimumUser[],
-	): Promise<note> {
-		const insert: Prisma.noteUncheckedCreateInput = {
+	): Promise<Note> {
+		const insert: Prisma.NoteUncheckedCreateInput = {
 			id: this.idService.genId(data.createdAt!),
 			createdAt: data.createdAt!,
 			fileIds: data.files ? data.files.map((file) => file.id) : [],
@@ -498,7 +499,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	private async postNoteCreated(
-		note: note,
+		note: Note,
 		user: {
 			id: user['id'];
 			username: user['username'];
@@ -805,7 +806,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		return false;
 	}
 
-	private incRenoteCount(renote: note): void {
+	private incRenoteCount(renote: Note): void {
 		this.prismaService.client.note.update({
 			where: { id: renote.id },
 			data: {
@@ -817,7 +818,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 	private async createMentionedEvents(
 		mentionedUsers: MinimumUser[],
-		note: note,
+		note: Note,
 		nm: NotificationManager,
 	): Promise<void> {
 		for (const u of mentionedUsers.filter((u) =>
@@ -860,7 +861,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		}
 	}
 
-	private async saveReply(reply: note, note: note): Promise<void> {
+	private async saveReply(reply: Note, note: Note): Promise<void> {
 		await this.prismaService.client.note.update({
 			where: { id: reply.id },
 			data: { repliesCount: { increment: 1 } },
@@ -869,7 +870,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 	private async renderNoteOrRenoteActivity(
 		data: Option,
-		note: note,
+		note: Note,
 	): Promise<AddContext<IAnnounce | ICreate> | null> {
 		if (data.localOnly) return null;
 
@@ -892,7 +893,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		return this.apRendererService.addContext(content);
 	}
 
-	private index(note: note): void {
+	private index(note: Note): void {
 		if (note.text == null && note.cw == null) return;
 
 		this.searchService.indexNote(note);

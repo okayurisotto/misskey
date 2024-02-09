@@ -10,7 +10,7 @@ import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import { NoteEntityPackService } from './NoteEntityPackService.js';
 import type { z } from 'zod';
-import type { access_token, note, user } from '@prisma/client';
+import type { access_token, Note, user } from '@prisma/client';
 
 const NOTE_REQUIRED_NOTIFICATION_TYPES = new Set<
 	(typeof notificationTypes)[number]
@@ -38,7 +38,7 @@ export class NotificationEntityService  {
 		meId: user['id'],
 		_options: Record<PropertyKey, never>,
 		hint?: {
-			packedNotes: Map<note['id'], z.infer<typeof NoteSchema>>;
+			packedNotes: Map<Note['id'], z.infer<typeof NoteSchema>>;
 			packedUsers: Map<user['id'], z.infer<typeof UserSchema>>;
 		},
 	): Promise<z.infer<typeof NotificationSchema>> {

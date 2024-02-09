@@ -6,7 +6,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-notes.js';
 import type { KVs } from '../core.js';
-import type { note, user } from '@prisma/client';
+import type { Note, user } from '@prisma/client';
 
 /**
  * ユーザーごとのノートに関するチャート
@@ -49,7 +49,7 @@ export default class PerUserNotesChart extends Chart<typeof schema> {
 
 	public update(
 		user: { id: user['id'] },
-		note: note,
+		note: Note,
 		isAdditional: boolean,
 	): void {
 		this.commit(

@@ -20,7 +20,7 @@ import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import { PageEntityService } from './PageEntityService.js';
 import type {
 	FollowRequest,
-	note,
+	Note,
 	note_unread,
 	user,
 	user_memo,
@@ -161,7 +161,7 @@ export class UserEntityService {
 			user_note_pining: user_note_pining[];
 			user_security_key: user_security_key[];
 			user_memo: user_memo[];
-			note: note[];
+			note: Note[];
 		},
 	): Promise<z.infer<typeof UserDetailedNotMeOnlySchema>> {
 		const user = data.user.find((user) => user.id === userId);

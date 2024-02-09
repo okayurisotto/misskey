@@ -8,7 +8,7 @@ import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { ReactionDecodeService } from './ReactionDecodeService.js';
-import type { note, user } from '@prisma/client';
+import type { Note, user } from '@prisma/client';
 
 @Injectable()
 export class ReactionDeleteService {
@@ -23,7 +23,7 @@ export class ReactionDeleteService {
 
 	public async delete(
 		user: { id: user['id']; host: user['host']; isBot: user['isBot'] },
-		note: note,
+		note: Note,
 	): Promise<void> {
 		// if already unreacted
 		const exist = await this.prismaService.client.note_reaction.findUnique({

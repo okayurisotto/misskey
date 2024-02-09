@@ -18,7 +18,7 @@ import type {
 	Antenna,
 	DriveFile,
 	DriveFolder,
-	note,
+	Note,
 	page,
 	role_assignment,
 	role,
@@ -86,9 +86,9 @@ export interface MainStreamTypes {
 	reply: z.infer<typeof NoteSchema>;
 	signin: signin;
 	unfollow: z.infer<typeof UserDetailedNotMeSchema>;
-	unreadMention: note['id'];
+	unreadMention: Note['id'];
 	unreadNotification: z.infer<typeof NotificationSchema>;
-	unreadSpecifiedNote: note['id'];
+	unreadSpecifiedNote: Note['id'];
 	urlUploadFinished: {
 		marker: string | null;
 		file: z.infer<typeof DriveFileSchema>;
@@ -116,7 +116,7 @@ export interface NoteStreamTypesBody {
 }
 type NoteStreamTypes = {
 	[key in keyof NoteStreamTypesBody]: {
-		id: note['id'];
+		id: Note['id'];
 		body: NoteStreamTypesBody[key];
 	};
 };
@@ -127,7 +127,7 @@ export interface UserListStreamTypes {
 }
 
 export interface AntennaStreamTypes {
-	note: note;
+	note: Note;
 }
 
 export interface RoleTimelineStreamTypes {
@@ -169,7 +169,7 @@ export type StreamMessages = {
 		payload: EventUnionFromDictionary<Jsonify<DriveStreamTypes>>;
 	};
 	note: {
-		name: `noteStream:${note['id']}`;
+		name: `noteStream:${Note['id']}`;
 		payload: EventUnionFromDictionary<Jsonify<NoteStreamTypes>>;
 	};
 	userList: {

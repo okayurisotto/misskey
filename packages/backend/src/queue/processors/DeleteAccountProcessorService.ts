@@ -7,7 +7,7 @@ import { DriveFileDeleteService } from '@/core/DriveFileDeleteService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbUserDeleteJobData } from '../types.js';
-import type { DriveFile, note } from '@prisma/client';
+import type { DriveFile, Note } from '@prisma/client';
 
 @Injectable()
 export class DeleteAccountProcessorService {
@@ -24,13 +24,13 @@ export class DeleteAccountProcessorService {
 			this.queueLoggerService.logger.createSubLogger('delete-account');
 	}
 
-	async deleteNotes(notes: note[]): Promise<void> {
+	async deleteNotes(notes: Note[]): Promise<void> {
 		await this.prismaService.client.note.deleteMany({
 			where: { id: { in: notes.map(({ id }) => id) } },
 		});
 	}
 
-	async unindexNotes(notes: note[]): Promise<void> {
+	async unindexNotes(notes: Note[]): Promise<void> {
 		await Promise.all(
 			notes.map(async (note) => {
 				await this.searchService.unindexNote(note);

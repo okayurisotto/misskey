@@ -5,7 +5,7 @@ import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { MeiliSearchService } from '@/core/MeiliSearchService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { Index } from 'meilisearch';
-import type { note, user } from '@prisma/client';
+import type { Note, user } from '@prisma/client';
 
 type K = string;
 type V = string | number | boolean;
@@ -104,7 +104,7 @@ export class SearchService implements OnApplicationBootstrap {
 		}
 	}
 
-	public async indexNote(note: note): Promise<void> {
+	public async indexNote(note: Note): Promise<void> {
 		if (note.text == null && note.cw == null) return;
 		if (!['home', 'public'].includes(note.visibility)) return;
 		if (this.meilisearchNoteIndex === null) return;
@@ -141,7 +141,7 @@ export class SearchService implements OnApplicationBootstrap {
 		);
 	}
 
-	public async unindexNote(note: note): Promise<void> {
+	public async unindexNote(note: Note): Promise<void> {
 		if (!['home', 'public'].includes(note.visibility)) return;
 		if (this.meilisearchNoteIndex === null) return;
 
@@ -152,16 +152,16 @@ export class SearchService implements OnApplicationBootstrap {
 		q: string,
 		me: user | null,
 		opts: {
-			userId?: note['userId'] | null;
-			channelId?: note['channelId'] | null;
+			userId?: Note['userId'] | null;
+			channelId?: Note['channelId'] | null;
 			host?: string | null;
 		},
 		pagination: {
-			untilId?: note['id'];
-			sinceId?: note['id'];
+			untilId?: Note['id'];
+			sinceId?: Note['id'];
 			limit?: number;
 		},
-	): Promise<note[]> {
+	): Promise<Note[]> {
 		if (this.meilisearchNoteIndex) {
 			const filter: Q = { op: 'and', qs: [] };
 

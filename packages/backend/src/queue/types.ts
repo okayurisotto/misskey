@@ -1,7 +1,7 @@
 import type { IActivity } from '@/core/activitypub/type.js';
 import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
 import type httpSignature from '@peertube/http-signature';
-import type { note, webhook, DriveFile, user } from '@prisma/client';
+import type { Note, webhook, DriveFile, user } from '@prisma/client';
 import type { z } from 'zod';
 
 export type DeliverJobData = {
@@ -93,7 +93,7 @@ export type ObjectStorageFileJobData = {
 };
 
 export type EndedPollNotificationJobData = {
-	noteId: note['id'];
+	noteId: Note['id'];
 };
 
 export type WebhookDeliverJobData = {

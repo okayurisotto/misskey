@@ -6,7 +6,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/notes.js';
 import type { KVs } from '../core.js';
-import type { note } from '@prisma/client';
+import type { Note } from '@prisma/client';
 
 /**
  * ノートに関するチャート
@@ -48,7 +48,7 @@ export default class NotesChart extends Chart<typeof schema> {
 		return {};
 	}
 
-	public async update(note: note, isAdditional: boolean): Promise<void> {
+	public async update(note: Note, isAdditional: boolean): Promise<void> {
 		const prefix = note.userHost === null ? 'local' : 'remote';
 
 		await this.commit({

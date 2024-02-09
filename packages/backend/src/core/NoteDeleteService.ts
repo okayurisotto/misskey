@@ -15,7 +15,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { RenoteCountService } from './entities/RenoteCountService.js';
-import type { Prisma, note, user } from '@prisma/client';
+import type { Prisma, Note, user } from '@prisma/client';
 import type { IActivity } from './activitypub/type.js';
 
 @Injectable()
@@ -51,7 +51,7 @@ export class NoteDeleteService {
 			host: user['host'];
 			isBot: user['isBot'];
 		},
-		note: note,
+		note: Note,
 		quiet = false,
 	): Promise<void> {
 		const deletedAt = new Date();
@@ -198,10 +198,10 @@ export class NoteDeleteService {
 	 */
 	private async findCascadingNotes(
 		noteId: string,
-	): Promise<(note & { user: user })[]> {
+	): Promise<(Note & { user: user })[]> {
 		const recursive = async (
 			noteId: string,
-		): Promise<(note & { user: user })[]> => {
+		): Promise<(Note & { user: user })[]> => {
 			const replies = await this.prismaService.client.note.findMany({
 				where: {
 					OR: [{ replyId: noteId }, { renoteId: noteId, text: { not: null } }],
@@ -218,7 +218,7 @@ export class NoteDeleteService {
 		return await recursive(noteId);
 	}
 
-	private async getMentionedRemoteUsers(note: note): Promise<RemoteUser[]> {
+	private async getMentionedRemoteUsers(note: Note): Promise<RemoteUser[]> {
 		const where: Prisma.userWhereInput[] = [];
 
 		// mention / reply / dm
@@ -243,7 +243,7 @@ export class NoteDeleteService {
 
 	private async deliverToConcerned(
 		user: { id: LocalUser['id']; host: null },
-		note: note,
+		note: Note,
 		content: IActivity,
 	): Promise<void> {
 		await this.apDeliverManagerService.deliverToFollowers(user, content);

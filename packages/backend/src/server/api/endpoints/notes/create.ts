@@ -19,7 +19,7 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
-import type { Channel, DriveFile, note, user } from '@prisma/client';
+import type { Channel, DriveFile, Note, user } from '@prisma/client';
 
 const res = z.object({ createdNote: NoteSchema });
 export const meta = {
@@ -135,7 +135,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			let renote: note | null = null;
+			let renote: Note | null = null;
 			if (ps.renoteId != null) {
 				// Fetch renote to note
 				renote = await this.prismaService.client.note.findUnique({
@@ -166,7 +166,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			let reply: note | null = null;
+			let reply: Note | null = null;
 			if (ps.replyId != null) {
 				// Fetch reply
 				reply = await this.prismaService.client.note.findUnique({

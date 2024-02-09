@@ -16,11 +16,11 @@ export class EndedPollNotificationProcessorService {
 	): Promise<void> {
 		const note = await this.prismaService.client.note.findUnique({
 			where: { id: job.data.noteId, hasPoll: true },
-			include: { poll_vote: { where: { user: { host: null } } } },
+			include: { pollVotes: { where: { user: { host: null } } } },
 		});
 		if (note === null) return;
 
-		const votes = note.poll_vote;
+		const votes = note.pollVotes;
 		const userIds = [...new Set([note.userId, ...votes.map((v) => v.userId)])];
 
 		await Promise.all(

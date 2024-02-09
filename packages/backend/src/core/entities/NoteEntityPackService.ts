@@ -12,7 +12,7 @@ import { LegacyReactionConvertService } from '../LegacyReactionConvertService.js
 import { CustomEmojiPopulateService } from '../CustomEmojiPopulateService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
-import type { note, note_reaction, user } from '@prisma/client';
+import type { Note, note_reaction, user } from '@prisma/client';
 
 type PollChoice = {
 	text: string;
@@ -135,7 +135,7 @@ export class NoteEntityPackService {
 	 * @returns `meId`が`null`でなかった場合、自身の投票結果が返り値の`isVoted`に`true`として表される。
 	 */
 	private async populatePoll(
-		note: note,
+		note: Note,
 		meId: user['id'] | null,
 	): Promise<Poll> {
 		const poll = await this.prismaService.client.poll.findUniqueOrThrow({
@@ -191,10 +191,10 @@ export class NoteEntityPackService {
 	 * @returns      リアクションが文字列（絵文字）もしくは文字列（カスタム絵文字の書式）として返される。自分がしたリアクションがなかった場合には`undefined`が返される。
 	 */
 	private async populateMyReaction(
-		note: note,
+		note: Note,
 		meId: user['id'],
 		_hint_?: {
-			myReactions: Map<note['id'], note_reaction | null>;
+			myReactions: Map<Note['id'], note_reaction | null>;
 		},
 	): Promise<string | undefined> {
 		if (_hint_?.myReactions) {
@@ -236,9 +236,9 @@ export class NoteEntityPackService {
 	 * @returns           packされた`file`。取得できなかった`file`に関しては除かれるため、`fileIds`と要素数が合わないこともなくはないはず。
 	 */
 	private async packAttachedFiles(
-		fileIds: note['fileIds'],
+		fileIds: Note['fileIds'],
 		packedFiles: Map<
-			note['fileIds'][number],
+			Note['fileIds'][number],
 			z.infer<typeof DriveFileSchema> | null
 		>,
 	): Promise<z.infer<typeof DriveFileSchema>[]> {
@@ -267,15 +267,15 @@ export class NoteEntityPackService {
 	 * @returns
 	 */
 	public async pack(
-		src: note['id'] | note,
+		src: Note['id'] | Note,
 		me?: { id: user['id'] } | null | undefined,
 		options?: {
 			detail?: boolean;
 			skipHide?: boolean;
 			_hint_?: {
-				myReactions: Map<note['id'], note_reaction | null>;
+				myReactions: Map<Note['id'], note_reaction | null>;
 				packedFiles: Map<
-					note['fileIds'][number],
+					Note['fileIds'][number],
 					z.infer<typeof DriveFileSchema> | null
 				>;
 			};
@@ -440,7 +440,7 @@ export class NoteEntityPackService {
 	 * @returns
 	 */
 	public async packMany(
-		notes: (note & { renote?: note | null; reply?: note | null })[],
+		notes: (Note & { renote?: Note | null; reply?: Note | null })[],
 		me?: { id: user['id'] } | null | undefined,
 		options?: {
 			detail?: boolean;
@@ -452,7 +452,7 @@ export class NoteEntityPackService {
 		const meId = me ? me.id : null;
 
 		/** `_hint_.myReactions`として渡すためのもの */
-		const myReactionsMap = new Map<note['id'], note_reaction | null>();
+		const myReactionsMap = new Map<Note['id'], note_reaction | null>();
 		if (meId) {
 			const renoteIds = notes.map((n) => n.renoteId).filter(isNotNull);
 			// パフォーマンスのためノートが作成されてから1秒以上経っていない場合はリアクションを取得しない

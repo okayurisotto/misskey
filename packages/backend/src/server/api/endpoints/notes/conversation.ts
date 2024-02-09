@@ -8,7 +8,7 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
-import type { note } from '@prisma/client';
+import type { Note } from '@prisma/client';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -44,7 +44,7 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			const conversation: note[] = [];
+			const conversation: Note[] = [];
 			let i = 0;
 
 			const get = async (id: any): Promise<void> => {

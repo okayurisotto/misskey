@@ -11,7 +11,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { RedisService } from '@/core/RedisService.js';
 import { ApiError } from '../../error.js';
-import type { note } from '@prisma/client';
+import type { Note } from '@prisma/client';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -53,7 +53,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchChannel);
 			}
 
-			let timeline: note[] = [];
+			let timeline: Note[] = [];
 
 			const limit = ps.limit + (ps.untilId ? 1 : 0); // untilIdに指定したものも含まれるため+1
 			let noteIdsRes: [string, string[]][] = [];

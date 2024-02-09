@@ -5,7 +5,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { z } from 'zod';
-import type { note, user } from '@prisma/client';
+import type { Note, user } from '@prisma/client';
 
 @Injectable()
 export class NoteReadService implements OnApplicationShutdown {
@@ -19,7 +19,7 @@ export class NoteReadService implements OnApplicationShutdown {
 
 	public async insertNoteUnread(
 		userId: user['id'],
-		note: note,
+		note: Note,
 		params: {
 			// NOTE: isSpecifiedがtrueならisMentionedは必ずfalse
 			isSpecified: boolean;
@@ -91,10 +91,10 @@ export class NoteReadService implements OnApplicationShutdown {
 
 	public async read(
 		userId: user['id'],
-		notes: (note | z.infer<typeof NoteSchema>)[],
+		notes: (Note | z.infer<typeof NoteSchema>)[],
 	): Promise<void> {
-		const readMentions: (note | z.infer<typeof NoteSchema>)[] = [];
-		const readSpecifiedNotes: (note | z.infer<typeof NoteSchema>)[] = [];
+		const readMentions: (Note | z.infer<typeof NoteSchema>)[] = [];
+		const readSpecifiedNotes: (Note | z.infer<typeof NoteSchema>)[] = [];
 
 		for (const note of notes) {
 			if (note.mentions && note.mentions.includes(userId)) {

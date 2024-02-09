@@ -4,7 +4,7 @@ import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
-import type { note, user } from '@prisma/client';
+import type { Note, user } from '@prisma/client';
 
 @Injectable()
 export class GetterService {
@@ -17,7 +17,7 @@ export class GetterService {
 	/**
 	 * Get note for API processing
 	 */
-	public async getNote(noteId: note['id']): Promise<note> {
+	public async getNote(noteId: Note['id']): Promise<Note> {
 		const note = await this.prismaService.client.note.findUnique({
 			where: { id: noteId },
 		});

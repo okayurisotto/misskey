@@ -59,7 +59,7 @@ export class PrismaQueryService {
 
 	public getVisibilityWhereForNote(
 		userId: user['id'] | null,
-	): Prisma.noteWhereInput {
+	): Prisma.NoteWhereInput {
 		if (userId === null) {
 			return { OR: [{ visibility: 'public' }, { visibility: 'home' }] };
 		}
@@ -94,7 +94,7 @@ export class PrismaQueryService {
 
 	public getRepliesWhereForNote(
 		userId: user['id'] | null,
-	): Prisma.noteWhereInput {
+	): Prisma.NoteWhereInput {
 		if (userId === null) {
 			return {
 				OR: [
@@ -130,7 +130,7 @@ export class PrismaQueryService {
 
 	public getChannelWhereForNote(
 		userId: user['id'] | null,
-	): Prisma.noteWhereInput {
+	): Prisma.NoteWhereInput {
 		if (userId === null) return { channelId: null };
 
 		return {
@@ -143,7 +143,7 @@ export class PrismaQueryService {
 
 	public getBlockedWhereForNote(
 		userId: user['id'] | null,
-	): Prisma.noteWhereInput {
+	): Prisma.NoteWhereInput {
 		if (userId === null) return {};
 
 		return {
@@ -157,7 +157,7 @@ export class PrismaQueryService {
 					OR: [
 						{ replyUserId: null },
 						{
-							note_note_replyIdTonote: {
+							reply: {
 								user: {
 									blocking_blocking_blockerIdTouser: {
 										none: { blockeeId: userId },
@@ -171,7 +171,7 @@ export class PrismaQueryService {
 					OR: [
 						{ renoteUserId: null },
 						{
-							note_note_renoteIdTonote: {
+							renote: {
 								user: {
 									blocking_blocking_blockerIdTouser: {
 										none: { blockeeId: userId },
@@ -187,7 +187,7 @@ export class PrismaQueryService {
 
 	public async getNoteThreadMutingWhereForNote(
 		userId: user['id'] | null,
-	): Promise<Prisma.noteWhereInput> {
+	): Promise<Prisma.NoteWhereInput> {
 		if (userId === null) return {};
 
 		const mutedThreads =
@@ -203,7 +203,7 @@ export class PrismaQueryService {
 
 	public async getMutingWhereForNote(
 		userId: user['id'] | null,
-	): Promise<Prisma.noteWhereInput> {
+	): Promise<Prisma.NoteWhereInput> {
 		if (userId === null) return {};
 
 		const meProfile =
@@ -222,7 +222,7 @@ export class PrismaQueryService {
 					OR: [
 						{ replyUserId: null },
 						{
-							note_note_replyIdTonote: {
+							reply: {
 								user: {
 									muting_muting_muteeIdTouser: { none: { muterId: userId } },
 								},
@@ -234,7 +234,7 @@ export class PrismaQueryService {
 					OR: [
 						{ renoteId: null },
 						{
-							note_note_renoteIdTonote: {
+							renote: {
 								user: {
 									muting_muting_muteeIdTouser: { none: { muterId: userId } },
 								},
@@ -264,7 +264,7 @@ export class PrismaQueryService {
 
 	public async getRenoteMutingWhereForNote(
 		userId: user['id'] | null,
-	): Promise<Prisma.noteWhereInput> {
+	): Promise<Prisma.NoteWhereInput> {
 		if (userId === null) return {};
 
 		const renoteMutings =

@@ -7,7 +7,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/instance.js';
 import type { KVs } from '../core.js';
-import type { DriveFile, note } from '@prisma/client';
+import type { DriveFile, Note } from '@prisma/client';
 
 /**
  * インスタンスごとのチャート
@@ -95,7 +95,7 @@ export default class InstanceChart extends Chart<typeof schema> {
 
 	public async updateNote(
 		host: string,
-		note: note,
+		note: Note,
 		isAdditional: boolean,
 	): Promise<void> {
 		await this.commit(

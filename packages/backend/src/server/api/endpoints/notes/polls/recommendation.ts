@@ -38,7 +38,7 @@ export default class extends Endpoint<
 			const polls = await this.prismaService.client.poll.findMany({
 				where: {
 					AND: [
-						{ note: { poll_vote: { none: { userId: { contains: me.id } } } } },
+						{ note: { pollVotes: { none: { userId: { contains: me.id } } } } },
 						{ noteVisibility: 'public' },
 						{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
 						{ userHost: null },

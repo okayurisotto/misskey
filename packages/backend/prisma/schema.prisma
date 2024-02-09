@@ -794,7 +794,7 @@ model Channel {
 
   favorites  ChannelFavorite[]
   followings ChannelFollowing[]
-  notes      note[]
+  notes      Note[]
 
   // aggregate
   lastNotedAt DateTime? @ignore @db.Timestamptz(6)
@@ -855,7 +855,7 @@ model channel_note_pining {
   createdAt DateTime @db.Timestamptz(6)
   channelId String   @db.VarChar(32)
   noteId    String   @db.VarChar(32)
-  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_10b19ef67d297ea9de325cd4502")
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_10b19ef67d297ea9de325cd4502")
   channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8125f950afd3093acb10d2db8a8")
 
   @@unique([channelId, noteId], map: "IDX_f36fed37d6d4cdcc68c803cd9c")
@@ -906,7 +906,7 @@ model ClipNote {
   id     String @id(map: "PK_e94cda2f40a99b57e032a1a738b") @db.VarChar(32)
   //
   noteId String @db.VarChar(32)
-  note   note   @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a012eaf5c87c65da1deb5fdbfa3")
+  note   Note   @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a012eaf5c87c65da1deb5fdbfa3")
   //
   clipId String @db.VarChar(32)
   clip   Clip   @relation(fields: [clipId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ebe99317bbbe9968a0c6f579adf")
@@ -1360,7 +1360,7 @@ model MutedNote {
   reason muted_note_reason_enum
   //
   noteId String                 @db.VarChar(32)
-  note   note                   @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_70ab9786313d78e4201d81cdb89")
+  note   Note                   @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_70ab9786313d78e4201d81cdb89")
   //
   userId String                 @db.VarChar(32)
   user   user                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d8e07aa18c2d64e86201601aec1")
@@ -1396,62 +1396,62 @@ model UserMuting {
 }
 
 // ノート
-model note {
-  id                             String               @id(map: "PK_96d0c172a4fba276b1bbed43058") @db.VarChar(32)
-  createdAt                      DateTime             @db.Timestamptz(6)
-  text                           String?
-  name                           String?              @db.VarChar(256)
-  cw                             String?              @db.VarChar(512)
-  localOnly                      Boolean              @default(false)
-  visibility                     note_visibility_enum
-  uri                            String?              @unique(map: "IDX_153536c67d05e9adb24e99fc2b") @db.VarChar(512)
-  score                          Int                  @default(0)
-  url                            String?              @db.VarChar(512)
-  reactionAcceptance             String?              @db.VarChar(64) // Enum?
+model Note {
+  id                   String               @id(map: "PK_96d0c172a4fba276b1bbed43058") @db.VarChar(32)
+  createdAt            DateTime             @db.Timestamptz(6)
+  text                 String?
+  name                 String?              @db.VarChar(256)
+  cw                   String?              @db.VarChar(512)
+  localOnly            Boolean              @default(false)
+  visibility           note_visibility_enum
+  uri                  String?              @unique(map: "IDX_153536c67d05e9adb24e99fc2b") @db.VarChar(512)
+  score                Int                  @default(0)
+  url                  String?              @db.VarChar(512)
+  reactionAcceptance   String?              @db.VarChar(64) // Enum?
   // 非正規化
-  attachedFileTypes              String[]             @default([]) @db.VarChar(256)
-  emojis                         String[]             @default([]) @db.VarChar(128)
-  fileIds                        String[]             @default([]) @db.VarChar(32)
-  mentionedRemoteUsers           String               @default("[]")
-  mentions                       String[]             @default([]) @db.VarChar(32)
-  reactions                      Json                 @default("{}")
-  renoteUserHost                 String?              @db.VarChar(128)
-  renoteUserId                   String?              @db.VarChar(32)
-  replyUserHost                  String?              @db.VarChar(128)
-  replyUserId                    String?              @db.VarChar(32)
-  tags                           String[]             @default([]) @db.VarChar(128)
-  threadId                       String?              @db.VarChar(256)
-  userHost                       String?              @db.VarChar(128)
-  visibleUserIds                 String[]             @default([]) @db.VarChar(32)
+  attachedFileTypes    String[]             @default([]) @db.VarChar(256)
+  emojis               String[]             @default([]) @db.VarChar(128)
+  fileIds              String[]             @default([]) @db.VarChar(32)
+  mentionedRemoteUsers String               @default("[]")
+  mentions             String[]             @default([]) @db.VarChar(32)
+  reactions            Json                 @default("{}")
+  renoteUserHost       String?              @db.VarChar(128)
+  renoteUserId         String?              @db.VarChar(32)
+  replyUserHost        String?              @db.VarChar(128)
+  replyUserId          String?              @db.VarChar(32)
+  tags                 String[]             @default([]) @db.VarChar(128)
+  threadId             String?              @db.VarChar(256)
+  userHost             String?              @db.VarChar(128)
+  visibleUserIds       String[]             @default([]) @db.VarChar(32)
   // 集計
-  renoteCount                    Int                  @default(0) @db.SmallInt
-  repliesCount                   Int                  @default(0) @db.SmallInt
-  hasPoll                        Boolean              @default(false)
+  renoteCount          Int                  @default(0) @db.SmallInt
+  repliesCount         Int                  @default(0) @db.SmallInt
+  hasPoll              Boolean              @default(false)
   //
-  userId                         String               @db.VarChar(32)
-  user                           user                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5b87d9d19127bd5d92026017a7b")
+  userId               String               @db.VarChar(32)
+  user                 user                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5b87d9d19127bd5d92026017a7b")
   //
-  channelId                      String?              @db.VarChar(32)
-  channel                        Channel?             @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f22169eb10657bded6d875ac8f9")
+  channelId            String?              @db.VarChar(32)
+  channel              Channel?             @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f22169eb10657bded6d875ac8f9")
   //
-  replyId                        String?              @db.VarChar(32)
-  note_note_replyIdTonote        note?                @relation("note_replyIdTonote", fields: [replyId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_17cb3553c700a4985dff5a30ff5")
-  other_note_note_replyIdTonote  note[]               @relation("note_replyIdTonote")
+  replyId              String?              @db.VarChar(32)
+  reply                Note?                @relation("reply", fields: [replyId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_17cb3553c700a4985dff5a30ff5")
+  replies              Note[]               @relation("reply")
   //
-  renoteId                       String?              @db.VarChar(32)
-  note_note_renoteIdTonote       note?                @relation("note_renoteIdTonote", fields: [renoteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_52ccc804d7c69037d558bac4c96")
-  other_note_note_renoteIdTonote note[]               @relation("note_renoteIdTonote")
+  renoteId             String?              @db.VarChar(32)
+  renote               Note?                @relation("renote", fields: [renoteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_52ccc804d7c69037d558bac4c96")
+  renotes              Note[]               @relation("renote")
 
-  poll             poll?
-  promo_note       promo_note?
-  clip_note        ClipNote[]
-  muted_note       MutedNote[]
-  note_favorite    note_favorite[]
-  note_reaction    note_reaction[]
-  note_unread      note_unread[]
-  poll_vote        poll_vote[]
-  promo_read       promo_read[]
-  user_note_pining user_note_pining[]
+  poll          poll?
+  promoNote     promo_note?
+  clipNotes     ClipNote[]
+  mutedNotes    MutedNote[]
+  noteFavorites note_favorite[]
+  noteReactions note_reaction[]
+  noteUnreads   note_unread[]
+  pollVotes     poll_vote[]
+  promoReads    promo_read[]
+  pinings       user_note_pining[]
 
   // deprecated
   channel_note_pining channel_note_pining[] @ignore
@@ -1472,6 +1472,7 @@ model note {
   @@index([threadId], map: "IDX_d4ebdef929896d6dc4a3c5bb48")
   @@index([createdAt], map: "IDX_e7c0567f5261063592f022e9b5")
   @@index([channelId], map: "IDX_f22169eb10657bded6d875ac8f")
+  @@map("note")
 }
 
 // ノートのお気に入り
@@ -1483,7 +1484,7 @@ model note_favorite {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_47f4b1892f5d6ba8efb3057d81a")
   //
   noteId    String   @db.VarChar(32)
-  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e00498f180193423c992bc4370")
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e00498f180193423c992bc4370")
 
   @@unique([userId, noteId], map: "IDX_0f4fb9ad355f3effff221ef245")
   @@index([userId], map: "IDX_47f4b1892f5d6ba8efb3057d81")
@@ -1499,7 +1500,7 @@ model note_reaction {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_13761f64257f40c5636d0ff95ee")
   //
   noteId    String   @db.VarChar(32)
-  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_45145e4953780f3cd5656f0ea6a")
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_45145e4953780f3cd5656f0ea6a")
 
   @@unique([userId, noteId], map: "IDX_ad0c221b25672daf2df320a817")
   @@index([createdAt], map: "IDX_01f4581f114e0ebd2bbb876f0b")
@@ -1534,7 +1535,7 @@ model note_unread {
   user          user    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_56b0166d34ddae49d8ef7610bb9")
   //
   noteId        String  @db.VarChar(32)
-  note          note    @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e637cba4dc4410218c4251260e4")
+  note          Note    @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e637cba4dc4410218c4251260e4")
 
   @@unique([userId, noteId], map: "IDX_d908433a4953cc13216cd9c274")
   @@index([isMentioned], map: "IDX_25b1dd384bec391b07b74b861c")
@@ -1552,7 +1553,7 @@ model note_watching {
   userId     String   @db.VarChar(32)
   noteId     String   @db.VarChar(32)
   noteUserId String   @db.VarChar(32)
-  note       note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_03e7028ab8388a3f5e3ce2a8619")
+  note       Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_03e7028ab8388a3f5e3ce2a8619")
   user       user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b0134ec406e8d09a540f8182888")
 
   @@unique([userId, noteId], map: "IDX_a42c93c69989ce1d09959df4cf")
@@ -1641,7 +1642,7 @@ model poll {
   votes          Int[]
   //
   noteId         String                   @id(map: "PK_da851e06d0dfe2ef397d8b1bf1b") @unique(map: "UQ_da851e06d0dfe2ef397d8b1bf1b") @db.VarChar(32)
-  note           note                     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_da851e06d0dfe2ef397d8b1bf1b")
+  note           Note                     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_da851e06d0dfe2ef397d8b1bf1b")
 
   @@index([userId], map: "IDX_0610ebcfcfb4a18441a9bcdab2")
   @@index([userHost], map: "IDX_7fa20a12319c7f6dc3aed98c0a")
@@ -1657,7 +1658,7 @@ model poll_vote {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_66d2bd2ee31d14bcc23069a89f8")
   // （なぜpollではなくnote？）
   noteId    String   @db.VarChar(32)
-  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_aecfbd5ef60374918e63ee95fa7")
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_aecfbd5ef60374918e63ee95fa7")
 
   @@unique([userId, noteId, choice], map: "IDX_50bd7164c5b78f1f4a42c4d21f")
   @@index([createdAt], map: "IDX_0fb627e1c2f753262a74f0562d")
@@ -1671,7 +1672,7 @@ model promo_note {
   userId    String   @db.VarChar(32) // 非正規化
   //
   noteId    String   @id(map: "PK_e263909ca4fe5d57f8d4230dd5c") @unique(map: "UQ_e263909ca4fe5d57f8d4230dd5c") @db.VarChar(32)
-  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e263909ca4fe5d57f8d4230dd5c")
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e263909ca4fe5d57f8d4230dd5c")
 
   @@index([userId], map: "IDX_83f0862e9bae44af52ced7099e")
 }
@@ -1685,7 +1686,7 @@ model promo_read {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9657d55550c3d37bfafaf7d4b05")
   //
   noteId    String   @db.VarChar(32)
-  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a46a1a603ecee695d7db26da5f4")
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a46a1a603ecee695d7db26da5f4")
 
   @@unique([userId, noteId], map: "IDX_2882b8a1a07c7d281a98b6db16")
   @@index([userId], map: "IDX_9657d55550c3d37bfafaf7d4b0")
@@ -1958,7 +1959,7 @@ model user {
   muted_note                                                MutedNote[]
   muting_muting_muterIdTouser                               UserMuting[]             @relation("muting_muterIdTouser")
   muting_muting_muteeIdTouser                               UserMuting[]             @relation("muting_muteeIdTouser")
-  note                                                      note[]
+  note                                                      Note[]
   note_favorite                                             note_favorite[]
   note_reaction                                             note_reaction[]
   note_thread_muting                                        note_thread_muting[]
@@ -2167,7 +2168,7 @@ model user_note_pining {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bfbc6f79ba4007b4ce5097f08d6")
   //
   noteId    String   @db.VarChar(32)
-  note      note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_68881008f7c3588ad7ecae471cf")
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_68881008f7c3588ad7ecae471cf")
 
   @@unique([userId, noteId], map: "IDX_410cd649884b501c02d6e72738")
   @@index([userId], map: "IDX_bfbc6f79ba4007b4ce5097f08d")

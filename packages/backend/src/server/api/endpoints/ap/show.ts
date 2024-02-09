@@ -17,7 +17,7 @@ import { ApPersonCreateService } from '@/core/activitypub/models/ApPersonCreateS
 import { ApUserIdResolverService } from '@/core/activitypub/ApUserIdResolverService.js';
 import { ApNoteIdResolverService } from '@/core/activitypub/ApNoteIdResolverService.js';
 import { ApiError } from '../../error.js';
-import type { note, user } from '@prisma/client';
+import type { Note, user } from '@prisma/client';
 
 const res = z
 	.union([
@@ -126,7 +126,7 @@ export default class extends Endpoint<
 	private async mergePack(
 		me: LocalUser | null | undefined,
 		user: user | null | undefined,
-		note: note | null | undefined,
+		note: Note | null | undefined,
 	): Promise<z.infer<typeof res> | null> {
 		if (user != null) {
 			return {

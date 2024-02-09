@@ -15,7 +15,7 @@ import { ApLoggerService } from '../ApLoggerService.js';
 import { ApResolverService, type Resolver } from '../ApResolverService.js';
 import type { OnModuleInit } from '@nestjs/common';
 import type { ApNoteService } from './ApNoteService.js';
-import type { note, user } from '@prisma/client';
+import type { Note, user } from '@prisma/client';
 
 @Injectable()
 export class ApPersonFeaturedUpdateService implements OnModuleInit {
@@ -64,7 +64,7 @@ export class ApPersonFeaturedUpdateService implements OnModuleInit {
 		);
 
 		// Resolve and regist Notes
-		const limit = promiseLimit<note | null>(2);
+		const limit = promiseLimit<Note | null>(2);
 		const featuredNotes = await Promise.all(
 			items
 				.filter((item) => getApType(item) === 'Note') // TODO: Noteでなくてもいいかも
@@ -85,7 +85,7 @@ export class ApPersonFeaturedUpdateService implements OnModuleInit {
 			// とりあえずidを別の時間で生成して順番を維持
 			let td = 0;
 			for (const note of featuredNotes.filter(
-				(note): note is note => note != null,
+				(note): note is Note => note != null,
 			)) {
 				td -= 1000;
 				client.user_note_pining.create({

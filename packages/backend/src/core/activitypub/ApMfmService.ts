@@ -3,7 +3,7 @@ import * as mfm from 'mfm-js';
 import { MfmService } from '@/core/MfmService.js';
 import { extractApHashtagObjects } from './models/tag.js';
 import type { IObject } from './type.js';
-import type { note } from '@prisma/client';
+import type { Note } from '@prisma/client';
 
 @Injectable()
 export class ApMfmService {
@@ -14,7 +14,7 @@ export class ApMfmService {
 		return this.mfmService.fromHtml(html, hashtagNames);
 	}
 
-	public getNoteHtml(note: note): string | null {
+	public getNoteHtml(note: Note): string | null {
 		if (!note.text) return '';
 		return this.mfmService.toHtml(
 			mfm.parse(note.text),

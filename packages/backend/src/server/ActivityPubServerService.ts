@@ -20,7 +20,7 @@ import type {
 	FastifyReply,
 	FastifyPluginOptions,
 } from 'fastify';
-import type { Prisma, note, user } from '@prisma/client';
+import type { Prisma, Note, user } from '@prisma/client';
 
 const ACTIVITY_JSON = 'application/activity+json; charset=utf-8';
 const LD_JSON =
@@ -52,7 +52,7 @@ export class ActivityPubServerService {
 	 * Pack Create<Note> or Announce Activity
 	 * @param note Note
 	 */
-	private async packActivity(note: note): Promise<any> {
+	private async packActivity(note: Note): Promise<any> {
 		if (
 			note.renoteId &&
 			note.text == null &&

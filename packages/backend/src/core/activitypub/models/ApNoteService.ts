@@ -32,7 +32,7 @@ import { ApNoteEmojiExtractService } from './ApNoteEmojiExtractService.js';
 import { ApNoteFetchService } from './ApNoteFetchService.js';
 import type { Resolver } from '../ApResolverService.js';
 import type { IObject, IPost } from '../type.js';
-import type { DriveFile, note } from '@prisma/client';
+import type { DriveFile, Note } from '@prisma/client';
 
 @Injectable()
 export class ApNoteService {
@@ -99,7 +99,7 @@ export class ApNoteService {
 		value: string | IObject,
 		resolver?: Resolver,
 		silent = false,
-	): Promise<note | null> {
+	): Promise<Note | null> {
 		// eslint-disable-next-line no-param-reassign
 		if (resolver == null) resolver = this.apResolverService.createResolver();
 
@@ -187,7 +187,7 @@ export class ApNoteService {
 		);
 
 		// リプライ
-		const reply: note | null = note.inReplyTo
+		const reply: Note | null = note.inReplyTo
 			? await this.resolveNote(note.inReplyTo, { resolver })
 					.then((x) => {
 						if (x == null) {
@@ -206,13 +206,13 @@ export class ApNoteService {
 			: null;
 
 		// 引用
-		let quote: note | undefined | null = null;
+		let quote: Note | undefined | null = null;
 
 		if (note._misskey_quote || note.quoteUrl) {
 			const tryResolveNote = async (
 				uri: string,
 			): Promise<
-				{ status: 'ok'; res: note } | { status: 'permerror' | 'temperror' }
+				{ status: 'ok'; res: Note } | { status: 'permerror' | 'temperror' }
 			> => {
 				if (!/^https?:/.test(uri)) return { status: 'permerror' };
 				try {
@@ -237,7 +237,7 @@ export class ApNoteService {
 			const results = await Promise.all(uris.map(tryResolveNote));
 
 			quote = results
-				.filter((x): x is { status: 'ok'; res: note } => x.status === 'ok')
+				.filter((x): x is { status: 'ok'; res: Note } => x.status === 'ok')
 				.map((x) => x.res)
 				.at(0);
 			if (!quote) {
@@ -342,7 +342,7 @@ export class ApNoteService {
 	public async resolveNote(
 		value: string | IObject,
 		options: { sentFrom?: URL; resolver?: Resolver } = {},
-	): Promise<note | null> {
+	): Promise<Note | null> {
 		const uri = getApId(value);
 
 		// ブロックしていたら中断
