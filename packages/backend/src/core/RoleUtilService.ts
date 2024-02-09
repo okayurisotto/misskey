@@ -31,9 +31,7 @@ export class RoleUtilService {
 	}
 
 	public async getModeratorIds(includeAdmins = true): Promise<user['id'][]> {
-		const roles = await this.roleCacheService.rolesCache.fetch(() =>
-			this.prismaService.client.role.findMany(),
-		);
+		const roles = await this.roleCacheService.rolesCache.fetch();
 		const moderatorRoles = includeAdmins
 			? roles.filter((r) => r.isModerator || r.isAdministrator)
 			: roles.filter((r) => r.isModerator);
@@ -59,9 +57,7 @@ export class RoleUtilService {
 	}
 
 	public async getAdministratorIds(): Promise<user['id'][]> {
-		const roles = await this.roleCacheService.rolesCache.fetch(() =>
-			this.prismaService.client.role.findMany(),
-		);
+		const roles = await this.roleCacheService.rolesCache.fetch();
 		const administratorRoles = roles.filter((r) => r.isAdministrator);
 		const assigns =
 			administratorRoles.length > 0

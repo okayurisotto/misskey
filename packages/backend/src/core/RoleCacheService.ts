@@ -1,22 +1,31 @@
 import { Injectable } from '@nestjs/common';
-import { MemoryKVCache } from '@/misc/MemoryKVCache.js';
-import { MemorySingleCache } from '@/misc/MemorySingleCache.js';
+import { MemorySingleCacheF } from '@/misc/cache/MemorySingleCacheF.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
 import { bindThis } from '@/decorators.js';
+import { MemoryKVCacheF } from '@/misc/cache/MemoryKVCacheF.js';
+import { PrismaService } from './PrismaService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { role, role_assignment } from '@prisma/client';
 
 @Injectable()
 export class RoleCacheService implements OnApplicationShutdown {
-	public readonly rolesCache = new MemorySingleCache<role[]>(
+	public readonly rolesCache = new MemorySingleCacheF<role[]>(
 		1000 * 60 * 60 * 1,
+		async () => await this.prismaService.client.role.findMany(),
 	);
-	public readonly roleAssignmentByUserIdCache = new MemoryKVCache<
+	public readonly roleAssignmentByUserIdCache = new MemoryKVCacheF<
 		role_assignment[]
-	>(1000 * 60 * 60 * 1);
+	>(1000 * 60 * 60 * 1, async (key) => {
+		return await this.prismaService.client.role_assignment.findMany({
+			where: { userId: key },
+		});
+	});
 
-	constructor(private readonly redisForSub: RedisSubService) {
+	constructor(
+		private readonly redisForSub: RedisSubService,
+		private readonly prismaService: PrismaService,
+	) {
 		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.on('message', this.onMessage);
 	}

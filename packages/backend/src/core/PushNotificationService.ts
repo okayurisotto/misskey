@@ -2,7 +2,7 @@ import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import push from 'web-push';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
 import { MetaService } from '@/core/MetaService.js';
-import { RedisKVCache } from '@/misc/RedisKVCache.js';
+import { RedisKVCache } from '@/misc/cache/RedisKVCache.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';

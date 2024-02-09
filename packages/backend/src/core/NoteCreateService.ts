@@ -15,7 +15,7 @@ import type { IPoll } from '@/models/entities/Poll.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import { checkWordMute } from '@/misc/check-word-mute.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
-import { MemorySingleCache } from '@/misc/MemorySingleCache.js';
+import { MemorySingleCacheF } from '@/misc/cache/MemorySingleCacheF.js';
 import { RelayService } from '@/core/RelayService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import NotesChart from '@/core/chart/charts/notes.js';
@@ -55,10 +55,6 @@ import type {
 	user,
 	user_profile,
 } from '@prisma/client';
-
-const mutedWordsCache = new MemorySingleCache<
-	{ userId: user_profile['userId']; mutedWords: user_profile['mutedWords'] }[]
->(1000 * 60 * 5);
 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
@@ -153,6 +149,22 @@ type Option = {
 @Injectable()
 export class NoteCreateService implements OnApplicationShutdown {
 	readonly #shutdownController = new AbortController();
+
+	private readonly mutedWordsCache = new MemorySingleCacheF<
+		{
+			userId: user_profile['userId'];
+			mutedWords: user_profile['mutedWords'];
+		}[]
+	>(1000 * 60 * 5, async () => {
+		return await this.prismaService.client.user_profile
+			.findMany({ where: { enableWordMute: true } })
+			.then((notes) => {
+				return notes.map((note) => ({
+					...note,
+					mutedWords: z.array(z.array(z.string())).parse(note.mutedWords),
+				}));
+			});
+	});
 
 	constructor(
 		private readonly activeUsersChart: ActiveUsersChart,
@@ -543,36 +555,25 @@ export class NoteCreateService implements OnApplicationShutdown {
 		await this.incNotesCountOfUser(user);
 
 		// Word mute
-		mutedWordsCache
-			.fetch(() => {
-				return this.prismaService.client.user_profile
-					.findMany({ where: { enableWordMute: true } })
-					.then((notes) => {
-						return notes.map((note) => ({
-							...note,
-							mutedWords: z.array(z.array(z.string())).parse(note.mutedWords),
-						}));
+		this.mutedWordsCache.fetch().then((us) => {
+			for (const u of us) {
+				const shouldMute = checkWordMute(
+					note,
+					{ id: u.userId },
+					z.array(z.array(z.string())).parse(u.mutedWords),
+				);
+				if (shouldMute) {
+					this.prismaService.client.mutedNote.create({
+						data: {
+							id: this.idService.genId(),
+							userId: u.userId,
+							noteId: note.id,
+							reason: 'word',
+						},
 					});
-			})
-			.then((us) => {
-				for (const u of us) {
-					const shouldMute = checkWordMute(
-						note,
-						{ id: u.userId },
-						z.array(z.array(z.string())).parse(u.mutedWords),
-					);
-					if (shouldMute) {
-						this.prismaService.client.mutedNote.create({
-							data: {
-								id: this.idService.genId(),
-								userId: u.userId,
-								noteId: note.id,
-								reason: 'word',
-							},
-						});
-					}
 				}
-			});
+			}
+		});
 
 		this.antennaService.addNoteToAntennas(note, user);
 

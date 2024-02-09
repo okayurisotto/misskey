@@ -1,32 +1,31 @@
 import { Injectable } from '@nestjs/common';
-import { RedisKVCache } from '@/misc/RedisKVCache.js';
-import { MemoryKVCache } from '@/misc/MemoryKVCache.js';
+import { RedisKVCache } from '@/misc/cache/RedisKVCache.js';
+import { MemoryKVCacheFC } from '@/misc/cache/MemoryKVCacheFC.js';
 import type { LocalUser } from '@/models/entities/User.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
 import { bindThis } from '@/decorators.js';
+import { MemoryKVCacheF } from '@/misc/cache/MemoryKVCacheF.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { user, user_profile } from '@prisma/client';
 
 @Injectable()
 export class CacheService implements OnApplicationShutdown {
-	public userByIdCache: MemoryKVCache<user, user | string>;
-	public localUserByNativeTokenCache: MemoryKVCache<
-		LocalUser | null,
-		string | null
-	>;
-	public localUserByIdCache: MemoryKVCache<LocalUser>;
-	public uriPersonCache: MemoryKVCache<user | null, string | null>;
-	public userProfileCache: RedisKVCache<user_profile>;
-	public userMutingsCache: RedisKVCache<Set<string>>;
-	public userBlockingCache: RedisKVCache<Set<string>>;
-	public userBlockedCache: RedisKVCache<Set<string>>; // NOTE: 「被」Blockキャッシュ
-	public renoteMutingsCache: RedisKVCache<Set<string>>;
-	public userFollowingsCache: RedisKVCache<Set<string>>;
-	public userFollowingChannelsCache: RedisKVCache<Set<string>>;
+	public readonly userByIdCache;
+	public readonly localUserByNativeTokenCache;
+	public readonly localUserByIdCache;
+	public readonly uriPersonCache;
+	public readonly userProfileCache;
+	public readonly userMutingsCache;
+	public readonly userBlockingCache;
+	/** 「被」Blockキャッシュ */
+	public readonly userBlockedCache;
+	public readonly renoteMutingsCache;
+	public readonly userFollowingsCache;
+	public readonly userFollowingChannelsCache;
 
 	constructor(
 		private readonly prismaService: PrismaService,
@@ -34,56 +33,90 @@ export class CacheService implements OnApplicationShutdown {
 		private readonly redisForSub: RedisSubService,
 		private readonly userEntityUtilService: UserEntityUtilService,
 	) {
-		//this.onMessage = this.onMessage.bind(this);
+		/** 6h */
+		const lifetime = 1000 * 60 * 60 * 6;
 
-		const localUserByIdCache = new MemoryKVCache<LocalUser>(
-			1000 * 60 * 60 * 6 /* 6h */,
+		this.localUserByIdCache = new MemoryKVCacheF<LocalUser | null>(
+			lifetime,
+			async (key) => {
+				const result = await this.prismaService.client.user.findUnique({
+					where: { id: key },
+				});
+				if (result === null) return null;
+
+				if (this.userEntityUtilService.isLocalUser(result)) {
+					return result;
+				} else {
+					throw new Error();
+				}
+			},
 		);
-		this.localUserByIdCache = localUserByIdCache;
 
 		// ローカルユーザーならlocalUserByIdCacheにデータを追加し、こちらにはid(文字列)だけを追加する
-		const userByIdCache = new MemoryKVCache<user, user | string>(
-			1000 * 60 * 60 * 6 /* 6h */,
+		this.userByIdCache = new MemoryKVCacheFC<user | null, user | string | null>(
+			lifetime,
+			async (key) => {
+				return await this.prismaService.client.user.findUnique({
+					where: { id: key },
+				});
+			},
 			{
-				toMapConverter: (user): user | string => {
-					if (user.host !== null) return user;
-					localUserByIdCache.set(user.id, user as LocalUser);
-					return user.id;
+				toCache: (user): user | string | null => {
+					if (user === null) return null;
+
+					if (this.userEntityUtilService.isLocalUser(user)) {
+						this.localUserByIdCache.set(user.id, user);
+						return user.id;
+					} else {
+						return user;
+					}
 				},
-				fromMapConverter: (userOrId): user | undefined => {
+				fromCache: (userOrId): user | null | undefined => {
 					if (typeof userOrId !== 'string') return userOrId;
-					return localUserByIdCache.get(userOrId);
+					return this.localUserByIdCache.get(userOrId);
 				},
 			},
 		);
-		this.userByIdCache = userByIdCache;
 
-		this.localUserByNativeTokenCache = new MemoryKVCache<
+		this.localUserByNativeTokenCache = new MemoryKVCacheFC<
 			LocalUser | null,
 			string | null
-		>(Infinity, {
-			toMapConverter: (user): string | null => {
-				if (user === null) return null;
-				localUserByIdCache.set(user.id, user);
-				return user.id;
+		>(
+			null,
+			async (key) => {
+				return (await this.prismaService.client.user.findUnique({
+					where: { token: key },
+				})) as LocalUser | null;
 			},
-			fromMapConverter: (id): LocalUser | undefined | null => {
-				if (id === null) return null;
-				return localUserByIdCache.get(id);
-			},
-		});
-
-		this.uriPersonCache = new MemoryKVCache<user | null, string | null>(
-			Infinity,
 			{
-				toMapConverter: (user): string | null => {
+				toCache: (user): string | null => {
 					if (user === null) return null;
-					userByIdCache.set(user.id, user);
+					this.localUserByIdCache.set(user.id, user);
 					return user.id;
 				},
-				fromMapConverter: (id): user | undefined | null => {
+				fromCache: (id): LocalUser | undefined | null => {
 					if (id === null) return null;
-					return userByIdCache.get(id);
+					return this.localUserByIdCache.get(id);
+				},
+			},
+		);
+
+		this.uriPersonCache = new MemoryKVCacheFC<user | null, string | null>(
+			null,
+			async (key) => {
+				return await this.prismaService.client.user.findFirst({
+					where: { uri: key },
+				});
+			},
+			{
+				toCache: (user): string | null => {
+					if (user === null) return null;
+					this.userByIdCache.set(user.id, user);
+					return user.id;
+				},
+				fromCache: (id): user | undefined | null => {
+					if (id === null) return null;
+					return this.userByIdCache.get(id);
 				},
 			},
 		);
@@ -226,7 +259,7 @@ export class CacheService implements OnApplicationShutdown {
 						where: { id: body.id },
 					});
 					this.userByIdCache.set(user.id, user);
-					for (const [k, v] of this.uriPersonCache.cache.entries()) {
+					for (const [k, v] of this.uriPersonCache.cache.cache.entries()) {
 						if (v.value === user.id) {
 							this.uriPersonCache.set(k, user);
 						}
@@ -259,12 +292,8 @@ export class CacheService implements OnApplicationShutdown {
 		}
 	}
 
-	public findUserById(userId: user['id']): Promise<user> {
-		return this.userByIdCache.fetch(userId, () =>
-			this.prismaService.client.user.findUniqueOrThrow({
-				where: { id: userId },
-			}),
-		);
+	public findUserById(userId: user['id']): Promise<user | null> {
+		return this.userByIdCache.fetch(userId);
 	}
 
 	public dispose(): void {

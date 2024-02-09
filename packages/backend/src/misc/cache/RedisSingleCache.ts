@@ -69,14 +69,12 @@ export class RedisSingleCache<T> {
 
 		// Cache MISS
 		const value = await this.fetcher();
-		this.set(value);
+		await this.set(value);
 		return value;
 	}
 
 	public async refresh(): Promise<void> {
 		const value = await this.fetcher();
-		this.set(value);
-
-		// TODO: イベント発行して他プロセスのメモリキャッシュも更新できるようにする
+		await this.set(value);
 	}
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { RedisSingleCache } from '@/misc/RedisSingleCache.js';
+import { RedisSingleCache } from '@/misc/cache/RedisSingleCache.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
 import type { CustomEmoji } from '@prisma/client';

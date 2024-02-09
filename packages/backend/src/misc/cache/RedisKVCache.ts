@@ -69,15 +69,13 @@ export class RedisKVCache<T> {
 
 		// Cache MISS
 		const value = await this.fetcher(key);
-		this.set(key, value);
+		await this.set(key, value);
 		return value;
 	}
 
 	public async refresh(key: string): Promise<void> {
 		const value = await this.fetcher(key);
-		this.set(key, value);
-
-		// TODO: イベント発行して他プロセスのメモリキャッシュも更新できるようにする
+		await this.set(key, value);
 	}
 
 	public gc(): void {

@@ -22,21 +22,9 @@ export class ApDbResolverService {
 		user: RemoteUser;
 		key: user_publickey;
 	} | null> {
-		const key = await this.apDbResolverCacheService.publicKeyCache.fetch(
-			keyId,
-			async () => {
-				const key = await this.prismaService.client.user_publickey.findUnique({
-					where: { keyId },
-				});
+		const key = await this.apDbResolverCacheService.publicKeyCache.fetch(keyId);
 
-				if (key == null) return null;
-
-				return key;
-			},
-			(key) => key != null,
-		);
-
-		if (key == null) return null;
+		if (key === undefined) return null;
 
 		return {
 			user: (await this.cacheService.findUserById(key.userId)) as RemoteUser,
@@ -54,18 +42,11 @@ export class ApDbResolverService {
 		const user = (await this.apPersonResolveService.resolve(uri)) as RemoteUser;
 
 		const key =
-			await this.apDbResolverCacheService.publicKeyByUserIdCache.fetch(
-				user.id,
-				() =>
-					this.prismaService.client.user_publickey.findUnique({
-						where: { userId: user.id },
-					}),
-				(v) => v != null,
-			);
+			await this.apDbResolverCacheService.publicKeyByUserIdCache.fetch(user.id);
 
 		return {
 			user,
-			key,
+			key: key ?? null,
 		};
 	}
 }

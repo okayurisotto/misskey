@@ -58,13 +58,8 @@ export class RoleService {
 
 	public async getUserAssigns(userId: user['id']): Promise<role_assignment[]> {
 		const now = Date.now();
-		let assigns = await this.roleCacheService.roleAssignmentByUserIdCache.fetch(
-			userId,
-			() =>
-				this.prismaService.client.role_assignment.findMany({
-					where: { userId },
-				}),
-		);
+		let assigns =
+			await this.roleCacheService.roleAssignmentByUserIdCache.fetch(userId);
 		// 期限切れのロールを除外
 		assigns = assigns.filter(
 			(a) => a.expiresAt == null || a.expiresAt.getTime() > now,
@@ -73,9 +68,7 @@ export class RoleService {
 	}
 
 	public async getUserRoles(userId: user['id']): Promise<role[]> {
-		const roles = await this.roleCacheService.rolesCache.fetch(() =>
-			this.prismaService.client.role.findMany(),
-		);
+		const roles = await this.roleCacheService.rolesCache.fetch();
 		const assigns = await this.getUserAssigns(userId);
 		const assignedRoles = roles.filter((r) =>
 			assigns.map((x) => x.roleId).includes(r.id),

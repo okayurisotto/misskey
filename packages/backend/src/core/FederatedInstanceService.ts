@@ -1,5 +1,5 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
-import { RedisKVCache } from '@/misc/RedisKVCache.js';
+import { RedisKVCache } from '@/misc/cache/RedisKVCache.js';
 import { IdService } from '@/core/IdService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';

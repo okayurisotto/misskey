@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { LocalUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
-import { MemorySingleCache } from '@/misc/MemorySingleCache.js';
+import { MemorySingleCacheF } from '@/misc/cache/MemorySingleCacheF.js';
 import { QueueService } from '@/core/QueueService.js';
 import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
@@ -13,7 +13,14 @@ const ACTOR_USERNAME = 'relay.actor' as const;
 
 @Injectable()
 export class RelayService {
-	private readonly relaysCache: MemorySingleCache<relay[]>;
+	private readonly relaysCache = new MemorySingleCacheF<relay[]>(
+		1000 * 60 * 10,
+		async () => {
+			return await this.prismaService.client.relay.findMany({
+				where: { status: 'accepted' },
+			});
+		},
+	);
 
 	constructor(
 		private readonly apRendererService: ApRendererService,
@@ -21,9 +28,7 @@ export class RelayService {
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
 		private readonly queueService: QueueService,
-	) {
-		this.relaysCache = new MemorySingleCache<relay[]>(1000 * 60 * 10);
-	}
+	) {}
 
 	private async getRelayActor(): Promise<LocalUser> {
 		const user = await this.prismaService.client.user.findFirst({
@@ -107,11 +112,7 @@ export class RelayService {
 	): Promise<void> {
 		if (activity == null) return;
 
-		const relays = await this.relaysCache.fetch(() =>
-			this.prismaService.client.relay.findMany({
-				where: { status: 'accepted' },
-			}),
-		);
+		const relays = await this.relaysCache.fetch();
 		if (relays.length === 0) return;
 
 		const copy = deepClone(activity);
