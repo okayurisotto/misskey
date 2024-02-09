@@ -32,7 +32,7 @@ export default class extends Endpoint<
 			});
 
 			const [favorite, threadMuting] = await Promise.all([
-				this.prismaService.client.note_favorite.count({
+				this.prismaService.client.noteFavorite.count({
 					where: {
 						userId: me.id,
 						noteId: note.id,

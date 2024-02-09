@@ -25,7 +25,7 @@ export default class extends Endpoint<
 > {
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			await this.prismaService.client.note_favorite.delete({
+			await this.prismaService.client.noteFavorite.delete({
 				where: { userId_noteId: { noteId: ps.noteId, userId: me.id } },
 			});
 		});

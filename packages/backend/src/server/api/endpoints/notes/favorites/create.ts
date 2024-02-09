@@ -40,7 +40,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const favorite = await this.prismaService.client.note_favorite.create({
+			const favorite = await this.prismaService.client.noteFavorite.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),

@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { NoteEntityPackService } from './NoteEntityPackService.js';
-import type { note_favorite, user } from '@prisma/client';
+import type { NoteFavorite, user } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -20,7 +20,7 @@ export class NoteFavoriteEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: note_favorite['id'] | note_favorite,
+		src: NoteFavorite['id'] | NoteFavorite,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<{
 		id: string;
@@ -31,7 +31,7 @@ export class NoteFavoriteEntityService {
 		const favorite =
 			typeof src === 'object'
 				? src
-				: await this.prismaService.client.note_favorite.findUniqueOrThrow({
+				: await this.prismaService.client.noteFavorite.findUniqueOrThrow({
 						where: { id: src },
 				  });
 

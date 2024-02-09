@@ -39,7 +39,7 @@ export class ExportFavoritesProcessorService {
 		this.logger.info(`Temp file is ${path}`);
 
 		try {
-			const favorites = await this.prismaService.client.note_favorite.findMany({
+			const favorites = await this.prismaService.client.noteFavorite.findMany({
 				where: { userId: user.id },
 				include: { note: { include: { user: true, poll: true } } },
 				orderBy: { id: 'asc' },

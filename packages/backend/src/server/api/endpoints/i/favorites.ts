@@ -37,7 +37,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const favorites = await this.prismaService.client.note_favorite.findMany({
+			const favorites = await this.prismaService.client.noteFavorite.findMany({
 				where: { AND: [paginationQuery.where, { userId: me.id }] },
 				orderBy: paginationQuery.orderBy,
 				take: ps.limit,
