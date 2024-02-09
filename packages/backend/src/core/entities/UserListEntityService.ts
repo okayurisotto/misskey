@@ -8,7 +8,7 @@ import type { user_list, user_list_joining } from '@prisma/client';
 @Injectable()
 export class UserListEntityService {
 	public pack(
-		id: user_list['id'],
+		id: string,
 		data: {
 			user_list: EntityMap<'id', user_list>;
 			user_list_joining: EntityMap<'id', user_list_joining>;

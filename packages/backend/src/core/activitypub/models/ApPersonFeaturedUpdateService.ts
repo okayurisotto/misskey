@@ -39,7 +39,7 @@ export class ApPersonFeaturedUpdateService implements OnModuleInit {
 		this.apNoteService = this.moduleRef.get('ApNoteService');
 	}
 
-	public async update(userId: user['id'], resolver?: Resolver): Promise<void> {
+	public async update(userId: string, resolver?: Resolver): Promise<void> {
 		const user = await this.prismaService.client.user.findUniqueOrThrow({
 			where: { id: userId },
 		});

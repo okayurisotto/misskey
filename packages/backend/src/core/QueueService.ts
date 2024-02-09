@@ -317,7 +317,7 @@ export class QueueService {
 
 	public createImportFollowingJob(
 		user: ThinUser,
-		fileId: DriveFile['id'],
+		fileId: string,
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importFollowing',
@@ -344,7 +344,7 @@ export class QueueService {
 
 	public createImportMutingJob(
 		user: ThinUser,
-		fileId: DriveFile['id'],
+		fileId: string,
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importMuting',
@@ -361,7 +361,7 @@ export class QueueService {
 
 	public createImportBlockingJob(
 		user: ThinUser,
-		fileId: DriveFile['id'],
+		fileId: string,
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importBlocking',
@@ -409,7 +409,7 @@ export class QueueService {
 
 	public createImportUserListsJob(
 		user: ThinUser,
-		fileId: DriveFile['id'],
+		fileId: string,
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importUserLists',
@@ -426,7 +426,7 @@ export class QueueService {
 
 	public createImportCustomEmojisJob(
 		user: ThinUser,
-		fileId: DriveFile['id'],
+		fileId: string,
 	): Promise<Bull.Job<unknown>> {
 		return this.dbQueue.add(
 			'importCustomEmojis',

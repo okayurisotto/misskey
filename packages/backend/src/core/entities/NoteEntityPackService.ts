@@ -192,9 +192,9 @@ export class NoteEntityPackService {
 	 */
 	private async populateMyReaction(
 		note: Note,
-		meId: user['id'],
+		meId: string,
 		_hint_?: {
-			myReactions: Map<Note['id'], NoteReaction | null>;
+			myReactions: Map<string, NoteReaction | null>;
 		},
 	): Promise<string | undefined> {
 		if (_hint_?.myReactions) {
@@ -273,7 +273,7 @@ export class NoteEntityPackService {
 			detail?: boolean;
 			skipHide?: boolean;
 			_hint_?: {
-				myReactions: Map<Note['id'], NoteReaction | null>;
+				myReactions: Map<string, NoteReaction | null>;
 				packedFiles: Map<
 					Note['fileIds'][number],
 					z.infer<typeof DriveFileSchema> | null
@@ -452,7 +452,7 @@ export class NoteEntityPackService {
 		const meId = me ? me.id : null;
 
 		/** `_hint_.myReactions`として渡すためのもの */
-		const myReactionsMap = new Map<Note['id'], NoteReaction | null>();
+		const myReactionsMap = new Map<string, NoteReaction | null>();
 		if (meId) {
 			const renoteIds = notes.map((n) => n.renoteId).filter(isNotNull);
 			// パフォーマンスのためノートが作成されてから1秒以上経っていない場合はリアクションを取得しない

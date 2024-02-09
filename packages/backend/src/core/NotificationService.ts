@@ -25,7 +25,7 @@ export class NotificationService implements OnApplicationShutdown {
 	) {}
 
 	public async readAllNotification(
-		userId: user['id'],
+		userId: string,
 		force = false,
 	): Promise<void> {
 		const latestReadNotificationId = await this.redisClient.get(
@@ -67,7 +67,7 @@ export class NotificationService implements OnApplicationShutdown {
 	}
 
 	public async createNotification(
-		notifieeId: user['id'],
+		notifieeId: string,
 		type: Notification['type'],
 		data: Partial<Omit<Notification, 'id' | 'createdAt' | 'type'>>,
 	): Promise<Notification | null> {
@@ -171,7 +171,7 @@ export class NotificationService implements OnApplicationShutdown {
 	// TODO: locale ファイルをクライアント用とサーバー用で分けたい
 
 	private async emailNotificationFollow(
-		userId: user['id'],
+		userId: string,
 		follower: user,
 	): Promise<void> {
 		/*
@@ -185,7 +185,7 @@ export class NotificationService implements OnApplicationShutdown {
 	}
 
 	private async emailNotificationReceiveFollowRequest(
-		userId: user['id'],
+		userId: string,
 		follower: user,
 	): Promise<void> {
 		/*

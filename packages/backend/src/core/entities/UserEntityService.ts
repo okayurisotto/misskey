@@ -50,8 +50,8 @@ export class UserEntityService {
 	 * @returns
 	 */
 	public async getRelation(
-		meId: user['id'],
-		targetId: user['id'],
+		meId: string,
+		targetId: string,
 	): Promise<z.infer<typeof UserRelationSchema> & { id: string }> {
 		const [me, isRenoteMuted] = await Promise.all([
 			this.prismaService.client.user.findUniqueOrThrow({
@@ -153,7 +153,7 @@ export class UserEntityService {
 	}
 
 	private async packDetailsOnly(
-		userId: user['id'],
+		userId: string,
 		meId: user['id'] | null,
 		data: {
 			user: user[];

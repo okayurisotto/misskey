@@ -14,7 +14,7 @@ export class AntennaEntityService {
 	 * 現状、`hasUnreadNote`は常に`false`になる。
 	 */
 	public pack(
-		id: Antenna['id'],
+		id: string,
 		data: { antenna: EntityMap<'id', Antenna> },
 	): z.infer<typeof AntennaSchema> {
 		const antenna = data.antenna.get(id);

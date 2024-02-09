@@ -64,7 +64,7 @@ export class GlobalEventService {
 	}
 
 	public publishMainStream<K extends keyof MainStreamTypes>(
-		userId: user['id'],
+		userId: string,
 		type: K,
 		value?: MainStreamTypes[K],
 	): void {
@@ -76,7 +76,7 @@ export class GlobalEventService {
 	}
 
 	public publishDriveStream<K extends keyof DriveStreamTypes>(
-		userId: user['id'],
+		userId: string,
 		type: K,
 		value?: DriveStreamTypes[K],
 	): void {
@@ -88,7 +88,7 @@ export class GlobalEventService {
 	}
 
 	public publishNoteStream<K extends keyof NoteStreamTypesBody>(
-		noteId: Note['id'],
+		noteId: string,
 		type: K,
 		value?: NoteStreamTypesBody[K],
 	): void {
@@ -99,7 +99,7 @@ export class GlobalEventService {
 	}
 
 	public publishUserListStream<K extends keyof UserListStreamTypes>(
-		listId: user_list['id'],
+		listId: string,
 		type: K,
 		value?: UserListStreamTypes[K],
 	): void {
@@ -111,7 +111,7 @@ export class GlobalEventService {
 	}
 
 	public publishAntennaStream<K extends keyof AntennaStreamTypes>(
-		antennaId: Antenna['id'],
+		antennaId: string,
 		type: K,
 		value?: AntennaStreamTypes[K],
 	): void {
@@ -123,7 +123,7 @@ export class GlobalEventService {
 	}
 
 	public publishRoleTimelineStream<K extends keyof RoleTimelineStreamTypes>(
-		roleId: role['id'],
+		roleId: string,
 		type: K,
 		value?: RoleTimelineStreamTypes[K],
 	): void {
@@ -139,7 +139,7 @@ export class GlobalEventService {
 	}
 
 	public publishAdminStream<K extends keyof AdminStreamTypes>(
-		userId: user['id'],
+		userId: string,
 		type: K,
 		value?: AdminStreamTypes[K],
 	): void {

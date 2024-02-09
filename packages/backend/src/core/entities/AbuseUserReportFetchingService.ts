@@ -21,7 +21,7 @@ export class AbuseUserReportFetchingService {
 	) {}
 
 	private async pack(
-		id: AbuseUserReport['id'],
+		id: string,
 		data: AbuseUserReportPackData,
 	): Promise<z.infer<typeof AbuseUserReportSchema>> {
 		const report = data.report.get(id);

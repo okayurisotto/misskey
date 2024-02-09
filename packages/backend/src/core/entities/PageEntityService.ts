@@ -36,7 +36,7 @@ export class PageEntityService {
 
 		const collectFiles = (
 			xs: z.infer<typeof PageContentSchema>,
-			userId: user['id'],
+			userId: string,
 		): Promise<DriveFile | null>[] => {
 			return xs
 				.map((x) => {

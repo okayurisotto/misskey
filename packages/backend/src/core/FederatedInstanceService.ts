@@ -74,7 +74,7 @@ export class FederatedInstanceService implements OnApplicationShutdown {
 	}
 
 	public async update(
-		id: Instance['id'],
+		id: string,
 		data: Partial<Instance>,
 	): Promise<void> {
 		const result = await this.prismaService.client.instance.update({

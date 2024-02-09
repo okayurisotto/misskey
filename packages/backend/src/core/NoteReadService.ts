@@ -18,7 +18,7 @@ export class NoteReadService implements OnApplicationShutdown {
 	) {}
 
 	public async insertNoteUnread(
-		userId: user['id'],
+		userId: string,
 		note: Note,
 		params: {
 			// NOTE: isSpecifiedがtrueならisMentionedは必ずfalse
@@ -90,7 +90,7 @@ export class NoteReadService implements OnApplicationShutdown {
 	}
 
 	public async read(
-		userId: user['id'],
+		userId: string,
 		notes: (Note | z.infer<typeof NoteSchema>)[],
 	): Promise<void> {
 		const readMentions: (Note | z.infer<typeof NoteSchema>)[] = [];

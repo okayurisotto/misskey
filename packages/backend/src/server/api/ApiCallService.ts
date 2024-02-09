@@ -30,7 +30,7 @@ const accessDenied = {
 @Injectable()
 export class ApiCallService implements OnApplicationShutdown {
 	private readonly logger: Logger;
-	private readonly userIpHistories: Map<user['id'], Set<string>>;
+	private readonly userIpHistories: Map<string, Set<string>>;
 	private readonly userIpHistoriesClearIntervalId: NodeJS.Timer;
 
 	constructor(
@@ -42,7 +42,7 @@ export class ApiCallService implements OnApplicationShutdown {
 		private readonly prismaService: PrismaService,
 	) {
 		this.logger = this.apiLoggerService.logger;
-		this.userIpHistories = new Map<user['id'], Set<string>>();
+		this.userIpHistories = new Map<string, Set<string>>();
 
 		this.userIpHistoriesClearIntervalId = setInterval(() => {
 			this.userIpHistories.clear();

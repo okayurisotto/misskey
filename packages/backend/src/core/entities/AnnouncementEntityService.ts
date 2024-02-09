@@ -82,7 +82,7 @@ export class AnnouncementEntityService {
 	}
 
 	public pack(
-		id: Announcement['id'],
+		id: string,
 		data: AnnouncementPackData,
 	): z.infer<typeof AnnouncementForAdminSchema> {
 		const announcement = data.announcement.get(id);

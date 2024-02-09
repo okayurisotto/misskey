@@ -63,8 +63,8 @@ export class AppEntityService {
 	}
 
 	public isAuthorized(
-		appId: App['id'],
-		userId: user['id'],
+		appId: string,
+		userId: string,
 		tokens: access_token[],
 	): boolean {
 		return tokens.some((token) => {
@@ -75,7 +75,7 @@ export class AppEntityService {
 	}
 
 	public packLite(
-		id: App['id'],
+		id: string,
 		data: { app: EntityMap<'id', App> },
 	): z.infer<typeof AppLiteSchema> {
 		const app = data.app.get(id);
@@ -83,7 +83,7 @@ export class AppEntityService {
 	}
 
 	public packSecretOnly(
-		id: App['id'],
+		id: string,
 		data: { app: EntityMap<'id', App> },
 	): z.infer<typeof AppSecretOnlySchema> {
 		const app = data.app.get(id);
@@ -91,8 +91,8 @@ export class AppEntityService {
 	}
 
 	public packAuthorizedOnly(
-		appId: App['id'],
-		userId: user['id'],
+		appId: string,
+		userId: string,
 		data: {
 			access_token: EntityMap<'id', access_token>;
 		},

@@ -35,11 +35,11 @@ export class NotificationEntityService  {
 	 */
 	public async pack(
 		notification: Notification,
-		meId: user['id'],
+		meId: string,
 		_options: Record<PropertyKey, never>,
 		hint?: {
-			packedNotes: Map<Note['id'], z.infer<typeof NoteSchema>>;
-			packedUsers: Map<user['id'], z.infer<typeof UserSchema>>;
+			packedNotes: Map<string, z.infer<typeof NoteSchema>>;
+			packedUsers: Map<string, z.infer<typeof UserSchema>>;
 		},
 	): Promise<z.infer<typeof NotificationSchema>> {
 		const getToken = async (): Promise<access_token | null> => {
@@ -120,7 +120,7 @@ export class NotificationEntityService  {
 	 */
 	public async packMany(
 		notifications: Notification[],
-		meId: user['id'],
+		meId: string,
 	): Promise<z.infer<typeof NotificationSchema>[]> {
 		if (notifications.length === 0) return [];
 

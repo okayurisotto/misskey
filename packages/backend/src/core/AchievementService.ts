@@ -95,7 +95,7 @@ export class AchievementService {
 	) {}
 
 	public async create(
-		userId: user['id'],
+		userId: string,
 		type: (typeof ACHIEVEMENT_TYPES)[number],
 	): Promise<void> {
 		if (!ACHIEVEMENT_TYPES.includes(type)) return;

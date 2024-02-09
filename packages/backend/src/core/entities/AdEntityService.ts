@@ -64,14 +64,14 @@ export class AdEntityService {
 	}
 
 	public packLite(
-		id: Ad['id'],
+		id: string,
 		data: AdLitePackData,
 	): z.infer<typeof AdLiteSchema> {
 		const ad = data.ad.get(id);
 		return pick(ad, ['id', 'dayOfWeek', 'imageUrl', 'place', 'ratio', 'url']);
 	}
 
-	public pack(id: Ad['id'], data: AdPackData): z.infer<typeof AdSchema> {
+	public pack(id: string, data: AdPackData): z.infer<typeof AdSchema> {
 		const ad = data.ad.get(id);
 
 		return {

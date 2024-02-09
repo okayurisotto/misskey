@@ -81,7 +81,7 @@ class NotificationManager {
 		this.queue = [];
 	}
 
-	public push(notifiee: LocalUser['id'], reason: NotificationType): void {
+	public push(notifiee: string, reason: NotificationType): void {
 		// 自分自身へは通知しない
 		if (this.notifier.id === notifiee) return;
 

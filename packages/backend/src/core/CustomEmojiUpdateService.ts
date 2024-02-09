@@ -16,7 +16,7 @@ export class CustomEmojiUpdateService {
 	) {}
 
 	public async update(
-		id: CustomEmoji['id'],
+		id: string,
 		data: {
 			driveFile?: DriveFile;
 			name?: string;

@@ -8,7 +8,7 @@ import type { CustomEmoji } from '@prisma/client';
 @Injectable()
 export class EmojiEntityService {
 	public packSimple(
-		id: CustomEmoji['id'],
+		id: string,
 		data: { emoji: EntityMap<'id', CustomEmoji> },
 	): z.infer<typeof EmojiSimpleSchema> {
 		const emoji = data.emoji.get(id);
@@ -27,7 +27,7 @@ export class EmojiEntityService {
 	}
 
 	public packDetailed(
-		id: CustomEmoji['id'],
+		id: string,
 		data: { emoji: EntityMap<'id', CustomEmoji> },
 	): z.infer<typeof EmojiDetailedSchema> {
 		const emoji = data.emoji.get(id);

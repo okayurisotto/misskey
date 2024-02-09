@@ -85,8 +85,8 @@ export class RoleUtilService {
 	}
 
 	public async assign(
-		userId: user['id'],
-		roleId: role['id'],
+		userId: string,
+		roleId: string,
 		expiresAt: Date | null = null,
 	): Promise<void> {
 		const now = new Date();
@@ -135,7 +135,7 @@ export class RoleUtilService {
 		this.globalEventService.publishInternalEvent('userRoleAssigned', created);
 	}
 
-	public async unassign(userId: user['id'], roleId: role['id']): Promise<void> {
+	public async unassign(userId: string, roleId: role['id']): Promise<void> {
 		const now = new Date();
 
 		const existing = await this.prismaService.client.role_assignment.findUnique(

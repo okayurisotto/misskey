@@ -30,7 +30,7 @@ export class NotePiningService {
 	 */
 	public async addPinned(
 		user: { id: user['id']; host: user['host'] },
-		noteId: Note['id'],
+		noteId: string,
 	): Promise<void> {
 		// Fetch pinee
 		const note = await this.prismaService.client.note.findUnique({
@@ -90,7 +90,7 @@ export class NotePiningService {
 	 */
 	public async removePinned(
 		user: { id: user['id']; host: user['host'] },
-		noteId: Note['id'],
+		noteId: string,
 	): Promise<void> {
 		// Fetch unpinee
 		const note = await this.prismaService.client.note.findUnique({
@@ -123,8 +123,8 @@ export class NotePiningService {
 	}
 
 	public async deliverPinnedChange(
-		userId: user['id'],
-		noteId: Note['id'],
+		userId: string,
+		noteId: string,
 		isAddition: boolean,
 	): Promise<void> {
 		const user = await this.prismaService.client.user.findUnique({

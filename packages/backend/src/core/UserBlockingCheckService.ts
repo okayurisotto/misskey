@@ -7,8 +7,8 @@ export class UserBlockingCheckService {
 	constructor(private readonly cacheService: CacheService) {}
 
 	public async check(
-		blockerId: user['id'],
-		blockeeId: user['id'],
+		blockerId: string,
+		blockeeId: string,
 	): Promise<boolean> {
 		return (await this.cacheService.userBlockingCache.fetch(blockerId)).has(
 			blockeeId,
