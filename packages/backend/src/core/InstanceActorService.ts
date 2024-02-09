@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { LocalUser } from '@/models/entities/User.js';
-import { MemorySingleCache } from '@/misc/cache.js';
+import { MemorySingleCache } from '@/misc/MemorySingleCache.js';
 import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 

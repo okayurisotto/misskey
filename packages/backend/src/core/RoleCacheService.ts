@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { MemoryKVCache, MemorySingleCache } from '@/misc/cache.js';
+import { MemoryKVCache } from '@/misc/MemoryKVCache.js';
+import { MemorySingleCache } from '@/misc/MemorySingleCache.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
 import { bindThis } from '@/decorators.js';

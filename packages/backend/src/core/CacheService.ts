@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { MemoryKVCache, RedisKVCache } from '@/misc/cache.js';
+import { RedisKVCache } from '@/misc/RedisKVCache.js';
+import { MemoryKVCache } from '@/misc/MemoryKVCache.js';
 import type { LocalUser } from '@/models/entities/User.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import { PrismaService } from '@/core/PrismaService.js';

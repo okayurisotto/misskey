@@ -1,5 +1,5 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
-import { MemoryKVCache } from '@/misc/cache.js';
+import { MemoryKVCache } from '@/misc/MemoryKVCache.js';
 import type { user_publickey } from '@prisma/client';
 
 @Injectable()

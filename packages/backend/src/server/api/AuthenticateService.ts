@@ -1,6 +1,6 @@
 import { Injectable, OnApplicationShutdown } from '@nestjs/common';
 import type { LocalUser } from '@/models/entities/User.js';
-import { MemoryKVCache } from '@/misc/cache.js';
+import { MemoryKVCache } from '@/misc/MemoryKVCache.js';
 import { CacheService } from '@/core/CacheService.js';
 import isNativeToken from '@/misc/is-native-token.js';
 import { PrismaService } from '@/core/PrismaService.js';

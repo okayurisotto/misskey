@@ -4,7 +4,7 @@ import { MetaService } from '@/core/MetaService.js';
 import { ApRequestService } from '@/core/activitypub/ApRequestService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import { FetchInstanceMetadataService } from '@/core/FetchInstanceMetadataService.js';
-import { MemorySingleCache } from '@/misc/cache.js';
+import { MemorySingleCache } from '@/misc/MemorySingleCache.js';
 import InstanceChart from '@/core/chart/charts/instance.js';
 import ApRequestChart from '@/core/chart/charts/ap-request.js';
 import FederationChart from '@/core/chart/charts/federation.js';

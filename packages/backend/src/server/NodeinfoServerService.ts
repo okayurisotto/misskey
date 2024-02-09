@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { MetaService } from '@/core/MetaService.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
-import { MemorySingleCache } from '@/misc/cache.js';
+import { MemorySingleCache } from '@/misc/MemorySingleCache.js';
 import NotesChart from '@/core/chart/charts/notes.js';
 import UsersChart from '@/core/chart/charts/users.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';

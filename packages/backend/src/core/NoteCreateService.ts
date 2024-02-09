@@ -15,7 +15,7 @@ import type { IPoll } from '@/models/entities/Poll.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import { checkWordMute } from '@/misc/check-word-mute.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
-import { MemorySingleCache } from '@/misc/cache.js';
+import { MemorySingleCache } from '@/misc/MemorySingleCache.js';
 import { RelayService } from '@/core/RelayService.js';
 import { FederatedInstanceService } from '@/core/FederatedInstanceService.js';
 import NotesChart from '@/core/chart/charts/notes.js';
