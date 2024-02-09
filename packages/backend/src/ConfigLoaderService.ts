@@ -145,11 +145,7 @@ export type Config = z.infer<typeof SourceSchema> & Mixin;
 @Injectable()
 export class ConfigLoaderService {
 	/** 設定内容 */
-	public readonly data;
-
-	constructor() {
-		this.data = this.loadConfig();
-	}
+	public readonly data = this.loadConfig();
 
 	/**
 	 * ファイルでされた設定を、`ioredis`の`Redis`クラスのコンストラクタに渡す設定に変換する。
