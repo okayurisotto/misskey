@@ -43,7 +43,7 @@ import type { OnApplicationShutdown } from '@nestjs/common';
 	],
 })
 export class GlobalModule implements OnApplicationShutdown {
-	async onApplicationShutdown(): Promise<void> {
+	public async onApplicationShutdown(): Promise<void> {
 		if (NODE_ENV === 'test') {
 			// XXX:
 			// Shutting down the existing connections causes errors on Jest as

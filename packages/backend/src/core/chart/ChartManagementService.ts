@@ -61,7 +61,7 @@ export class ChartManagementService implements OnApplicationShutdown {
 		}, INTERVAL);
 	}
 
-	async onApplicationShutdown(): Promise<void> {
+	public async onApplicationShutdown(): Promise<void> {
 		clearInterval(this.saveIntervalId);
 
 		if (NODE_ENV !== 'test') {

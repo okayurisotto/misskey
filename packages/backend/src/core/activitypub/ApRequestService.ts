@@ -26,7 +26,7 @@ type PrivateKey = {
 };
 
 export class ApRequestCreator {
-	static createSignedPost(args: {
+	public static createSignedPost(args: {
 		key: PrivateKey;
 		url: string;
 		body: string;
@@ -67,7 +67,7 @@ export class ApRequestCreator {
 		};
 	}
 
-	static createSignedGet(args: {
+	public static createSignedGet(args: {
 		key: PrivateKey;
 		url: string;
 		additionalHeaders: Record<string, string>;

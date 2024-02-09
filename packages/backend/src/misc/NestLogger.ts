@@ -8,7 +8,7 @@ export class NestLogger implements LoggerService {
 	/**
 	 * Write a 'log' level log.
 	 */
-	log(message: unknown, ...optionalParams: unknown[]): void {
+	public log(message: unknown, ...optionalParams: unknown[]): void {
 		const ctx = optionalParams[0];
 		this.logger.info(ctx + ': ' + message);
 	}
@@ -16,7 +16,7 @@ export class NestLogger implements LoggerService {
 	/**
 	 * Write an 'error' level log.
 	 */
-	error(message: unknown, ...optionalParams: unknown[]): void {
+	public error(message: unknown, ...optionalParams: unknown[]): void {
 		const ctx = optionalParams[0];
 		this.logger.error(ctx + ': ' + message);
 	}
@@ -24,7 +24,7 @@ export class NestLogger implements LoggerService {
 	/**
 	 * Write a 'warn' level log.
 	 */
-	warn(message: unknown, ...optionalParams: unknown[]): void {
+	public warn(message: unknown, ...optionalParams: unknown[]): void {
 		const ctx = optionalParams[0];
 		this.logger.warn(ctx + ': ' + message);
 	}
@@ -32,7 +32,7 @@ export class NestLogger implements LoggerService {
 	/**
 	 * Write a 'debug' level log.
 	 */
-	debug?(message: unknown, ...optionalParams: unknown[]): void {
+	public debug?(message: unknown, ...optionalParams: unknown[]): void {
 		if (NODE_ENV === 'production') return;
 
 		const ctx = optionalParams[0];
@@ -42,7 +42,7 @@ export class NestLogger implements LoggerService {
 	/**
 	 * Write a 'verbose' level log.
 	 */
-	verbose?(message: unknown, ...optionalParams: unknown[]): void {
+	public verbose?(message: unknown, ...optionalParams: unknown[]): void {
 		if (NODE_ENV === 'production') return;
 
 		const ctx = optionalParams[0];

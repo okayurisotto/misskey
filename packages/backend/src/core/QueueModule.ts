@@ -162,7 +162,7 @@ export class QueueModule implements OnApplicationShutdown {
 		]);
 	}
 
-	async onApplicationShutdown(): Promise<void> {
+	public async onApplicationShutdown(): Promise<void> {
 		await this.dispose();
 	}
 }

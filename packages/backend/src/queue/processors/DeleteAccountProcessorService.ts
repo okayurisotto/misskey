@@ -24,13 +24,13 @@ export class DeleteAccountProcessorService {
 			this.queueLoggerService.logger.createSubLogger('delete-account');
 	}
 
-	async deleteNotes(notes: Note[]): Promise<void> {
+	private async deleteNotes(notes: Note[]): Promise<void> {
 		await this.prismaService.client.note.deleteMany({
 			where: { id: { in: notes.map(({ id }) => id) } },
 		});
 	}
 
-	async unindexNotes(notes: Note[]): Promise<void> {
+	private async unindexNotes(notes: Note[]): Promise<void> {
 		await Promise.all(
 			notes.map(async (note) => {
 				await this.searchService.unindexNote(note);
@@ -38,7 +38,7 @@ export class DeleteAccountProcessorService {
 		);
 	}
 
-	async deleteFiles(files: DriveFile[]): Promise<void> {
+	private async deleteFiles(files: DriveFile[]): Promise<void> {
 		await Promise.all(
 			files.map(async (file) => {
 				await this.driveFileDeleteService.delete(file);

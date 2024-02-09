@@ -38,6 +38,7 @@ module.exports = {
 		/* typescript */
 		// 厳しくしているもの
 		'@typescript-eslint/explicit-function-return-type': ['error'],
+		'@typescript-eslint/explicit-member-accessibility': ['error', { overrides: { constructors: 'off' } }],
 		'@typescript-eslint/naming-convention': ['error', { selector: 'typeLike', format: ['PascalCase'] }, { selector: 'typeParameter', format: [] }],
 		'@typescript-eslint/no-inferrable-types': ['error'],
 		'@typescript-eslint/prefer-readonly': ['error'],

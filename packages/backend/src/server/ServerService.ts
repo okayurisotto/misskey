@@ -341,7 +341,7 @@ export class ServerService implements OnApplicationShutdown {
 		await this.fastify?.close();
 	}
 
-	async onApplicationShutdown(): Promise<void> {
+	public async onApplicationShutdown(): Promise<void> {
 		await this.dispose();
 	}
 }
