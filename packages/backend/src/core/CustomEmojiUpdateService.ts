@@ -3,13 +3,11 @@ import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
-import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
 import type { role, DriveFile } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiUpdateService {
 	constructor(
-		private readonly customEmojiLocalCacheService: CustomEmojiLocalCacheService,
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
@@ -60,8 +58,6 @@ export class CustomEmojiUpdateService {
 					data.roleIdsThatCanBeUsedThisEmojiAsReaction ?? undefined,
 			},
 		});
-
-		await this.customEmojiLocalCacheService.refresh();
 
 		const updated = this.emojiEntityService.packDetailed(emoji.id, {
 			emoji: new EntityMap('id', [emoji]),

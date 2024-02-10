@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserMuting, user } from '@prisma/client';
 
@@ -8,7 +7,6 @@ import type { UserMuting, user } from '@prisma/client';
 export class UserMutingService {
 	constructor(
 		private readonly idService: IdService,
-		private readonly cacheService: CacheService,
 		private readonly prismaService: PrismaService,
 	) {}
 
@@ -26,8 +24,6 @@ export class UserMutingService {
 				muteeId: target.id,
 			},
 		});
-
-		this.cacheService.userMutingsCache.refresh(user.id);
 	}
 
 	public async unmute(mutings: UserMuting[]): Promise<void> {
@@ -38,10 +34,5 @@ export class UserMutingService {
 				id: { in: mutings.map((m) => m.id) },
 			},
 		});
-
-		const muterIds = [...new Set(mutings.map((m) => m.muterId))];
-		for (const muterId of muterIds) {
-			this.cacheService.userMutingsCache.refresh(muterId);
-		}
 	}
 }

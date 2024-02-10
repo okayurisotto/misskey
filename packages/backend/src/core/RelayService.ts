@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { LocalUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
-import { MemorySingleCacheF } from '@/misc/cache/MemorySingleCacheF.js';
 import { QueueService } from '@/core/QueueService.js';
 import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
@@ -13,15 +12,6 @@ const ACTOR_USERNAME = 'relay.actor' as const;
 
 @Injectable()
 export class RelayService {
-	private readonly relaysCache = new MemorySingleCacheF<relay[]>(
-		1000 * 60 * 10,
-		async () => {
-			return await this.prismaService.client.relay.findMany({
-				where: { status: 'accepted' },
-			});
-		},
-	);
-
 	constructor(
 		private readonly apRendererService: ApRendererService,
 		private readonly createSystemUserService: CreateSystemUserService,
@@ -112,7 +102,9 @@ export class RelayService {
 	): Promise<void> {
 		if (activity == null) return;
 
-		const relays = await this.relaysCache.fetch();
+		const relays = await this.prismaService.client.relay.findMany({
+			where: { status: 'accepted' },
+		});
 		if (relays.length === 0) return;
 
 		const copy = deepClone(activity);

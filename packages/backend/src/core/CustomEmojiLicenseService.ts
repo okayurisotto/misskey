@@ -3,13 +3,11 @@ import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
-import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
 import type { CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiLicenseService {
 	constructor(
-		private readonly customEmojiLocalCacheService: CustomEmojiLocalCacheService,
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
@@ -26,8 +24,6 @@ export class CustomEmojiLicenseService {
 				license: license,
 			},
 		});
-
-		await this.customEmojiLocalCacheService.refresh();
 
 		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { id: { in: ids } },

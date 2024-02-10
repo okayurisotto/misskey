@@ -7,7 +7,6 @@ import { RelayService } from '@/core/RelayService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
 import { AccountMovingPostProcessService } from './AccountMovingPostProcessService.js';
@@ -21,7 +20,6 @@ export class LocalAccountMovingService {
 		private readonly accountMovingPostProcessService: AccountMovingPostProcessService,
 		private readonly apDeliverManagerService: ApDeliverManagerService,
 		private readonly apRendererService: ApRendererService,
-		private readonly cacheService: CacheService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
 		private readonly queueService: QueueService,
@@ -57,9 +55,6 @@ export class LocalAccountMovingService {
 			data: update,
 		});
 		Object.assign(src, update);
-
-		// Update cache
-		this.cacheService.uriPersonCache.set(srcUri, src);
 
 		const srcPerson = await this.apRendererService.renderPerson(src);
 		const updateAct = this.apRendererService.addContext(

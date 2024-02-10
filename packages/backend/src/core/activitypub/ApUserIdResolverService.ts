@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { CacheService } from '@/core/CacheService.js';
 import { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { ApUriParseService } from './ApUriParseService.js';
 import type { IObject } from './type.js';
 
@@ -9,8 +9,8 @@ import type { IObject } from './type.js';
 export class ApUserIdResolverService {
 	constructor(
 		private readonly apUriParseService: ApUriParseService,
-		private readonly cacheService: CacheService,
 		private readonly userEntityUtilService: UserEntityUtilService,
+		private readonly prismaService: PrismaService,
 	) {}
 
 	/**
@@ -24,7 +24,9 @@ export class ApUserIdResolverService {
 		if (parsed.local) {
 			if (parsed.type !== 'users') return null;
 
-			const result = await this.cacheService.userByIdCache.fetch(parsed.id);
+			const result = await this.prismaService.client.user.findUnique({
+				where: { id: parsed.id },
+			});
 			if (result === null) return null;
 
 			if (this.userEntityUtilService.isLocalUser(result)) {
@@ -33,7 +35,10 @@ export class ApUserIdResolverService {
 				throw new Error();
 			}
 		} else {
-			const result = await this.cacheService.uriPersonCache.fetch(parsed.uri);
+			const result = await this.prismaService.client.user.findFirst({
+				where: { uri: parsed.uri },
+			});
+
 			if (result === null) return null;
 
 			if (this.userEntityUtilService.isRemoteUser(result)) {

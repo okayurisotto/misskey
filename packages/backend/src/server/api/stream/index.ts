@@ -2,8 +2,8 @@ import * as WebSocket from 'ws';
 import { z } from 'zod';
 import type { NoteReadService } from '@/core/NoteReadService.js';
 import type { NotificationService } from '@/core/NotificationService.js';
-import { CacheService } from '@/core/CacheService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
+import { PrismaService } from '@/core/PrismaService.js';
 import { channelServiceNames, type ChannelServiceName, type ChannelsService } from './ChannelsService.js';
 import type { EventEmitter } from 'events';
 import type Channel from './channel.js';
@@ -34,7 +34,7 @@ export default class Connection {
 		private readonly channelsService: ChannelsService,
 		private readonly noteReadService: NoteReadService,
 		private readonly notificationService: NotificationService,
-		private readonly cacheService: CacheService,
+		private readonly prismaService: PrismaService,
 
 		user: user | null | undefined,
 		token: access_token | null | undefined,
@@ -46,19 +46,19 @@ export default class Connection {
 	public async fetch(): Promise<void> {
 		if (this.user == null) return;
 		const [userProfile, following, followingChannels, userIdsWhoMeMuting, userIdsWhoBlockingMe, userIdsWhoMeMutingRenotes] = await Promise.all([
-			this.cacheService.userProfileCache.fetch(this.user.id),
-			this.cacheService.userFollowingsCache.fetch(this.user.id),
-			this.cacheService.userFollowingChannelsCache.fetch(this.user.id),
-			this.cacheService.userMutingsCache.fetch(this.user.id),
-			this.cacheService.userBlockedCache.fetch(this.user.id),
-			this.cacheService.renoteMutingsCache.fetch(this.user.id),
+			this.prismaService.client.user_profile.findUnique({ where: { userId: this.user.id } }),
+			this.prismaService.client.following.findMany({ where: { followerId: this.user.id }, select: { followeeId: true } }),
+			this.prismaService.client.channelFollowing.findMany({ where: { userId: this.user.id }, select: { channelId: true } }),
+			this.prismaService.client.userMuting.findMany({ where: { muterId: this.user.id }, select: { muteeId: true } }),
+			this.prismaService.client.blocking.findMany({ where: { blockeeId: this.user.id }, select: { blockerId: true } }),
+			this.prismaService.client.renote_muting.findMany({ where: { muterId: this.user.id }, select: { muteeId: true } }),
 		]);
 		this.userProfile = userProfile;
-		this.following = following;
-		this.followingChannels = followingChannels;
-		this.userIdsWhoMeMuting = userIdsWhoMeMuting;
-		this.userIdsWhoBlockingMe = userIdsWhoBlockingMe;
-		this.userIdsWhoMeMutingRenotes = userIdsWhoMeMutingRenotes;
+		this.following = new Set(following.map(({ followeeId }) => followeeId));
+		this.followingChannels = new Set(followingChannels.map(({ channelId }) => channelId));
+		this.userIdsWhoMeMuting = new Set(userIdsWhoMeMuting.map(({ muteeId }) => muteeId));
+		this.userIdsWhoBlockingMe = new Set(userIdsWhoBlockingMe.map(({ blockerId }) => blockerId));
+		this.userIdsWhoMeMutingRenotes = new Set(userIdsWhoMeMutingRenotes.map(({ muteeId }) => muteeId));
 	}
 
 	public async init(): Promise<void> {

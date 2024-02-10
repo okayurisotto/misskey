@@ -27,7 +27,6 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { AccountUpdateService } from '@/core/AccountUpdateService.js';
 import { HashtagService } from '@/core/HashtagService.js';
 import { RoleService } from '@/core/RoleService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import {
 	BirthdaySchema,
@@ -123,7 +122,6 @@ export default class extends Endpoint<
 	constructor(
 		private readonly accountUpdateService: AccountUpdateService,
 		private readonly apiLoggerService: ApiLoggerService,
-		private readonly cacheService: CacheService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly hashtagService: HashtagService,
 		private readonly prismaService: PrismaService,
@@ -384,12 +382,6 @@ export default class extends Endpoint<
 					data: updates,
 				});
 			}
-			if (Object.keys(updates).includes('alsoKnownAs')) {
-				this.cacheService.uriPersonCache.set(
-					this.userEntityUtilService.genLocalUserUri(user.id),
-					{ ...user, ...updates },
-				);
-			}
 			if (Object.keys(profileUpdates).length > 0) {
 				await this.prismaService.client.user_profile.update({
 					where: { userId: user.id },
@@ -405,8 +397,6 @@ export default class extends Endpoint<
 				await this.prismaService.client.user_profile.findUniqueOrThrow({
 					where: { userId: user.id },
 				});
-
-			this.cacheService.userProfileCache.set(user.id, updatedProfile);
 
 			// Publish meUpdated event
 			this.globalEventService.publishMainStream(user.id, 'meUpdated', iObj);

@@ -3,7 +3,6 @@ import { Injectable } from '@nestjs/common';
 import * as WebSocket from 'ws';
 import { NoteReadService } from '@/core/NoteReadService.js';
 import { NotificationService } from '@/core/NotificationService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { LocalUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
@@ -20,7 +19,6 @@ export class StreamingApiServerService {
 	#cleanConnectionsIntervalId: NodeJS.Timeout | null = null;
 
 	constructor(
-		private readonly cacheService: CacheService,
 		private readonly noteReadService: NoteReadService,
 		private readonly authenticateService: AuthenticateService,
 		private readonly channelsService: ChannelsService,
@@ -78,7 +76,7 @@ export class StreamingApiServerService {
 				this.channelsService,
 				this.noteReadService,
 				this.notificationService,
-				this.cacheService,
+				this.prismaService,
 				user, app,
 			);
 

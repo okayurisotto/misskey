@@ -12,7 +12,6 @@ import { WebhookService } from '@/core/WebhookService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { MetaService } from '@/core/MetaService.js';
-import { CacheService } from '@/core/CacheService.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import Logger from '../misc/logger.js';
@@ -26,7 +25,6 @@ const logger = new Logger('following/create');
 export class UserFollowingDeleteService {
 	constructor(
 		private readonly apRendererService: ApRendererService,
-		private readonly cacheService: CacheService,
 		private readonly federatedInstanceService: FederatedInstanceService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly instanceChart: InstanceChart,
@@ -67,8 +65,6 @@ export class UserFollowingDeleteService {
 		await this.prismaService.client.following.delete({
 			where: { id: following.id },
 		});
-
-		this.cacheService.userFollowingsCache.refresh(follower.id);
 
 		await this.decrementFollowing(following.follower, following.followee);
 

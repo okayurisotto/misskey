@@ -3,13 +3,11 @@ import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
-import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
 import type { CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiAliasService {
 	constructor(
-		private readonly customEmojiLocalCacheService: CustomEmojiLocalCacheService,
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
@@ -23,8 +21,6 @@ export class CustomEmojiAliasService {
 				aliases: aliases,
 			},
 		});
-
-		await this.customEmojiLocalCacheService.refresh();
 
 		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { id: { in: ids } },
@@ -52,8 +48,6 @@ export class CustomEmojiAliasService {
 				},
 			});
 		}
-
-		await this.customEmojiLocalCacheService.refresh();
 
 		const data = {
 			emoji: new EntityMap('id', emojis),
@@ -83,8 +77,6 @@ export class CustomEmojiAliasService {
 				},
 			});
 		}
-
-		await this.customEmojiLocalCacheService.refresh();
 
 		const data = { emoji: new EntityMap('id', emojis) };
 

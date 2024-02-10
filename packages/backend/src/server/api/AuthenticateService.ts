@@ -1,10 +1,9 @@
-import { Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { LocalUser } from '@/models/entities/User.js';
-import { CacheService } from '@/core/CacheService.js';
 import isNativeToken from '@/misc/is-native-token.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { MemoryKVCacheF } from '@/misc/cache/MemoryKVCacheF.js';
-import type { access_token, App } from '@prisma/client';
+import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
+import type { access_token } from '@prisma/client';
 
 export class AuthenticationError extends Error {
 	constructor(message: string) {
@@ -14,19 +13,11 @@ export class AuthenticationError extends Error {
 }
 
 @Injectable()
-export class AuthenticateService implements OnApplicationShutdown {
-	private readonly appCache;
-
+export class AuthenticateService {
 	constructor(
-		private readonly cacheService: CacheService,
 		private readonly prismaService: PrismaService,
-	) {
-		this.appCache = new MemoryKVCacheF<App>(null, async (key) => {
-			return await this.prismaService.client.app.findUniqueOrThrow({
-				where: { id: key },
-			});
-		});
-	}
+		private readonly userEntityUtilService: UserEntityUtilService,
+	) {}
 
 	public async authenticate(
 		token: string | null | undefined,
@@ -36,14 +27,19 @@ export class AuthenticateService implements OnApplicationShutdown {
 		}
 
 		if (isNativeToken(token)) {
-			const user =
-				await this.cacheService.localUserByNativeTokenCache.fetch(token);
+			const user = await this.prismaService.client.user.findUnique({
+				where: { token },
+			});
 
 			if (user == null) {
 				throw new AuthenticationError('user not found');
 			}
 
-			return [user, null];
+			if (this.userEntityUtilService.isLocalUser(user)) {
+				return [user, null];
+			} else {
+				throw new Error();
+			}
 		} else {
 			const accessToken =
 				await this.prismaService.client.access_token.findFirst({
@@ -64,12 +60,23 @@ export class AuthenticateService implements OnApplicationShutdown {
 				data: { lastUsedAt: new Date() },
 			});
 
-			const user = await this.cacheService.localUserByIdCache.fetch(
-				accessToken.userId,
-			);
+			const user = await (async (id): Promise<LocalUser | null> => {
+				const result = await this.prismaService.client.user.findUnique({
+					where: { id },
+				});
+				if (result === null) return null;
+
+				if (this.userEntityUtilService.isLocalUser(result)) {
+					return result;
+				} else {
+					throw new Error();
+				}
+			})(accessToken.userId);
 
 			if (accessToken.appId) {
-				const app = await this.appCache.fetch(accessToken.appId);
+				const app = await this.prismaService.client.app.findUniqueOrThrow({
+					where: { id: accessToken.appId },
+				});
 
 				return [
 					user,
@@ -82,13 +89,5 @@ export class AuthenticateService implements OnApplicationShutdown {
 				return [user, accessToken];
 			}
 		}
-	}
-
-	public dispose(): void {
-		this.appCache.dispose();
-	}
-
-	public onApplicationShutdown(signal?: string | undefined): void {
-		this.dispose();
 	}
 }

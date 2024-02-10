@@ -5,7 +5,6 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { WebhookService } from '@/core/WebhookService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { UserFollowingDeleteService } from './UserFollowingDeleteService.js';
@@ -17,7 +16,6 @@ import type { z } from 'zod';
 export class UserBlockingCreateService {
 	constructor(
 		private readonly apRendererService: ApRendererService,
-		private readonly cacheService: CacheService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
@@ -49,9 +47,6 @@ export class UserBlockingCreateService {
 		};
 
 		await this.prismaService.client.blocking.create({ data: blocking });
-
-		this.cacheService.userBlockingCache.refresh(blocker.id);
-		this.cacheService.userBlockedCache.refresh(blockee.id);
 
 		this.globalEventService.publishInternalEvent('blockingCreated', {
 			blockerId: blocker.id,

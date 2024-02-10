@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { truncate } from '@/misc/truncate.js';
-import { CacheService } from '@/core/CacheService.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { HashtagService } from '@/core/HashtagService.js';
@@ -41,7 +40,6 @@ export class ApPersonUpdateService {
 		private readonly apPersonFeaturedUpdateService: ApPersonFeaturedUpdateService,
 		private readonly apPersonFetchService: ApPersonFetchService,
 		private readonly apResolverService: ApResolverService,
-		private readonly cacheService: CacheService,
 		private readonly configLoaderService: ConfigLoaderService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly hashtagService: HashtagService,
@@ -202,8 +200,6 @@ export class ApPersonUpdateService {
 			});
 
 		const updated = { ...exist, ...updates };
-
-		this.cacheService.uriPersonCache.set(uri, updated);
 
 		// 移行処理を行う
 		if (

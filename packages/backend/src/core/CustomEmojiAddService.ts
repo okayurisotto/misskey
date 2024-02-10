@@ -4,13 +4,11 @@ import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
-import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
 import type { role, DriveFile, CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiAddService {
 	constructor(
-		private readonly customEmojiLocalCacheService: CustomEmojiLocalCacheService,
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly idService: IdService,
@@ -48,8 +46,6 @@ export class CustomEmojiAddService {
 		});
 
 		if (data.host === null) {
-			await this.customEmojiLocalCacheService.refresh();
-
 			this.globalEventService.publishBroadcastStream('emojiAdded', {
 				emoji: this.emojiEntityService.packDetailed(emoji.id, {
 					emoji: new EntityMap('id', [emoji]),

@@ -3,7 +3,6 @@ import { QueueService } from '@/core/QueueService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import Logger from '@/misc/logger.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import type { user } from '@prisma/client';
@@ -14,7 +13,6 @@ export class UserBlockingDeleteService {
 
 	constructor(
 		private readonly apRendererService: ApRendererService,
-		private readonly cacheService: CacheService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly prismaService: PrismaService,
 		private readonly queueService: QueueService,
@@ -49,9 +47,6 @@ export class UserBlockingDeleteService {
 		await this.prismaService.client.blocking.delete({
 			where: { id: blocking.id },
 		});
-
-		this.cacheService.userBlockingCache.refresh(blocker.id);
-		this.cacheService.userBlockedCache.refresh(blockee.id);
 
 		this.globalEventService.publishInternalEvent('blockingDeleted', {
 			blockerId: blocker.id,

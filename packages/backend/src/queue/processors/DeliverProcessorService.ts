@@ -10,14 +10,10 @@ import FederationChart from '@/core/chart/charts/federation.js';
 import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { MemorySingleCacheF } from '@/misc/cache/MemorySingleCacheF.js';
 import type { DeliverJobData } from '../types.js';
-import type { Instance } from '@prisma/client';
 
 @Injectable()
 export class DeliverProcessorService {
-	private readonly suspendedHostsCache;
-
 	constructor(
 		private readonly metaService: MetaService,
 		private readonly utilityService: UtilityService,
@@ -28,16 +24,7 @@ export class DeliverProcessorService {
 		private readonly apRequestChart: ApRequestChart,
 		private readonly federationChart: FederationChart,
 		private readonly prismaService: PrismaService,
-	) {
-		this.suspendedHostsCache = new MemorySingleCacheF<Instance[]>(
-			1000 * 60 * 60,
-			async () => {
-				return await this.prismaService.client.instance.findMany({
-					where: { isSuspended: true },
-				});
-			},
-		);
-	}
+	) {}
 
 	public async process(job: Bull.Job<DeliverJobData>): Promise<string> {
 		const { host } = new URL(job.data.to);
@@ -54,7 +41,9 @@ export class DeliverProcessorService {
 		}
 
 		// isSuspendedなら中断
-		const suspendedHosts = await this.suspendedHostsCache.fetch();
+		const suspendedHosts = await this.prismaService.client.instance.findMany({
+			where: { isSuspended: true },
+		});
 		if (
 			suspendedHosts
 				.map((x) => x.host)
@@ -64,10 +53,14 @@ export class DeliverProcessorService {
 		}
 
 		try {
-			await this.apRequestService.signedPost(job.data.user, job.data.to, job.data.content);
+			await this.apRequestService.signedPost(
+				job.data.user,
+				job.data.to,
+				job.data.content,
+			);
 
 			// Update stats
-			this.federatedInstanceService.fetch(host).then(i => {
+			this.federatedInstanceService.fetch(host).then((i) => {
 				if (i.isNotResponding) {
 					this.federatedInstanceService.update(i.id, {
 						isNotResponding: false,
@@ -86,7 +79,7 @@ export class DeliverProcessorService {
 			return 'Success';
 		} catch (res) {
 			// Update stats
-			this.federatedInstanceService.fetch(host).then(i => {
+			this.federatedInstanceService.fetch(host).then((i) => {
 				if (!i.isNotResponding) {
 					this.federatedInstanceService.update(i.id, {
 						isNotResponding: true,
@@ -106,14 +99,16 @@ export class DeliverProcessorService {
 				if (res.isClientError) {
 					// 相手が閉鎖していることを明示しているため、配送停止する
 					if (job.data.isSharedInbox && res.statusCode === 410) {
-						this.federatedInstanceService.fetch(host).then(i => {
+						this.federatedInstanceService.fetch(host).then((i) => {
 							this.federatedInstanceService.update(i.id, {
 								isSuspended: true,
 							});
 						});
 						throw new Bull.UnrecoverableError(`${host} is gone`);
 					}
-					throw new Bull.UnrecoverableError(`${res.statusCode} ${res.statusMessage}`);
+					throw new Bull.UnrecoverableError(
+						`${res.statusCode} ${res.statusMessage}`,
+					);
 				}
 
 				// 5xx etc.

@@ -10,7 +10,6 @@ import { WebhookService } from '@/core/WebhookService.js';
 import { NotificationService } from '@/core/NotificationService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { MetaService } from '@/core/MetaService.js';
-import { CacheService } from '@/core/CacheService.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import Logger from '../misc/logger.js';
@@ -24,7 +23,6 @@ const logger = new Logger('following/create');
 @Injectable()
 export class UserFollowingCreateProcessService {
 	constructor(
-		private readonly cacheService: CacheService,
 		private readonly federatedInstanceService: FederatedInstanceService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly idService: IdService,
@@ -84,8 +82,6 @@ export class UserFollowingCreateProcessService {
 					throw err;
 				}
 			});
-
-		this.cacheService.userFollowingsCache.refresh(follower.id);
 
 		const requestExist =
 			(await this.prismaService.client.followRequest.count({

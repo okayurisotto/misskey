@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { MetaService } from '@/core/MetaService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -11,7 +10,6 @@ import {
 	UserPoliciesSchema,
 } from '@/models/zod/RolePoliciesSchema.js';
 import { RedisService } from '@/core/RedisService.js';
-import { RoleCacheService } from './RoleCacheService.js';
 import { RoleConditionEvalService } from './RoleConditionEvalService.js';
 import type { role, role_assignment, user } from '@prisma/client';
 
@@ -47,34 +45,32 @@ export class RoleService {
 	public static NotAssignedError = class extends Error {};
 
 	constructor(
-		private readonly cacheService: CacheService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
 		private readonly redisClient: RedisService,
-		private readonly roleCacheService: RoleCacheService,
 		private readonly roleConditionEvalService: RoleConditionEvalService,
 	) {}
 
 	public async getUserAssigns(userId: user['id']): Promise<role_assignment[]> {
-		const now = Date.now();
-		let assigns =
-			await this.roleCacheService.roleAssignmentByUserIdCache.fetch(userId);
-		// 期限切れのロールを除外
-		assigns = assigns.filter(
-			(a) => a.expiresAt == null || a.expiresAt.getTime() > now,
-		);
-		return assigns;
+		return await this.prismaService.client.role_assignment.findMany({
+			where: {
+				userId,
+				OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+			},
+		});
 	}
 
 	public async getUserRoles(userId: user['id']): Promise<role[]> {
-		const roles = await this.roleCacheService.rolesCache.fetch();
+		const roles = await this.prismaService.client.role.findMany();
 		const assigns = await this.getUserAssigns(userId);
 		const assignedRoles = roles.filter((r) =>
 			assigns.map((x) => x.roleId).includes(r.id),
 		);
 		const user = roles.some((r) => r.target === 'conditional')
-			? await this.cacheService.findUserById(userId)
+			? await this.prismaService.client.user.findUnique({
+					where: { id: userId },
+			  })
 			: null;
 		const matchedCondRoles = roles.filter((r) => {
 			return (

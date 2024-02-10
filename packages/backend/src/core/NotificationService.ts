@@ -5,7 +5,6 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PushNotificationService } from '@/core/PushNotificationService.js';
 import { NotificationEntityService } from '@/core/entities/NotificationEntityService.js';
 import { IdService } from '@/core/IdService.js';
-import { CacheService } from '@/core/CacheService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
 import type { user } from '@prisma/client';
@@ -15,7 +14,6 @@ export class NotificationService implements OnApplicationShutdown {
 	readonly #shutdownController = new AbortController();
 
 	constructor(
-		private readonly cacheService: CacheService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly idService: IdService,
 		private readonly notificationEntityService: NotificationEntityService,
@@ -71,7 +69,10 @@ export class NotificationService implements OnApplicationShutdown {
 		type: Notification['type'],
 		data: Partial<Omit<Notification, 'id' | 'createdAt' | 'type'>>,
 	): Promise<Notification | null> {
-		const profile = await this.cacheService.userProfileCache.fetch(notifieeId);
+		const profile =
+			await this.prismaService.client.user_profile.findUniqueOrThrow({
+				where: { userId: notifieeId },
+			});
 		const isMuted = profile.mutingNotificationTypes.includes(type);
 		if (isMuted) return null;
 
@@ -80,8 +81,14 @@ export class NotificationService implements OnApplicationShutdown {
 				return null;
 			}
 
-			const mutings =
-				await this.cacheService.userMutingsCache.fetch(notifieeId);
+			const mutings = new Set(
+				(
+					await this.prismaService.client.userMuting.findMany({
+						where: { muterId: notifieeId },
+						select: { muteeId: true },
+					})
+				).map(({ muteeId }) => muteeId),
+			);
 			if (mutings.has(data.notifierId)) {
 				return null;
 			}

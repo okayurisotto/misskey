@@ -1,17 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { CacheService } from '@/core/CacheService.js';
 import { RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApPersonResolveService } from './models/ApPersonResolveService.js';
-import { ApDbResolverCacheService } from './ApDbResolverCacheService.js';
 import type { user_publickey } from '@prisma/client';
 
 @Injectable()
 export class ApDbResolverService {
 	constructor(
-		private readonly apDbResolverCacheService: ApDbResolverCacheService,
 		private readonly apPersonResolveService: ApPersonResolveService,
-		private readonly cacheService: CacheService,
 		private readonly prismaService: PrismaService,
 	) {}
 
@@ -22,12 +18,15 @@ export class ApDbResolverService {
 		user: RemoteUser;
 		key: user_publickey;
 	} | null> {
-		const key = await this.apDbResolverCacheService.publicKeyCache.fetch(keyId);
-
-		if (key === undefined) return null;
+		const key = await this.prismaService.client.user_publickey.findFirst({
+			where: { keyId },
+		});
+		if (key === null) return null;
 
 		return {
-			user: (await this.cacheService.findUserById(key.userId)) as RemoteUser,
+			user: (await this.prismaService.client.user.findUnique({
+				where: { id: key.userId },
+			})) as RemoteUser,
 			key,
 		};
 	}
@@ -41,12 +40,10 @@ export class ApDbResolverService {
 	} | null> {
 		const user = (await this.apPersonResolveService.resolve(uri)) as RemoteUser;
 
-		const key =
-			await this.apDbResolverCacheService.publicKeyByUserIdCache.fetch(user.id);
+		const key = await this.prismaService.client.user_publickey.findUnique({
+			where: { userId: user.id },
+		});
 
-		return {
-			user,
-			key: key ?? null,
-		};
+		return { user, key };
 	}
 }

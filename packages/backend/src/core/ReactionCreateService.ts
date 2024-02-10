@@ -20,7 +20,6 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserBlockingCheckService } from './UserBlockingCheckService.js';
-import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { ReactionDecodeService } from './ReactionDecodeService.js';
 import { ReactionDeleteService } from './ReactionDeleteService.js';
@@ -49,7 +48,6 @@ export class ReactionCreateService {
 	constructor(
 		private readonly apDeliverManagerService: ApDeliverManagerService,
 		private readonly apRendererService: ApRendererService,
-		private readonly customEmojiLocalCacheService: CustomEmojiLocalCacheService,
 		private readonly globalEventService: GlobalEventService,
 		private readonly idService: IdService,
 		private readonly metaService: MetaService,
@@ -107,7 +105,9 @@ export class ReactionCreateService {
 				const name = custom[1];
 				const emoji =
 					reacterHost == null
-						? (await this.customEmojiLocalCacheService.fetch()).get(name)
+						? await this.prismaService.client.customEmoji.findFirst({
+								where: { host: null, name },
+						  })
 						: await this.prismaService.client.customEmoji.findUnique({
 								where: { name_host: { host: reacterHost, name } },
 						  });
@@ -217,9 +217,9 @@ export class ReactionCreateService {
 			decodedReaction.name == null
 				? null
 				: decodedReaction.host == null
-				? (await this.customEmojiLocalCacheService.fetch()).get(
-						decodedReaction.name,
-				  )
+				? await this.prismaService.client.customEmoji.findFirst({
+						where: { name: decodedReaction.name, host: null },
+				  })
 				: await this.prismaService.client.customEmoji.findUnique({
 						where: {
 							name_host: {

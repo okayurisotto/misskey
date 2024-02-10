@@ -1,14 +1,11 @@
-import { Injectable, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import push from 'web-push';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
 import { MetaService } from '@/core/MetaService.js';
-import { RedisKVCache } from '@/misc/cache/RedisKVCache.js';
 import type { NotificationSchema } from '@/models/zod/NotificationSchema.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import { RedisService } from '@/core/RedisService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
-import type { sw_subscription } from '@prisma/client';
 import type { z } from 'zod';
 
 // Defined also packages/sw/types.ts#L13
@@ -52,31 +49,12 @@ function truncateBody<T extends keyof PushNotificationsTypes>(
 }
 
 @Injectable()
-export class PushNotificationService implements OnApplicationShutdown {
-	private readonly subscriptionsCache: RedisKVCache<sw_subscription[]>;
-
+export class PushNotificationService {
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
-		private readonly redisClient: RedisService,
-	) {
-		this.subscriptionsCache = new RedisKVCache<sw_subscription[]>(
-			this.redisClient,
-			'userSwSubscriptions',
-			{
-				lifetime: 1000 * 60 * 60 * 1, // 1h
-				memoryCacheLifetime: 1000 * 60 * 3, // 3m
-				fetcher: async (key): Promise<sw_subscription[]> => {
-					return await this.prismaService.client.sw_subscription.findMany({
-						where: { userId: key },
-					});
-				},
-				toRedisConverter: (value): string => JSON.stringify(value),
-				fromRedisConverter: (value): sw_subscription[] => JSON.parse(value),
-			},
-		);
-	}
+	) {}
 
 	public async pushNotification<T extends keyof PushNotificationsTypes>(
 		userId: string,
@@ -99,7 +77,10 @@ export class PushNotificationService implements OnApplicationShutdown {
 			meta.swPrivateKey,
 		);
 
-		const subscriptions = await this.subscriptionsCache.fetch(userId);
+		const subscriptions =
+			await this.prismaService.client.sw_subscription.findMany({
+				where: { userId },
+			});
 
 		for (const subscription of subscriptions) {
 			if (
@@ -155,13 +136,5 @@ export class PushNotificationService implements OnApplicationShutdown {
 					}
 				});
 		}
-	}
-
-	public dispose(): void {
-		this.subscriptionsCache.dispose();
-	}
-
-	public onApplicationShutdown(): void {
-		this.dispose();
 	}
 }

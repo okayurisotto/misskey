@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { RemoteUser } from '@/models/entities/User.js';
 import { truncate } from '@/misc/truncate.js';
-import { CacheService } from '@/core/CacheService.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { isDuplicateKeyValueError } from '@/misc/is-duplicate-key-value-error.js';
 import { IdService } from '@/core/IdService.js';
@@ -44,7 +43,6 @@ export class ApPersonCreateService {
 		private readonly apPersonAvatarAndBannerResolveService: ApPersonAvatarAndBannerResolveService,
 		private readonly apPersonFeaturedUpdateService: ApPersonFeaturedUpdateService,
 		private readonly apResolverService: ApResolverService,
-		private readonly cacheService: CacheService,
 		private readonly configLoaderService: ConfigLoaderService,
 		private readonly federatedInstanceService: FederatedInstanceService,
 		private readonly fetchInstanceMetadataService: FetchInstanceMetadataService,
@@ -193,8 +191,6 @@ export class ApPersonCreateService {
 		}
 
 		if (user == null) throw new Error('failed to create user: user is null');
-		// Register to the cache
-		this.cacheService.uriPersonCache.set(user.uri, user);
 
 		// Register host
 		this.federatedInstanceService.fetch(host).then(async (i) => {
@@ -225,9 +221,6 @@ export class ApPersonCreateService {
 				data: updates,
 			});
 			user = { ...user, ...updates };
-
-			// Register to the cache
-			this.cacheService.uriPersonCache.set(user.uri, user);
 		} catch (err) {
 			this.logger.error('error occured while fetching user avatar/banner', {
 				stack: err,

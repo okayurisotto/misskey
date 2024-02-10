@@ -1,16 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { CacheService } from '@/core/CacheService.js';
+import { PrismaService } from './PrismaService.js';
 
 @Injectable()
 export class UserBlockingCheckService {
-	constructor(private readonly cacheService: CacheService) {}
+	constructor(private readonly prismaService: PrismaService) {}
 
-	public async check(
-		blockerId: string,
-		blockeeId: string,
-	): Promise<boolean> {
-		return (await this.cacheService.userBlockingCache.fetch(blockerId)).has(
-			blockeeId,
-		);
+	public async check(blockerId: string, blockeeId: string): Promise<boolean> {
+		const blocking = await this.prismaService.client.blocking.findUnique({
+			where: { blockerId_blockeeId: { blockerId, blockeeId } },
+		});
+
+		return blocking !== null;
 	}
 }

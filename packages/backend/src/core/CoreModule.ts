@@ -35,7 +35,6 @@ import { ApRequestService } from './activitypub/ApRequestService.js';
 import { ApResolverService } from './activitypub/ApResolverService.js';
 import { AuthSessionEntityService } from './entities/AuthSessionEntityService.js';
 import { BlockingEntityService } from './entities/BlockingEntityService.js';
-import { CacheService } from './CacheService.js';
 import { CaptchaService } from './CaptchaService.js';
 import { ChannelEntityService } from './entities/ChannelEntityService.js';
 import { ChartLoggerService } from './chart/ChartLoggerService.js';
@@ -158,13 +157,11 @@ import { CustomEmojiAliasService } from './CustomEmojiAliasService.js';
 import { CustomEmojiCategoryService } from './CustomEmojiCategoryService.js';
 import { CustomEmojiDeleteService } from './CustomEmojiDeleteService.js';
 import { CustomEmojiLicenseService } from './CustomEmojiLicenseService.js';
-import { CustomEmojiLocalCacheService } from './CustomEmojiLocalCacheService.js';
 import { CustomEmojiStringParseService } from './CustomEmojiStringParseService.js';
 import { CustomEmojiUpdateService } from './CustomEmojiUpdateService.js';
 import type { Provider } from '@nestjs/common';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { BadgeRoleService } from './BadgeRoleService.js';
-import { RoleCacheService } from './RoleCacheService.js';
 import { RoleConditionEvalService } from './RoleConditionEvalService.js';
 import { RoleUtilService } from './RoleUtilService.js';
 import { ApImageCreateService } from './activitypub/models/ApImageCreateService.js';
@@ -176,7 +173,6 @@ import { LegacyReactionConvertService } from './LegacyReactionConvertService.js'
 import { NoteVisibilityService } from './entities/NoteVisibilityService.js';
 import { RenoteCountService } from './entities/RenoteCountService.js';
 import { ApQuestionUpdateService } from './activitypub/models/ApQuestionUpdateService.js';
-import { ApDbResolverCacheService } from './activitypub/ApDbResolverCacheService.js';
 import { ApNoteIdResolverService } from './activitypub/ApNoteIdResolverService.js';
 import { ApUserIdResolverService } from './activitypub/ApUserIdResolverService.js';
 import { ApUriParseService } from './activitypub/ApUriParseService.js';
@@ -211,7 +207,6 @@ const $ApNoteService: Provider = {
 		AntennaService,
 		ApActorValidateService,
 		ApAudienceParseService,
-		ApDbResolverCacheService,
 		ApDbResolverService,
 		ApDeliverManagerService,
 		ApHostPunycodeService,
@@ -245,7 +240,6 @@ const $ApNoteService: Provider = {
 		AuthSessionEntityService,
 		BadgeRoleService,
 		BlockingEntityService,
-		CacheService,
 		CaptchaService,
 		ChannelEntityService,
 		ChartLoggerService,
@@ -257,7 +251,6 @@ const $ApNoteService: Provider = {
 		CustomEmojiCategoryService,
 		CustomEmojiDeleteService,
 		CustomEmojiLicenseService,
-		CustomEmojiLocalCacheService,
 		CustomEmojiPopulateService,
 		CustomEmojiStringParseService,
 		CustomEmojiUpdateService,
@@ -338,7 +331,6 @@ const $ApNoteService: Provider = {
 		RemoteUserResolveService,
 		RenoteCountService,
 		RenoteMutingEntityService,
-		RoleCacheService,
 		RoleConditionEvalService,
 		RoleEntityService,
 		RoleService,
@@ -400,7 +392,6 @@ const $ApNoteService: Provider = {
 		AntennaService,
 		ApActorValidateService,
 		ApAudienceParseService,
-		ApDbResolverCacheService,
 		ApDbResolverService,
 		ApDeliverManagerService,
 		ApHostPunycodeService,
@@ -434,7 +425,6 @@ const $ApNoteService: Provider = {
 		AuthSessionEntityService,
 		BadgeRoleService,
 		BlockingEntityService,
-		CacheService,
 		CaptchaService,
 		ChannelEntityService,
 		ChartManagementService,
@@ -445,7 +435,6 @@ const $ApNoteService: Provider = {
 		CustomEmojiCategoryService,
 		CustomEmojiDeleteService,
 		CustomEmojiLicenseService,
-		CustomEmojiLocalCacheService,
 		CustomEmojiPopulateService,
 		CustomEmojiStringParseService,
 		CustomEmojiUpdateService,

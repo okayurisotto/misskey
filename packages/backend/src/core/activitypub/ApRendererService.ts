@@ -15,7 +15,6 @@ import { isNotNull } from '@/misc/is-not-null.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { DriveFilePublicUrlGenerationService } from '../entities/DriveFilePublicUrlGenerationService.js';
-import { CustomEmojiLocalCacheService } from '../CustomEmojiLocalCacheService.js';
 import { UserEntityUtilService } from '../entities/UserEntityUtilService.js';
 import { LdSignatureService } from './LdSignatureService.js';
 import { ApMfmService } from './ApMfmService.js';
@@ -66,7 +65,6 @@ export class ApRendererService {
 	constructor(
 		private readonly apMfmService: ApMfmService,
 		private readonly configLoaderService: ConfigLoaderService,
-		private readonly customEmojiLocalCacheService: CustomEmojiLocalCacheService,
 		private readonly driveFilePublicUrlGenerationService: DriveFilePublicUrlGenerationService,
 		private readonly ldSignatureService: LdSignatureService,
 		private readonly mfmService: MfmService,
@@ -304,7 +302,9 @@ export class ApRendererService {
 
 		if (reaction.startsWith(':')) {
 			const name = reaction.replaceAll(':', '');
-			const emoji = (await this.customEmojiLocalCacheService.fetch()).get(name);
+			const emoji = await this.prismaService.client.customEmoji.findFirst({
+				where: { name },
+			});
 
 			if (emoji && !emoji.localOnly) object.tag = [this.renderEmoji(emoji)];
 		}
@@ -829,7 +829,13 @@ export class ApRendererService {
 	private async getEmojis(names: string[]): Promise<CustomEmoji[]> {
 		if (names.length === 0) return [];
 
-		const allEmojis = await this.customEmojiLocalCacheService.fetch();
+		const allEmojis = new Map(
+			(
+				await this.prismaService.client.customEmoji.findMany({
+					where: { name: { in: names } },
+				})
+			).map((emoji) => [emoji.name, emoji]),
+		);
 		const emojis = names.map((name) => allEmojis.get(name)).filter(isNotNull);
 
 		return emojis;

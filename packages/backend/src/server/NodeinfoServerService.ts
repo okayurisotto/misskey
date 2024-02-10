@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { MetaService } from '@/core/MetaService.js';
 import { MAX_NOTE_TEXT_LENGTH } from '@/const.js';
-import { MemorySingleCacheF } from '@/misc/cache/MemorySingleCacheF.js';
 import NotesChart from '@/core/chart/charts/notes.js';
 import UsersChart from '@/core/chart/charts/users.js';
 import { DEFAULT_POLICIES } from '@/core/RoleService.js';
@@ -178,20 +177,15 @@ export class NodeinfoServerService {
 			};
 		};
 
-		const cache = new MemorySingleCacheF<Awaited<ReturnType<typeof nodeinfo2>>>(
-			1000 * 60 * 10,
-			async () => await nodeinfo2(),
-		);
-
 		fastify.get(nodeinfo2_1path, async (request, reply) => {
-			const base = await cache.fetch();
+			const base = await nodeinfo2();
 
 			reply.header('Cache-Control', 'public, max-age=600');
 			return { version: '2.1', ...base };
 		});
 
 		fastify.get(nodeinfo2_0path, async (request, reply) => {
-			const base = await cache.fetch();
+			const base = await nodeinfo2();
 
 			delete (base as any).software.repository;
 

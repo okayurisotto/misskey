@@ -4,7 +4,6 @@ import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserPoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
-import { RoleCacheService } from './RoleCacheService.js';
 import type { role, user } from '@prisma/client';
 
 export type RolePolicies = Required<z.infer<typeof UserPoliciesSchema>>;
@@ -18,7 +17,6 @@ export class RoleUtilService {
 		private readonly globalEventService: GlobalEventService,
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
-		private readonly roleCacheService: RoleCacheService,
 	) {}
 
 	public async isExplorable(role: { id: role['id'] } | null): Promise<boolean> {
@@ -31,7 +29,7 @@ export class RoleUtilService {
 	}
 
 	public async getModeratorIds(includeAdmins = true): Promise<user['id'][]> {
-		const roles = await this.roleCacheService.rolesCache.fetch();
+		const roles = await this.prismaService.client.role.findMany();
 		const moderatorRoles = includeAdmins
 			? roles.filter((r) => r.isModerator || r.isAdministrator)
 			: roles.filter((r) => r.isModerator);
@@ -57,7 +55,7 @@ export class RoleUtilService {
 	}
 
 	public async getAdministratorIds(): Promise<user['id'][]> {
-		const roles = await this.roleCacheService.rolesCache.fetch();
+		const roles = await this.prismaService.client.role.findMany();
 		const administratorRoles = roles.filter((r) => r.isAdministrator);
 		const assigns =
 			administratorRoles.length > 0
