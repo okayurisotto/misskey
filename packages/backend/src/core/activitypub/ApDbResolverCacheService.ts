@@ -4,8 +4,8 @@ import type { user_publickey } from '@prisma/client';
 
 @Injectable()
 export class ApDbResolverCacheService implements OnApplicationShutdown {
-	public readonly publicKeyCache: MemoryKVCache<user_publickey | null>;
-	public readonly publicKeyByUserIdCache: MemoryKVCache<user_publickey | null>;
+	public readonly publicKeyCache;
+	public readonly publicKeyByUserIdCache;
 
 	constructor() {
 		this.publicKeyCache = new MemoryKVCache<user_publickey | null>(Infinity);

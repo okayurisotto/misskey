@@ -2,29 +2,25 @@ import * as Redis from 'ioredis';
 import { MemorySingleCache } from './MemorySingleCache.js';
 
 export class RedisSingleCache<T> {
-	private readonly redisClient: Redis.Redis;
-	private readonly name;
 	private readonly lifetime;
-	private readonly memoryCache: MemorySingleCache<T>;
-	private readonly fetcher: () => Promise<T>;
-	private readonly toRedisConverter: (value: T) => string;
-	private readonly fromRedisConverter: (value: string) => T | undefined;
+	private readonly memoryCache;
+	private readonly fetcher;
+	private readonly toRedisConverter;
+	private readonly fromRedisConverter;
 
 	constructor(
-		redisClient: RedisSingleCache<T>['redisClient'],
-		name: string,
+		private readonly redisClient: Redis.Redis,
+		private readonly name: string,
 		opts: {
 			lifetime: number;
 			memoryCacheLifetime: number;
-			fetcher: RedisSingleCache<T>['fetcher'];
-			toRedisConverter: RedisSingleCache<T>['toRedisConverter'];
-			fromRedisConverter: RedisSingleCache<T>['fromRedisConverter'];
+			fetcher: () => Promise<T>;
+			toRedisConverter: (value: T) => string;
+			fromRedisConverter: (value: string) => T | undefined;
 		},
 	) {
-		this.redisClient = redisClient;
-		this.name = name;
 		this.lifetime = opts.lifetime;
-		this.memoryCache = new MemorySingleCache(opts.memoryCacheLifetime);
+		this.memoryCache = new MemorySingleCache<T>(opts.memoryCacheLifetime);
 		this.fetcher = opts.fetcher;
 		this.toRedisConverter = opts.toRedisConverter;
 		this.fromRedisConverter = opts.fromRedisConverter;
