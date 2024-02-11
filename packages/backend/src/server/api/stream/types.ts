@@ -4,9 +4,7 @@ import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import type { DriveFileSchema } from '@/models/zod/DriveFileSchema.js';
 import type { DriveFolderSchema } from '@/models/zod/DriveFolderSchema.js';
-import type { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 import type { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
-import type { Meta } from '@/models/index.js';
 import type { MeDetailedSchema } from '@/models/zod/MeDetailedSchema.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import type { Jsonify, UnionToIntersection } from 'type-fest';
@@ -20,7 +18,6 @@ import type {
 	DriveFolder,
 	Note,
 	page,
-	role_assignment,
 	role,
 	signin,
 	user_list,
@@ -33,23 +30,8 @@ export interface InternalStreamTypes {
 	antennaCreated: Antenna;
 	antennaDeleted: Antenna;
 	antennaUpdated: Antenna;
-	blockingCreated: { blockerId: user['id']; blockeeId: user['id'] };
-	blockingDeleted: { blockerId: user['id']; blockeeId: user['id'] };
 	follow: { followerId: user['id']; followeeId: user['id'] };
-	metaUpdated: Meta;
-	policiesUpdated: z.infer<typeof RolePoliciesSchema>;
-	remoteUserUpdated: { id: user['id'] };
-	roleCreated: role;
-	roleDeleted: role;
-	roleUpdated: role;
 	unfollow: { followerId: user['id']; followeeId: user['id'] };
-	userChangeSuspendedState: {
-		id: user['id'];
-		isSuspended: user['isSuspended'];
-	};
-	userRoleAssigned: role_assignment;
-	userRoleUnassigned: role_assignment;
-	userTokenRegenerated: { id: user['id']; oldToken: string; newToken: string };
 	webhookCreated: webhook;
 	webhookDeleted: webhook;
 	webhookUpdated: webhook;

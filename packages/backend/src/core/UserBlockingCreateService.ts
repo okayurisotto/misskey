@@ -48,11 +48,6 @@ export class UserBlockingCreateService {
 
 		await this.prismaService.client.blocking.create({ data: blocking });
 
-		this.globalEventService.publishInternalEvent('blockingCreated', {
-			blockerId: blocker.id,
-			blockeeId: blockee.id,
-		});
-
 		if (
 			this.userEntityUtilService.isLocalUser(blocker) &&
 			this.userEntityUtilService.isRemoteUser(blockee)

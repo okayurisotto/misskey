@@ -48,11 +48,6 @@ export class UserBlockingDeleteService {
 			where: { id: blocking.id },
 		});
 
-		this.globalEventService.publishInternalEvent('blockingDeleted', {
-			blockerId: blocker.id,
-			blockeeId: blockee.id,
-		});
-
 		// deliver if remote bloking
 		if (
 			this.userEntityUtilService.isLocalUser(blocker) &&

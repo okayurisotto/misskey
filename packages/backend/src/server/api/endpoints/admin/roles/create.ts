@@ -72,8 +72,6 @@ export default class extends Endpoint<
 				},
 			});
 
-			this.globalEventService.publishInternalEvent('roleCreated', created);
-
 			return await this.roleEntityService.pack(created);
 		});
 	}

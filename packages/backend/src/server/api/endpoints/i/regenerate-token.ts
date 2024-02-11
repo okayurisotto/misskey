@@ -50,11 +50,6 @@ export default class extends Endpoint<
 			});
 
 			// Publish event
-			this.globalEventService.publishInternalEvent('userTokenRegenerated', {
-				id: me.id,
-				oldToken,
-				newToken,
-			});
 			this.globalEventService.publishMainStream(me.id, 'myTokenRegenerated');
 		});
 	}

@@ -46,8 +46,6 @@ export default class extends Endpoint<
 
 				throw e;
 			}
-
-			this.globalEventService.publishInternalEvent('roleDeleted', role);
 		});
 	}
 }

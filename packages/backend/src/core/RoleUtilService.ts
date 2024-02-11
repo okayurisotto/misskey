@@ -125,8 +125,6 @@ export class RoleUtilService {
 			where: { id: roleId },
 			data: { lastUsedAt: new Date() },
 		});
-
-		this.globalEventService.publishInternalEvent('userRoleAssigned', created);
 	}
 
 	public async unassign(userId: string, roleId: role['id']): Promise<void> {
@@ -160,10 +158,5 @@ export class RoleUtilService {
 			where: { id: roleId },
 			data: { lastUsedAt: now },
 		});
-
-		this.globalEventService.publishInternalEvent(
-			'userRoleUnassigned',
-			existing,
-		);
 	}
 }

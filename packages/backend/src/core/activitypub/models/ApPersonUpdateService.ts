@@ -184,10 +184,6 @@ export class ApPersonUpdateService {
 			},
 		});
 
-		this.globalEventService.publishInternalEvent('remoteUserUpdated', {
-			id: exist.id,
-		});
-
 		// ハッシュタグ更新
 		this.hashtagService.updateUsertags(exist, tags);
 
