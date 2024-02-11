@@ -18,14 +18,16 @@ export const meta = {
 	res,
 } as const;
 
-const paramDef_base = z.object({
+export const paramDef = z.object({
 	limit: limit({ max: 100, default: 10 }),
 	detail: z.boolean().default(true),
+	username: z.string().nullish(),
+	host: z
+		.string()
+		.nullish()
+		.transform((v) => (v === '' ? null : v))
+		.transform((v) => (v === '.' ? null : v)),
 });
-export const paramDef = z.union([
-	paramDef_base.merge(z.object({ username: z.string().nullable() })),
-	paramDef_base.merge(z.object({ host: z.string().nullable() })),
-]);
 
 @Injectable()
 // eslint-disable-next-line import/no-default-export
@@ -45,7 +47,7 @@ export default class extends Endpoint<
 
 			const where: Prisma.userWhereInput = {
 				AND: [
-					'username' in ps && ps.username !== null
+					'username' in ps && ps.username != null
 						? {
 								username: {
 									startsWith: ps.username.toLowerCase(),
@@ -53,9 +55,8 @@ export default class extends Endpoint<
 								},
 						  }
 						: {},
-					'host' in ps && ps.host !== null
-						? ps.host === this.configLoaderService.data.hostname ||
-						  ps.host === '.'
+					'host' in ps && ps.host != null
+						? ps.host === this.configLoaderService.data.hostname
 							? { host: null }
 							: { host: { startsWith: ps.host.toLowerCase() } }
 						: {},
