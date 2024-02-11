@@ -434,7 +434,7 @@ export class NoteEntityPackService {
 	/**
 	 * 複数の`note`をまとめてpackする。
 	 *
-	 * @param notes `note`の配列（IDではない）。`renoteId`や`replyId`の解決は行われない。
+	 * @param notes
 	 * @param me
 	 * @param options
 	 * @returns
