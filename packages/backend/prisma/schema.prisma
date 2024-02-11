@@ -1511,7 +1511,7 @@ model NoteReaction {
 }
 
 // スレッドミュート
-model note_thread_muting {
+model NoteThreadMuting {
   id        String   @id(map: "PK_ec5936d94d1a0369646d12a3a47") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   threadId  String   @db.VarChar(256) // 非正規化
@@ -1522,6 +1522,7 @@ model note_thread_muting {
   @@unique([userId, threadId], map: "IDX_ae7aab18a2641d3e5f25e0c4ea")
   @@index([userId], map: "IDX_29c11c7deb06615076f8c95b80")
   @@index([threadId], map: "IDX_c426394644267453e76f036926")
+  @@map("note_thread_muting")
 }
 
 // ノートの未読
@@ -1964,7 +1965,7 @@ model user {
   note                                                      Note[]
   note_favorite                                             NoteFavorite[]
   note_reaction                                             NoteReaction[]
-  note_thread_muting                                        note_thread_muting[]
+  note_thread_muting                                        NoteThreadMuting[]
   note_unread                                               note_unread[]
   page                                                      page[]
   page_like                                                 page_like[]

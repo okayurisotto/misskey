@@ -35,7 +35,7 @@ export class NoteReadService implements OnApplicationShutdown {
 
 		// スレッドミュート
 		const isThreadMuted =
-			(await this.prismaService.client.note_thread_muting.count({
+			(await this.prismaService.client.noteThreadMuting.count({
 				where: {
 					userId: userId,
 					threadId: note.threadId ?? note.id,

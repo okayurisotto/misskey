@@ -39,7 +39,7 @@ export default class extends Endpoint<
 					},
 					take: 1,
 				}),
-				this.prismaService.client.note_thread_muting.count({
+				this.prismaService.client.noteThreadMuting.count({
 					where: {
 						userId: me.id,
 						threadId: note.threadId ?? note.id,

@@ -658,7 +658,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 				// 通知
 				if (data.reply.userHost === null) {
 					const isThreadMuted =
-						(await this.prismaService.client.note_thread_muting.count({
+						(await this.prismaService.client.noteThreadMuting.count({
 							where: {
 								userId: data.reply.userId,
 								threadId: data.reply.threadId ?? data.reply.id,
@@ -816,7 +816,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 			this.userEntityUtilService.isLocalUser(u),
 		)) {
 			const isThreadMuted =
-				(await this.prismaService.client.note_thread_muting.count({
+				(await this.prismaService.client.noteThreadMuting.count({
 					where: {
 						userId: u.id,
 						threadId: note.threadId ?? note.id,

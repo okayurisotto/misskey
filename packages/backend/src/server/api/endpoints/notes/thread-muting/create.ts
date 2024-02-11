@@ -57,7 +57,7 @@ export default class extends Endpoint<
 
 			await this.noteReadService.read(me.id, mutedNotes);
 
-			await this.prismaService.client.note_thread_muting.create({
+			await this.prismaService.client.noteThreadMuting.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),

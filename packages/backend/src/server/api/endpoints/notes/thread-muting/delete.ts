@@ -37,7 +37,7 @@ export default class extends Endpoint<
 				throw err;
 			});
 
-			await this.prismaService.client.note_thread_muting.delete({
+			await this.prismaService.client.noteThreadMuting.delete({
 				where: {
 					userId_threadId: {
 						threadId: note.threadId ?? note.id,

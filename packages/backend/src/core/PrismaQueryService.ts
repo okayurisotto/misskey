@@ -191,7 +191,7 @@ export class PrismaQueryService {
 		if (userId === null) return {};
 
 		const mutedThreads =
-			await this.prismaService.client.note_thread_muting.findMany({
+			await this.prismaService.client.noteThreadMuting.findMany({
 				where: { userId },
 				select: { threadId: true },
 			});
