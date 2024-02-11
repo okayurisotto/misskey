@@ -4,6 +4,7 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ChannelEntityService } from '@/core/entities/ChannelEntityService.js';
 import { ChannelSchema } from '@/models/zod/ChannelSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { isNotNull } from '@/misc/is-not-null.js';
 
 const res = z.array(ChannelSchema);
 export const meta = {
@@ -26,17 +27,19 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const channels = await this.prismaService.client.channel.findMany({
-				where: {
-					lastNotedAt: { not: null },
-					isArchived: false,
-				},
-				orderBy: { lastNotedAt: 'desc' },
+			const notes = await this.prismaService.client.note.findMany({
+				where: { channel: { isArchived: false } },
+				include: { channel: true },
+				orderBy: { createdAt: 'desc' },
 				take: 10,
+				distinct: ['channelId'],
 			});
 
 			return await Promise.all(
-				channels.map((x) => this.channelEntityService.pack(x, me)),
+				notes
+					.map((note) => note.channel)
+					.filter(isNotNull)
+					.map((channel) => this.channelEntityService.pack(channel, me)),
 			);
 		});
 	}
