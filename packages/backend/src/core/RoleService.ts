@@ -16,34 +16,31 @@ import type { role, role_assignment, user } from '@prisma/client';
 export type RolePolicies = Required<z.infer<typeof UserPoliciesSchema>>;
 
 export const DEFAULT_POLICIES = {
-	gtlAvailable: true,
-	ltlAvailable: true,
-	canPublicNote: true,
+	alwaysMarkNsfw: false,
+	antennaLimit: 5,
+	canHideAds: false,
 	canInvite: false,
+	canManageCustomEmojis: false,
+	canPublicNote: true,
+	canSearchNotes: false,
+	clipLimit: 10,
+	driveCapacityMb: 100,
+	gtlAvailable: true,
+	inviteExpirationTime: 0,
 	inviteLimit: 0,
 	inviteLimitCycle: 60 * 24 * 7,
-	inviteExpirationTime: 0,
-	canManageCustomEmojis: false,
-	canSearchNotes: false,
-	canHideAds: false,
-	driveCapacityMb: 100,
-	alwaysMarkNsfw: false,
-	pinLimit: 5,
-	antennaLimit: 5,
-	wordMuteLimit: 200,
-	webhookLimit: 3,
-	clipLimit: 10,
+	ltlAvailable: true,
 	noteEachClipsLimit: 200,
-	userListLimit: 10,
-	userEachUserListsLimit: 50,
+	pinLimit: 5,
 	rateLimitFactor: 1,
+	userEachUserListsLimit: 50,
+	userListLimit: 10,
+	webhookLimit: 3,
+	wordMuteLimit: 200,
 } as const satisfies RolePolicies;
 
 @Injectable()
 export class RoleService {
-	public static AlreadyAssignedError = class extends Error {};
-	public static NotAssignedError = class extends Error {};
-
 	constructor(
 		private readonly globalEventService: GlobalEventService,
 		private readonly metaService: MetaService,
@@ -62,26 +59,37 @@ export class RoleService {
 	}
 
 	public async getUserRoles(userId: user['id']): Promise<role[]> {
-		const roles = await this.prismaService.client.role.findMany();
-		const assigns = await this.getUserAssigns(userId);
-		const assignedRoles = roles.filter((r) =>
-			assigns.map((x) => x.roleId).includes(r.id),
-		);
-		const user = roles.some((r) => r.target === 'conditional')
-			? await this.prismaService.client.user.findUnique({
-					where: { id: userId },
-			  })
-			: null;
-		const matchedCondRoles = roles.filter((r) => {
-			return (
-				r.target === 'conditional' &&
-				this.roleConditionEvalService.eval(
-					user!,
-					RoleCondFormulaValueSchema.parse(r.condFormula),
-				)
-			);
+		const roles = await this.prismaService.client.role.findMany({
+			where: {
+				OR: [
+					{ target: 'conditional' },
+					{
+						role_assignment: {
+							some: {
+								userId,
+								OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+							},
+						},
+					},
+				],
+			},
 		});
-		return [...assignedRoles, ...matchedCondRoles];
+
+		const conditionalRoles = roles.filter((r) => r.target === 'conditional');
+		const assignedRoles = roles.filter((r) => r.target === 'manual');
+
+		if (conditionalRoles.length === 0) {
+			return assignedRoles;
+		} else {
+			const user = await this.prismaService.client.user.findUniqueOrThrow({
+				where: { id: userId },
+			});
+			const matchedCondRoles = conditionalRoles.filter((role) => {
+				const formula = RoleCondFormulaValueSchema.parse(role.condFormula);
+				return this.roleConditionEvalService.eval(user, formula);
+			});
+			return [...assignedRoles, ...matchedCondRoles];
+		}
 	}
 
 	public async getUserPolicies(
@@ -90,101 +98,96 @@ export class RoleService {
 		const meta = await this.metaService.fetch();
 		const basePolicies = {
 			...DEFAULT_POLICIES,
-			...z.record(z.string(), z.any()).optional().parse(meta.policies),
+			...UserPoliciesSchema.parse(meta.policies),
 		};
 
-		if (userId == null) return basePolicies;
+		if (userId === null) return basePolicies;
 
 		const roles = await this.getUserRoles(userId);
 
-		function calc<T extends keyof RolePolicies>(
+		const calc = <T extends keyof RolePolicies>(
 			name: T,
 			aggregate: (values: RolePolicies[T][]) => RolePolicies[T],
-		): RolePolicies[T] {
+		): RolePolicies[T] => {
 			if (roles.length === 0) return basePolicies[name];
 
-			const policies = roles.map(
-				(role) =>
-					RolePoliciesSchema.parse(role.policies)[name] ?? {
-						priority: 0,
-						useDefault: true,
-					},
+			const policies = roles.map((role) => {
+				const policies = RolePoliciesSchema.parse(role.policies);
+				const policy = policies[name];
+				if (policy !== undefined) return policy;
+				return { priority: 0, useDefault: true } as const;
+			});
+
+			/** `Map<Priority, Policy[]>` */
+			const policiesMap = policies.reduce((acc, cur) => {
+				const prevValue = acc.get(cur.priority);
+				if (prevValue === undefined) {
+					acc.set(cur.priority, [cur]);
+				} else {
+					acc.set(cur.priority, [...prevValue, cur]);
+				}
+				return acc;
+			}, new Map<number, typeof policies>());
+
+			const [[, highPriorityPolicies]] = [...policiesMap].sort(
+				([a], [b]) => b - a,
 			);
 
-			const p2 = policies.filter((policy) => policy.priority === 2);
-			if (p2.length > 0)
-				return aggregate(
-					p2.map((policy) =>
-						policy.useDefault ? basePolicies[name] : policy.value,
-					),
-				);
+			const values = highPriorityPolicies.map((policy) => {
+				if (policy.useDefault) {
+					return basePolicies[name];
+				} else {
+					return policy.value as RolePolicies[T]; // TODO
+				}
+			});
 
-			const p1 = policies.filter((policy) => policy.priority === 1);
-			if (p1.length > 0)
-				return aggregate(
-					p1.map((policy) =>
-						policy.useDefault ? basePolicies[name] : policy.value,
-					),
-				);
+			return aggregate(values);
+		};
 
-			return aggregate(
-				policies.map((policy) =>
-					policy.useDefault ? basePolicies[name] : policy.value,
-				),
-			);
-		}
+		const some = (vs: boolean[]): boolean => vs.some((v) => v);
+		const max = (vs: number[]): number => Math.max(...vs);
 
 		return {
-			gtlAvailable: calc('gtlAvailable', (vs) => vs.some((v) => v)),
-			ltlAvailable: calc('ltlAvailable', (vs) => vs.some((v) => v)),
-			canPublicNote: calc('canPublicNote', (vs) => vs.some((v) => v)),
-			canInvite: calc('canInvite', (vs) => vs.some((v) => v)),
-			inviteLimit: calc('inviteLimit', (vs) => Math.max(...vs)),
-			inviteLimitCycle: calc('inviteLimitCycle', (vs) => Math.max(...vs)),
-			inviteExpirationTime: calc('inviteExpirationTime', (vs) =>
-				Math.max(...vs),
-			),
-			canManageCustomEmojis: calc('canManageCustomEmojis', (vs) =>
-				vs.some((v) => v),
-			),
-			canSearchNotes: calc('canSearchNotes', (vs) => vs.some((v) => v)),
-			canHideAds: calc('canHideAds', (vs) => vs.some((v) => v)),
-			driveCapacityMb: calc('driveCapacityMb', (vs) => Math.max(...vs)),
-			alwaysMarkNsfw: calc('alwaysMarkNsfw', (vs) => vs.some((v) => v)),
-			pinLimit: calc('pinLimit', (vs) => Math.max(...vs)),
-			antennaLimit: calc('antennaLimit', (vs) => Math.max(...vs)),
-			wordMuteLimit: calc('wordMuteLimit', (vs) => Math.max(...vs)),
-			webhookLimit: calc('webhookLimit', (vs) => Math.max(...vs)),
-			clipLimit: calc('clipLimit', (vs) => Math.max(...vs)),
-			noteEachClipsLimit: calc('noteEachClipsLimit', (vs) => Math.max(...vs)),
-			userListLimit: calc('userListLimit', (vs) => Math.max(...vs)),
-			userEachUserListsLimit: calc('userEachUserListsLimit', (vs) =>
-				Math.max(...vs),
-			),
-			rateLimitFactor: calc('rateLimitFactor', (vs) => Math.max(...vs)),
+			alwaysMarkNsfw: calc('alwaysMarkNsfw', some),
+			antennaLimit: calc('antennaLimit', max),
+			canHideAds: calc('canHideAds', some),
+			canInvite: calc('canInvite', some),
+			canManageCustomEmojis: calc('canManageCustomEmojis', some),
+			canPublicNote: calc('canPublicNote', some),
+			canSearchNotes: calc('canSearchNotes', some),
+			clipLimit: calc('clipLimit', max),
+			driveCapacityMb: calc('driveCapacityMb', max),
+			gtlAvailable: calc('gtlAvailable', some),
+			inviteExpirationTime: calc('inviteExpirationTime', max),
+			inviteLimit: calc('inviteLimit', max),
+			inviteLimitCycle: calc('inviteLimitCycle', max),
+			ltlAvailable: calc('ltlAvailable', some),
+			noteEachClipsLimit: calc('noteEachClipsLimit', max),
+			pinLimit: calc('pinLimit', max),
+			rateLimitFactor: calc('rateLimitFactor', max),
+			userEachUserListsLimit: calc('userEachUserListsLimit', max),
+			userListLimit: calc('userListLimit', max),
+			webhookLimit: calc('webhookLimit', max),
+			wordMuteLimit: calc('wordMuteLimit', max),
 		};
 	}
 
 	public async isModerator(
 		user: { id: user['id']; isRoot: user['isRoot'] } | null,
 	): Promise<boolean> {
-		if (user == null) return false;
-		return (
-			user.isRoot ||
-			(await this.getUserRoles(user.id)).some(
-				(r) => r.isModerator || r.isAdministrator,
-			)
-		);
+		if (user === null) return false;
+		if (user.isRoot) return true;
+		const roles = await this.getUserRoles(user.id);
+		return roles.some((role) => role.isModerator || role.isAdministrator);
 	}
 
 	public async isAdministrator(
 		user: { id: user['id']; isRoot: user['isRoot'] } | null,
 	): Promise<boolean> {
-		if (user == null) return false;
-		return (
-			user.isRoot ||
-			(await this.getUserRoles(user.id)).some((r) => r.isAdministrator)
-		);
+		if (user === null) return false;
+		if (user.isRoot) return true;
+		const roles = await this.getUserRoles(user.id);
+		return roles.some((role) => role.isAdministrator);
 	}
 
 	public async addNoteToRoleTimeline(
