@@ -56,27 +56,35 @@ okayurisottoによるMisskeyフォークです。`13.14.2`をベースにして�
   - ✅ TSConfig basesを使うようにする
   - 🚧 TSConfigをより厳しくする
   - 🚧 型エラーをゼロにする
-- ✅ AjvからZodへ移行する
+- 🚧 バリデーション関連
+	- ✅ AjvからZodへ移行する
   - ✅ Zodを使うabstractな`Endpoint`クラスを新しく作る
   - ✅ 実際のエンドポイントを新しく作ったエンドポイントに置き換える
   - ✅ Ajvへの依存をなくす
-- ❓ `Endpoint`クラスの`override`方法を工夫する
-  - ❓ `meta`や`paramDef`を`override`で定義するようにする
-- ✅ validなOpenAPI Specを配信するようにする
-- 🚧 TypeORMからPrismaへ移行しつつクエリを最適化する
+	- ✅ validなOpenAPI Specを配信するようにする
+	- 🚧 すべての危険な箇所で適切にバリデーションする
+- 🚧 データベース関連
   - ✅ Prismaをセットアップする
-  - 🤏 TypeORMをPrismaで置き換えていく
+  - 🚧 TypeORMをPrismaで置き換えていく
+		- ✅ 基本的な問い合わせ部分をTypeORMからPrismaに置き換える
+		- 😇 Chart部分をTypeORMからPrismaで置き換える
   - 🚧 不要な存在確認クエリを消し、エラーハンドリングをきちんとするようにする
   - 🚧 トランザクションをきちんとするようにする
-  - 🚧 適切に`JOIN`して取得し、`pack()`メソッドでの追加取得をやめる
+  - 🚧 適切に`JOIN`して取得し、あとから追加では取得しないようにする
 	- 🚧 トレンド算出のためのクエリを最適化する
 		- ❓ ハッシュタグの使用履歴を取るようにする
-	- ❓ 非正規化されている箇所を`schema.prisma`で`@ignore`する
-	- ❓ `@unique`忘れや`@relation`忘れや`Json`型などをなくす
-- ❓ テストのカバレッジを上げる
+	- 🚧 非正規化されている箇所を`schema.prisma`で`@ignore`する
+	- ❓ `@unique`忘れや`@relation`忘れや`Json`型やSTIやEAVなどをなくす
+	- ✅ キャッシュによるごまかしをやめる
+- ❓ `Endpoint`クラスの`override`方法を工夫する
+  - ❓ `meta`や`paramDef`を`override`で定義するようにする
+- ❓ Conditionalなロールに該当するユーザーの一覧を取得できるようにする
+	- ❓ 条件をデータベースへのクエリとして表現する
+- 🚧 壊してしまったテストをなんとかする
 - ❓ ベンチマークを取れるようにする
 - ❓ 積極的なジョブキューの活用
-- ❓ `@bindThis`をやめる
+- 🚧 `@bindThis`をやめる
+- ❓ タイムライン構築にRedisの集合演算を活用する
 
 ### misskey-js
 
