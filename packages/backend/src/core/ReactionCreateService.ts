@@ -6,8 +6,8 @@ import {
 	type NoteReaction,
 	type user,
 } from '@prisma/client';
+import { isNotUndefined } from 'omick';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
-import type { RemoteUser } from '@/models/entities/User.js';
 import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { NotificationService } from '@/core/NotificationService.js';
@@ -27,19 +27,19 @@ import { NoteVisibilityService } from './entities/NoteVisibilityService.js';
 
 const FALLBACK = '❤';
 
-const legacies: Record<string, string> = {
-	like: '👍',
-	love: '❤', // ここに記述する場合は異体字セレクタを入れない
-	laugh: '😆',
-	hmm: '🤔',
-	surprise: '😮',
-	congrats: '🎉',
-	angry: '💢',
-	confused: '😥',
-	rip: '😇',
-	pudding: '🍮',
-	star: '⭐',
-};
+const legacies = new Map([
+	['like', '👍'],
+	['love', '❤'], // ここに記述する場合は異体字セレクタを入れない
+	['laugh', '😆'],
+	['hmm', '🤔'],
+	['surprise', '😮'],
+	['congrats', '🎉'],
+	['angry', '💢'],
+	['confused', '😥'],
+	['rip', '😇'],
+	['pudding', '🍮'],
+	['star', '⭐'],
+]);
 
 const isCustomEmojiRegexp = /^:([\w+-]+)(?:@\.)?:$/;
 
@@ -64,11 +64,11 @@ export class ReactionCreateService {
 	) {}
 
 	public async create(
-		user: { id: user['id']; host: user['host']; isBot: user['isBot'] },
+		user: Pick<user, 'id' | 'host' | 'isBot'>,
 		note: Note,
-		_reaction?: string | null,
+		reaction_?: string | null,
 	): Promise<void> {
-		// Check blocking
+		//#region Check blocking
 		if (note.userId !== user.id) {
 			const blocked = await this.userBlockingCheckService.check(
 				note.userId,
@@ -78,39 +78,47 @@ export class ReactionCreateService {
 				throw new IdentifiableError('e70412a4-7197-4726-8e74-f3e0deb92aa7');
 			}
 		}
+		//#endregion
 
-		// check visibility
+		//#region Check visibility
 		if (!(await this.noteVisibilityService.isVisibleForMe(note, user.id))) {
 			throw new IdentifiableError(
 				'68e9d2d1-48bf-42c2-b90a-b20e09fd3d48',
 				'Note not accessible for you.',
 			);
 		}
+		//#endregion
 
-		let reaction = _reaction ?? FALLBACK;
+		//#region Select reaction
+		let reaction = reaction_ ?? FALLBACK;
 
-		if (
-			note.reactionAcceptance === 'likeOnly' ||
-			((note.reactionAcceptance === 'likeOnlyForRemote' ||
-				note.reactionAcceptance ===
-					'nonSensitiveOnlyForLocalLikeOnlyForRemote') &&
-				user.host != null)
+		const ReactionAcceptanceSchema = z
+			.enum([
+				'likeOnly',
+				'likeOnlyForRemote',
+				'nonSensitiveOnly',
+				'nonSensitiveOnlyForLocalLikeOnlyForRemote',
+			])
+			.nullable();
+		const acceptance = ReactionAcceptanceSchema.parse(note.reactionAcceptance);
+
+		if (acceptance === 'likeOnly') {
+			reaction = '❤️';
+		} else if (
+			(acceptance === 'likeOnlyForRemote' ||
+				acceptance === 'nonSensitiveOnlyForLocalLikeOnlyForRemote') &&
+			user.host !== null
 		) {
 			reaction = '❤️';
-		} else if (_reaction) {
+		} else if (reaction_) {
 			const custom = reaction.match(isCustomEmojiRegexp);
 			if (custom) {
 				const reacterHost = this.utilityService.toPunyNullable(user.host);
 
 				const name = custom[1];
-				const emoji =
-					reacterHost == null
-						? await this.prismaService.client.customEmoji.findFirst({
-								where: { host: null, name },
-						  })
-						: await this.prismaService.client.customEmoji.findUnique({
-								where: { name_host: { host: reacterHost, name } },
-						  });
+				const emoji = await this.prismaService.client.customEmoji.findFirst({
+					where: { host: reacterHost, name },
+				});
 
 				if (emoji) {
 					if (
@@ -122,10 +130,7 @@ export class ReactionCreateService {
 						reaction = reacterHost ? `:${name}@${reacterHost}:` : `:${name}:`;
 
 						// センシティブ
-						if (
-							note.reactionAcceptance === 'nonSensitiveOnly' &&
-							emoji.isSensitive
-						) {
+						if (acceptance === 'nonSensitiveOnly' && emoji.isSensitive) {
 							reaction = FALLBACK;
 						}
 					} else {
@@ -136,10 +141,12 @@ export class ReactionCreateService {
 					reaction = FALLBACK;
 				}
 			} else {
-				reaction = this.normalize(reaction ?? null);
+				reaction = this.normalize(reaction);
 			}
 		}
+		//#endregion
 
+		//#region Create reaction
 		const record: NoteReaction = {
 			id: this.idService.genId(),
 			createdAt: new Date(),
@@ -148,7 +155,6 @@ export class ReactionCreateService {
 			reaction,
 		};
 
-		// Create reaction
 		try {
 			await this.prismaService.client.noteReaction.create({ data: record });
 		} catch (e) {
@@ -176,8 +182,9 @@ export class ReactionCreateService {
 				throw e;
 			}
 		}
+		//#endregion
 
-		// Increment reactions count
+		//#region Increment reactions count
 		await this.prismaService.client.$transaction(async (client) => {
 			const data = await client.note.findUniqueOrThrow({
 				where: { id: note.id },
@@ -203,29 +210,30 @@ export class ReactionCreateService {
 				},
 			});
 		});
+		//#endregion
 
-		const meta = await this.metaService.fetch();
-
-		if (meta.enableChartsForRemoteUser || user.host == null) {
-			this.perUserReactionsChart.update(user, note);
+		//#region Update chart
+		if (user.host === null) {
+			await this.perUserReactionsChart.update(user, note);
+		} else {
+			const meta = await this.metaService.fetch();
+			if (meta.enableChartsForRemoteUser) {
+				await this.perUserReactionsChart.update(user, note);
+			}
 		}
+		//#endregion
 
+		//#region Publish stream
 		// カスタム絵文字リアクションだったら絵文字情報も送る
 		const decodedReaction = this.reactionDecodeService.decode(reaction);
 
 		const customEmoji =
-			decodedReaction.name == null
+			decodedReaction.name === undefined
 				? null
-				: decodedReaction.host == null
-				? await this.prismaService.client.customEmoji.findFirst({
-						where: { name: decodedReaction.name, host: null },
-				  })
-				: await this.prismaService.client.customEmoji.findUnique({
+				: await this.prismaService.client.customEmoji.findFirst({
 						where: {
-							name_host: {
-								name: decodedReaction.name,
-								host: decodedReaction.host,
-							},
+							name: decodedReaction.name,
+							host: decodedReaction.host ?? null,
 						},
 				  });
 
@@ -237,23 +245,31 @@ export class ReactionCreateService {
 							name: customEmoji.host
 								? `${customEmoji.name}@${customEmoji.host}`
 								: `${customEmoji.name}@.`,
-							// || emoji.originalUrl してるのは後方互換性のため（publicUrlはstringなので??はだめ）
-							url: customEmoji.publicUrl || customEmoji.originalUrl,
+							url:
+								customEmoji.publicUrl !== ''
+									? customEmoji.publicUrl
+									: customEmoji.originalUrl,
 					  }
 					: null,
 			userId: user.id,
 		});
+		//#endregion
 
-		// リアクションされたユーザーがローカルユーザーなら通知を作成
+		//#region Create Notification
 		if (note.userHost === null) {
-			this.notificationService.createNotification(note.userId, 'reaction', {
-				notifierId: user.id,
-				noteId: note.id,
-				reaction: reaction,
-			});
+			await this.notificationService.createNotification(
+				note.userId,
+				'reaction',
+				{
+					notifierId: user.id,
+					noteId: note.id,
+					reaction: reaction,
+				},
+			);
 		}
+		//#endregion
 
-		//#region 配信
+		//#region Deliver
 		if (this.userEntityUtilService.isLocalUser(user) && !note.localOnly) {
 			const content = this.apRendererService.addContext(
 				await this.apRendererService.renderLike(record, note),
@@ -263,37 +279,43 @@ export class ReactionCreateService {
 				content,
 			);
 			if (note.userHost !== null) {
-				const reactee = await this.prismaService.client.user.findUnique({
+				const reactee = await this.prismaService.client.user.findUniqueOrThrow({
 					where: { id: note.userId },
 				});
-				dm.addDirectRecipe(reactee as RemoteUser);
+				if (this.userEntityUtilService.isRemoteUser(reactee)) {
+					dm.addDirectRecipe(reactee);
+				} else {
+					throw new Error();
+				}
 			}
 
 			if (['public', 'home', 'followers'].includes(note.visibility)) {
 				dm.addFollowersRecipe();
 			} else if (note.visibility === 'specified') {
-				const visibleUsers = await Promise.all(
-					note.visibleUserIds.map((id) =>
-						this.prismaService.client.user.findUnique({ where: { id } }),
-					),
-				);
-				for (const u of visibleUsers.filter(
-					(u) => u && this.userEntityUtilService.isRemoteUser(u),
-				)) {
-					dm.addDirectRecipe(u as RemoteUser);
+				const users = await this.prismaService.client.user.findMany({
+					where: { id: { in: note.visibleUserIds } },
+				});
+				const visibleUsers = note.visibleUserIds
+					.map((id) => users.find((user) => user.id === id))
+					.filter(isNotUndefined);
+				for (const user of visibleUsers) {
+					if (this.userEntityUtilService.isRemoteUser(user)) {
+						dm.addDirectRecipe(user);
+					}
 				}
 			}
 
-			dm.execute();
+			await dm.execute();
 		}
 		//#endregion
 	}
 
 	private normalize(reaction: string | null): string {
-		if (reaction == null) return FALLBACK;
+		if (reaction === null) return FALLBACK;
 
 		// 文字列タイプのリアクションを絵文字に変換
-		if (Object.keys(legacies).includes(reaction)) return legacies[reaction];
+		const newLocal = legacies.get(reaction);
+		if (newLocal !== undefined) return newLocal;
 
 		// Unicode絵文字
 		const match = emojiRegex.exec(reaction);

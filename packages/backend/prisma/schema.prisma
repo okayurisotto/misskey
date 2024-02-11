@@ -1407,7 +1407,7 @@ model Note {
   uri                  String?              @unique(map: "IDX_153536c67d05e9adb24e99fc2b") @db.VarChar(512)
   score                Int                  @default(0)
   url                  String?              @db.VarChar(512)
-  reactionAcceptance   String?              @db.VarChar(64) // Enum?
+  reactionAcceptance   String?              @db.VarChar(64) // 'likeOnly' | 'likeOnlyForRemote' | 'nonSensitiveOnly' | 'nonSensitiveOnlyForLocalLikeOnlyForRemote'
   // 非正規化
   attachedFileTypes    String[]             @default([]) @db.VarChar(256)
   emojis               String[]             @default([]) @db.VarChar(128)
