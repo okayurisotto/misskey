@@ -100,7 +100,6 @@ import { QueueModule } from './QueueModule.js';
 import { QueueService } from './QueueService.js';
 import { ReactionCreateService } from './ReactionCreateService.js';
 import { RelayService } from './RelayService.js';
-import { RemoteAccountMovingService } from './activitypub/models/RemoteAccountMovingService.js';
 import { RemoteLoggerService } from './RemoteLoggerService.js';
 import { RemoteUserResolveService } from './RemoteUserResolveService.js';
 import { RenoteMutingEntityService } from './entities/RenoteMutingEntityService.js';
@@ -335,7 +334,6 @@ const $ApNoteService: Provider = {
 		ReactionDecodeService,
 		ReactionDeleteService,
 		RelayService,
-		RemoteAccountMovingService,
 		RemoteLoggerService,
 		RemoteUserResolveService,
 		RenoteCountService,
@@ -525,7 +523,6 @@ const $ApNoteService: Provider = {
 		ReactionDecodeService,
 		ReactionDeleteService,
 		RelayService,
-		RemoteAccountMovingService,
 		RemoteLoggerService,
 		RemoteUserResolveService,
 		RenoteCountService,
