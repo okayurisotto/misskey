@@ -49,7 +49,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			const instance = await this.metaService.fetch(true);
+			const instance = await this.metaService.fetch();
 
 			if (exist != null) {
 				return {

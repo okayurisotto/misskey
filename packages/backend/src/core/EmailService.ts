@@ -23,7 +23,7 @@ export class EmailService {
 		html: string,
 		text: string,
 	): Promise<void> {
-		const meta = await this.metaService.fetch(true);
+		const meta = await this.metaService.fetch();
 
 		const iconUrl = `${this.configLoaderService.data.url}/static-assets/mi-white.png`;
 		const emailSettingUrl = `${this.configLoaderService.data.url}/settings/email`;

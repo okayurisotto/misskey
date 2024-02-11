@@ -130,7 +130,7 @@ export class ClientServerService {
 	private async manifestHandler(reply: FastifyReply): Promise<Manifest> {
 		const res = deepClone(manifest);
 
-		const instance = await this.metaService.fetch(true);
+		const instance = await this.metaService.fetch();
 
 		res.short_name = instance.name ?? 'Misskey';
 		res.name = instance.name ?? 'Misskey';
@@ -776,7 +776,7 @@ export class ClientServerService {
 		//#endregion
 
 		fastify.get('/_info_card_', async (request, reply) => {
-			const meta = await this.metaService.fetch(true);
+			const meta = await this.metaService.fetch();
 
 			reply.removeHeader('X-Frame-Options');
 

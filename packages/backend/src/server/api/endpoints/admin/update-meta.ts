@@ -110,7 +110,7 @@ export default class extends Endpoint<
 		private readonly moderationLogService: ModerationLogService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const set: Partial<Meta> = {};
+			const set: Partial<Omit<Meta, 'id' | 'policies'>> = {};
 
 			if (typeof ps.disableRegistration === 'boolean') {
 				set.disableRegistration = ps.disableRegistration;

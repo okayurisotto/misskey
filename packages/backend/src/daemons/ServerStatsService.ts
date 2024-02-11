@@ -52,7 +52,7 @@ export class ServerStatsService implements OnApplicationShutdown {
 	 * Report server stats regularly
 	 */
 	public async start(): Promise<void> {
-		const meta = await this.metaService.fetch(true);
+		const meta = await this.metaService.fetch();
 		if (!meta.enableServerMachineStats) return;
 
 		const log: unknown[] = [];

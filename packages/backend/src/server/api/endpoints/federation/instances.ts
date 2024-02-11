@@ -46,7 +46,7 @@ export default class extends Endpoint<
 			const where_blocked =
 				await (async (): Promise<Prisma.InstanceWhereInput> => {
 					if (ps.blocked == null) return {};
-					const meta = await this.metaService.fetch(true);
+					const meta = await this.metaService.fetch();
 
 					if (ps.blocked) {
 						return { host: { in: meta.blockedHosts } };

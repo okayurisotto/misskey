@@ -38,7 +38,7 @@ export default class extends Endpoint<
 		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const instance = await this.metaService.fetch(true);
+			const instance = await this.metaService.fetch();
 
 			const now = new Date();
 			const dayOfWeek = 1 << now.getDay();

@@ -49,7 +49,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async () => {
-			const instance = await this.metaService.fetch(true);
+			const instance = await this.metaService.fetch();
 			const hiddenTags = instance.hiddenTags.map((t) => normalizeForSearch(t));
 
 			const now = new Date(); // 5分単位で丸めた現在日時

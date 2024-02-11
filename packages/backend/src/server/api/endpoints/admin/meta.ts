@@ -112,7 +112,7 @@ export default class extends Endpoint<
 		private readonly metaService: MetaService,
 	) {
 		super(meta, paramDef, async () => {
-			const instance = await this.metaService.fetch(true);
+			const instance = await this.metaService.fetch();
 
 			return {
 				...pick(instance, [

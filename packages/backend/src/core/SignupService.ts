@@ -75,7 +75,7 @@ export class SignupService {
 			})) === 0;
 
 		if (!opts.ignorePreservedUsernames && !isTheFirstUser) {
-			const instance = await this.metaService.fetch(true);
+			const instance = await this.metaService.fetch();
 			const isPreserved = instance.preservedUsernames
 				.map((x) => x.toLowerCase())
 				.includes(username.toLowerCase());
