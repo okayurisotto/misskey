@@ -1767,7 +1767,7 @@ model RenoteMuting {
 }
 
 // 新規ユーザーがどの程度サーバに定着したか？
-model retention_aggregation {
+model RetentionAggregation {
   id         String   @id(map: "PK_22aad3e8640b15fb3b90ee02d18") @db.VarChar(32)
   createdAt  DateTime @db.Timestamptz(6)
   updatedAt  DateTime @db.Timestamptz(6)
@@ -1777,6 +1777,7 @@ model retention_aggregation {
   usersCount Int // 集計？
 
   @@index([createdAt], map: "IDX_09f4e5b9e4a2f268d3e284e4b3")
+  @@map("retention_aggregation")
 }
 
 // deprecated

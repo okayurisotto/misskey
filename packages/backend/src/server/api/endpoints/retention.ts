@@ -29,7 +29,7 @@ export default class extends Endpoint<
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async () => {
 			const records =
-				await this.prismaService.client.retention_aggregation.findMany({
+				await this.prismaService.client.retentionAggregation.findMany({
 					orderBy: { id: 'desc' },
 					take: 30,
 				});

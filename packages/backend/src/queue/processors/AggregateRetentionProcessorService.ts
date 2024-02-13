@@ -32,7 +32,7 @@ export class AggregateRetentionProcessorService {
 
 		/** 過去31日分のレコード */
 		const pastRecords =
-			await this.prismaService.client.retention_aggregation.findMany({
+			await this.prismaService.client.retentionAggregation.findMany({
 				where: {
 					createdAt: { gt: new Date(+now - 1000 * 60 * 60 * 24 * 31) },
 				},
@@ -48,7 +48,7 @@ export class AggregateRetentionProcessorService {
 		const targetUserIds = targetUsers.map((u) => u.id);
 
 		try {
-			await this.prismaService.client.retention_aggregation.create({
+			await this.prismaService.client.retentionAggregation.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: now,
@@ -85,7 +85,7 @@ export class AggregateRetentionProcessorService {
 					activeUsersIds.has(id),
 				).length;
 
-				await this.prismaService.client.retention_aggregation.update({
+				await this.prismaService.client.retentionAggregation.update({
 					where: { id: record.id },
 					data: {
 						updatedAt: now,
