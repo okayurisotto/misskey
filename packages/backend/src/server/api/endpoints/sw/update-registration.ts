@@ -33,7 +33,7 @@ export default class extends Endpoint<
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
 			const swSubscription =
-				await this.prismaService.client.sw_subscription.findFirst({
+				await this.prismaService.client.swSubscription.findFirst({
 					where: {
 						userId: me.id,
 						endpoint: ps.endpoint,
@@ -48,7 +48,7 @@ export default class extends Endpoint<
 				swSubscription.sendReadMessage = ps.sendReadMessage;
 			}
 
-			await this.prismaService.client.sw_subscription.update({
+			await this.prismaService.client.swSubscription.update({
 				where: { id: swSubscription.id },
 				data: { sendReadMessage: swSubscription.sendReadMessage },
 			});

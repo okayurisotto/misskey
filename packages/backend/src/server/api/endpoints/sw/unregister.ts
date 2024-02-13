@@ -22,7 +22,7 @@ export default class extends Endpoint<
 > {
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			await this.prismaService.client.sw_subscription.deleteMany({
+			await this.prismaService.client.swSubscription.deleteMany({
 				where: {
 					...(me ? { userId: me.id } : {}),
 					endpoint: ps.endpoint,

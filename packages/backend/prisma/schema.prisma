@@ -1887,7 +1887,7 @@ model Signin {
 }
 
 // ServiceWorkerの購読
-model sw_subscription {
+model SwSubscription {
   id              String   @id(map: "PK_e8f763631530051b95eb6279b91") @db.VarChar(32)
   createdAt       DateTime @db.Timestamptz(6)
   endpoint        String   @db.VarChar(512) // Enum?
@@ -1899,6 +1899,7 @@ model sw_subscription {
   user            user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_97754ca6f2baff9b4abb7f853dd")
 
   @@index([userId], map: "IDX_97754ca6f2baff9b4abb7f853d")
+  @@map("sw_subscription")
 }
 
 // 使用済みユーザー名
@@ -1999,7 +2000,7 @@ model user {
   registry_item                                             registry_item[]
   role_assignment                                           RoleAssignment[]
   signin                                                    Signin[]
-  sw_subscription                                           sw_subscription[]
+  sw_subscription                                           SwSubscription[]
   user_keypair                                              user_keypair?
   user_list                                                 user_list[]
   user_list_favorite                                        user_list_favorite[]

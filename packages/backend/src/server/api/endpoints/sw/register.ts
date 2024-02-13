@@ -40,7 +40,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// if already subscribed
-			const exist = await this.prismaService.client.sw_subscription.findFirst({
+			const exist = await this.prismaService.client.swSubscription.findFirst({
 				where: {
 					userId: me.id,
 					endpoint: ps.endpoint,
@@ -61,7 +61,7 @@ export default class extends Endpoint<
 				};
 			}
 
-			await this.prismaService.client.sw_subscription.create({
+			await this.prismaService.client.swSubscription.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),

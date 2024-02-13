@@ -78,7 +78,7 @@ export class PushNotificationService {
 		);
 
 		const subscriptions =
-			await this.prismaService.client.sw_subscription.findMany({
+			await this.prismaService.client.swSubscription.findMany({
 				where: { userId },
 			});
 
@@ -120,7 +120,7 @@ export class PushNotificationService {
 
 					if (err.statusCode === 410) {
 						const result =
-							await this.prismaService.client.sw_subscription.findFirst({
+							await this.prismaService.client.swSubscription.findFirst({
 								where: {
 									userId: userId,
 									endpoint: subscription.endpoint,
@@ -129,7 +129,7 @@ export class PushNotificationService {
 								},
 							});
 						if (result) {
-							this.prismaService.client.sw_subscription.delete({
+							this.prismaService.client.swSubscription.delete({
 								where: { id: result.id },
 							});
 						}

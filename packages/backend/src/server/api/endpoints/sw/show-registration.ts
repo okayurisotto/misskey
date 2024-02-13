@@ -31,7 +31,7 @@ export default class extends Endpoint<
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
 			// if already subscribed
-			const exist = await this.prismaService.client.sw_subscription.findFirst({
+			const exist = await this.prismaService.client.swSubscription.findFirst({
 				where: {
 					userId: me.id,
 					endpoint: ps.endpoint,
