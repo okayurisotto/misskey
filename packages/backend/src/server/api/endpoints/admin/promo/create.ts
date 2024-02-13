@@ -36,7 +36,7 @@ export default class extends Endpoint<
 			}
 
 			try {
-				await this.prismaService.client.promo_note.create({
+				await this.prismaService.client.promoNote.create({
 					data: {
 						noteId: note.id,
 						expiresAt: new Date(ps.expiresAt),

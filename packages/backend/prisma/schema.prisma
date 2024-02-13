@@ -1444,7 +1444,7 @@ model Note {
   renotes              Note[]               @relation("renote")
 
   poll          Poll?
-  promoNote     promo_note?
+  promoNote     PromoNote?
   clipNotes     ClipNote[]
   mutedNotes    MutedNote[]
   noteFavorites NoteFavorite[]
@@ -1678,8 +1678,8 @@ model PollVote {
   @@map("poll_vote")
 }
 
-// ?
-model promo_note {
+// `/api/admin/promo/create`と関連
+model PromoNote {
   expiresAt DateTime @db.Timestamptz(6)
   userId    String   @db.VarChar(32) // 非正規化
   //
@@ -1687,6 +1687,7 @@ model promo_note {
   note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e263909ca4fe5d57f8d4230dd5c")
 
   @@index([userId], map: "IDX_83f0862e9bae44af52ced7099e")
+  @@map("promo_note")
 }
 
 // ?
