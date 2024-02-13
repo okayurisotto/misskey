@@ -1451,7 +1451,7 @@ model Note {
   noteReactions NoteReaction[]
   noteUnreads   NoteUnread[]
   pollVotes     PollVote[]
-  promoReads    promo_read[]
+  promoReads    PromoRead[]
   pinings       user_note_pining[]
 
   // deprecated
@@ -1691,7 +1691,7 @@ model PromoNote {
 }
 
 // ?
-model promo_read {
+model PromoRead {
   id        String   @id(map: "PK_61917c1541002422b703318b7c9") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   //
@@ -1703,6 +1703,7 @@ model promo_read {
 
   @@unique([userId, noteId], map: "IDX_2882b8a1a07c7d281a98b6db16")
   @@index([userId], map: "IDX_9657d55550c3d37bfafaf7d4b0")
+  @@map("promo_read")
 }
 
 // 招待
@@ -1981,7 +1982,7 @@ model user {
   page_like                                                 PageLike[]
   password_reset_request                                    PasswordResetRequest[]
   poll_vote                                                 PollVote[]
-  promo_read                                                promo_read[]
+  promo_read                                                PromoRead[]
   registration_ticket_registration_ticket_usedByIdTouser    registration_ticket?   @relation("registration_ticket_usedByIdTouser")
   registration_ticket_registration_ticket_createdByIdTouser registration_ticket[]  @relation("registration_ticket_createdByIdTouser")
   registry_item                                             registry_item[]

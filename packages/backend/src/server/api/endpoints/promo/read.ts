@@ -39,7 +39,7 @@ export default class extends Endpoint<
 			});
 
 			const exist =
-				(await this.prismaService.client.promo_read.count({
+				(await this.prismaService.client.promoRead.count({
 					where: {
 						noteId: note.id,
 						userId: me.id,
@@ -51,7 +51,7 @@ export default class extends Endpoint<
 				return;
 			}
 
-			await this.prismaService.client.promo_read.create({
+			await this.prismaService.client.promoRead.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
