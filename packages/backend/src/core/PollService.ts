@@ -7,7 +7,7 @@ import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerServ
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserBlockingCheckService } from './UserBlockingCheckService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { Note, user } from '@prisma/client';
+import type { Note, User } from '@prisma/client';
 
 @Injectable()
 export class PollService {
@@ -22,7 +22,7 @@ export class PollService {
 		private readonly userEntityUtilService: UserEntityUtilService,
 	) {}
 
-	public async vote(user: user, note: Note, choice: number): Promise<void> {
+	public async vote(user: User, note: Note, choice: number): Promise<void> {
 		const poll = await this.prismaService.client.poll.findUnique({
 			where: { noteId: note.id },
 		});

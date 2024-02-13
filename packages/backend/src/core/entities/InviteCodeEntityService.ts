@@ -4,7 +4,7 @@ import type { InviteCodeSchema } from '@/models/zod/InviteCodeSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
-import type { InviteCode, user } from '@prisma/client';
+import type { InviteCode, User } from '@prisma/client';
 
 @Injectable()
 export class InviteCodeEntityService {
@@ -22,7 +22,7 @@ export class InviteCodeEntityService {
 	 */
 	public async pack(
 		src: InviteCode['id'] | InviteCode,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof InviteCodeSchema>> {
 		const target = await this.prismaService.client.inviteCode.findUniqueOrThrow(
 			{

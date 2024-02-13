@@ -30,15 +30,14 @@ export class ExportNotesProcessorService {
 
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },
-			include: { note: { include: { poll: true }, orderBy: { id: 'asc' } } },
+			include: { notes: { include: { poll: true }, orderBy: { id: 'asc' } } },
 		});
 		if (user === null) return;
 
-		const notes = user.note;
-		const allFileIds = unique(notes.map((note) => note.fileIds).flat());
+		const allFileIds = unique(user.notes.map((note) => note.fileIds).flat());
 		const allFiles =
 			await this.driveFileEntityPackService.packManyByIdsMap(allFileIds);
-		const content = notes.map((note) => ({
+		const content = user.notes.map((note) => ({
 			...pick(note, [
 				'id',
 				'text',

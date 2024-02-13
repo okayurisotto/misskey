@@ -62,7 +62,7 @@ export default class extends Endpoint<
 		private readonly roleUtilService: RoleUtilService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const orderBy = ((): Prisma.userOrderByWithRelationInput => {
+			const orderBy = ((): Prisma.UserOrderByWithRelationInput => {
 				switch (ps.sort) {
 					case '+follower':
 						return { followersCount: 'desc' };
@@ -87,17 +87,17 @@ export default class extends Endpoint<
 
 			const [adminFilter, moderatorFilter, adminAndModeratorFilter] =
 				await Promise.all([
-					(async (): Promise<Pick<Prisma.userWhereInput, 'id'>> =>
+					(async (): Promise<Pick<Prisma.UserWhereInput, 'id'>> =>
 						ps.state === 'admin'
 							? { id: { in: await this.roleUtilService.getAdministratorIds() } }
 							: {})(),
-					(async (): Promise<Pick<Prisma.userWhereInput, 'id'>> =>
+					(async (): Promise<Pick<Prisma.UserWhereInput, 'id'>> =>
 						ps.state === 'moderator'
 							? {
 									id: { in: await this.roleUtilService.getModeratorIds(false) },
 							  }
 							: {})(),
-					(async (): Promise<Pick<Prisma.userWhereInput, 'id'>> =>
+					(async (): Promise<Pick<Prisma.UserWhereInput, 'id'>> =>
 						ps.state === 'adminOrModerator'
 							? { id: { in: await this.roleUtilService.getModeratorIds(true) } }
 							: {})(),

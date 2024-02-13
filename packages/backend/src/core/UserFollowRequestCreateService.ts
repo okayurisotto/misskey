@@ -13,7 +13,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserBlockingCheckService } from './UserBlockingCheckService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 import { UserEntityPackLiteService } from './entities/UserEntityPackLiteService.js';
 
 @Injectable()
@@ -33,8 +33,8 @@ export class UserFollowRequestCreateService {
 	) {}
 
 	public async create(
-		follower: Pick<user, 'id' | 'host' | 'uri' | 'inbox' | 'sharedInbox'>,
-		followee: Pick<user, 'id' | 'host' | 'uri' | 'inbox' | 'sharedInbox'>,
+		follower: Pick<User, 'id' | 'host' | 'uri' | 'inbox' | 'sharedInbox'>,
+		followee: Pick<User, 'id' | 'host' | 'uri' | 'inbox' | 'sharedInbox'>,
 		requestId?: string,
 	): Promise<void> {
 		if (follower.id === followee.id) return;

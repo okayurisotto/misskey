@@ -5,7 +5,7 @@ import { genRsaKeyPair } from '@/misc/gen-key-pair.js';
 import { IdService } from '@/core/IdService.js';
 import generateNativeUserToken from '@/misc/generate-native-user-token.js';
 import { PrismaService } from './PrismaService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class CreateSystemUserService {
@@ -14,7 +14,7 @@ export class CreateSystemUserService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	public async createSystemUser(username: string): Promise<user> {
+	public async createSystemUser(username: string): Promise<User> {
 		const password = randomUUID();
 		const salt = await bcrypt.genSalt(8);
 		const hash = await bcrypt.hash(password, salt);
@@ -44,14 +44,14 @@ export class CreateSystemUserService {
 					isExplorable: false,
 					isBot: true,
 
-					user_keypair: {
+					userKeypair: {
 						create: {
 							publicKey: keyPair.publicKey,
 							privateKey: keyPair.privateKey,
 						},
 					},
 
-					user_profile: {
+					userProfile: {
 						create: {
 							autoAcceptFollowed: false,
 							password: hash,

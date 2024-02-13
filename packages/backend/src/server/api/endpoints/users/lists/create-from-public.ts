@@ -57,7 +57,7 @@ export default class extends Endpoint<
 						user_list_joining: {
 							where: {
 								user: {
-									blocking_blocking_blockerIdTouser: {
+									blockings_blocker: {
 										none: { blockeeId: me.id },
 									},
 								},

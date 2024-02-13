@@ -8,7 +8,7 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { LocalUsernameSchema, PasswordSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user, user_profile } from '@prisma/client';
+import type { User, user_profile } from '@prisma/client';
 
 @Injectable()
 export class SignupService {
@@ -21,12 +21,12 @@ export class SignupService {
 	) {}
 
 	public async signup(opts: {
-		username: user['username'];
+		username: User['username'];
 		password?: string | null;
 		passwordHash?: user_profile['password'] | null;
 		host?: string | null;
 		ignorePreservedUsernames?: boolean;
-	}): Promise<{ account: user; secret: string }> {
+	}): Promise<{ account: User; secret: string }> {
 		const { username, password, passwordHash, host } = opts;
 		let hash = passwordHash;
 
@@ -126,14 +126,14 @@ export class SignupService {
 						token: secret,
 						isRoot: isTheFirstUser,
 
-						user_keypair: {
+						userKeypair: {
 							create: {
 								publicKey: keyPair[0],
 								privateKey: keyPair[1],
 							},
 						},
 
-						user_profile: {
+						userProfile: {
 							create: {
 								autoAcceptFollowed: true,
 								password: hash,

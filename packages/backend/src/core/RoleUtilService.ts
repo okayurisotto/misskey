@@ -4,7 +4,7 @@ import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserPoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
-import type { Role, user } from '@prisma/client';
+import type { Role, User } from '@prisma/client';
 
 export type RolePolicies = Required<z.infer<typeof UserPoliciesSchema>>;
 
@@ -28,7 +28,7 @@ export class RoleUtilService {
 		return check.isExplorable;
 	}
 
-	public async getModeratorIds(includeAdmins = true): Promise<user['id'][]> {
+	public async getModeratorIds(includeAdmins = true): Promise<User['id'][]> {
 		const roles = await this.prismaService.client.role.findMany();
 		const moderatorRoles = includeAdmins
 			? roles.filter((r) => r.isModerator || r.isAdministrator)
@@ -43,7 +43,7 @@ export class RoleUtilService {
 		return assigns.map((a) => a.userId);
 	}
 
-	public async getModerators(includeAdmins = true): Promise<user[]> {
+	public async getModerators(includeAdmins = true): Promise<User[]> {
 		const ids = await this.getModeratorIds(includeAdmins);
 		const users =
 			ids.length > 0
@@ -54,7 +54,7 @@ export class RoleUtilService {
 		return users;
 	}
 
-	public async getAdministratorIds(): Promise<user['id'][]> {
+	public async getAdministratorIds(): Promise<User['id'][]> {
 		const roles = await this.prismaService.client.role.findMany();
 		const administratorRoles = roles.filter((r) => r.isAdministrator);
 		const assigns =
@@ -67,7 +67,7 @@ export class RoleUtilService {
 		return assigns.map((a) => a.userId);
 	}
 
-	public async getAdministrators(): Promise<user[]> {
+	public async getAdministrators(): Promise<User[]> {
 		const ids = await this.getAdministratorIds();
 		const users =
 			ids.length > 0

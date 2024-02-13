@@ -8,7 +8,7 @@ import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserFollowingCreateProcessService } from './UserFollowingCreateProcessService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class UserFollowRequestAcceptService {
@@ -24,13 +24,13 @@ export class UserFollowRequestAcceptService {
 
 	public async accept(
 		followee: {
-			id: user['id'];
-			host: user['host'];
-			uri: user['host'];
-			inbox: user['inbox'];
-			sharedInbox: user['sharedInbox'];
+			id: User['id'];
+			host: User['host'];
+			uri: User['host'];
+			inbox: User['inbox'];
+			sharedInbox: User['sharedInbox'];
 		},
-		follower: user,
+		follower: User,
 	): Promise<void> {
 		const request = await this.prismaService.client.followRequest.findUnique({
 			where: {

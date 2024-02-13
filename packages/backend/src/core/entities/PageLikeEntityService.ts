@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { PageSchema } from '@/models/zod/PageSchema.js';
 import { PageEntityService } from './PageEntityService.js';
-import type { PageLike, user } from '@prisma/client';
+import type { PageLike, User } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class PageLikeEntityService {
 	 */
 	public async pack(
 		src: PageLike['id'] | PageLike,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 	): Promise<{ id: string; page: z.infer<typeof PageSchema> }> {
 		const like =
 			typeof src === 'object'

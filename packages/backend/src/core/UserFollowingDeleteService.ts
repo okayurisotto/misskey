@@ -17,7 +17,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import Logger from '../misc/logger.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import type { z } from 'zod';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 const logger = new Logger('following/create');
 
@@ -38,8 +38,8 @@ export class UserFollowingDeleteService {
 	) {}
 
 	public async delete(
-		follower: Pick<user, 'id' | 'host' | 'uri' | 'inbox' | 'sharedInbox'>,
-		followee: Pick<user, 'id' | 'host' | 'uri' | 'inbox' | 'sharedInbox'>,
+		follower: Pick<User, 'id' | 'host' | 'uri' | 'inbox' | 'sharedInbox'>,
+		followee: Pick<User, 'id' | 'host' | 'uri' | 'inbox' | 'sharedInbox'>,
 		silent = false,
 	): Promise<void> {
 		const following = await this.prismaService.client.following.findUnique({
@@ -127,8 +127,8 @@ export class UserFollowingDeleteService {
 	}
 
 	private async decrementFollowing(
-		follower: user,
-		followee: user,
+		follower: User,
+		followee: User,
 	): Promise<void> {
 		this.globalEventService.publishInternalEvent('unfollow', {
 			followerId: follower.id,

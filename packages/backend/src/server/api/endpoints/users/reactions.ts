@@ -51,7 +51,7 @@ export default class extends Endpoint<
 							user: {
 								id: ps.userId,
 								OR: [
-									{ user_profile: { publicReactions: true } },
+									{ userProfile: { publicReactions: true } },
 									...(me ? [{ id: me.id }] : []),
 								],
 							},

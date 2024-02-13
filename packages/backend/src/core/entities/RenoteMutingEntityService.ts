@@ -3,7 +3,7 @@ import type { RenoteMutingSchema } from '@/models/zod/RenoteMutingSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityService } from './UserEntityService.js';
 import type { z } from 'zod';
-import type { RenoteMuting, user } from '@prisma/client';
+import type { RenoteMuting, User } from '@prisma/client';
 
 @Injectable()
 export class RenoteMutingEntityService {
@@ -21,7 +21,7 @@ export class RenoteMutingEntityService {
 	 */
 	public async pack(
 		src: RenoteMuting['id'] | RenoteMuting,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof RenoteMutingSchema>> {
 		const muting =
 			typeof src === 'object'

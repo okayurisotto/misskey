@@ -23,16 +23,15 @@ export class DeleteDriveFilesProcessorService {
 
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },
-			include: { drive_file_drive_file_userIdTouser: true },
+			include: { driveFiles: true },
 		});
 		if (user == null) return;
 
-		const files = user.drive_file_drive_file_userIdTouser;
-		const total = files.length;
+		const total = user.driveFiles.length;
 		let count = 0;
 
 		await Promise.all(
-			files.map(async (file) => {
+			user.driveFiles.map(async (file) => {
 				await this.driveFileDeleteService.delete(file);
 				count++;
 				await job.updateProgress(count / total);

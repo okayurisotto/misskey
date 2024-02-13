@@ -12,7 +12,7 @@ import { LegacyReactionConvertService } from '../LegacyReactionConvertService.js
 import { CustomEmojiPopulateService } from '../CustomEmojiPopulateService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
-import type { Note, NoteReaction, user } from '@prisma/client';
+import type { Note, NoteReaction, User } from '@prisma/client';
 
 type PollChoice = {
 	text: string;
@@ -66,7 +66,7 @@ export class NoteEntityPackService {
 	 */
 	private async hideNote(
 		packedNote: z.infer<typeof NoteSchema>,
-		meId: user['id'] | null,
+		meId: User['id'] | null,
 	): Promise<void> {
 		/** 隠すかどうか。隠す場合は`true`へ書き換えられる。 */
 		let hide = false;
@@ -136,7 +136,7 @@ export class NoteEntityPackService {
 	 */
 	private async populatePoll(
 		note: Note,
-		meId: user['id'] | null,
+		meId: User['id'] | null,
 	): Promise<Poll> {
 		const poll = await this.prismaService.client.poll.findUniqueOrThrow({
 			where: { noteId: note.id },
@@ -268,7 +268,7 @@ export class NoteEntityPackService {
 	 */
 	public async pack(
 		src: Note['id'] | Note,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 		options?: {
 			detail?: boolean;
 			skipHide?: boolean;
@@ -441,7 +441,7 @@ export class NoteEntityPackService {
 	 */
 	public async packMany(
 		notes: (Note & { renote?: Note | null; reply?: Note | null })[],
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 		options?: {
 			detail?: boolean;
 			skipHide?: boolean;

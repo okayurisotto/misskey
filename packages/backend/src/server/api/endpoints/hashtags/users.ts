@@ -44,7 +44,7 @@ export default class extends Endpoint<
 		super(meta, paramDef, async (ps, me) => {
 			const recent = new Date(Date.now() - 1000 * 60 * 60 * 24 * 5);
 
-			const orderBy = ((): Prisma.userOrderByWithRelationInput => {
+			const orderBy = ((): Prisma.UserOrderByWithRelationInput => {
 				switch (ps.sort) {
 					case '+follower':
 						return { followersCount: 'desc' };

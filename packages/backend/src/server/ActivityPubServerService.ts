@@ -20,7 +20,7 @@ import type {
 	FastifyReply,
 	FastifyPluginOptions,
 } from 'fastify';
-import type { Prisma, Note, user } from '@prisma/client';
+import type { Prisma, Note, User } from '@prisma/client';
 
 const ACTIVITY_JSON = 'application/activity+json; charset=utf-8';
 const LD_JSON =
@@ -483,7 +483,7 @@ export class ActivityPubServerService {
 	private async userInfo(
 		request: FastifyRequest,
 		reply: FastifyReply,
-		user: user | null,
+		user: User | null,
 	): Promise<any> {
 		if (user == null) {
 			reply.code(404);

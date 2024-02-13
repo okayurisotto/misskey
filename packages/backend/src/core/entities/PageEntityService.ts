@@ -7,7 +7,7 @@ import { PageContentSchema } from '@/models/zod/PageContentSchema.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
-import type { DriveFile, Page, user } from '@prisma/client';
+import type { DriveFile, Page, User } from '@prisma/client';
 
 @Injectable()
 export class PageEntityService {
@@ -26,7 +26,7 @@ export class PageEntityService {
 	 */
 	public async pack(
 		src: Page['id'] | Page,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof PageSchema>> {
 		const meId = me ? me.id : null;
 		const page = await this.prismaService.client.page.findUniqueOrThrow({

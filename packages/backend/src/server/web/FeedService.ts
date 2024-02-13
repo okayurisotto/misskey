@@ -25,8 +25,8 @@ export class FeedService {
 				isSuspended: false,
 			},
 			include: {
-				user_profile: true,
-				note: {
+				userProfile: true,
+				notes: {
 					where: { renoteId: null, visibility: { in: ['public', 'home'] } },
 					orderBy: { createdAt: 'desc' },
 					take: 20,
@@ -34,7 +34,7 @@ export class FeedService {
 			},
 		});
 		if (user === null) return null;
-		if (user.user_profile === null) return null;
+		if (user.userProfile === null) return null;
 
 		const author = {
 			link: `${this.configLoaderService.data.url}/@${user.username}`,
@@ -44,16 +44,14 @@ export class FeedService {
 		const feed = new Feed({
 			id: author.link,
 			title: `${author.name} (@${user.username}@${this.configLoaderService.data.host})`,
-			updated: user.note[0].createdAt,
+			updated: user.notes[0].createdAt,
 			generator: 'Misskey',
 			description: `${user.notesCount} Notes, ${
-				user.user_profile.ffVisibility === 'public' ? user.followingCount : '?'
+				user.userProfile.ffVisibility === 'public' ? user.followingCount : '?'
 			} Following, ${
-				user.user_profile.ffVisibility === 'public' ? user.followersCount : '?'
+				user.userProfile.ffVisibility === 'public' ? user.followersCount : '?'
 			} Followers${
-				user.user_profile.description
-					? ` · ${user.user_profile.description}`
-					: ''
+				user.userProfile.description ? ` · ${user.userProfile.description}` : ''
 			}`,
 			link: author.link,
 			image: user.avatarUrl ?? this.userEntityUtilService.getIdenticonUrl(user),
@@ -67,12 +65,12 @@ export class FeedService {
 
 		const allFiles = await this.prismaService.client.driveFile.findMany({
 			where: {
-				id: { in: unique(user.note.map(({ fileIds }) => fileIds).flat()) },
+				id: { in: unique(user.notes.map(({ fileIds }) => fileIds).flat()) },
 				type: { startsWith: 'image/' },
 			},
 		});
 
-		for (const note of user.note) {
+		for (const note of user.notes) {
 			const file = note.fileIds
 				.map((fileId) => allFiles.find((file) => file.id === fileId))
 				.filter(isNotNull)

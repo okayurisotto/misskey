@@ -5,7 +5,7 @@ import Logger from '@/misc/logger.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class UserBlockingDeleteService {
@@ -19,7 +19,7 @@ export class UserBlockingDeleteService {
 		private readonly userEntityUtilService: UserEntityUtilService,
 	) {}
 
-	public async delete(blocker: user, blockee: user): Promise<void> {
+	public async delete(blocker: User, blockee: User): Promise<void> {
 		const blocking_ = await this.prismaService.client.blocking.findUnique({
 			where: {
 				blockerId_blockeeId: {

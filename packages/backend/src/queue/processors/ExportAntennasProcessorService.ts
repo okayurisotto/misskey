@@ -30,7 +30,7 @@ export class ExportAntennasProcessorService {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },
 			include: {
-				antenna: {
+				antennas: {
 					include: {
 						userList: {
 							include: { user_list_joining: { include: { user: true } } },
@@ -44,7 +44,7 @@ export class ExportAntennasProcessorService {
 		const [path, cleanup] = await createTemp();
 
 		try {
-			const data = user.antenna.map<z.infer<typeof ExportedAntennaSchema>>(
+			const data = user.antennas.map<z.infer<typeof ExportedAntennaSchema>>(
 				(antenna) => {
 					const userListAccts =
 						antenna.userList?.user_list_joining.map(({ user }) => {

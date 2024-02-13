@@ -4,7 +4,7 @@ import { RelayService } from '@/core/RelayService.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class AccountUpdateService {
@@ -16,7 +16,7 @@ export class AccountUpdateService {
 		private readonly userEntityUtilService: UserEntityUtilService,
 	) {}
 
-	public async publishToFollowers(userId: user['id']): Promise<void> {
+	public async publishToFollowers(userId: User['id']): Promise<void> {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: userId },
 		});

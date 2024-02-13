@@ -8,7 +8,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { limit } from '@/models/zod/misc.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
-import type { Prisma, user } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 
 const res = z.array(UserSchema);
 export const meta = {
@@ -45,7 +45,7 @@ export default class extends Endpoint<
 		super(meta, paramDef, async (ps, me) => {
 			const activeThreshold = new Date(Date.now() - ms('30days'));
 
-			const where: Prisma.userWhereInput = {
+			const where: Prisma.UserWhereInput = {
 				AND: [
 					'username' in ps && ps.username != null
 						? {
@@ -63,7 +63,7 @@ export default class extends Endpoint<
 				],
 			};
 
-			let users: user[];
+			let users: User[];
 
 			if (me) {
 				users = await this.prismaService.client.user.findMany({
@@ -71,7 +71,7 @@ export default class extends Endpoint<
 						AND: [
 							where,
 							{
-								following_following_followeeIdTouser: {
+								followings_followee: {
 									some: { followerId: me.id },
 								},
 								id: { not: me.id },
@@ -93,7 +93,7 @@ export default class extends Endpoint<
 							AND: [
 								where,
 								{
-									following_following_followeeIdTouser: {
+									followings_followee: {
 										none: { followerId: me.id },
 									},
 									isSuspended: false,

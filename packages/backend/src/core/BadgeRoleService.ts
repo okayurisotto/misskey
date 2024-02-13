@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
 import { RoleConditionEvalService } from './RoleConditionEvalService.js';
-import type { Role, user } from '@prisma/client';
+import type { Role, User } from '@prisma/client';
 
 @Injectable()
 export class BadgeRoleService {
@@ -15,12 +15,12 @@ export class BadgeRoleService {
 	) {}
 
 	/** 指定ユーザーのバッジロール一覧取得 */
-	public async getUserBadgeRoles(userId: user['id']): Promise<Role[]> {
+	public async getUserBadgeRoles(userId: User['id']): Promise<Role[]> {
 		const [user, badgeCondRoles] = await Promise.all([
 			this.prismaService.client.user.findUniqueOrThrow({
 				where: { id: userId, host: null },
 				include: {
-					role_assignment: {
+					roleAssignments: {
 						where: {
 							userId,
 							OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
@@ -35,8 +35,7 @@ export class BadgeRoleService {
 			}),
 		]);
 
-		const assigns = user.role_assignment;
-		const assignedBadgeRoles = assigns.map(({ role }) => role);
+		const assignedBadgeRoles = user.roleAssignments.map(({ role }) => role);
 		const matchedBadgeCondRoles = badgeCondRoles.filter((role) => {
 			return this.roleConditionEvalService.eval(
 				user,

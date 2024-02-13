@@ -5,7 +5,7 @@ import { UserKeypairService } from '@/core/UserKeypairService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import Logger from '@/misc/logger.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 type Request = {
 	url: string;
@@ -179,7 +179,7 @@ export class ApRequestService {
 	) {}
 
 	public async signedPost(
-		user: { id: user['id'] },
+		user: { id: User['id'] },
 		url: string,
 		object: unknown,
 	): Promise<void> {
@@ -211,7 +211,7 @@ export class ApRequestService {
 	 */
 	public async signedGet(
 		url: string,
-		user: { id: user['id'] },
+		user: { id: User['id'] },
 	): Promise<unknown> {
 		const keypair = await this.userKeypairService.getUserKeypair(user.id);
 

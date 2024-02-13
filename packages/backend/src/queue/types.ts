@@ -1,7 +1,7 @@
 import type { IActivity } from '@/core/activitypub/type.js';
 import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
 import type httpSignature from '@peertube/http-signature';
-import type { Note, webhook, DriveFile, user } from '@prisma/client';
+import type { Note, webhook, DriveFile, User } from '@prisma/client';
 import type { z } from 'zod';
 
 export type DeliverJobData = {
@@ -100,7 +100,7 @@ export type WebhookDeliverJobData = {
 	type: string;
 	content: unknown;
 	webhookId: webhook['id'];
-	userId: user['id'];
+	userId: User['id'];
 	to: string;
 	secret: string;
 	createdAt: number;
@@ -108,5 +108,5 @@ export type WebhookDeliverJobData = {
 };
 
 export type ThinUser = {
-	id: user['id'];
+	id: User['id'];
 };

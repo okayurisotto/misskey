@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserFollowRequestAcceptService } from './UserFollowRequestAcceptService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class UserFollowRequestAcceptAllService {
@@ -11,11 +11,11 @@ export class UserFollowRequestAcceptAllService {
 	) {}
 
 	public async acceptAll(user: {
-		id: user['id'];
-		host: user['host'];
-		uri: user['host'];
-		inbox: user['inbox'];
-		sharedInbox: user['sharedInbox'];
+		id: User['id'];
+		host: User['host'];
+		uri: User['host'];
+		inbox: User['inbox'];
+		sharedInbox: User['sharedInbox'];
 	}): Promise<void> {
 		const requests = await this.prismaService.client.followRequest.findMany({
 			where: { followeeId: user.id },

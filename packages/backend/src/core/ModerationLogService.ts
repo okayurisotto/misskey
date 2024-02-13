@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class ModerationLogService {
@@ -11,7 +11,7 @@ export class ModerationLogService {
 	) {}
 
 	public async insertModerationLog(
-		moderator: Pick<user, 'id'>,
+		moderator: Pick<User, 'id'>,
 		type: string,
 		info?: Record<string, any>,
 	): Promise<void> {

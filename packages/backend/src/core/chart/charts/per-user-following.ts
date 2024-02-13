@@ -7,7 +7,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-following.js';
 import type { KVs } from '../core.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 /**
  * ユーザーごとのフォローに関するチャート
@@ -69,8 +69,8 @@ export default class PerUserFollowingChart extends Chart<typeof schema> {
 	}
 
 	public async update(
-		follower: { id: user['id']; host: user['host'] },
-		followee: { id: user['id']; host: user['host'] },
+		follower: { id: User['id']; host: User['host'] },
+		followee: { id: User['id']; host: User['host'] },
 		isFollow: boolean,
 	): Promise<void> {
 		const prefixFollower = this.userEntityUtilService.isLocalUser(follower)

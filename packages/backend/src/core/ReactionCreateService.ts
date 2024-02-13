@@ -4,7 +4,7 @@ import {
 	Prisma,
 	type Note,
 	type NoteReaction,
-	type user,
+	type User,
 } from '@prisma/client';
 import { isNotUndefined } from 'omick';
 import { IdentifiableError } from '@/misc/identifiable-error.js';
@@ -64,7 +64,7 @@ export class ReactionCreateService {
 	) {}
 
 	public async create(
-		user: Pick<user, 'id' | 'host' | 'isBot'>,
+		user: Pick<User, 'id' | 'host' | 'isBot'>,
 		note: Note,
 		reaction_?: string | null,
 	): Promise<void> {

@@ -43,7 +43,7 @@ import { DriveFilePublicUrlGenerationService } from '@/core/entities/DriveFilePu
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 import { ApiLoggerService } from '../../ApiLoggerService.js';
 import { ApiError } from '../../error.js';
-import type { Prisma, user } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 
 const res = MeDetailedSchema;
 export const meta = {
@@ -138,7 +138,7 @@ export default class extends Endpoint<
 			});
 			const isSecure = token == null;
 
-			const updates: Partial<user> = {};
+			const updates: Partial<User> = {};
 			const profileUpdates: Prisma.user_profileUncheckedUpdateInput = {};
 
 			const profile =

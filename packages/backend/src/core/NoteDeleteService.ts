@@ -15,7 +15,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { RenoteCountService } from './entities/RenoteCountService.js';
-import type { Prisma, Note, user } from '@prisma/client';
+import type { Prisma, Note, User } from '@prisma/client';
 import type { IActivity } from './activitypub/type.js';
 
 @Injectable()
@@ -46,10 +46,10 @@ export class NoteDeleteService {
 	 */
 	public async delete(
 		user: {
-			id: user['id'];
-			uri: user['uri'];
-			host: user['host'];
-			isBot: user['isBot'];
+			id: User['id'];
+			uri: User['uri'];
+			host: User['host'];
+			isBot: User['isBot'];
 		},
 		note: Note,
 		quiet = false,
@@ -198,10 +198,10 @@ export class NoteDeleteService {
 	 */
 	private async findCascadingNotes(
 		noteId: string,
-	): Promise<(Note & { user: user })[]> {
+	): Promise<(Note & { user: User })[]> {
 		const recursive = async (
 			noteId: string,
-		): Promise<(Note & { user: user })[]> => {
+		): Promise<(Note & { user: User })[]> => {
 			const replies = await this.prismaService.client.note.findMany({
 				where: {
 					OR: [{ replyId: noteId }, { renoteId: noteId, text: { not: null } }],
@@ -219,7 +219,7 @@ export class NoteDeleteService {
 	}
 
 	private async getMentionedRemoteUsers(note: Note): Promise<RemoteUser[]> {
-		const where: Prisma.userWhereInput[] = [];
+		const where: Prisma.UserWhereInput[] = [];
 
 		// mention / reply / dm
 		const uris = (

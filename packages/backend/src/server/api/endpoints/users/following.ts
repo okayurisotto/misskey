@@ -71,15 +71,15 @@ export default class extends Endpoint<
 									{
 										AND: [
 											// 無条件で取得できる
-											{ user_profile: { ffVisibility: 'public' } },
+											{ userProfile: { ffVisibility: 'public' } },
 										],
 									},
 									{
 										AND: [
 											// そのユーザーのフォロワーに自身が含まれる場合のみ取得できる
-											{ user_profile: { ffVisibility: 'followers' } },
+											{ userProfile: { ffVisibility: 'followers' } },
 											{
-												following_following_followeeIdTouser: {
+												followings_followee: {
 													some: {
 														followerId: { in: me === null ? [] : [me.id] },
 													},
@@ -90,7 +90,7 @@ export default class extends Endpoint<
 									{
 										AND: [
 											// そのユーザーが自分自身だった場合のみ取得できる
-											{ user_profile: { ffVisibility: 'private' } },
+											{ userProfile: { ffVisibility: 'private' } },
 											{ id: { in: me === null ? [] : [me.id] } },
 										],
 									},

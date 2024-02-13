@@ -5,7 +5,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
-import type { Gallery, user } from '@prisma/client';
+import type { Gallery, User } from '@prisma/client';
 
 @Injectable()
 export class GalleryPostEntityService {
@@ -24,7 +24,7 @@ export class GalleryPostEntityService {
 	 */
 	public async pack(
 		src: Gallery['id'] | Gallery,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof GalleryPostSchema>> {
 		const meId = me ? me.id : null;
 		const post = await this.prismaService.client.gallery.findUniqueOrThrow({

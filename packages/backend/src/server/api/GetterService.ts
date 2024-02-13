@@ -4,7 +4,7 @@ import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
-import type { Note, user } from '@prisma/client';
+import type { Note, User } from '@prisma/client';
 
 @Injectable()
 export class GetterService {
@@ -35,7 +35,7 @@ export class GetterService {
 	/**
 	 * Get user for API processing
 	 */
-	public async getUser(userId: user['id']): Promise<LocalUser | RemoteUser> {
+	public async getUser(userId: User['id']): Promise<LocalUser | RemoteUser> {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: userId },
 		});
@@ -53,7 +53,7 @@ export class GetterService {
 	/**
 	 * Get remote user for API processing
 	 */
-	public async getRemoteUser(userId: user['id']): Promise<RemoteUser> {
+	public async getRemoteUser(userId: User['id']): Promise<RemoteUser> {
 		const user = await this.getUser(userId);
 
 		if (!this.userEntityUtilService.isRemoteUser(user)) {
@@ -66,7 +66,7 @@ export class GetterService {
 	/**
 	 * Get local user for API processing
 	 */
-	public async getLocalUser(userId: user['id']): Promise<LocalUser> {
+	public async getLocalUser(userId: User['id']): Promise<LocalUser> {
 		const user = await this.getUser(userId);
 
 		if (!this.userEntityUtilService.isLocalUser(user)) {

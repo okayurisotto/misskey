@@ -21,7 +21,7 @@ import type {
 	Role,
 	Signin,
 	user_list,
-	user,
+	User,
 	webhook,
 } from '@prisma/client';
 
@@ -30,8 +30,8 @@ export interface InternalStreamTypes {
 	antennaCreated: Antenna;
 	antennaDeleted: Antenna;
 	antennaUpdated: Antenna;
-	follow: { followerId: user['id']; followeeId: user['id'] };
-	unfollow: { followerId: user['id']; followeeId: user['id'] };
+	follow: { followerId: User['id']; followeeId: User['id'] };
+	unfollow: { followerId: User['id']; followeeId: User['id'] };
 	webhookCreated: webhook;
 	webhookDeleted: webhook;
 	webhookUpdated: webhook;
@@ -55,7 +55,7 @@ export interface MainStreamTypes {
 		pageId: Page['id'];
 		event: string;
 		var: unknown;
-		userId: user['id'];
+		userId: User['id'];
 		user: z.infer<typeof UserDetailedSchema>;
 	};
 	readAllAnnouncements: undefined;
@@ -88,13 +88,13 @@ export interface DriveStreamTypes {
 
 export interface NoteStreamTypesBody {
 	deleted: { deletedAt: Date };
-	pollVoted: { choice: number; userId: user['id'] };
+	pollVoted: { choice: number; userId: User['id'] };
 	reacted: {
 		reaction: string;
 		emoji: { name: string; url: string } | null;
-		userId: user['id'];
+		userId: User['id'];
 	};
-	unreacted: { reaction: string; userId: user['id'] };
+	unreacted: { reaction: string; userId: User['id'] };
 }
 type NoteStreamTypes = {
 	[key in keyof NoteStreamTypesBody]: {
@@ -119,8 +119,8 @@ export interface RoleTimelineStreamTypes {
 export interface AdminStreamTypes {
 	newAbuseUserReport: {
 		id: AbuseUserReport['id'];
-		targetUserId: user['id'];
-		reporterId: user['id'];
+		targetUserId: User['id'];
+		reporterId: User['id'];
 		comment: string;
 	};
 }
@@ -143,11 +143,11 @@ export type StreamMessages = {
 		payload: EventUnionFromDictionary<Jsonify<BroadcastTypes>>;
 	};
 	main: {
-		name: `mainStream:${user['id']}`;
+		name: `mainStream:${User['id']}`;
 		payload: EventUnionFromDictionary<Jsonify<MainStreamTypes>>;
 	};
 	drive: {
-		name: `driveStream:${user['id']}`;
+		name: `driveStream:${User['id']}`;
 		payload: EventUnionFromDictionary<Jsonify<DriveStreamTypes>>;
 	};
 	note: {
@@ -167,7 +167,7 @@ export type StreamMessages = {
 		payload: EventUnionFromDictionary<Jsonify<AntennaStreamTypes>>;
 	};
 	admin: {
-		name: `adminStream:${user['id']}`;
+		name: `adminStream:${User['id']}`;
 		payload: EventUnionFromDictionary<Jsonify<AdminStreamTypes>>;
 	};
 	notes: {

@@ -7,7 +7,7 @@ import { QueueService } from '@/core/QueueService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { UserEntityPackLiteService } from './entities/UserEntityPackLiteService.js';
-import type { user, user_list } from '@prisma/client';
+import type { User, user_list } from '@prisma/client';
 
 @Injectable()
 export class UserListService {
@@ -24,7 +24,7 @@ export class UserListService {
 		private readonly userEntityPackLiteService: UserEntityPackLiteService,
 	) {}
 
-	public async push(target: user, list: user_list, me: user): Promise<void> {
+	public async push(target: User, list: user_list, me: User): Promise<void> {
 		const currentCount =
 			await this.prismaService.client.user_list_joining.count({
 				where: { userListId: list.id },

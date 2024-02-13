@@ -42,7 +42,7 @@ export class LocalAccountMovingService {
 
 		// add movedToUri to indicate that the user has moved
 		const alsoKnownAsArray = src.alsoKnownAs?.split(',') ?? [];
-		const update: Prisma.userUncheckedUpdateInput = {
+		const update: Prisma.UserUncheckedUpdateInput = {
 			alsoKnownAs: (alsoKnownAsArray.includes(dstUri)
 				? alsoKnownAsArray
 				: [...alsoKnownAsArray, dstUri]

@@ -11,7 +11,7 @@ import {
 } from '@/models/zod/RolePoliciesSchema.js';
 import { RedisService } from '@/core/RedisService.js';
 import { RoleConditionEvalService } from './RoleConditionEvalService.js';
-import type { Role, RoleAssignment, user } from '@prisma/client';
+import type { Role, RoleAssignment, User } from '@prisma/client';
 
 export type RolePolicies = Required<z.infer<typeof UserPoliciesSchema>>;
 
@@ -49,7 +49,7 @@ export class RoleService {
 		private readonly roleConditionEvalService: RoleConditionEvalService,
 	) {}
 
-	public async getUserAssigns(userId: user['id']): Promise<RoleAssignment[]> {
+	public async getUserAssigns(userId: User['id']): Promise<RoleAssignment[]> {
 		return await this.prismaService.client.roleAssignment.findMany({
 			where: {
 				userId,
@@ -58,7 +58,7 @@ export class RoleService {
 		});
 	}
 
-	public async getUserRoles(userId: user['id']): Promise<Role[]> {
+	public async getUserRoles(userId: User['id']): Promise<Role[]> {
 		const roles = await this.prismaService.client.role.findMany({
 			where: {
 				OR: [
@@ -93,7 +93,7 @@ export class RoleService {
 	}
 
 	public async getUserPolicies(
-		userId: user['id'] | null,
+		userId: User['id'] | null,
 	): Promise<RolePolicies> {
 		const meta = await this.metaService.fetch();
 		const basePolicies = {
@@ -173,7 +173,7 @@ export class RoleService {
 	}
 
 	public async isModerator(
-		user: { id: user['id']; isRoot: user['isRoot'] } | null,
+		user: { id: User['id']; isRoot: User['isRoot'] } | null,
 	): Promise<boolean> {
 		if (user === null) return false;
 		if (user.isRoot) return true;
@@ -182,7 +182,7 @@ export class RoleService {
 	}
 
 	public async isAdministrator(
-		user: { id: user['id']; isRoot: user['isRoot'] } | null,
+		user: { id: User['id']; isRoot: User['isRoot'] } | null,
 	): Promise<boolean> {
 		if (user === null) return false;
 		if (user.isRoot) return true;

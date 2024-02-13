@@ -7,21 +7,21 @@ import type {
 	RemoteUser,
 } from '@/models/entities/User.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
-function isLocalUser(user: user): user is LocalUser;
-function isLocalUser<T extends { host: user['host'] }>(
+function isLocalUser(user: User): user is LocalUser;
+function isLocalUser<T extends { host: User['host'] }>(
 	user: T,
 ): user is T & { host: null };
-function isLocalUser(user: user | { host: user['host'] }): boolean {
+function isLocalUser(user: User | { host: User['host'] }): boolean {
 	return user.host === null;
 }
 
-function isRemoteUser(user: user): user is RemoteUser;
-function isRemoteUser<T extends { host: user['host'] }>(
+function isRemoteUser(user: User): user is RemoteUser;
+function isRemoteUser<T extends { host: User['host'] }>(
 	user: T,
 ): user is T & { host: string };
-function isRemoteUser(user: user | { host: user['host'] }): boolean {
+function isRemoteUser(user: User | { host: User['host'] }): boolean {
 	return !isLocalUser(user);
 }
 
@@ -33,7 +33,7 @@ export class UserEntityUtilService {
 	public isRemoteUser = isRemoteUser;
 
 	public getOnlineStatus(
-		user: user,
+		user: User,
 	): 'unknown' | 'online' | 'active' | 'offline' {
 		if (user.hideOnlineStatus) return 'unknown';
 		if (user.lastActiveDate == null) return 'unknown';
@@ -45,7 +45,7 @@ export class UserEntityUtilService {
 			: 'offline';
 	}
 
-	public getIdenticonUrl(user: user): string {
+	public getIdenticonUrl(user: User): string {
 		return `${
 			this.configLoaderService.data.url
 		}/identicon/${user.username.toLowerCase()}@${

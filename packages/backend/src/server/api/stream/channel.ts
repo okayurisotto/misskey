@@ -1,5 +1,5 @@
 import type Connection from './index.js';
-import type { user, user_profile } from '@prisma/client';
+import type { User, user_profile } from '@prisma/client';
 import type { StreamEventEmitter } from './types.js';
 
 /**
@@ -13,7 +13,7 @@ export default abstract class Channel {
 	public static readonly requireCredential: boolean;
 	public static readonly shouldShare: boolean;
 
-	protected get user(): user | undefined {
+	protected get user(): User | undefined {
 		return this.connection.user;
 	}
 

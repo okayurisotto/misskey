@@ -7,7 +7,7 @@ import { NotificationEntityService } from '@/core/entities/NotificationEntitySer
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { RedisService } from '@/core/RedisService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class NotificationService implements OnApplicationShutdown {
@@ -55,7 +55,7 @@ export class NotificationService implements OnApplicationShutdown {
 		}
 	}
 
-	private postReadAllNotifications(userId: user['id']): void {
+	private postReadAllNotifications(userId: User['id']): void {
 		this.globalEventService.publishMainStream(userId, 'readAllNotifications');
 		this.pushNotificationService.pushNotification(
 			userId,
@@ -179,7 +179,7 @@ export class NotificationService implements OnApplicationShutdown {
 
 	private async emailNotificationFollow(
 		userId: string,
-		follower: user,
+		follower: User,
 	): Promise<void> {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });
@@ -193,7 +193,7 @@ export class NotificationService implements OnApplicationShutdown {
 
 	private async emailNotificationReceiveFollowRequest(
 		userId: string,
-		follower: user,
+		follower: User,
 	): Promise<void> {
 		/*
 		const userProfile = await UserProfiles.findOneByOrFail({ userId: userId });

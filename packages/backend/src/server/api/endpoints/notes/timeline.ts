@@ -65,7 +65,7 @@ export default class extends Endpoint<
 								{ userId: me.id },
 								{
 									user: {
-										following_following_followeeIdTouser: {
+										followings_followee: {
 											some: { followerId: me.id },
 										},
 									},

@@ -8,7 +8,7 @@ import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class NotePiningService {
@@ -29,7 +29,7 @@ export class NotePiningService {
 	 * @param noteId
 	 */
 	public async addPinned(
-		user: { id: user['id']; host: user['host'] },
+		user: { id: User['id']; host: User['host'] },
 		noteId: string,
 	): Promise<void> {
 		// Fetch pinee
@@ -89,7 +89,7 @@ export class NotePiningService {
 	 * @param noteId
 	 */
 	public async removePinned(
-		user: { id: user['id']; host: user['host'] },
+		user: { id: User['id']; host: User['host'] },
 		noteId: string,
 	): Promise<void> {
 		// Fetch unpinee

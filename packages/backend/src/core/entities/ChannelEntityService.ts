@@ -4,7 +4,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { NoteEntityPackService } from './NoteEntityPackService.js';
 import { DriveFilePublicUrlGenerationService } from './DriveFilePublicUrlGenerationService.js';
 import type { z } from 'zod';
-import type { Channel, user } from '@prisma/client';
+import type { Channel, User } from '@prisma/client';
 
 @Injectable()
 export class ChannelEntityService {
@@ -24,7 +24,7 @@ export class ChannelEntityService {
 	 */
 	public async pack(
 		src: Channel['id'] | Channel,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 		detailed?: boolean,
 	): Promise<z.infer<typeof ChannelSchema>> {
 		const meId = me ? me.id : null;
@@ -52,7 +52,7 @@ export class ChannelEntityService {
 		// `distinct`を使ってuserIdについてユニークになったNote[]を取得した上で`.length`すればよかった？
 		// しかし数え上げることが目的なのに値を取得してしまうのはどうなんだろうか？
 		const usersCount = await this.prismaService.client.user.count({
-			where: { note: { some: { channelId: channel.id } } },
+			where: { notes: { some: { channelId: channel.id } } },
 		});
 
 		// 当該Channelとmeとの関係性を取得する。
@@ -66,17 +66,17 @@ export class ChannelEntityService {
 			const result = await this.prismaService.client.user.findUniqueOrThrow({
 				where: { id: meId },
 				include: {
-					channel_favorite: { where: { channelId: channel.id }, take: 1 },
-					channel_following: { where: { channelId: channel.id }, take: 1 },
+					channelFavorites: { where: { channelId: channel.id }, take: 1 },
+					channelFollowings: { where: { channelId: channel.id }, take: 1 },
 					// note_unread: { where: { noteChannelId: channel.id }, take: 1 },
-					note_unread: { where: { note: { channelId: channel.id } }, take: 1 },
+					noteUnreads: { where: { note: { channelId: channel.id } }, take: 1 },
 				},
 			});
 
 			return [
-				result.channel_favorite.length > 0,
-				result.channel_following.length > 0,
-				result.note_unread.length > 0,
+				result.channelFavorites.length > 0,
+				result.channelFollowings.length > 0,
+				result.noteUnreads.length > 0,
 			];
 		})();
 

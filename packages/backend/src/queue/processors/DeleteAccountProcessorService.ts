@@ -53,31 +53,30 @@ export class DeleteAccountProcessorService {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },
 			include: {
-				note: true,
-				drive_file_drive_file_userIdTouser: true,
-				user_profile: true,
+				notes: true,
+				driveFiles: true,
+				userProfile: true,
 			},
 		});
 		if (user === null) return;
-		if (user.user_profile === null) throw new Error();
+		if (user.userProfile === null) throw new Error();
 
 		await Promise.all([
 			await Promise.all([
-				this.deleteNotes(user.note),
-				this.unindexNotes(user.note),
+				this.deleteNotes(user.notes),
+				this.unindexNotes(user.notes),
 			]).then(() => {
 				this.logger.succ('All of notes deleted');
 			}),
-			this.deleteFiles(user.drive_file_drive_file_userIdTouser).then(() => {
+			this.deleteFiles(user.driveFiles).then(() => {
 				this.logger.succ('All of files deleted');
 			}),
 		]);
 
 		// Send email notification
-		const profile = user.user_profile;
-		if (profile.email && profile.emailVerified) {
+		if (user.userProfile.email && user.userProfile.emailVerified) {
 			await this.emailService.sendEmail(
-				profile.email,
+				user.userProfile.email,
 				'Account deleted',
 				'Your account has been deleted.',
 				'Your account has been deleted.',

@@ -5,7 +5,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import type { PartiallyPartial } from '@/types.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
-import type { Clip, user } from '@prisma/client';
+import type { Clip, User } from '@prisma/client';
 
 @Injectable()
 export class ClipEntityService {
@@ -23,7 +23,7 @@ export class ClipEntityService {
 	 */
 	public async pack(
 		src: Clip['id'] | Clip,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 	): Promise<z.infer<typeof ClipSchema>> {
 		const meId = me ? me.id : null;
 		const clip_ = await this.prismaService.client.clip.findUniqueOrThrow({

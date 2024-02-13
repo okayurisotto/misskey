@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { Prisma, user } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 
 export type PaginationQuery = {
 	where: {
@@ -58,7 +58,7 @@ export class PrismaQueryService {
 	}
 
 	public getVisibilityWhereForNote(
-		userId: user['id'] | null,
+		userId: User['id'] | null,
 	): Prisma.NoteWhereInput {
 		if (userId === null) {
 			return { OR: [{ visibility: 'public' }, { visibility: 'home' }] };
@@ -78,7 +78,7 @@ export class PrismaQueryService {
 							OR: [
 								{
 									user: {
-										following_following_followeeIdTouser: {
+										followings_followee: {
 											some: { followerId: userId },
 										},
 									},
@@ -93,7 +93,7 @@ export class PrismaQueryService {
 	}
 
 	public getRepliesWhereForNote(
-		userId: user['id'] | null,
+		userId: User['id'] | null,
 	): Prisma.NoteWhereInput {
 		if (userId === null) {
 			return {
@@ -129,7 +129,7 @@ export class PrismaQueryService {
 	}
 
 	public getChannelWhereForNote(
-		userId: user['id'] | null,
+		userId: User['id'] | null,
 	): Prisma.NoteWhereInput {
 		if (userId === null) return { channelId: null };
 
@@ -142,7 +142,7 @@ export class PrismaQueryService {
 	}
 
 	public getBlockedWhereForNote(
-		userId: user['id'] | null,
+		userId: User['id'] | null,
 	): Prisma.NoteWhereInput {
 		if (userId === null) return {};
 
@@ -150,7 +150,7 @@ export class PrismaQueryService {
 			AND: [
 				{
 					user: {
-						blocking_blocking_blockerIdTouser: { none: { blockeeId: userId } },
+						blockings_blocker: { none: { blockeeId: userId } },
 					},
 				},
 				{
@@ -159,7 +159,7 @@ export class PrismaQueryService {
 						{
 							reply: {
 								user: {
-									blocking_blocking_blockerIdTouser: {
+									blockings_blocker: {
 										none: { blockeeId: userId },
 									},
 								},
@@ -173,7 +173,7 @@ export class PrismaQueryService {
 						{
 							renote: {
 								user: {
-									blocking_blocking_blockerIdTouser: {
+									blockings_blocker: {
 										none: { blockeeId: userId },
 									},
 								},
@@ -186,7 +186,7 @@ export class PrismaQueryService {
 	}
 
 	public async getNoteThreadMutingWhereForNote(
-		userId: user['id'] | null,
+		userId: User['id'] | null,
 	): Promise<Prisma.NoteWhereInput> {
 		if (userId === null) return {};
 
@@ -202,7 +202,7 @@ export class PrismaQueryService {
 	}
 
 	public async getMutingWhereForNote(
-		userId: user['id'] | null,
+		userId: User['id'] | null,
 	): Promise<Prisma.NoteWhereInput> {
 		if (userId === null) return {};
 
@@ -216,7 +216,7 @@ export class PrismaQueryService {
 			AND: [
 				// user
 				{
-					user: { muting_muting_muteeIdTouser: { none: { muterId: userId } } },
+					user: { mutings_mutee: { none: { muterId: userId } } },
 				},
 				{
 					OR: [
@@ -224,7 +224,7 @@ export class PrismaQueryService {
 						{
 							reply: {
 								user: {
-									muting_muting_muteeIdTouser: { none: { muterId: userId } },
+									mutings_mutee: { none: { muterId: userId } },
 								},
 							},
 						},
@@ -236,7 +236,7 @@ export class PrismaQueryService {
 						{
 							renote: {
 								user: {
-									muting_muting_muteeIdTouser: { none: { muterId: userId } },
+									mutings_mutee: { none: { muterId: userId } },
 								},
 							},
 						},
@@ -263,7 +263,7 @@ export class PrismaQueryService {
 	}
 
 	public async getRenoteMutingWhereForNote(
-		userId: user['id'] | null,
+		userId: User['id'] | null,
 	): Promise<Prisma.NoteWhereInput> {
 		if (userId === null) return {};
 
@@ -286,25 +286,25 @@ export class PrismaQueryService {
 	}
 
 	public getBlockedWhereForUser(
-		userId: user['id'] | null,
-	): Prisma.userWhereInput {
+		userId: User['id'] | null,
+	): Prisma.UserWhereInput {
 		if (userId === null) return {};
 
 		return {
-			blocking_blocking_blockeeIdTouser: { none: { blockerId: userId } },
-			blocking_blocking_blockerIdTouser: { none: { blockeeId: userId } },
+			blockings_blockee: { none: { blockerId: userId } },
+			blockings_blocker: { none: { blockeeId: userId } },
 		};
 	}
 
 	public getMutingWhereForUser(
-		userId: user['id'] | null,
-	): Prisma.userWhereInput {
+		userId: User['id'] | null,
+	): Prisma.UserWhereInput {
 		if (userId === null) return {};
-		return { muting_muting_muteeIdTouser: { none: { muterId: userId } } };
+		return { mutings_mutee: { none: { muterId: userId } } };
 	}
 
 	public getVisibilityWhereForNoteReaction(
-		userId: user['id'] | null,
+		userId: User['id'] | null,
 	): Prisma.NoteReactionWhereInput {
 		if (userId === null) {
 			return {
@@ -330,7 +330,7 @@ export class PrismaQueryService {
 								OR: [
 									{
 										user: {
-											following_following_followeeIdTouser: {
+											followings_followee: {
 												some: { followerId: userId },
 											},
 										},

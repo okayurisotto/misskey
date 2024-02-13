@@ -5,7 +5,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-pv.js';
 import type { KVs } from '../core.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 /**
  * ユーザーごとのプロフィール被閲覧数に関するチャート
@@ -37,7 +37,7 @@ export default class PerUserPvChart extends Chart<typeof schema> {
 	}
 
 	public async commitByUser(
-		user: { id: user['id'] },
+		user: { id: User['id'] },
 		key: string,
 	): Promise<void> {
 		await this.commit(
@@ -50,7 +50,7 @@ export default class PerUserPvChart extends Chart<typeof schema> {
 	}
 
 	public async commitByVisitor(
-		user: { id: user['id'] },
+		user: { id: User['id'] },
 		key: string,
 	): Promise<void> {
 		await this.commit(

@@ -6,7 +6,7 @@ import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { deepClone } from '@/misc/clone.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { Relay, user } from '@prisma/client';
+import type { Relay, User } from '@prisma/client';
 
 const ACTOR_USERNAME = 'relay.actor' as const;
 
@@ -97,7 +97,7 @@ export class RelayService {
 	}
 
 	public async deliverToRelays(
-		user: { id: user['id']; host: null },
+		user: { id: User['id']; host: null },
 		activity: any,
 	): Promise<void> {
 		if (activity == null) return;

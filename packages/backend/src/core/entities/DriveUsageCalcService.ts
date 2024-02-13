@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class DriveUsageCalcService {
@@ -13,7 +13,7 @@ export class DriveUsageCalcService {
 	 * @returns
 	 */
 	public async calcUser(
-		user: user['id'] | { id: user['id'] },
+		user: User['id'] | { id: User['id'] },
 	): Promise<number> {
 		const id = typeof user === 'object' ? user.id : user;
 

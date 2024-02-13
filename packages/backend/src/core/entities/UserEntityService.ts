@@ -22,7 +22,7 @@ import type {
 	FollowRequest,
 	Note,
 	NoteUnread,
-	user,
+	User,
 	user_memo,
 	user_note_pining,
 	user_profile,
@@ -57,32 +57,32 @@ export class UserEntityService {
 			this.prismaService.client.user.findUniqueOrThrow({
 				where: { id: meId },
 				include: {
-					blocking_blocking_blockeeIdTouser: {
+					blockings_blockee: {
 						where: { blockerId: targetId },
 						take: 1,
 					},
-					blocking_blocking_blockerIdTouser: {
+					blockings_blocker: {
 						where: { blockeeId: targetId },
 						take: 1,
 					},
-					follow_request_follow_request_followeeIdTouser: {
+					followRequests_followee: {
 						where: { followerId: targetId },
 						take: 1,
 					},
-					follow_request_follow_request_followerIdTouser: {
+					followRequests_follower: {
 						where: { followeeId: targetId },
 						take: 1,
 					},
-					following_following_followeeIdTouser: {
+					followings_followee: {
 						where: { followerId: targetId },
 						take: 1,
 					},
-					following_following_followerIdTouser: {
+					followings_follower: {
 						where: { followeeId: targetId },
 						take: 1,
 					},
-					// muting_muting_muteeIdTouser: { where: { muterId: targetId }, take: 1 },
-					muting_muting_muterIdTouser: {
+					// mutings_mutee: { where: { muterId: targetId }, take: 1 },
+					mutings_muter: {
 						where: { muteeId: targetId },
 						take: 1,
 					},
@@ -98,15 +98,13 @@ export class UserEntityService {
 
 		return {
 			id: targetId,
-			hasPendingFollowRequestFromYou:
-				me.follow_request_follow_request_followerIdTouser.length !== 0,
-			hasPendingFollowRequestToYou:
-				me.follow_request_follow_request_followeeIdTouser.length !== 0,
-			isBlocked: me.blocking_blocking_blockeeIdTouser.length !== 0,
-			isBlocking: me.blocking_blocking_blockerIdTouser.length !== 0,
-			isFollowed: me.following_following_followeeIdTouser.length !== 0,
-			isFollowing: me.following_following_followerIdTouser.length !== 0,
-			isMuted: me.muting_muting_muterIdTouser.length !== 0,
+			hasPendingFollowRequestFromYou: me.followRequests_follower.length !== 0,
+			hasPendingFollowRequestToYou: me.followRequests_followee.length !== 0,
+			isBlocked: me.blockings_blockee.length !== 0,
+			isBlocking: me.blockings_blocker.length !== 0,
+			isFollowed: me.followings_followee.length !== 0,
+			isFollowing: me.followings_follower.length !== 0,
+			isMuted: me.mutings_muter.length !== 0,
 			isRenoteMuted: isRenoteMuted,
 		};
 	}
@@ -117,7 +115,7 @@ export class UserEntityService {
 	 * @param userId
 	 * @returns
 	 */
-	public async getHasUnreadAnnouncement(userId: user['id']): Promise<boolean> {
+	public async getHasUnreadAnnouncement(userId: User['id']): Promise<boolean> {
 		const count = await this.prismaService.client.announcement.count({
 			where: { reads: { none: { userId: userId } } },
 			take: 1,
@@ -132,7 +130,7 @@ export class UserEntityService {
 	 * @param userId
 	 * @returns
 	 */
-	public async getHasUnreadNotification(userId: user['id']): Promise<boolean> {
+	public async getHasUnreadNotification(userId: User['id']): Promise<boolean> {
 		const latestReadNotificationId = await this.redisClient.get(
 			`latestReadNotification:${userId}`,
 		);
@@ -154,9 +152,9 @@ export class UserEntityService {
 
 	private async packDetailsOnly(
 		userId: string,
-		meId: user['id'] | null,
+		meId: User['id'] | null,
 		data: {
-			user: user[];
+			user: User[];
 			user_profile: user_profile[];
 			user_note_pining: user_note_pining[];
 			user_security_key: user_security_key[];
@@ -311,7 +309,7 @@ export class UserEntityService {
 	private async packDetailsMeOnly(
 		userId: string,
 		data: {
-			user: user[];
+			user: User[];
 			user_profile: user_profile[];
 			nore_unread: NoteUnread[];
 			follow_request: FollowRequest[];
@@ -421,8 +419,8 @@ export class UserEntityService {
 	}
 
 	public async packDetailed(
-		src: user['id'] | user,
-		me?: Pick<user, 'id'> | null | undefined,
+		src: User['id'] | User,
+		me?: Pick<User, 'id'> | null | undefined,
 		options?: {
 			includeSecrets?: boolean;
 		},
@@ -437,26 +435,27 @@ export class UserEntityService {
 		const result = await this.prismaService.client.user.findUniqueOrThrow({
 			where: { id: userId },
 			include: {
-				follow_request_follow_request_followeeIdTouser: true,
-				note_unread: true,
-				user_memo_user_memo_targetUserIdTouser: true,
-				user_note_pining: { include: { note: true }, orderBy: { id: 'desc' } },
-				user_profile: true,
-				user_security_key: true,
+				followRequests_followee: true,
+				noteUnreads: true,
+				userMemo_targetUser: true,
+				userNotePinings: { include: { note: true }, orderBy: { id: 'desc' } },
+				userProfile: true,
+				userSecurityKeys: true,
 			},
 		});
-		if (result.user_profile === null)
+		if (result.userProfile === null) {
 			throw new Error('data.user_profile is null');
+		}
 
 		const data = {
-			follow_request: result.follow_request_follow_request_followeeIdTouser,
-			nore_unread: result.note_unread,
-			note: result.user_note_pining.map((pin) => pin.note),
+			follow_request: result.followRequests_followee,
+			nore_unread: result.noteUnreads,
+			note: result.userNotePinings.map((pin) => pin.note),
 			relation,
-			user_memo: result.user_memo_user_memo_targetUserIdTouser,
-			user_note_pining: result.user_note_pining,
-			user_profile: [result.user_profile],
-			user_security_key: result.user_security_key,
+			user_memo: result.userMemo_targetUser,
+			user_note_pining: result.userNotePinings,
+			user_profile: [result.userProfile],
+			user_security_key: result.userSecurityKeys,
 			user: [result],
 		};
 
@@ -499,7 +498,7 @@ export class UserEntityService {
 	 * `packDetailed`メソッドでも現時点では事足りるが、そちらは`DetailedNotMe`とのunionが返されてしまうので。
 	 */
 	public async packDetailedMe(
-		src: user['id'] | user,
+		src: User['id'] | User,
 		options?: {
 			includeSecrets?: boolean;
 		},
@@ -510,27 +509,26 @@ export class UserEntityService {
 		const result = await this.prismaService.client.user.findUniqueOrThrow({
 			where: { id: userId },
 			include: {
-				follow_request_follow_request_followeeIdTouser: true,
-				user_profile: true,
-				user_note_pining: { include: { note: true }, orderBy: { id: 'desc' } },
-				user_security_key: true,
-				user_memo_user_memo_targetUserIdTouser: {
-					where: { targetUserId: userId, userId },
-				},
-				note_unread: true,
+				followRequests_followee: true,
+				userProfile: true,
+				userNotePinings: { include: { note: true }, orderBy: { id: 'desc' } },
+				userSecurityKeys: true,
+				userMemo_targetUser: { where: { targetUserId: userId, userId } },
+				noteUnreads: true,
 			},
 		});
-		if (result.user_profile === null)
+		if (result.userProfile === null) {
 			throw new Error('data.user_profile is null');
+		}
 
 		const data = {
-			follow_request: result.follow_request_follow_request_followeeIdTouser,
-			nore_unread: result.note_unread,
-			note: result.user_note_pining.map((pin) => pin.note),
-			user_memo: result.user_memo_user_memo_targetUserIdTouser,
-			user_note_pining: result.user_note_pining,
-			user_profile: [result.user_profile],
-			user_security_key: result.user_security_key,
+			follow_request: result.followRequests_followee,
+			nore_unread: result.noteUnreads,
+			note: result.userNotePinings.map((pin) => pin.note),
+			user_memo: result.userMemo_targetUser,
+			user_note_pining: result.userNotePinings,
+			user_profile: [result.userProfile],
+			user_security_key: result.userSecurityKeys,
 			user: [result],
 		};
 

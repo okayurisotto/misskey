@@ -6,14 +6,14 @@ import { getApIds } from './type.js';
 import { ApPersonResolveService } from './models/ApPersonResolveService.js';
 import type { ApObject } from './type.js';
 import type { Resolver } from './ApResolverService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 type Visibility = 'public' | 'home' | 'followers' | 'specified';
 
 type AudienceInfo = {
 	visibility: Visibility;
-	mentionedUsers: user[];
-	visibleUsers: user[];
+	mentionedUsers: User[];
+	visibleUsers: User[];
 };
 
 type GroupedAudience = Record<'public' | 'followers' | 'other', string[]>;
@@ -35,7 +35,7 @@ export class ApAudienceParseService {
 
 		const others = unique(concat([toGroups.other, ccGroups.other]));
 
-		const limit = promiseLimit<user | null>(2);
+		const limit = promiseLimit<User | null>(2);
 		const mentionedUsers = (
 			await Promise.all(
 				others.map((id) =>
@@ -44,7 +44,7 @@ export class ApAudienceParseService {
 					),
 				),
 			)
-		).filter((x): x is user => x != null);
+		).filter((x): x is User => x != null);
 
 		if (toGroups.public.length > 0) {
 			return {

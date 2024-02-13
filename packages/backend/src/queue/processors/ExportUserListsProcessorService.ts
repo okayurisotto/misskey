@@ -29,14 +29,14 @@ export class ExportUserListsProcessorService {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },
 			include: {
-				user_list: {
+				userLists: {
 					include: { user_list_joining: { include: { user: true } } },
 				},
 			},
 		});
 		if (user === null) return;
 
-		const content = user.user_list
+		const content = user.userLists
 			.map((list) => {
 				return list.user_list_joining
 					.map(({ user }) => {

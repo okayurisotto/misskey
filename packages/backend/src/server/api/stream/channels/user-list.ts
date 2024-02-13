@@ -6,14 +6,14 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { bindThis } from '@/decorators.js';
 import Channel from '../channel.js';
 import type { z } from 'zod';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 class UserListChannel extends Channel {
 	public readonly chName = 'userList';
 	public static override shouldShare = false;
 	public static override requireCredential = false;
 	private listId: string;
-	public listUsers: user['id'][] = [];
+	public listUsers: User['id'][] = [];
 	private listUsersClock: NodeJS.Timer;
 
 	constructor(

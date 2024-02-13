@@ -10,7 +10,7 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class UserFollowRequestCancelService {
@@ -24,8 +24,8 @@ export class UserFollowRequestCancelService {
 	) {}
 
 	public async cancel(
-		followee: Pick<user, 'id' | 'host' | 'uri' | 'inbox'>,
-		follower: Pick<user, 'id' | 'host' | 'uri'>,
+		followee: Pick<User, 'id' | 'host' | 'uri' | 'inbox'>,
+		follower: Pick<User, 'id' | 'host' | 'uri'>,
 	): Promise<void> {
 		if (this.userEntityUtilService.isRemoteUser(followee)) {
 			const content = this.apRendererService.addContext(

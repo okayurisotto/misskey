@@ -29,14 +29,14 @@ export class ExportMutingProcessorService {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },
 			include: {
-				muting_muting_muterIdTouser: {
+				mutings_muter: {
 					include: { mutee: true },
 				},
 			},
 		});
 		if (user === null) return;
 
-		const content = user.muting_muting_muterIdTouser
+		const content = user.mutings_muter
 			.map((mute) => {
 				return this.utilityService.getFullApAccount(
 					mute.mutee.username,

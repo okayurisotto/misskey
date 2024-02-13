@@ -76,7 +76,7 @@ export default class extends Endpoint<
 								{ AND: [{ visibility: 'public' }, { userHost: null }] },
 								{
 									user: {
-										following_following_followerIdTouser: {
+										followings_follower: {
 											some: { followeeId: me.id },
 										},
 									},

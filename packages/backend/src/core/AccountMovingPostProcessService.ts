@@ -11,7 +11,7 @@ import { UserBlockingCopyingService } from './UserBlockingCopyingService.js';
 import { UserMutingCopyingService } from './UserMutingCopyingService.js';
 import { UserListMovingUserService } from './UserListMovingUserService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class AccountMovingPostProcessService {
@@ -29,7 +29,7 @@ export class AccountMovingPostProcessService {
 		private readonly userMutingCopyingService: UserMutingCopyingService,
 	) {}
 
-	public async process(src: user, dst: user): Promise<void> {
+	public async process(src: User, dst: User): Promise<void> {
 		// Copy blockings and mutings, and update lists
 		try {
 			await Promise.all([
@@ -70,7 +70,7 @@ export class AccountMovingPostProcessService {
 
 	private async adjustFollowingCounts(
 		localFollowerIds: string[],
-		oldAccount: user,
+		oldAccount: User,
 	): Promise<void> {
 		if (localFollowerIds.length === 0) return;
 

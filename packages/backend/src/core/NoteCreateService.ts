@@ -51,13 +51,13 @@ import type {
 	Channel,
 	DriveFile,
 	Note,
-	user,
+	User,
 } from '@prisma/client';
 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention';
 
 class NotificationManager {
-	private readonly notifier: { id: user['id'] };
+	private readonly notifier: { id: User['id'] };
 	private readonly note;
 	private readonly queue: {
 		target: LocalUser['id'];
@@ -67,7 +67,7 @@ class NotificationManager {
 	constructor(
 		private readonly notificationService: NotificationService,
 		private readonly prismaService: PrismaService,
-		notifier: { id: user['id'] },
+		notifier: { id: User['id'] },
 		note: Note,
 	) {
 		this.notifier = notifier;
@@ -116,10 +116,10 @@ class NotificationManager {
 }
 
 type MinimumUser = {
-	id: user['id'];
-	host: user['host'];
-	username: user['username'];
-	uri: user['uri'];
+	id: User['id'];
+	host: User['host'];
+	username: User['username'];
+	uri: User['uri'];
 };
 
 type Option = {
@@ -179,11 +179,11 @@ export class NoteCreateService implements OnApplicationShutdown {
 
 	public async create(
 		user: {
-			id: user['id'];
-			username: user['username'];
-			host: user['host'];
-			createdAt: user['createdAt'];
-			isBot: user['isBot'];
+			id: User['id'];
+			username: User['username'];
+			host: User['host'];
+			createdAt: User['createdAt'];
+			isBot: User['isBot'];
 		},
 		data: Option,
 		silent = false,
@@ -377,7 +377,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	private async insertNote(
-		user: Pick<user, 'id' | 'host'>,
+		user: Pick<User, 'id' | 'host'>,
 		data: Option,
 		tags: string[],
 		emojis: string[],
@@ -492,11 +492,11 @@ export class NoteCreateService implements OnApplicationShutdown {
 	private async postNoteCreated(
 		note: Note,
 		user: {
-			id: user['id'];
-			username: user['username'];
-			host: user['host'];
-			createdAt: user['createdAt'];
-			isBot: user['isBot'];
+			id: User['id'];
+			username: User['username'];
+			host: User['host'];
+			createdAt: User['createdAt'];
+			isBot: User['isBot'];
 		},
 		data: Option,
 		silent: boolean,
@@ -887,7 +887,7 @@ export class NoteCreateService implements OnApplicationShutdown {
 		this.searchService.indexNote(note);
 	}
 
-	private async incNotesCountOfUser(user: { id: user['id'] }): Promise<void> {
+	private async incNotesCountOfUser(user: { id: User['id'] }): Promise<void> {
 		await this.prismaService.client.user.update({
 			where: { id: user.id },
 			data: {
@@ -898,9 +898,9 @@ export class NoteCreateService implements OnApplicationShutdown {
 	}
 
 	private async extractMentionedUsers(
-		user: { host: user['host'] },
+		user: { host: User['host'] },
 		tokens: mfm.MfmNode[],
-	): Promise<user[]> {
+	): Promise<User[]> {
 		if (tokens == null) return [];
 
 		const mentions = extractMentions(tokens);

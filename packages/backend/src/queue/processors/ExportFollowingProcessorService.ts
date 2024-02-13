@@ -31,8 +31,8 @@ export class ExportFollowingProcessorService {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },
 			include: {
-				muting_muting_muterIdTouser: true,
-				following_following_followeeIdTouser: {
+				mutings_muter: true,
+				followings_followee: {
 					orderBy: { id: 'asc' },
 					include: { follower: true },
 				},
@@ -41,10 +41,10 @@ export class ExportFollowingProcessorService {
 		if (user === null) return;
 
 		const muteeIds = new Set(
-			user.muting_muting_muterIdTouser.map(({ muteeId }) => muteeId),
+			user.mutings_muter.map(({ muteeId }) => muteeId),
 		);
 
-		const content = user.following_following_followeeIdTouser
+		const content = user.followings_followee
 			.filter((following) => {
 				if (!job.data.excludeMuting) return true;
 				return !muteeIds.has(following.followeeId);

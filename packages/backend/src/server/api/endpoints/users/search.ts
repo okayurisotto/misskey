@@ -7,7 +7,7 @@ import { UserSchema } from '@/models/zod/UserSchema.js';
 import { LocalUsernameSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 const res = z.array(UserSchema);
 export const meta = {
@@ -43,7 +43,7 @@ export default class extends Endpoint<
 			ps.query = ps.query.trim();
 			const isUsername = ps.query.startsWith('@');
 
-			let users: user[] = [];
+			let users: User[] = [];
 
 			if (isUsername) {
 				users = await this.prismaService.client.user.findMany({
@@ -104,7 +104,7 @@ export default class extends Endpoint<
 							where: {
 								AND: [
 									{
-										user_profile: {
+										userProfile: {
 											AND: [
 												{
 													description: {

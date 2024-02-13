@@ -8,7 +8,7 @@ import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 import { NodeinfoServerService } from './NodeinfoServerService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
-import type { Prisma, user } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class WellKnownServerService {
@@ -103,7 +103,7 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 		fastify.get<{ Querystring: { resource: string } }>(
 			webFingerPath,
 			async (request, reply) => {
-				const fromId = (id: user['id']): Prisma.userWhereInput => ({
+				const fromId = (id: User['id']): Prisma.UserWhereInput => ({
 					id,
 					host: null,
 					isSuspended: false,
@@ -111,7 +111,7 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 
 				const generateQuery = (
 					resource: string,
-				): number | Prisma.userWhereInput =>
+				): number | Prisma.UserWhereInput =>
 					resource.startsWith(
 						`${this.configLoaderService.data.url.toLowerCase()}/users/`,
 					)
@@ -128,7 +128,7 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 								),
 						  );
 
-				const fromAcct = (acct: Acct.Acct): Prisma.userWhereInput | number =>
+				const fromAcct = (acct: Acct.Acct): Prisma.UserWhereInput | number =>
 					!acct.host ||
 					acct.host === this.configLoaderService.data.host.toLowerCase()
 						? {

@@ -64,7 +64,7 @@ export default class extends Endpoint<
 									OR: [
 										{
 											user: {
-												following_following_followeeIdTouser: {
+												followings_followee: {
 													some: { followerId: me.id },
 												},
 											},

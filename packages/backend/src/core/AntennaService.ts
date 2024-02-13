@@ -10,7 +10,7 @@ import { RedisService } from '@/core/RedisService.js';
 import { RedisSubService } from '@/core/RedisSubService.js';
 import { bindThis } from '@/decorators.js';
 import type { OnApplicationShutdown } from '@nestjs/common';
-import type { Antenna, Note, user } from '@prisma/client';
+import type { Antenna, Note, User } from '@prisma/client';
 
 @Injectable()
 export class AntennaService implements OnApplicationShutdown {
@@ -61,7 +61,7 @@ export class AntennaService implements OnApplicationShutdown {
 
 	public async addNoteToAntennas(
 		note: Note,
-		noteUser: { id: user['id']; username: string; host: string | null },
+		noteUser: { id: User['id']; username: string; host: string | null },
 	): Promise<void> {
 		const antennas = await this.getAntennas();
 		const antennasWithMatchResult = await Promise.all(
@@ -99,7 +99,7 @@ export class AntennaService implements OnApplicationShutdown {
 	public async checkHitAntenna(
 		antenna: Antenna,
 		note: Note | z.infer<typeof NoteSchema>,
-		noteUser: { id: user['id']; username: string; host: string | null },
+		noteUser: { id: User['id']; username: string; host: string | null },
 	): Promise<boolean> {
 		if (note.visibility === 'specified') return false;
 		if (note.visibility === 'followers') return false;

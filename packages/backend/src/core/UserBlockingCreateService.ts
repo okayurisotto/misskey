@@ -9,7 +9,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import type { UserDetailedNotMeSchema } from '@/models/zod/UserDetailedNotMeSchema.js';
 import { UserFollowingDeleteService } from './UserFollowingDeleteService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { Blocking, user } from '@prisma/client';
+import type { Blocking, User } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -27,8 +27,8 @@ export class UserBlockingCreateService {
 	) {}
 
 	public async create(
-		blocker: user,
-		blockee: user,
+		blocker: User,
+		blockee: User,
 		silent = false,
 	): Promise<void> {
 		await Promise.all([
@@ -63,8 +63,8 @@ export class UserBlockingCreateService {
 	}
 
 	private async cancelRequest(
-		follower: user,
-		followee: user,
+		follower: User,
+		followee: User,
 		silent = false,
 	): Promise<void> {
 		const request = await this.prismaService.client.followRequest.findUnique({
@@ -157,7 +157,7 @@ export class UserBlockingCreateService {
 		}
 	}
 
-	private async removeFromList(listOwner: user, user: user): Promise<void> {
+	private async removeFromList(listOwner: User, user: User): Promise<void> {
 		await this.prismaService.client.user_list_joining.deleteMany({
 			where: {
 				user_list: { userId: listOwner.id },

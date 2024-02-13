@@ -5,7 +5,7 @@ import { QueueService } from '@/core/QueueService.js';
 import { ProxyAccountService } from '@/core/ProxyAccountService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { Prisma, user } from '@prisma/client';
+import type { Prisma, User } from '@prisma/client';
 
 @Injectable()
 export class UserListMovingUserService {
@@ -26,7 +26,7 @@ export class UserListMovingUserService {
 	 * @param dst User (new account)
 	 * @returns {Promise<void>}
 	 */
-	public async move(src: ThinUser, dst: user): Promise<void> {
+	public async move(src: ThinUser, dst: User): Promise<void> {
 		const dstJoinings =
 			await this.prismaService.client.user_list_joining.findMany({
 				where: { userId: dst.id },

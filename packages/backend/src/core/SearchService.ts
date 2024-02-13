@@ -5,7 +5,7 @@ import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 import { MeiliSearchService } from '@/core/MeiliSearchService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import type { Index } from 'meilisearch';
-import type { Note, user } from '@prisma/client';
+import type { Note, User } from '@prisma/client';
 
 type K = string;
 type V = string | number | boolean;
@@ -150,7 +150,7 @@ export class SearchService implements OnApplicationBootstrap {
 
 	public async searchNote(
 		q: string,
-		me: user | null,
+		me: User | null,
 		opts: {
 			userId?: Note['userId'] | null;
 			channelId?: Note['channelId'] | null;

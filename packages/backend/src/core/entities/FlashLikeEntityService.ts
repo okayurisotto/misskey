@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { FlashSchema } from '@/models/zod/FlashSchema.js';
 import { FlashEntityService } from './FlashEntityService.js';
-import type { FlashLike, user } from '@prisma/client';
+import type { FlashLike, User } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class FlashLikeEntityService {
 	 */
 	public async pack(
 		src: FlashLike['id'] | FlashLike,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 	): Promise<{ id: string; flash: z.infer<typeof FlashSchema> }> {
 		const like =
 			typeof src === 'object'

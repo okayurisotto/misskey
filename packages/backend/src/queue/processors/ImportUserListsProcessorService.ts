@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { user, user_list } from '@prisma/client';
+import { User, user_list } from '@prisma/client';
 import * as Acct from '@/misc/acct.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { DownloadService } from '@/core/DownloadService.js';
@@ -17,8 +17,8 @@ export const ExportedUserListsSchema = z.array(
 	z.tuple([z.string(), z.string()]),
 );
 
-const getUserFromAcct = (users: user[]) => {
-	return (acct: Acct.Acct): user | undefined => {
+const getUserFromAcct = (users: User[]) => {
+	return (acct: Acct.Acct): User | undefined => {
 		return users.find((user) => {
 			if (user.usernameLower !== acct.username.toLowerCase()) {
 				return false;
@@ -57,7 +57,7 @@ export class ImportUserListsProcessorService {
 
 		const me = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },
-			include: { user_list: { include: { user_list_joining: true } } },
+			include: { userLists: { include: { user_list_joining: true } } },
 		});
 		if (me === null) return;
 
@@ -90,7 +90,7 @@ export class ImportUserListsProcessorService {
 
 		const userListCreateManyData = [...data.keys()]
 			.filter((listName) => {
-				return me.user_list.every((list) => list.name !== listName);
+				return me.userLists.every((list) => list.name !== listName);
 			})
 			.map((listName) => ({
 				id: this.idService.genId(),
@@ -137,7 +137,7 @@ export class ImportUserListsProcessorService {
 		// 足りない`user_list_joinging`を作る
 
 		const joiningCreateManyData = [...data]
-			.map<{ user: user; user_list: user_list }[]>(([listName, accts]) => {
+			.map<{ user: User; user_list: user_list }[]>(([listName, accts]) => {
 				const user_list = allListsByName.get(listName);
 				if (user_list === undefined) {
 					// 取得もしくは作成していたはずの`user_list`がない

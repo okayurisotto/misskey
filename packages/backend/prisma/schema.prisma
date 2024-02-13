@@ -573,13 +573,13 @@ model AbuseUserReport {
   comment      String   @db.VarChar(2048)
   //
   reporterId   String   @db.VarChar(32)
-  reporter     user     @relation("abuse_user_report_reporterIdTouser", fields: [reporterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_04cc96756f89d0b7f9473e8cdf3")
+  reporter     User     @relation("abuse_user_report_reporterIdTouser", fields: [reporterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_04cc96756f89d0b7f9473e8cdf3")
   //
   targetUserId String   @db.VarChar(32)
-  targetUser   user     @relation("abuse_user_report_targetUserIdTouser", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9021cc2e1feb5f72d3db6e9f5f")
+  targetUser   User     @relation("abuse_user_report_targetUserIdTouser", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9021cc2e1feb5f72d3db6e9f5f")
   //
   assigneeId   String?  @db.VarChar(32)
-  assignee     user?    @relation("abuse_user_report_assigneeIdTouser", fields: [assigneeId], references: [id], onUpdate: NoAction, map: "FK_08b883dd5fdd6f9c4c1572b36de")
+  assignee     User?    @relation("abuse_user_report_assigneeIdTouser", fields: [assigneeId], references: [id], onUpdate: NoAction, map: "FK_08b883dd5fdd6f9c4c1572b36de")
 
   // 非正規化につき無視
   targetUserHost String? @ignore @db.VarChar(128)
@@ -613,7 +613,7 @@ model AccessToken {
   app         App?      @relation(fields: [appId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a3ff16c90cc87a82a0b5959e560")
   //
   userId      String    @db.VarChar(32)
-  user        user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9949557d0e1b2c19e5344c171e9")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9949557d0e1b2c19e5344c171e9")
 
   @@index([hash], map: "IDX_64c327441248bae40f7d92f34f")
   @@index([token], map: "IDX_70ba8f6af34bc924fc9e12adb8")
@@ -665,7 +665,7 @@ model AnnouncementRead {
   announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_603a7b1e7aa0533c6c88e9bfafe")
   //
   userId         String       @db.VarChar(32)
-  user           user         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8288151386172b8109f7239ab28")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8288151386172b8109f7239ab28")
 
   @@unique([userId, announcementId], map: "IDX_924fa71815cfa3941d003702a0")
   @@index([announcementId], map: "IDX_603a7b1e7aa0533c6c88e9bfaf")
@@ -689,7 +689,7 @@ model Antenna {
   isActive        Boolean          @default(true)
   //
   userId          String           @db.VarChar(32)
-  user            user             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6446c571a0e8d0f05f01c789096")
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6446c571a0e8d0f05f01c789096")
   // `src`が`users`の場合、ここにユーザーIDが配列で保存される（単一テーブル継承、外部キー制約忘れ）
   users           String[]         @default([]) @db.VarChar(1024)
   // `src`が`list`の場合、これらは非nullになる（単一テーブル継承）
@@ -716,7 +716,7 @@ model App {
   callbackUrl String?  @db.VarChar(512)
   //
   userId      String?  @db.VarChar(32)
-  user        user?    @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_3f5b0899ef90527a3462d7c2cb3")
+  user        User?    @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_3f5b0899ef90527a3462d7c2cb3")
 
   accessTokens AccessToken[]
   authSessions AuthSession[]
@@ -735,7 +735,7 @@ model AttestationChallenge {
   registrationChallenge Boolean  @default(false)
   //
   userId                String   @db.VarChar(32)
-  user                  user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f1a461a618fa1755692d0e0d592")
+  user                  User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f1a461a618fa1755692d0e0d592")
 
   @@id([id, userId], map: "PK_d0ba6786e093f1bcb497572a6b5")
   @@index([challenge], map: "IDX_47efb914aed1f72dd39a306c7b")
@@ -750,7 +750,7 @@ model AuthSession {
   token     String   @db.VarChar(128)
   //
   userId    String?  @db.VarChar(32)
-  user      user?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c072b729d71697f959bde66ade0")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_c072b729d71697f959bde66ade0")
   //
   appId     String   @db.VarChar(32)
   app       App      @relation(fields: [appId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_dbe037d4bddd17b03a1dc778dee")
@@ -765,10 +765,10 @@ model Blocking {
   createdAt DateTime @db.Timestamptz(6)
   //
   blockerId String   @db.VarChar(32)
-  blocker   user     @relation("blocking_blockerIdTouser", fields: [blockerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0627125f1a8a42c9a1929edb552")
+  blocker   User     @relation("blocking_blockerIdTouser", fields: [blockerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0627125f1a8a42c9a1929edb552")
   //
   blockeeId String   @db.VarChar(32)
-  blockee   user     @relation("blocking_blockeeIdTouser", fields: [blockeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2cd4a2743a99671308f5417759e")
+  blockee   User     @relation("blocking_blockeeIdTouser", fields: [blockeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2cd4a2743a99671308f5417759e")
 
   @@unique([blockerId, blockeeId], map: "IDX_98a1bc5cb30dfd159de056549f")
   @@index([blockerId], map: "IDX_0627125f1a8a42c9a1929edb55")
@@ -788,7 +788,7 @@ model Channel {
   pinnedNoteIds String[]   @default([]) @db.VarChar(128) // 外部キー制約忘れ
   //
   userId        String?    @db.VarChar(32)
-  user          user?      @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_823bae55bd81b3be6e05cff4383")
+  user          User?      @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_823bae55bd81b3be6e05cff4383")
   //
   bannerId      String?    @db.VarChar(32)
   banner        DriveFile? @relation(fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_999da2bcc7efadbfe0e92d3bc19")
@@ -821,7 +821,7 @@ model ChannelFavorite {
   createdAt DateTime @db.Timestamptz(6)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8302bd27226605ece14842fb25a")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8302bd27226605ece14842fb25a")
   //
   channelId String   @db.VarChar(32)
   channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d3ca0db011b75ac2a940a2337d2")
@@ -838,7 +838,7 @@ model ChannelFollowing {
   createdAt DateTime @db.Timestamptz(6)
   //
   userId    String   @map("followerId") @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6d8084ec9496e7334a4602707e1")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6d8084ec9496e7334a4602707e1")
   //
   channelId String   @map("followeeId") @db.VarChar(32)
   channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e43068c3f92cab197c3d3cd86e")
@@ -873,7 +873,7 @@ model Clip {
   description String?  @db.VarChar(2048)
   //
   userId      String   @db.VarChar(32)
-  user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2b5ec6c574d6802c94c80313fb2")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2b5ec6c574d6802c94c80313fb2")
 
   favorites ClipFavorite[]
   notes     ClipNote[]
@@ -892,7 +892,7 @@ model ClipFavorite {
   createdAt DateTime @db.Timestamptz(6)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_25a31662b0b0cc9af6549a9d711")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_25a31662b0b0cc9af6549a9d711")
   //
   clipId    String   @db.VarChar(32)
   clip      Clip     @relation(fields: [clipId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fce61c7986cee54393e79f1d849")
@@ -948,15 +948,15 @@ model DriveFile {
   maybePorn          Boolean      @default(false)
   //
   userId             String?      @db.VarChar(32)
-  user               user?        @relation("drive_file_userIdTouser", fields: [userId], references: [id], onUpdate: NoAction, map: "FK_860fa6f6c7df5bb887249fba22e")
+  user               User?        @relation("drive_file_userIdTouser", fields: [userId], references: [id], onUpdate: NoAction, map: "FK_860fa6f6c7df5bb887249fba22e")
   //
   folderId           String?      @db.VarChar(32)
   folder             DriveFolder? @relation(fields: [folderId], references: [id], onUpdate: NoAction, map: "FK_bb90d1956dafc4068c28aa7560a")
 
   channel    Channel[]
   page       Page[]
-  avatarUser user?     @relation("user_avatarIdTodrive_file")
-  bannerUser user?     @relation("user_bannerIdTodrive_file")
+  avatarUser User?     @relation("user_avatarIdTodrive_file")
+  bannerUser User?     @relation("user_bannerIdTodrive_file")
 
   // deprecated
   messaging_message messaging_message[] @ignore
@@ -983,7 +983,7 @@ model DriveFolder {
   name      String       @db.VarChar(128)
   //
   userId    String?      @db.VarChar(32)
-  user      user?        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f4fc06e49c0171c85f1c48060d2")
+  user      User?        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f4fc06e49c0171c85f1c48060d2")
   //
   parentId  String?      @db.VarChar(32)
   parent    DriveFolder? @relation("drive_folderTodrive_folder", fields: [parentId], references: [id], onUpdate: NoAction, map: "FK_00ceffb0cdc238b3233294f08f2")
@@ -1035,7 +1035,7 @@ model Flash {
   permissions String[] @default([]) @db.VarChar(256) // Enumの配列？
   //
   userId      String   @db.VarChar(32)
-  user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9b88250fc2fd009b8f1b5623ed5")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9b88250fc2fd009b8f1b5623ed5")
 
   likes FlashLike[]
 
@@ -1054,7 +1054,7 @@ model FlashLike {
   createdAt DateTime @db.Timestamptz(6)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_60c4af1c19a7a75f1592f93b287")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_60c4af1c19a7a75f1592f93b287")
   //
   flashId   String   @db.VarChar(32)
   flash     Flash    @relation(fields: [flashId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6c16fe0e93b7a1951eca624b76a")
@@ -1071,10 +1071,10 @@ model FollowRequest {
   requestId  String?  @db.VarChar(128)
   //
   followeeId String   @db.VarChar(32)
-  followee   user     @relation("follow_request_followeeIdTouser", fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_12c01c0d1a79f77d9f6c15fadd2")
+  followee   User     @relation("follow_request_followeeIdTouser", fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_12c01c0d1a79f77d9f6c15fadd2")
   //
   followerId String   @db.VarChar(32)
-  follower   user     @relation("follow_request_followerIdTouser", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a7fd92dd6dc519e6fb435dd108f")
+  follower   User     @relation("follow_request_followerIdTouser", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a7fd92dd6dc519e6fb435dd108f")
 
   // 非正規化
   followerHost        String? @ignore @db.VarChar(128)
@@ -1096,10 +1096,10 @@ model Following {
   createdAt  DateTime @db.Timestamptz(6)
   //
   followeeId String   @db.VarChar(32)
-  followee   user     @relation("following_followeeIdTouser", fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_24e0042143a18157b234df186c3")
+  followee   User     @relation("following_followeeIdTouser", fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_24e0042143a18157b234df186c3")
   //
   followerId String   @db.VarChar(32)
-  follower   user     @relation("following_followerIdTouser", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6516c5a6f3c015b4eed39978be5")
+  follower   User     @relation("following_followerIdTouser", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6516c5a6f3c015b4eed39978be5")
 
   // 非正規化
   followerHost        String? @ignore @db.VarChar(128)
@@ -1124,7 +1124,7 @@ model GalleryLike {
   createdAt DateTime @db.Timestamptz(6)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8fd5215095473061855ceb948cf")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_8fd5215095473061855ceb948cf")
   //
   galleryId String   @map("postId") @db.VarChar(32)
   gallery   Gallery  @relation(fields: [galleryId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b1cb568bfe569e47b7051699fc8")
@@ -1147,7 +1147,7 @@ model Gallery {
   tags        String[] @default([]) @db.VarChar(128)
   //
   userId      String   @db.VarChar(32)
-  user        user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_985b836dddd8615e432d7043ddb")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_985b836dddd8615e432d7043ddb")
 
   likes GalleryLike[]
 
@@ -1236,8 +1236,8 @@ model messaging_message {
   uri                                      String?     @db.VarChar(512)
   user_group                               user_group? @relation(fields: [groupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c4be03b446884f9e9c502135be") @ignore
   drive_file                               DriveFile?  @relation(fields: [fileId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_535def119223ac05ad3fa9ef64b")
-  user_messaging_message_userIdTouser      user        @relation("messaging_message_userIdTouser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5377c307783fce2b6d352e1203b")
-  user_messaging_message_recipientIdTouser user?       @relation("messaging_message_recipientIdTouser", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cac14a4e3944454a5ce7daa5142")
+  user_messaging_message_userIdTouser      User        @relation("messaging_message_userIdTouser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5377c307783fce2b6d352e1203b")
+  user_messaging_message_recipientIdTouser User?       @relation("messaging_message_recipientIdTouser", fields: [recipientId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cac14a4e3944454a5ce7daa5142")
 
   @@index([groupId], map: "IDX_2c4be03b446884f9e9c502135b")
   @@index([userId], map: "IDX_5377c307783fce2b6d352e1203")
@@ -1327,7 +1327,7 @@ model Meta {
   cacheRemoteSensitiveFiles              Boolean                                      @default(true)
   //
   proxyAccountId                         String?                                      @db.VarChar(32)
-  proxyAccount                           user?                                        @relation(fields: [proxyAccountId], references: [id], onUpdate: NoAction, map: "FK_ab1bc0c1e209daa77b8e8d212ad")
+  proxyAccount                           User?                                        @relation(fields: [proxyAccountId], references: [id], onUpdate: NoAction, map: "FK_ab1bc0c1e209daa77b8e8d212ad")
 
   @@map("meta")
 }
@@ -1349,7 +1349,7 @@ model ModerationLog {
   info      Json
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a08ad074601d204e0f69da9a954")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a08ad074601d204e0f69da9a954")
 
   @@index([userId], map: "IDX_a08ad074601d204e0f69da9a95")
   @@map("moderation_log")
@@ -1364,7 +1364,7 @@ model MutedNote {
   note   Note                   @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_70ab9786313d78e4201d81cdb89")
   //
   userId String                 @db.VarChar(32)
-  user   user                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d8e07aa18c2d64e86201601aec1")
+  user   User                   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d8e07aa18c2d64e86201601aec1")
 
   @@unique([noteId, userId], map: "IDX_a8c6bfd637d3f1d67a27c48e27")
   @@index([reason], map: "IDX_636e977ff90b23676fb5624b25")
@@ -1380,10 +1380,10 @@ model UserMuting {
   expiresAt DateTime? @db.Timestamptz(6)
   //
   muterId   String    @db.VarChar(32)
-  muter     user      @relation("muting_muterIdTouser", fields: [muterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_93060675b4a79a577f31d260c67")
+  muter     User      @relation("muting_muterIdTouser", fields: [muterId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_93060675b4a79a577f31d260c67")
   //
   muteeId   String    @db.VarChar(32)
-  mutee     user      @relation("muting_muteeIdTouser", fields: [muteeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ec96b4fed9dae517e0dbbe0675c")
+  mutee     User      @relation("muting_muteeIdTouser", fields: [muteeId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ec96b4fed9dae517e0dbbe0675c")
 
   @@unique([muterId, muteeId], map: "IDX_1eb9d9824a630321a29fd3b290")
   @@index([muterId], map: "IDX_93060675b4a79a577f31d260c6")
@@ -1430,7 +1430,7 @@ model Note {
   hasPoll              Boolean              @default(false)
   //
   userId               String               @db.VarChar(32)
-  user                 user                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5b87d9d19127bd5d92026017a7b")
+  user                 User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5b87d9d19127bd5d92026017a7b")
   //
   channelId            String?              @db.VarChar(32)
   channel              Channel?             @relation(fields: [channelId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f22169eb10657bded6d875ac8f9")
@@ -1482,7 +1482,7 @@ model NoteFavorite {
   createdAt DateTime @db.Timestamptz(6)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_47f4b1892f5d6ba8efb3057d81a")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_47f4b1892f5d6ba8efb3057d81a")
   //
   noteId    String   @db.VarChar(32)
   note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e00498f180193423c992bc4370")
@@ -1499,7 +1499,7 @@ model NoteReaction {
   reaction  String   @db.VarChar(260)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_13761f64257f40c5636d0ff95ee")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_13761f64257f40c5636d0ff95ee")
   //
   noteId    String   @db.VarChar(32)
   note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_45145e4953780f3cd5656f0ea6a")
@@ -1518,7 +1518,7 @@ model NoteThreadMuting {
   threadId  String   @db.VarChar(256) // 非正規化
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_29c11c7deb06615076f8c95b80a")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_29c11c7deb06615076f8c95b80a")
 
   @@unique([userId, threadId], map: "IDX_ae7aab18a2641d3e5f25e0c4ea")
   @@index([userId], map: "IDX_29c11c7deb06615076f8c95b80")
@@ -1533,7 +1533,7 @@ model NoteUnread {
   isMentioned   Boolean
   //
   userId        String  @db.VarChar(32)
-  user          user    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_56b0166d34ddae49d8ef7610bb9")
+  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_56b0166d34ddae49d8ef7610bb9")
   //
   noteId        String  @db.VarChar(32)
   note          Note    @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e637cba4dc4410218c4251260e4")
@@ -1559,7 +1559,7 @@ model note_watching {
   noteId     String   @db.VarChar(32)
   noteUserId String   @db.VarChar(32)
   note       Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_03e7028ab8388a3f5e3ce2a8619")
-  user       user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b0134ec406e8d09a540f8182888")
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b0134ec406e8d09a540f8182888")
 
   @@unique([userId, noteId], map: "IDX_a42c93c69989ce1d09959df4cf")
   @@index([noteId], map: "IDX_03e7028ab8388a3f5e3ce2a861")
@@ -1588,7 +1588,7 @@ model Page {
   visibleUserIds      String[]             @default([]) @db.VarChar(32)
   //
   userId              String               @db.VarChar(32)
-  user                user                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ae1d917992dd0c9d9bbdad06c4a")
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ae1d917992dd0c9d9bbdad06c4a")
   //
   eyeCatchingImageId  String?              @db.VarChar(32)
   eyeCatchingImage    DriveFile?           @relation(fields: [eyeCatchingImageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9ca79ad939bf06066b81c9d3aa")
@@ -1614,7 +1614,7 @@ model PageLike {
   createdAt DateTime @db.Timestamptz(6)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e61efab7f88dbb79c9166dbb48")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e61efab7f88dbb79c9166dbb48")
   //
   pageId    String   @db.VarChar(32)
   page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cf8782626dced3176038176a847")
@@ -1632,7 +1632,7 @@ model PasswordResetRequest {
   token     String   @unique(map: "IDX_0b575fa9a4cfe638a925949285") @db.VarChar(256) // 非正規化？
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_4bb7fd4a34492ae0e6cc8d30ac8")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_4bb7fd4a34492ae0e6cc8d30ac8")
 
   @@index([userId], map: "IDX_4bb7fd4a34492ae0e6cc8d30ac")
   @@map("password_reset_request")
@@ -1666,7 +1666,7 @@ model PollVote {
   choice    Int // 正規化したい
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_66d2bd2ee31d14bcc23069a89f8")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_66d2bd2ee31d14bcc23069a89f8")
   // （なぜpollではなくnote？）
   noteId    String   @db.VarChar(32)
   note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_aecfbd5ef60374918e63ee95fa7")
@@ -1696,7 +1696,7 @@ model PromoRead {
   createdAt DateTime @db.Timestamptz(6)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9657d55550c3d37bfafaf7d4b05")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_9657d55550c3d37bfafaf7d4b05")
   //
   noteId    String   @db.VarChar(32)
   note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a46a1a603ecee695d7db26da5f4")
@@ -1716,10 +1716,10 @@ model InviteCode {
   pendingUserId String?   @db.VarChar(32) // 非正規化
   //
   createdById   String?   @db.VarChar(32)
-  createdBy     user?     @relation("registration_ticket_createdByIdTouser", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_beba993576db0261a15364ea96e")
+  createdBy     User?     @relation("registration_ticket_createdByIdTouser", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_beba993576db0261a15364ea96e")
   //
   usedById      String?   @unique(map: "UQ_b6f93f2f30bdbb9a5ebdc7c7189") @db.VarChar(32)
-  usedBy        user?     @relation("registration_ticket_usedByIdTouser", fields: [usedById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b6f93f2f30bdbb9a5ebdc7c7189")
+  usedBy        User?     @relation("registration_ticket_usedByIdTouser", fields: [usedById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b6f93f2f30bdbb9a5ebdc7c7189")
 
   @@index([usedById], map: "IDX_b6f93f2f30bdbb9a5ebdc7c718")
   @@index([createdById], map: "IDX_beba993576db0261a15364ea96")
@@ -1738,7 +1738,7 @@ model registry_item {
   value     Json?    @default("{}")
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fb9d21ba0abb83223263df6bcb3")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_fb9d21ba0abb83223263df6bcb3")
 
   @@index([domain], map: "IDX_0a72bdfcdb97c0eca11fe7ecad")
   @@index([scope], map: "IDX_22baca135bb8a3ea1a83d13df3")
@@ -1803,8 +1803,8 @@ model reversi_game {
   form1                           Json?
   form2                           Json?
   crc32                           String?   @db.VarChar(32)
-  user_reversi_game_user2IdTouser user      @relation("reversi_game_user2IdTouser", fields: [user2Id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6649a4e8c5d5cf32fb03b5da9f6")
-  user_reversi_game_user1IdTouser user      @relation("reversi_game_user1IdTouser", fields: [user1Id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f7467510c60a45ce5aca6292743")
+  user_reversi_game_user2IdTouser User      @relation("reversi_game_user2IdTouser", fields: [user2Id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_6649a4e8c5d5cf32fb03b5da9f6")
+  user_reversi_game_user1IdTouser User      @relation("reversi_game_user1IdTouser", fields: [user1Id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f7467510c60a45ce5aca6292743")
 
   @@index([createdAt], map: "IDX_b46ec40746efceac604142be1c")
   @@ignore
@@ -1816,8 +1816,8 @@ model reversi_matching {
   createdAt                            DateTime @db.Timestamptz(6)
   parentId                             String   @db.VarChar(32)
   childId                              String   @db.VarChar(32)
-  user_reversi_matching_parentIdTouser user     @relation("reversi_matching_parentIdTouser", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3b25402709dd9882048c2bbade0")
-  user_reversi_matching_childIdTouser  user     @relation("reversi_matching_childIdTouser", fields: [childId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e247b23a3c9b45f89ec1299d066")
+  user_reversi_matching_parentIdTouser User     @relation("reversi_matching_parentIdTouser", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3b25402709dd9882048c2bbade0")
+  user_reversi_matching_childIdTouser  User     @relation("reversi_matching_childIdTouser", fields: [childId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e247b23a3c9b45f89ec1299d066")
 
   @@index([parentId], map: "IDX_3b25402709dd9882048c2bbade")
   @@index([createdAt], map: "IDX_b604d92d6c7aec38627f6eaf16")
@@ -1859,7 +1859,7 @@ model RoleAssignment {
   expiresAt DateTime? @db.Timestamptz(6)
   //
   userId    String    @db.VarChar(32)
-  user      user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_db5b72c16227c97ca88734d5c2b")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_db5b72c16227c97ca88734d5c2b")
   //
   roleId    String    @db.VarChar(32)
   role      Role      @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f0de67fd09cd3cd0aabca79994d")
@@ -1880,7 +1880,7 @@ model Signin {
   success   Boolean
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c308dbdc50d94dc625670055f7")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c308dbdc50d94dc625670055f7")
 
   @@index([userId], map: "IDX_2c308dbdc50d94dc625670055f")
   @@map("signin")
@@ -1896,7 +1896,7 @@ model SwSubscription {
   sendReadMessage Boolean  @default(false)
   //
   userId          String   @db.VarChar(32)
-  user            user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_97754ca6f2baff9b4abb7f853dd")
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_97754ca6f2baff9b4abb7f853dd")
 
   @@index([userId], map: "IDX_97754ca6f2baff9b4abb7f853d")
   @@map("sw_subscription")
@@ -1911,109 +1911,109 @@ model UsedUsername {
 }
 
 // ユーザー
-model user {
-  id                                   String     @id(map: "PK_cace4a159ff9f2512dd42373760") @db.VarChar(32)
-  createdAt                            DateTime   @db.Timestamptz(6)
-  updatedAt                            DateTime?  @db.Timestamptz(6)
-  lastFetchedAt                        DateTime?  @db.Timestamptz(6)
-  username                             String     @db.VarChar(128)
-  usernameLower                        String     @db.VarChar(128) // 手動generated column
-  name                                 String?    @db.VarChar(128)
-  tags                                 String[]   @default([]) @db.VarChar(128) // 非正規化？
-  isSuspended                          Boolean    @default(false)
-  isLocked                             Boolean    @default(false)
-  isBot                                Boolean    @default(false)
-  isCat                                Boolean    @default(false)
-  isRoot                               Boolean    @default(false)
-  emojis                               String[]   @default([]) @db.VarChar(128) // 非正規化？
-  host                                 String?    @db.VarChar(128)
-  inbox                                String?    @db.VarChar(512)
-  sharedInbox                          String?    @db.VarChar(512)
-  featured                             String?    @db.VarChar(512)
-  uri                                  String?    @db.VarChar(512)
-  token                                String?    @unique(map: "IDX_a854e557b1b14814750c7c7b0c") @db.Char(16)
-  isExplorable                         Boolean    @default(true)
-  followersUri                         String?    @db.VarChar(512)
-  lastActiveDate                       DateTime?  @db.Timestamptz(6)
-  hideOnlineStatus                     Boolean    @default(false)
-  isDeleted                            Boolean    @default(false) // そのユーザーの削除が進行中かどうか
-  movedToUri                           String?    @db.VarChar(512)
-  alsoKnownAs                          String? // CSV
-  movedAt                              DateTime?  @db.Timestamptz(6)
+model User {
+  id               String     @id(map: "PK_cace4a159ff9f2512dd42373760") @db.VarChar(32)
+  createdAt        DateTime   @db.Timestamptz(6)
+  updatedAt        DateTime?  @db.Timestamptz(6)
+  lastFetchedAt    DateTime?  @db.Timestamptz(6)
+  username         String     @db.VarChar(128)
+  usernameLower    String     @db.VarChar(128) // 手動generated column
+  name             String?    @db.VarChar(128)
+  tags             String[]   @default([]) @db.VarChar(128) // 非正規化？
+  isSuspended      Boolean    @default(false)
+  isLocked         Boolean    @default(false)
+  isBot            Boolean    @default(false)
+  isCat            Boolean    @default(false)
+  isRoot           Boolean    @default(false)
+  emojis           String[]   @default([]) @db.VarChar(128) // 非正規化？
+  host             String?    @db.VarChar(128)
+  inbox            String?    @db.VarChar(512)
+  sharedInbox      String?    @db.VarChar(512)
+  featured         String?    @db.VarChar(512)
+  uri              String?    @db.VarChar(512)
+  token            String?    @unique(map: "IDX_a854e557b1b14814750c7c7b0c") @db.Char(16)
+  isExplorable     Boolean    @default(true)
+  followersUri     String?    @db.VarChar(512)
+  lastActiveDate   DateTime?  @db.Timestamptz(6)
+  hideOnlineStatus Boolean    @default(false)
+  isDeleted        Boolean    @default(false) // そのユーザーの削除が進行中かどうか
+  movedToUri       String?    @db.VarChar(512)
+  alsoKnownAs      String? // CSV
+  movedAt          DateTime?  @db.Timestamptz(6)
   // 非正規化
-  avatarBlurhash                       String?    @db.VarChar(128)
-  bannerBlurhash                       String?    @db.VarChar(128)
-  avatarUrl                            String?    @db.VarChar(512)
-  bannerUrl                            String?    @db.VarChar(512)
+  avatarBlurhash   String?    @db.VarChar(128)
+  bannerBlurhash   String?    @db.VarChar(128)
+  avatarUrl        String?    @db.VarChar(512)
+  bannerUrl        String?    @db.VarChar(512)
   // 集計
-  followersCount                       Int        @default(0)
-  followingCount                       Int        @default(0)
-  notesCount                           Int        @default(0)
+  followersCount   Int        @default(0)
+  followingCount   Int        @default(0)
+  notesCount       Int        @default(0)
   //
-  avatarId                             String?    @unique(map: "REL_58f5c71eaab331645112cf8cfa") @db.VarChar(32)
-  drive_file_user_avatarIdTodrive_file DriveFile? @relation("user_avatarIdTodrive_file", fields: [avatarId], references: [id], onUpdate: NoAction, map: "FK_58f5c71eaab331645112cf8cfa5")
+  avatarId         String?    @unique(map: "REL_58f5c71eaab331645112cf8cfa") @db.VarChar(32)
+  avatar           DriveFile? @relation("user_avatarIdTodrive_file", fields: [avatarId], references: [id], onUpdate: NoAction, map: "FK_58f5c71eaab331645112cf8cfa5")
   //
-  bannerId                             String?    @unique(map: "REL_afc64b53f8db3707ceb34eb28e") @db.VarChar(32)
-  drive_file_user_bannerIdTodrive_file DriveFile? @relation("user_bannerIdTodrive_file", fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_afc64b53f8db3707ceb34eb28e2")
+  bannerId         String?    @unique(map: "REL_afc64b53f8db3707ceb34eb28e") @db.VarChar(32)
+  banner           DriveFile? @relation("user_bannerIdTodrive_file", fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_afc64b53f8db3707ceb34eb28e2")
 
-  abuse_user_report_abuse_user_report_reporterIdTouser      AbuseUserReport[]      @relation("abuse_user_report_reporterIdTouser")
-  abuse_user_report_abuse_user_report_assigneeIdTouser      AbuseUserReport[]      @relation("abuse_user_report_assigneeIdTouser")
-  abuse_user_report_abuse_user_report_targetUserIdTouser    AbuseUserReport[]      @relation("abuse_user_report_targetUserIdTouser")
-  access_token                                              AccessToken[]
-  announcement_read                                         AnnouncementRead[]
-  antenna                                                   Antenna[]
-  app                                                       App[]
-  attestation_challenge                                     AttestationChallenge[]
-  auth_session                                              AuthSession[]
-  blocking_blocking_blockerIdTouser                         Blocking[]             @relation("blocking_blockerIdTouser")
-  blocking_blocking_blockeeIdTouser                         Blocking[]             @relation("blocking_blockeeIdTouser")
-  channel                                                   Channel[]
-  channel_favorite                                          ChannelFavorite[]
-  channel_following                                         ChannelFollowing[]
-  clip                                                      Clip[]
-  clip_favorite                                             ClipFavorite[]
-  drive_file_drive_file_userIdTouser                        DriveFile[]            @relation("drive_file_userIdTouser")
-  drive_folder                                              DriveFolder[]
-  flash                                                     Flash[]
-  flash_like                                                FlashLike[]
-  follow_request_follow_request_followeeIdTouser            FollowRequest[]        @relation("follow_request_followeeIdTouser")
-  follow_request_follow_request_followerIdTouser            FollowRequest[]        @relation("follow_request_followerIdTouser")
-  following_following_followeeIdTouser                      Following[]            @relation("following_followeeIdTouser")
-  following_following_followerIdTouser                      Following[]            @relation("following_followerIdTouser")
-  gallery_like                                              GalleryLike[]
-  gallery_post                                              Gallery[]
-  meta                                                      Meta[]
-  moderation_log                                            ModerationLog[]
-  muted_note                                                MutedNote[]
-  muting_muting_muterIdTouser                               UserMuting[]           @relation("muting_muterIdTouser")
-  muting_muting_muteeIdTouser                               UserMuting[]           @relation("muting_muteeIdTouser")
-  note                                                      Note[]
-  note_favorite                                             NoteFavorite[]
-  note_reaction                                             NoteReaction[]
-  note_thread_muting                                        NoteThreadMuting[]
-  note_unread                                               NoteUnread[]
-  page                                                      Page[]
-  page_like                                                 PageLike[]
-  password_reset_request                                    PasswordResetRequest[]
-  poll_vote                                                 PollVote[]
-  promo_read                                                PromoRead[]
-  registration_ticket_registration_ticket_usedByIdTouser    InviteCode?            @relation("registration_ticket_usedByIdTouser")
-  registration_ticket_registration_ticket_createdByIdTouser InviteCode[]           @relation("registration_ticket_createdByIdTouser")
-  registry_item                                             registry_item[]
-  role_assignment                                           RoleAssignment[]
-  signin                                                    Signin[]
-  sw_subscription                                           SwSubscription[]
-  user_keypair                                              user_keypair?
-  user_list                                                 user_list[]
-  user_list_favorite                                        user_list_favorite[]
-  user_list_joining                                         user_list_joining[]
-  user_memo_user_memo_userIdTouser                          user_memo[]            @relation("user_memo_userIdTouser")
-  user_memo_user_memo_targetUserIdTouser                    user_memo[]            @relation("user_memo_targetUserIdTouser")
-  user_note_pining                                          user_note_pining[]
-  user_profile                                              user_profile?
-  user_publickey                                            user_publickey?
-  user_security_key                                         user_security_key[]
-  webhook                                                   webhook[]
+  reportedAbuseUserReports     AbuseUserReport[]      @relation("abuse_user_report_reporterIdTouser")
+  assignedAbuseUserReports     AbuseUserReport[]      @relation("abuse_user_report_assigneeIdTouser")
+  targetedAbuseUserReports     AbuseUserReport[]      @relation("abuse_user_report_targetUserIdTouser")
+  accessTokens                 AccessToken[]
+  announcementReads            AnnouncementRead[]
+  antennas                     Antenna[]
+  apps                         App[]
+  attestationChallenges        AttestationChallenge[]
+  authSessions                 AuthSession[]
+  blockings_blocker            Blocking[]             @relation("blocking_blockerIdTouser")
+  blockings_blockee            Blocking[]             @relation("blocking_blockeeIdTouser")
+  channels                     Channel[]
+  channelFavorites             ChannelFavorite[]
+  channelFollowings            ChannelFollowing[]
+  clip                         Clip[]
+  clipFavorites                ClipFavorite[]
+  driveFiles                   DriveFile[]            @relation("drive_file_userIdTouser")
+  driveFolders                 DriveFolder[]
+  flashes                      Flash[]
+  flashLikes                   FlashLike[]
+  followRequests_followee      FollowRequest[]        @relation("follow_request_followeeIdTouser")
+  followRequests_follower      FollowRequest[]        @relation("follow_request_followerIdTouser")
+  followings_followee          Following[]            @relation("following_followeeIdTouser")
+  followings_follower          Following[]            @relation("following_followerIdTouser")
+  galleryLikes                 GalleryLike[]
+  galleries                    Gallery[]
+  meta                         Meta[]
+  moderationLogs               ModerationLog[]
+  mutedNotes                   MutedNote[]
+  mutings_muter                UserMuting[]           @relation("muting_muterIdTouser")
+  mutings_mutee                UserMuting[]           @relation("muting_muteeIdTouser")
+  notes                        Note[]
+  noteFavorites                NoteFavorite[]
+  noteReactions                NoteReaction[]
+  noteThreadMutings            NoteThreadMuting[]
+  noteUnreads                  NoteUnread[]
+  pages                        Page[]
+  pageLikes                    PageLike[]
+  passwordResetRequests        PasswordResetRequest[]
+  pollVotes                    PollVote[]
+  promoReads                   PromoRead[]
+  registrationTickets_usedBy   InviteCode?            @relation("registration_ticket_usedByIdTouser")
+  registrationTicket_createdBy InviteCode[]           @relation("registration_ticket_createdByIdTouser")
+  registryItems                registry_item[]
+  roleAssignments              RoleAssignment[]
+  signins                      Signin[]
+  swSubscriptions              SwSubscription[]
+  userKeypair                  user_keypair?
+  userLists                    user_list[]
+  userListFavorites            user_list_favorite[]
+  userListJoinings             user_list_joining[]
+  userMemo_user                user_memo[]            @relation("user_memo_userIdTouser")
+  userMemo_targetUser          user_memo[]            @relation("user_memo_targetUserIdTouser")
+  userNotePinings              user_note_pining[]
+  userProfile                  user_profile?
+  userPublickey                user_publickey?
+  userSecurityKeys             user_security_key[]
+  webhooks                     webhook[]
 
   // deprecated
   messaging_message_messaging_message_userIdTouser      messaging_message[]     @relation("messaging_message_userIdTouser") @ignore
@@ -2037,6 +2037,7 @@ model user {
   @@index([isExplorable], map: "IDX_d5a1b83c7cab66f167e6888188")
   @@index([createdAt], map: "IDX_e11e649824a45d8ed01d597fd9")
   @@index([tags], map: "IDX_fa99d777623947a5b05f394cae")
+  @@map("user")
 }
 
 // deprecated
@@ -2047,7 +2048,7 @@ model user_group {
   userId                String                  @db.VarChar(32)
   isPrivate             Boolean                 @default(false)
   messaging_message     messaging_message[]
-  user                  user                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3d6b372788ab01be58853003c93")
+  user                  User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_3d6b372788ab01be58853003c93")
   user_group_invitation user_group_invitation[]
   user_group_invite     user_group_invite[]
   user_group_joining    user_group_joining[]
@@ -2064,7 +2065,7 @@ model user_group_invitation {
   userId      String     @db.VarChar(32)
   userGroupId String     @db.VarChar(32)
   user_group  user_group @relation(fields: [userGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_5cc8c468090e129857e9fecce5a")
-  user        user       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bfbc6305547539369fe73eb144a")
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bfbc6305547539369fe73eb144a")
 
   @@unique([userId, userGroupId], map: "IDX_e9793f65f504e5a31fbaedbf2f")
   @@index([userGroupId], map: "IDX_5cc8c468090e129857e9fecce5")
@@ -2078,7 +2079,7 @@ model user_group_invite {
   createdAt   DateTime   @db.Timestamptz(6)
   userId      String     @db.VarChar(32)
   userGroupId String     @db.VarChar(32)
-  user        user       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1039988afa3bf991185b277fe03")
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_1039988afa3bf991185b277fe03")
   user_group  user_group @relation(fields: [userGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e10924607d058004304611a436a")
 
   @@unique([userId, userGroupId], map: "IDX_78787741f9010886796f2320a4")
@@ -2094,7 +2095,7 @@ model user_group_joining {
   userId      String     @db.VarChar(32)
   userGroupId String     @db.VarChar(32)
   user_group  user_group @relation(fields: [userGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_67dc758bc0566985d1b3d399865")
-  user        user       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f3a1b4bd0c7cabba958a0c0b231")
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f3a1b4bd0c7cabba958a0c0b231")
 
   @@unique([userId, userGroupId], map: "IDX_d9ecaed8c6dc43f3592c229282")
   @@index([userGroupId], map: "IDX_67dc758bc0566985d1b3d39986")
@@ -2119,7 +2120,7 @@ model user_keypair {
   privateKey String @db.VarChar(4096)
   //
   userId     String @id(map: "PK_f4853eb41ab722fe05f81cedeb6") @unique(map: "UQ_f4853eb41ab722fe05f81cedeb6") @db.VarChar(32)
-  user       user   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f4853eb41ab722fe05f81cedeb6")
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f4853eb41ab722fe05f81cedeb6")
 }
 
 // ユーザーリスト
@@ -2131,7 +2132,7 @@ model user_list {
   antenna   Antenna[]
   //
   userId    String    @db.VarChar(32)
-  user      user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b7fcefbdd1c18dce86687531f99")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b7fcefbdd1c18dce86687531f99")
 
   user_list_favorite user_list_favorite[]
   user_list_joining  user_list_joining[]
@@ -2146,7 +2147,7 @@ model user_list_favorite {
   createdAt  DateTime  @db.Timestamptz(6)
   //
   userId     String    @db.VarChar(32)
-  user       user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_016f613dc4feb807e03e3e7da92")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_016f613dc4feb807e03e3e7da92")
   //
   userListId String    @db.VarChar(32)
   user_list  user_list @relation(fields: [userListId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_4d52b20bfe32c8552e7a61e80d2")
@@ -2161,7 +2162,7 @@ model user_list_joining {
   createdAt  DateTime  @db.Timestamptz(6)
   //
   userId     String    @db.VarChar(32)
-  user       user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d844bfc6f3f523a05189076efaa")
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_d844bfc6f3f523a05189076efaa")
   //
   userListId String    @db.VarChar(32)
   user_list  user_list @relation(fields: [userListId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_605472305f26818cc93d1baaa74")
@@ -2177,10 +2178,10 @@ model user_memo {
   memo                              String @db.VarChar(2048)
   //
   userId                            String @db.VarChar(32)
-  user_user_memo_userIdTouser       user   @relation("user_memo_userIdTouser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_650b49c5639b5840ee6a2b8f83e")
+  user_user_memo_userIdTouser       User   @relation("user_memo_userIdTouser", fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_650b49c5639b5840ee6a2b8f83e")
   //
   targetUserId                      String @db.VarChar(32)
-  user_user_memo_targetUserIdTouser user   @relation("user_memo_targetUserIdTouser", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_66ac4a82894297fd09ba61f3d35")
+  user_user_memo_targetUserIdTouser User   @relation("user_memo_targetUserIdTouser", fields: [targetUserId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_66ac4a82894297fd09ba61f3d35")
 
   @@unique([userId, targetUserId], map: "IDX_faef300913c738265638ba3ebc")
   @@index([userId], map: "IDX_650b49c5639b5840ee6a2b8f83")
@@ -2193,7 +2194,7 @@ model user_note_pining {
   createdAt DateTime @db.Timestamptz(6)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bfbc6f79ba4007b4ce5097f08d6")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_bfbc6f79ba4007b4ce5097f08d6")
   //
   noteId    String   @db.VarChar(32)
   note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_68881008f7c3588ad7ecae471cf")
@@ -2253,7 +2254,7 @@ model user_profile {
   preventAiLearning        Boolean                                     @default(true)
   //
   userId                   String                                      @id(map: "PK_51cb79b5555effaf7d69ba1cff9") @unique(map: "UQ_51cb79b5555effaf7d69ba1cff9") @db.VarChar(32)
-  user                     user                                        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_51cb79b5555effaf7d69ba1cff9")
+  user                     User                                        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_51cb79b5555effaf7d69ba1cff9")
   //
   pinnedPageId             String?                                     @unique(map: "UQ_6dc44f1ceb65b1e72bacef2ca27") @db.VarChar(32)
   page                     Page?                                       @relation(fields: [pinnedPageId], references: [id], onUpdate: NoAction, map: "FK_6dc44f1ceb65b1e72bacef2ca27")
@@ -2268,7 +2269,7 @@ model user_publickey {
   keyPem String @db.VarChar(4096)
   //
   userId String @id(map: "PK_10c146e4b39b443ede016f6736d") @unique(map: "UQ_10c146e4b39b443ede016f6736d") @db.VarChar(32)
-  user   user   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_10c146e4b39b443ede016f6736d")
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_10c146e4b39b443ede016f6736d")
 }
 
 // ?
@@ -2279,7 +2280,7 @@ model user_security_key {
   name      String   @db.VarChar(30)
   //
   userId    String   @db.VarChar(32)
-  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ff9ca3b5f3ee3d0681367a9b447")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ff9ca3b5f3ee3d0681367a9b447")
 
   @@index([publicKey], map: "IDX_0d7718e562dcedd0aa5cf2c9f7")
   @@index([userId], map: "IDX_ff9ca3b5f3ee3d0681367a9b44")
@@ -2298,7 +2299,7 @@ model webhook {
   latestStatus Int?
   //
   userId       String    @db.VarChar(32)
-  user         user      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f272c8c8805969e6a6449c77b3c")
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_f272c8c8805969e6a6449c77b3c")
 
   @@index([active], map: "IDX_5a056076f76b2efe08216ba655")
   @@index([on], map: "IDX_8063a0586ed1dfbe86e982d961")

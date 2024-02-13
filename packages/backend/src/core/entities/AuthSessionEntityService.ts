@@ -6,7 +6,7 @@ import type {
 } from '@/models/zod/AppSchema.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import { AppEntityService } from './AppEntityService.js';
-import type { AuthSession, user } from '@prisma/client';
+import type { AuthSession, User } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -18,7 +18,7 @@ export class AuthSessionEntityService {
 
 	public async pack(
 		src: AuthSession,
-		me?: Pick<user, 'id'> | null | undefined,
+		me?: Pick<User, 'id'> | null | undefined,
 	): Promise<{
 		id: string;
 		app:

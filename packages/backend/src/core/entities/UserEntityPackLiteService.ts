@@ -8,7 +8,7 @@ import { BadgeRoleService } from '../BadgeRoleService.js';
 import { InstanceEntityService } from './InstanceEntityService.js';
 import { DriveFilePublicUrlGenerationService } from './DriveFilePublicUrlGenerationService.js';
 import { UserEntityUtilService } from './UserEntityUtilService.js';
-import type { Instance, user } from '@prisma/client';
+import type { Instance, User } from '@prisma/client';
 
 @Injectable()
 export class UserEntityPackLiteService {
@@ -24,7 +24,7 @@ export class UserEntityPackLiteService {
 	/**
 	 * `user`に`{avatar,banner}Id`があるのに`{avatar,banner}{Url,Blurhash}`がなかった場合に付け加える。
 	 */
-	private async migrate(user: user): Promise<void> {
+	private async migrate(user: User): Promise<void> {
 		if (user.avatarId !== null && user.avatarUrl === null) {
 			const avatar =
 				await this.prismaService.client.driveFile.findUniqueOrThrow({
@@ -60,7 +60,7 @@ export class UserEntityPackLiteService {
 		}
 	}
 
-	private async getInstance(user: user): Promise<Instance | null> {
+	private async getInstance(user: User): Promise<Instance | null> {
 		if (user.host === null) return null;
 
 		return await this.prismaService.client.instance.findUniqueOrThrow({
@@ -68,7 +68,7 @@ export class UserEntityPackLiteService {
 		});
 	}
 
-	public async packLite(user: user): Promise<z.infer<typeof UserLiteSchema>> {
+	public async packLite(user: User): Promise<z.infer<typeof UserLiteSchema>> {
 		await this.migrate(user);
 
 		const [instance, badgeRoles, emojis] = await Promise.all([

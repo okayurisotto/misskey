@@ -3,11 +3,11 @@ import Logger from '@/misc/logger.js';
 import { createTemp } from '@/misc/create-temp.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { DriveFileAddService } from './DriveFileAddService.js';
-import type { DriveFile, DriveFolder, user } from '@prisma/client';
+import type { DriveFile, DriveFolder, User } from '@prisma/client';
 
 type UploadFromUrlArgs = {
 	url: string;
-	user: { id: user['id']; host: user['host'] } | null;
+	user: { id: User['id']; host: User['host'] } | null;
 	folderId?: DriveFolder['id'] | null;
 	uri?: string | null;
 	sensitive?: boolean;

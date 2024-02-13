@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
-import type { FollowRequest, user } from '@prisma/client';
+import type { FollowRequest, User } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class FollowRequestEntityService {
 	 */
 	public async pack(
 		src: FollowRequest['id'] | FollowRequest,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 	): Promise<{
 		id: string;
 		follower: z.infer<typeof UserLiteSchema>;

@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
 import { UserPoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 export type RolePolicies = Required<z.infer<typeof UserPoliciesSchema>>;
 
@@ -15,7 +15,7 @@ export class RoleConditionEvalService {
 	constructor(private readonly userEntityUtilService: UserEntityUtilService) {}
 
 	public eval(
-		user: user,
+		user: User,
 		value: z.infer<typeof RoleCondFormulaValueSchema>,
 	): boolean {
 		try {

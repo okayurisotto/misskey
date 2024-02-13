@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { UserMuting, user } from '@prisma/client';
+import type { UserMuting, User } from '@prisma/client';
 
 @Injectable()
 export class UserMutingService {
@@ -11,8 +11,8 @@ export class UserMutingService {
 	) {}
 
 	public async mute(
-		user: user,
-		target: user,
+		user: User,
+		target: User,
 		expiresAt: Date | null = null,
 	): Promise<void> {
 		await this.prismaService.client.userMuting.create({

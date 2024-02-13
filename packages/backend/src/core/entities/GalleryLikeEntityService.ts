@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { GalleryPostSchema } from '@/models/zod/GalleryPostSchema.js';
 import { GalleryPostEntityService } from './GalleryPostEntityService.js';
-import type { GalleryLike, user } from '@prisma/client';
+import type { GalleryLike, User } from '@prisma/client';
 import type { z } from 'zod';
 
 @Injectable()
@@ -21,7 +21,7 @@ export class GalleryLikeEntityService {
 	 */
 	public async pack(
 		src: GalleryLike['id'] | GalleryLike,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 	): Promise<{ id: string; post: z.infer<typeof GalleryPostSchema> }> {
 		const like =
 			typeof src === 'object'

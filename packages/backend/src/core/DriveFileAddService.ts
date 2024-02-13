@@ -21,11 +21,11 @@ import { DriveFileDeleteService } from './DriveFileDeleteService.js';
 import { DriveFileNameValidationService } from './entities/DriveFileNameValidationService.js';
 import { DriveUsageCalcService } from './entities/DriveUsageCalcService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { Prisma, DriveFile, DriveFolder, user } from '@prisma/client';
+import type { Prisma, DriveFile, DriveFolder, User } from '@prisma/client';
 
 type AddFileArgs = {
 	/** User who wish to add file */
-	user: { id: user['id']; host: user['host'] } | null;
+	user: { id: User['id']; host: User['host'] } | null;
 	/** File path */
 	path: string;
 	/** Name */

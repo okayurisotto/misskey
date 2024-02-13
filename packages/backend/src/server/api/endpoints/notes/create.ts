@@ -19,7 +19,7 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { MisskeyIdSchema, uniqueItems } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
-import type { Channel, DriveFile, Note, user } from '@prisma/client';
+import type { Channel, DriveFile, Note, User } from '@prisma/client';
 
 const res = z.object({ createdNote: NoteSchema });
 export const meta = {
@@ -104,7 +104,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			let visibleUsers: user[] = [];
+			let visibleUsers: User[] = [];
 			if (ps.visibleUserIds) {
 				visibleUsers = await this.prismaService.client.user.findMany({
 					where: { id: { in: ps.visibleUserIds } },

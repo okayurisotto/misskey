@@ -1,12 +1,12 @@
 import { AhoCorasick } from 'slacc';
 import RE2 from 're2';
 import { Memoize } from 'memoize';
-import type { Note, user } from '@prisma/client';
+import type { Note, User } from '@prisma/client';
 
 type CustomPartial<T, U extends keyof T> = Omit<T, U> & Partial<Pick<T, U>>;
 
 type NoteLike = CustomPartial<Pick<Note, 'userId' | 'text' | 'cw'>, 'cw'>;
-type UserLike = Pick<user, 'id'>;
+type UserLike = Pick<User, 'id'>;
 
 const AHOCORASICK_CACHE_LIMIT = 1000;
 

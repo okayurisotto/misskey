@@ -49,7 +49,7 @@ export default class extends Endpoint<
 						this.prismaQueryService.getMutingWhereForUser(me.id),
 						this.prismaQueryService.getBlockedWhereForUser(me.id),
 						{
-							following_following_followeeIdTouser: {
+							followings_followee: {
 								none: { followerId: me.id },
 							},
 						},

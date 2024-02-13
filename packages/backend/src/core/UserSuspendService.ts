@@ -4,7 +4,7 @@ import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class UserSuspendService {
@@ -17,8 +17,8 @@ export class UserSuspendService {
 	) {}
 
 	public async doPostSuspend(user: {
-		id: user['id'];
-		host: user['host'];
+		id: User['id'];
+		host: User['host'];
 	}): Promise<void> {
 		if (this.userEntityUtilService.isLocalUser(user)) {
 			// 知り得る全SharedInboxにDelete配信
@@ -55,7 +55,7 @@ export class UserSuspendService {
 		}
 	}
 
-	public async doPostUnsuspend(user: user): Promise<void> {
+	public async doPostUnsuspend(user: User): Promise<void> {
 		if (this.userEntityUtilService.isLocalUser(user)) {
 			// 知り得る全SharedInboxにUndo Delete配信
 			const content = this.apRendererService.addContext(

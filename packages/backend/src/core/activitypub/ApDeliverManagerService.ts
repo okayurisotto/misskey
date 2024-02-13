@@ -3,7 +3,7 @@ import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { QueueService } from '@/core/QueueService.js';
 import type { IActivity } from '@/core/activitypub/type.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 interface IRecipe {
 	type: string;
@@ -40,7 +40,7 @@ class DeliverManager {
 		private readonly prismaService: PrismaService,
 		private readonly queueService: QueueService,
 
-		actor: { id: user['id']; host: null },
+		actor: { id: User['id']; host: null },
 		activity: IActivity | null,
 	) {
 		// 型で弾いてはいるが一応ローカルユーザーかチェック
@@ -180,7 +180,7 @@ export class ApDeliverManagerService {
 	}
 
 	public createDeliverManager(
-		actor: { id: user['id']; host: null },
+		actor: { id: User['id']; host: null },
 		activity: IActivity | null,
 	): DeliverManager {
 		return new DeliverManager(

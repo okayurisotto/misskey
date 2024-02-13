@@ -29,7 +29,7 @@ export class ExportBlockingProcessorService {
 		const user = await this.prismaService.client.user.findUnique({
 			where: { id: job.data.user.id },
 			include: {
-				blocking_blocking_blockerIdTouser: {
+				blockings_blocker: {
 					include: { blockee: true },
 				},
 			},
@@ -40,7 +40,7 @@ export class ExportBlockingProcessorService {
 		const [path, cleanup] = await createTemp();
 
 		try {
-			const content = user.blocking_blocking_blockerIdTouser
+			const content = user.blockings_blocker
 				.map((blocking) => {
 					const user = blocking.blockee;
 					return this.utilityService.getFullApAccount(user.username, user.host);

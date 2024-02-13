@@ -10,7 +10,7 @@ import { UserFollowingCreateProcessService } from './UserFollowingCreateProcessS
 import { UserBlockingDeleteService } from './UserBlockingDeleteService.js';
 import { UserBlockingCheckService } from './UserBlockingCheckService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class UserFollowingCreateService {
@@ -27,8 +27,8 @@ export class UserFollowingCreateService {
 	) {}
 
 	public async create(
-		_follower: { id: user['id'] },
-		_followee: { id: user['id'] },
+		_follower: { id: User['id'] },
+		_followee: { id: User['id'] },
 		requestId?: string,
 		silent = false,
 	): Promise<void> {

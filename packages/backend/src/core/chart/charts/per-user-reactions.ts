@@ -6,7 +6,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/per-user-reactions.js';
 import type { KVs } from '../core.js';
-import type { Note, user } from '@prisma/client';
+import type { Note, User } from '@prisma/client';
 
 /**
  * ユーザーごとのリアクションに関するチャート
@@ -42,7 +42,7 @@ export default class PerUserReactionsChart extends Chart<typeof schema> {
 	}
 
 	public async update(
-		user: { id: user['id']; host: user['host'] },
+		user: { id: User['id']; host: User['host'] },
 		note: Note,
 	): Promise<void> {
 		const prefix = this.userEntityUtilService.isLocalUser(user)

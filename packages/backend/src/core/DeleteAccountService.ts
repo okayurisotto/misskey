@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { QueueService } from '@/core/QueueService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class DeleteAccountService {
@@ -12,7 +12,7 @@ export class DeleteAccountService {
 		private readonly userSuspendService: UserSuspendService,
 	) {}
 
-	public async deleteAccount(user: Pick<user, 'id' | 'host'>): Promise<void> {
+	public async deleteAccount(user: Pick<User, 'id' | 'host'>): Promise<void> {
 		const isRoot = await this.prismaService.client.user
 			.count({
 				where: { id: user.id, isRoot: true },

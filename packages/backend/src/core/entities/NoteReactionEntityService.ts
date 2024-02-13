@@ -5,7 +5,7 @@ import { LegacyReactionConvertService } from '../LegacyReactionConvertService.js
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import { NoteEntityPackService } from './NoteEntityPackService.js';
 import type { z } from 'zod';
-import type { NoteReaction, user } from '@prisma/client';
+import type { NoteReaction, User } from '@prisma/client';
 
 @Injectable()
 export class NoteReactionEntityService {
@@ -26,7 +26,7 @@ export class NoteReactionEntityService {
 	 */
 	public async pack(
 		src: NoteReaction['id'] | NoteReaction,
-		me?: { id: user['id'] } | null | undefined,
+		me?: { id: User['id'] } | null | undefined,
 		options?: {
 			withNote: boolean;
 		},

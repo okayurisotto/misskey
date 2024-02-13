@@ -5,12 +5,12 @@ import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
 import type { AbuseUserReportSchema } from '@/models/zod/AbuseUserReportSchema.js';
 import { PaginationQuery } from '../PrismaQueryService.js';
-import type { AbuseUserReport, Prisma, user } from '@prisma/client';
+import type { AbuseUserReport, Prisma, User } from '@prisma/client';
 import type { z } from 'zod';
 
 type AbuseUserReportPackData = {
 	report: EntityMap<'id', AbuseUserReport>;
-	user: EntityMap<'id', user>;
+	user: EntityMap<'id', User>;
 };
 
 @Injectable()

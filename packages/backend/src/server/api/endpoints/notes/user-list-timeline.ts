@@ -65,7 +65,7 @@ export default class extends Endpoint<
 			const timeline = await this.prismaService.client.note.findMany({
 				where: {
 					AND: [
-						{ user: { user_list_joining: { some: { userListId: list.id } } } },
+						{ user: { userListJoinings: { some: { userListId: list.id } } } },
 						this.prismaQueryService.getVisibilityWhereForNote(me.id),
 						ps.includeMyRenotes
 							? {}

@@ -8,7 +8,7 @@ import { RoleService } from '@/core/RoleService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 export const meta = {
 	tags: ['admin'],
@@ -59,7 +59,7 @@ export default class extends Endpoint<
 		});
 	}
 
-	private async unFollowAll(follower: user): Promise<void> {
+	private async unFollowAll(follower: User): Promise<void> {
 		const followings = await this.prismaService.client.following.findMany({
 			where: { followerId: follower.id },
 		});

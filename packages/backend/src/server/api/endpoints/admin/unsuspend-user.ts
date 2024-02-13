@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
-import { Prisma, type user } from '@prisma/client';
+import { Prisma, type User } from '@prisma/client';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { ModerationLogService } from '@/core/ModerationLogService.js';
 import { UserSuspendService } from '@/core/UserSuspendService.js';
@@ -29,7 +29,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const [user] = await Promise.all([
-				(async (): Promise<user> => {
+				(async (): Promise<User> => {
 					try {
 						return await this.prismaService.client.user.update({
 							where: { id: ps.userId },

@@ -3,7 +3,7 @@ import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { IdService } from '@/core/IdService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 @Injectable()
 export class HashtagService {
@@ -14,14 +14,14 @@ export class HashtagService {
 	) {}
 
 	public async updateHashtags(
-		user: Pick<user, 'id' | 'host'>,
+		user: Pick<User, 'id' | 'host'>,
 		tags: string[],
 	): Promise<void> {
 		await Promise.all(tags.map((tag) => this.updateHashtag(user, tag)));
 	}
 
 	public async updateUsertags(
-		user: Pick<user, 'id' | 'host' | 'tags'>,
+		user: Pick<User, 'id' | 'host' | 'tags'>,
 		tags: string[],
 	): Promise<void> {
 		await Promise.all([
@@ -33,7 +33,7 @@ export class HashtagService {
 	}
 
 	public async updateHashtag(
-		user: Pick<user, 'id' | 'host'>,
+		user: Pick<User, 'id' | 'host'>,
 		tag: string,
 		isUserAttached = false,
 		inc = true,

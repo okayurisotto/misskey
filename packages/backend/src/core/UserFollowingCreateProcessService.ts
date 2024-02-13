@@ -16,7 +16,7 @@ import Logger from '../misc/logger.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { UserEntityPackLiteService } from './entities/UserEntityPackLiteService.js';
 import type { z } from 'zod';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 const logger = new Logger('following/create');
 
@@ -40,18 +40,18 @@ export class UserFollowingCreateProcessService {
 
 	public async process(
 		followee: {
-			id: user['id'];
-			host: user['host'];
-			uri: user['host'];
-			inbox: user['inbox'];
-			sharedInbox: user['sharedInbox'];
+			id: User['id'];
+			host: User['host'];
+			uri: User['host'];
+			inbox: User['inbox'];
+			sharedInbox: User['sharedInbox'];
 		},
 		follower: {
-			id: user['id'];
-			host: user['host'];
-			uri: user['host'];
-			inbox: user['inbox'];
-			sharedInbox: user['sharedInbox'];
+			id: User['id'];
+			host: User['host'];
+			uri: User['host'];
+			inbox: User['inbox'];
+			sharedInbox: User['sharedInbox'];
 		},
 		silent = false,
 	): Promise<void> {

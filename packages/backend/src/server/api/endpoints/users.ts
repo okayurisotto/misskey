@@ -50,7 +50,7 @@ export default class extends Endpoint<
 		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const orderBy = ((): Prisma.userOrderByWithRelationInput => {
+			const orderBy = ((): Prisma.UserOrderByWithRelationInput => {
 				switch (ps.sort) {
 					case '+follower':
 						return { followersCount: 'desc' };

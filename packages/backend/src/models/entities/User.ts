@@ -1,7 +1,7 @@
 import { Entity, Column, Index, OneToOne, JoinColumn, PrimaryColumn } from 'typeorm';
 import { id } from '../id.js';
 import { DriveFile } from './DriveFile.js';
-import type { user } from '@prisma/client';
+import type { User as pUser } from '@prisma/client';
 
 @Entity()
 @Index(['usernameLower', 'host'], { unique: true })
@@ -241,23 +241,23 @@ export class User {
 	public token: string | null;
 }
 
-export type LocalUser = user & {
+export type LocalUser = pUser & {
 	host: null;
 	uri: null;
 }
 
-export type PartialLocalUser = Partial<user> & {
+export type PartialLocalUser = Partial<pUser> & {
 	id: User['id'];
 	host: null;
 	uri: null;
 }
 
-export type RemoteUser = user & {
+export type RemoteUser = pUser & {
 	host: string;
 	uri: string;
 }
 
-export type PartialRemoteUser = Partial<user> & {
+export type PartialRemoteUser = Partial<pUser> & {
 	id: User['id'];
 	host: string;
 	uri: string;

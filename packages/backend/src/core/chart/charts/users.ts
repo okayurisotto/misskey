@@ -7,7 +7,7 @@ import Chart from '../core.js';
 import { ChartLoggerService } from '../ChartLoggerService.js';
 import { name, schema } from './entities/users.js';
 import type { KVs } from '../core.js';
-import type { user } from '@prisma/client';
+import type { User } from '@prisma/client';
 
 /**
  * ユーザー数に関するチャート
@@ -49,7 +49,7 @@ export default class UsersChart extends Chart<typeof schema> {
 	}
 
 	public async update(
-		user: { id: user['id']; host: user['host'] },
+		user: { id: User['id']; host: User['host'] },
 		isAdditional: boolean,
 	): Promise<void> {
 		const prefix = this.userEntityUtilService.isLocalUser(user)

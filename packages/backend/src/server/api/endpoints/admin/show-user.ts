@@ -34,14 +34,14 @@ export default class extends Endpoint<
 		super(meta, paramDef, async (ps, me) => {
 			const user = await this.prismaService.client.user.findUnique({
 				where: { id: ps.userId },
-				include: { user_profile: true, signin: true },
+				include: { userProfile: true, signins: true },
 			});
 
 			if (user === null) {
 				throw new Error('Unable to locate the requested user.');
 			}
 
-			if (user.user_profile === null) {
+			if (user.userProfile === null) {
 				throw new Error('Unable to locate the requested user_profile.');
 			}
 
@@ -77,7 +77,7 @@ export default class extends Endpoint<
 			const isSilenced = !policies.canPublicNote;
 
 			return {
-				...pick(user.user_profile, [
+				...pick(user.userProfile, [
 					'email',
 					'emailVerified',
 					'autoAcceptFollowed',
@@ -100,7 +100,7 @@ export default class extends Endpoint<
 				isSilenced,
 				policies,
 
-				signins: user.signin,
+				signins: user.signins,
 				roles: packedRoles,
 				roleAssigns: packedRoleAssigns,
 			};

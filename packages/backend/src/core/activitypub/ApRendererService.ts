@@ -54,7 +54,7 @@ import type {
 	Note,
 	Poll,
 	PollVote,
-	user,
+	User,
 	user_keypair,
 } from '@prisma/client';
 
@@ -75,7 +75,7 @@ export class ApRendererService {
 
 	public renderAccept(
 		object: string | IObject,
-		user: { id: user['id']; host: null },
+		user: { id: User['id']; host: null },
 	): IAccept {
 		return {
 			type: 'Accept',
@@ -134,7 +134,7 @@ export class ApRendererService {
 	 *
 	 * @param block The block to be rendered. The blockee relation must be loaded.
 	 */
-	public renderBlock(block: Blocking & { blockee: user }): IBlock {
+	public renderBlock(block: Blocking & { blockee: User }): IBlock {
 		if (block.blockee.uri == null) {
 			throw new Error('renderBlock: missing blockee uri');
 		}
@@ -164,7 +164,7 @@ export class ApRendererService {
 
 	public renderDelete(
 		object: IObject | string,
-		user: { id: user['id']; host: null },
+		user: { id: User['id']; host: null },
 	): IDelete {
 		return {
 			type: 'Delete',
@@ -228,7 +228,7 @@ export class ApRendererService {
 	 * Convert (local|remote)(Follower|Followee)ID to URL
 	 * @param id Follower|Followee ID
 	 */
-	public async renderFollowUser(id: user['id']): Promise<string> {
+	public async renderFollowUser(id: User['id']): Promise<string> {
 		const user = (await this.prismaService.client.user.findUniqueOrThrow({
 			where: { id: id },
 		})) as PartialLocalUser | PartialRemoteUser;
@@ -601,7 +601,7 @@ export class ApRendererService {
 	}
 
 	public renderQuestion(
-		user: { id: user['id'] },
+		user: { id: User['id'] },
 		note: Note,
 		poll: Poll,
 	): IQuestion {
@@ -623,7 +623,7 @@ export class ApRendererService {
 
 	public renderReject(
 		object: string | IObject,
-		user: { id: user['id'] },
+		user: { id: User['id'] },
 	): IReject {
 		return {
 			type: 'Reject',
@@ -633,7 +633,7 @@ export class ApRendererService {
 	}
 
 	public renderRemove(
-		user: { id: user['id'] },
+		user: { id: User['id'] },
 		target: string | IObject | undefined,
 		object: string | IObject,
 	): IRemove {
@@ -652,7 +652,7 @@ export class ApRendererService {
 		};
 	}
 
-	public renderUndo(object: string | IObject, user: { id: user['id'] }): IUndo {
+	public renderUndo(object: string | IObject, user: { id: User['id'] }): IUndo {
 		const id =
 			typeof object !== 'string' &&
 			typeof object.id === 'string' &&
@@ -671,7 +671,7 @@ export class ApRendererService {
 
 	public renderUpdate(
 		object: string | IObject,
-		user: { id: user['id'] },
+		user: { id: User['id'] },
 	): IUpdate {
 		return {
 			id: `${this.configLoaderService.data.url}/users/${
@@ -686,7 +686,7 @@ export class ApRendererService {
 	}
 
 	public renderVote(
-		user: { id: user['id'] },
+		user: { id: User['id'] },
 		vote: PollVote,
 		note: Note,
 		poll: Poll,
@@ -752,7 +752,7 @@ export class ApRendererService {
 
 	public async attachLdSignature(
 		activity: any,
-		user: { id: user['id']; host: null },
+		user: { id: User['id']; host: null },
 	): Promise<IActivity> {
 		const keypair = await this.userKeypairService.getUserKeypair(user.id);
 
