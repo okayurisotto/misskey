@@ -52,7 +52,7 @@ export default class extends Endpoint<
 
 			// if already liked
 			const exist =
-				(await this.prismaService.client.page_like.count({
+				(await this.prismaService.client.pageLike.count({
 					where: {
 						pageId: page.id,
 						userId: me.id,
@@ -65,7 +65,7 @@ export default class extends Endpoint<
 			}
 
 			// Create like
-			await this.prismaService.client.page_like.create({
+			await this.prismaService.client.pageLike.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),

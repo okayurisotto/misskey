@@ -71,7 +71,7 @@ export class PageEntityService {
 				),
 			isLiked: async () =>
 				meId
-					? (await this.prismaService.client.page_like.count({
+					? (await this.prismaService.client.pageLike.count({
 							where: { pageId: page.id, userId: meId },
 							take: 1,
 					  })) > 0

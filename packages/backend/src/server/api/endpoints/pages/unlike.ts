@@ -34,7 +34,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.noSuchPage);
 			}
 
-			const exist = await this.prismaService.client.page_like.findUnique({
+			const exist = await this.prismaService.client.pageLike.findUnique({
 				where: {
 					userId_pageId: {
 						pageId: page.id,
@@ -48,7 +48,7 @@ export default class extends Endpoint<
 			}
 
 			// Delete like
-			await this.prismaService.client.page_like.delete({
+			await this.prismaService.client.pageLike.delete({
 				where: { id: exist.id },
 			});
 		});

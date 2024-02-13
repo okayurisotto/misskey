@@ -42,7 +42,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const likes = await this.prismaService.client.page_like.findMany({
+			const likes = await this.prismaService.client.pageLike.findMany({
 				where: { AND: [paginationQuery.where, { userId: me.id }] },
 				orderBy: paginationQuery.orderBy,
 				take: ps.limit,

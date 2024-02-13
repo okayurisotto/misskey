@@ -1593,7 +1593,7 @@ model Page {
   eyeCatchingImageId  String?              @db.VarChar(32)
   eyeCatchingImage    DriveFile?           @relation(fields: [eyeCatchingImageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9ca79ad939bf06066b81c9d3aa")
 
-  likes       page_like[]
+  likes       PageLike[]
   userProfile user_profile?
 
   // 集計
@@ -1609,7 +1609,7 @@ model Page {
 }
 
 // ページのお気に入り
-model page_like {
+model PageLike {
   id        String   @id(map: "PK_813f034843af992d3ae0f43c64c") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   //
@@ -1621,6 +1621,7 @@ model page_like {
 
   @@unique([userId, pageId], map: "IDX_4ce6fb9c70529b4c8ac46c9bfa")
   @@index([userId], map: "IDX_0e61efab7f88dbb79c9166dbb4")
+  @@map("page_like")
 }
 
 // パスワードリセットリクエスト
@@ -1972,7 +1973,7 @@ model user {
   note_thread_muting                                        NoteThreadMuting[]
   note_unread                                               NoteUnread[]
   page                                                      Page[]
-  page_like                                                 page_like[]
+  page_like                                                 PageLike[]
   password_reset_request                                    password_reset_request[]
   poll_vote                                                 poll_vote[]
   promo_read                                                promo_read[]
