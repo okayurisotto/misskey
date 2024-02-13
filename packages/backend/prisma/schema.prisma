@@ -1326,7 +1326,7 @@ model Meta {
   cacheRemoteSensitiveFiles              Boolean                                      @default(true)
   //
   proxyAccountId                         String?                                      @db.VarChar(32)
-  user                                   user?                                        @relation(fields: [proxyAccountId], references: [id], onUpdate: NoAction, map: "FK_ab1bc0c1e209daa77b8e8d212ad")
+  proxyAccount                           user?                                        @relation(fields: [proxyAccountId], references: [id], onUpdate: NoAction, map: "FK_ab1bc0c1e209daa77b8e8d212ad")
 
   @@map("meta")
 }
