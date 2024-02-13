@@ -90,7 +90,7 @@ export default class extends Endpoint<
 			}
 
 			// if already voted
-			const exist = await this.prismaService.client.poll_vote.findMany({
+			const exist = await this.prismaService.client.pollVote.findMany({
 				where: { noteId: note.id, userId: me.id },
 			});
 
@@ -105,7 +105,7 @@ export default class extends Endpoint<
 			}
 
 			// Create vote
-			const vote = await this.prismaService.client.poll_vote.create({
+			const vote = await this.prismaService.client.pollVote.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt,

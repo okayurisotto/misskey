@@ -53,7 +53,7 @@ import type {
 	DriveFile,
 	Note,
 	Poll,
-	poll_vote,
+	PollVote,
 	user,
 	user_keypair,
 } from '@prisma/client';
@@ -687,7 +687,7 @@ export class ApRendererService {
 
 	public renderVote(
 		user: { id: user['id'] },
-		vote: poll_vote,
+		vote: PollVote,
 		note: Note,
 		poll: Poll,
 		pollOwner: RemoteUser,

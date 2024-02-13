@@ -1450,7 +1450,7 @@ model Note {
   noteFavorites NoteFavorite[]
   noteReactions NoteReaction[]
   noteUnreads   NoteUnread[]
-  pollVotes     poll_vote[]
+  pollVotes     PollVote[]
   promoReads    promo_read[]
   pinings       user_note_pining[]
 
@@ -1660,7 +1660,7 @@ model Poll {
 }
 
 // アンケートへの投票
-model poll_vote {
+model PollVote {
   id        String   @id(map: "PK_fd002d371201c472490ba89c6a0") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   choice    Int // 正規化したい
@@ -1675,6 +1675,7 @@ model poll_vote {
   @@index([createdAt], map: "IDX_0fb627e1c2f753262a74f0562d")
   @@index([userId], map: "IDX_66d2bd2ee31d14bcc23069a89f")
   @@index([noteId], map: "IDX_aecfbd5ef60374918e63ee95fa")
+  @@map("poll_vote")
 }
 
 // ?
@@ -1978,7 +1979,7 @@ model user {
   page                                                      Page[]
   page_like                                                 PageLike[]
   password_reset_request                                    PasswordResetRequest[]
-  poll_vote                                                 poll_vote[]
+  poll_vote                                                 PollVote[]
   promo_read                                                promo_read[]
   registration_ticket_registration_ticket_usedByIdTouser    registration_ticket?   @relation("registration_ticket_usedByIdTouser")
   registration_ticket_registration_ticket_createdByIdTouser registration_ticket[]  @relation("registration_ticket_createdByIdTouser")

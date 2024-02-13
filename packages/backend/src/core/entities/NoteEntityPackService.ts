@@ -149,7 +149,7 @@ export class NoteEntityPackService {
 
 		if (meId) {
 			if (poll.multiple) {
-				const votes = await this.prismaService.client.poll_vote.findMany({
+				const votes = await this.prismaService.client.pollVote.findMany({
 					where: {
 						userId: meId,
 						noteId: note.id,
@@ -161,7 +161,7 @@ export class NoteEntityPackService {
 					choices[myChoice].isVoted = true;
 				}
 			} else {
-				const vote = await this.prismaService.client.poll_vote.findFirst({
+				const vote = await this.prismaService.client.pollVote.findFirst({
 					where: {
 						userId: meId,
 						noteId: note.id,

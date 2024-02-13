@@ -44,7 +44,7 @@ export class PollService {
 		}
 
 		// if already voted
-		const exist = await this.prismaService.client.poll_vote.findMany({
+		const exist = await this.prismaService.client.pollVote.findMany({
 			where: {
 				noteId: note.id,
 				userId: user.id,
@@ -60,7 +60,7 @@ export class PollService {
 		}
 
 		// Create vote
-		await this.prismaService.client.poll_vote.create({
+		await this.prismaService.client.pollVote.create({
 			data: {
 				id: this.idService.genId(),
 				createdAt: new Date(),
