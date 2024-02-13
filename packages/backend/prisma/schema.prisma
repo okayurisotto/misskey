@@ -1903,9 +1903,11 @@ model SwSubscription {
 }
 
 // 使用済みユーザー名
-model used_username {
+model UsedUsername {
   username  String   @id(map: "PK_78fd79d2d24c6ac2f4cc9a31a5d") @db.VarChar(128)
   createdAt DateTime @db.Timestamptz(6)
+
+  @@map("used_username")
 }
 
 // ユーザー

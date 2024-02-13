@@ -60,7 +60,7 @@ export class CreateSystemUserService {
 				},
 			});
 
-			await client.used_username.create({
+			await client.usedUsername.create({
 				data: {
 					createdAt: new Date(),
 					username: username.toLowerCase(),

@@ -129,7 +129,7 @@ export class SignupApiService {
 			}
 
 			// Check deleted username duplication
-			if ((await this.prismaService.client.used_username.count({ where: { username: username.toLowerCase() }, take: 1 })) > 0) {
+			if ((await this.prismaService.client.usedUsername.count({ where: { username: username.toLowerCase() }, take: 1 })) > 0) {
 				throw new FastifyReplyError(400, 'USED_USERNAME');
 			}
 

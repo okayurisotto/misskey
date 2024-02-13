@@ -37,7 +37,7 @@ export default class extends Endpoint<
 				},
 			});
 
-			const exist2 = await this.prismaService.client.used_username.count({
+			const exist2 = await this.prismaService.client.usedUsername.count({
 				where: {
 					username: ps.username.toLowerCase(),
 				},

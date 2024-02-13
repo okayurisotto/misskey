@@ -61,7 +61,7 @@ export class SignupService {
 
 		// Check deleted username duplication
 		if (
-			(await this.prismaService.client.used_username.count({
+			(await this.prismaService.client.usedUsername.count({
 				where: { username: username.toLowerCase() },
 				take: 1,
 			})) > 0
@@ -142,7 +142,7 @@ export class SignupService {
 					},
 				});
 
-				await client.used_username.create({
+				await client.usedUsername.create({
 					data: {
 						createdAt: new Date(),
 						username: username.toLowerCase(),
