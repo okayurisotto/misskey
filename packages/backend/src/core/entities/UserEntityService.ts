@@ -88,7 +88,7 @@ export class UserEntityService {
 					},
 				},
 			}),
-			this.prismaService.client.renote_muting
+			this.prismaService.client.renoteMuting
 				.count({
 					where: { muterId: meId, muteeId: targetId },
 					take: 1,

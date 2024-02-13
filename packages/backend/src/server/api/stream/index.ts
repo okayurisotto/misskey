@@ -51,7 +51,7 @@ export default class Connection {
 			this.prismaService.client.channelFollowing.findMany({ where: { userId: this.user.id }, select: { channelId: true } }),
 			this.prismaService.client.userMuting.findMany({ where: { muterId: this.user.id }, select: { muteeId: true } }),
 			this.prismaService.client.blocking.findMany({ where: { blockeeId: this.user.id }, select: { blockerId: true } }),
-			this.prismaService.client.renote_muting.findMany({ where: { muterId: this.user.id }, select: { muteeId: true } }),
+			this.prismaService.client.renoteMuting.findMany({ where: { muterId: this.user.id }, select: { muteeId: true } }),
 		]);
 		this.userProfile = userProfile;
 		this.following = new Set(following.map(({ followeeId }) => followeeId));

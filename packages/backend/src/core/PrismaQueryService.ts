@@ -268,7 +268,7 @@ export class PrismaQueryService {
 		if (userId === null) return {};
 
 		const renoteMutings =
-			await this.prismaService.client.renote_muting.findMany({
+			await this.prismaService.client.renoteMuting.findMany({
 				where: { muterId: userId },
 			});
 

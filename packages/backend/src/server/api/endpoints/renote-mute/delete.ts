@@ -54,7 +54,7 @@ export default class extends Endpoint<
 			});
 
 			// Check not muting
-			const exist = await this.prismaService.client.renote_muting.findFirst({
+			const exist = await this.prismaService.client.renoteMuting.findFirst({
 				where: {
 					muterId: muter.id,
 					muteeId: mutee.id,
@@ -66,7 +66,7 @@ export default class extends Endpoint<
 			}
 
 			// Delete mute
-			await this.prismaService.client.renote_muting.delete({
+			await this.prismaService.client.renoteMuting.delete({
 				where: { id: exist.id },
 			});
 		});

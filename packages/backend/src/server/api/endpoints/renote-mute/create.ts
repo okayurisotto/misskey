@@ -62,7 +62,7 @@ export default class extends Endpoint<
 			});
 
 			// Check if already muting
-			const exist = await this.prismaService.client.renote_muting.findFirst({
+			const exist = await this.prismaService.client.renoteMuting.findFirst({
 				where: {
 					muterId: muter.id,
 					muteeId: mutee.id,
@@ -74,7 +74,7 @@ export default class extends Endpoint<
 			}
 
 			// Create mute
-			await this.prismaService.client.renote_muting.create({
+			await this.prismaService.client.renoteMuting.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),

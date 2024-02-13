@@ -1756,12 +1756,14 @@ model Relay {
 
 // リノートミュート
 // ユニーク制約忘れ
-model renote_muting {
+model RenoteMuting {
   id        String   @id(map: "PK_renoteMuting_id") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   // 非正規化
   muteeId   String   @db.VarChar(32)
   muterId   String   @db.VarChar(32)
+
+  @@map("renote_muting")
 }
 
 // 新規ユーザーがどの程度サーバに定着したか？
