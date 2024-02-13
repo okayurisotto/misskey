@@ -3,7 +3,7 @@ import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
-import type { role, DriveFile } from '@prisma/client';
+import type { Role, DriveFile } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiUpdateService {
@@ -23,7 +23,7 @@ export class CustomEmojiUpdateService {
 			license?: string | null;
 			isSensitive?: boolean;
 			localOnly?: boolean;
-			roleIdsThatCanBeUsedThisEmojiAsReaction?: role['id'][];
+			roleIdsThatCanBeUsedThisEmojiAsReaction?: Role['id'][];
 		},
 	): Promise<void> {
 		const emoji = await this.prismaService.client.customEmoji.findUniqueOrThrow({

@@ -11,7 +11,7 @@ import {
 } from '@/models/zod/RolePoliciesSchema.js';
 import { RedisService } from '@/core/RedisService.js';
 import { RoleConditionEvalService } from './RoleConditionEvalService.js';
-import type { role, role_assignment, user } from '@prisma/client';
+import type { Role, role_assignment, user } from '@prisma/client';
 
 export type RolePolicies = Required<z.infer<typeof UserPoliciesSchema>>;
 
@@ -58,13 +58,13 @@ export class RoleService {
 		});
 	}
 
-	public async getUserRoles(userId: user['id']): Promise<role[]> {
+	public async getUserRoles(userId: user['id']): Promise<Role[]> {
 		const roles = await this.prismaService.client.role.findMany({
 			where: {
 				OR: [
 					{ target: 'conditional' },
 					{
-						role_assignment: {
+						assignments: {
 							some: {
 								userId,
 								OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],

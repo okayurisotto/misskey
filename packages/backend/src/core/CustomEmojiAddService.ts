@@ -4,7 +4,7 @@ import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
-import type { role, DriveFile, CustomEmoji } from '@prisma/client';
+import type { Role, DriveFile, CustomEmoji } from '@prisma/client';
 
 @Injectable()
 export class CustomEmojiAddService {
@@ -24,7 +24,7 @@ export class CustomEmojiAddService {
 		license: string | null;
 		isSensitive: boolean;
 		localOnly: boolean;
-		roleIdsThatCanBeUsedThisEmojiAsReaction: role['id'][];
+		roleIdsThatCanBeUsedThisEmojiAsReaction: Role['id'][];
 	}): Promise<CustomEmoji> {
 		const emoji = await this.prismaService.client.customEmoji.create({
 			data: {

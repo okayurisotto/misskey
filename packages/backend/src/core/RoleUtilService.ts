@@ -4,7 +4,7 @@ import { IdService } from '@/core/IdService.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserPoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
-import type { role, user } from '@prisma/client';
+import type { Role, user } from '@prisma/client';
 
 export type RolePolicies = Required<z.infer<typeof UserPoliciesSchema>>;
 
@@ -19,7 +19,7 @@ export class RoleUtilService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	public async isExplorable(role: { id: role['id'] } | null): Promise<boolean> {
+	public async isExplorable(role: { id: Role['id'] } | null): Promise<boolean> {
 		if (role == null) return false;
 		const check = await this.prismaService.client.role.findUnique({
 			where: { id: role.id },
@@ -127,7 +127,7 @@ export class RoleUtilService {
 		});
 	}
 
-	public async unassign(userId: string, roleId: role['id']): Promise<void> {
+	public async unassign(userId: string, roleId: Role['id']): Promise<void> {
 		const now = new Date();
 
 		const existing = await this.prismaService.client.role_assignment.findUnique(

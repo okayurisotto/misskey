@@ -18,7 +18,7 @@ import type {
 	DriveFolder,
 	Note,
 	Page,
-	role,
+	Role,
 	signin,
 	user_list,
 	user,
@@ -159,7 +159,7 @@ export type StreamMessages = {
 		payload: EventUnionFromDictionary<Jsonify<UserListStreamTypes>>;
 	};
 	roleTimeline: {
-		name: `roleTimelineStream:${role['id']}`;
+		name: `roleTimelineStream:${Role['id']}`;
 		payload: EventUnionFromDictionary<Jsonify<RoleTimelineStreamTypes>>;
 	};
 	antenna: {

@@ -6,7 +6,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { RoleSchema } from '@/models/zod/RoleSchema.js';
 import { RoleCondFormulaValueSchema } from '@/models/zod/RoleCondFormulaSchema.js';
 import { RolePoliciesSchema } from '@/models/zod/RolePoliciesSchema.js';
-import type { role } from '@prisma/client';
+import type { Role } from '@prisma/client';
 
 @Injectable()
 export class RoleEntityService {
@@ -19,7 +19,7 @@ export class RoleEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: role['id'] | role,
+		src: Role['id'] | Role,
 	): Promise<z.infer<typeof RoleSchema>> {
 		const role =
 			typeof src === 'object'
