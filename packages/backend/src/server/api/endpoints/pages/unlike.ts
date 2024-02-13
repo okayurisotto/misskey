@@ -51,11 +51,6 @@ export default class extends Endpoint<
 			await this.prismaService.client.page_like.delete({
 				where: { id: exist.id },
 			});
-
-			this.prismaService.client.page.update({
-				where: { id: page.id },
-				data: { likedCount: { decrement: 1 } },
-			});
 		});
 	}
 }

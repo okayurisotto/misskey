@@ -27,13 +27,16 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const pages = await this.prismaService.client.page.findMany({
-				where: { visibility: 'public', likedCount: { gt: 0 } },
-				orderBy: { likedCount: 'desc' },
+				where: { visibility: 'public' },
+				orderBy: { likes: { _count: 'desc' } },
+				include: { _count: { select: { likes: true } } },
 				take: 10,
 			});
 
 			return await Promise.all(
-				pages.map((page) => this.pageEntityService.pack(page, me)),
+				pages
+					.filter((page) => page._count.likes === 0)
+					.map((page) => this.pageEntityService.pack(page, me)),
 			);
 		});
 	}

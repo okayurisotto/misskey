@@ -7,7 +7,7 @@ import { PageSchema } from '@/models/zod/PageSchema.js';
 import { MisskeyIdSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ApiError } from '../../error.js';
-import type { page } from '@prisma/client';
+import type { Page } from '@prisma/client';
 
 const res = PageSchema;
 export const meta = {
@@ -39,7 +39,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			let page: page | null = null;
+			let page: Page | null = null;
 
 			if ('pageId' in ps) {
 				page = await this.prismaService.client.page.findUnique({

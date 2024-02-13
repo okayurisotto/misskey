@@ -954,7 +954,7 @@ model DriveFile {
   folder             DriveFolder? @relation(fields: [folderId], references: [id], onUpdate: NoAction, map: "FK_bb90d1956dafc4068c28aa7560a")
 
   channel    Channel[]
-  page       page[]
+  page       Page[]
   avatarUser user?     @relation("user_avatarIdTodrive_file")
   bannerUser user?     @relation("user_bannerIdTodrive_file")
 
@@ -1570,7 +1570,7 @@ model note_watching {
 }
 
 // ページ
-model page {
+model Page {
   id                  String               @id(map: "PK_742f4117e065c5b6ad21b37ba1f") @db.VarChar(32)
   createdAt           DateTime             @db.Timestamptz(6)
   updatedAt           DateTime             @db.Timestamptz(6)
@@ -1586,17 +1586,18 @@ model page {
   script              String               @default("") @db.VarChar(16384)
   // 非正規化
   visibleUserIds      String[]             @default([]) @db.VarChar(32)
-  // 集計
-  likedCount          Int                  @default(0)
   //
   userId              String               @db.VarChar(32)
   user                user                 @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_ae1d917992dd0c9d9bbdad06c4a")
   //
   eyeCatchingImageId  String?              @db.VarChar(32)
-  drive_file          DriveFile?           @relation(fields: [eyeCatchingImageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9ca79ad939bf06066b81c9d3aa")
+  eyeCatchingImage    DriveFile?           @relation(fields: [eyeCatchingImageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_a9ca79ad939bf06066b81c9d3aa")
 
-  page_like    page_like[]
-  user_profile user_profile?
+  likes       page_like[]
+  userProfile user_profile?
+
+  // 集計
+  likedCount Int @default(0) @ignore
 
   @@unique([userId, name], map: "IDX_2133ef8317e4bdb839c0dcbf13")
   @@index([visibleUserIds], map: "IDX_90148bbc2bf0854428786bfc15")
@@ -1604,6 +1605,7 @@ model page {
   @@index([updatedAt], map: "IDX_af639b066dfbca78b01a920f8a")
   @@index([name], map: "IDX_b82c19c08afb292de4600d99e4")
   @@index([createdAt], map: "IDX_fbb4297c927a9b85e9cefa2eb1")
+  @@map("page")
 }
 
 // ページのお気に入り
@@ -1615,7 +1617,7 @@ model page_like {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_0e61efab7f88dbb79c9166dbb48")
   //
   pageId    String   @db.VarChar(32)
-  page      page     @relation(fields: [pageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cf8782626dced3176038176a847")
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_cf8782626dced3176038176a847")
 
   @@unique([userId, pageId], map: "IDX_4ce6fb9c70529b4c8ac46c9bfa")
   @@index([userId], map: "IDX_0e61efab7f88dbb79c9166dbb4")
@@ -1969,7 +1971,7 @@ model user {
   note_reaction                                             NoteReaction[]
   note_thread_muting                                        NoteThreadMuting[]
   note_unread                                               NoteUnread[]
-  page                                                      page[]
+  page                                                      Page[]
   page_like                                                 page_like[]
   password_reset_request                                    password_reset_request[]
   poll_vote                                                 poll_vote[]
@@ -2233,7 +2235,7 @@ model user_profile {
   user                     user                                        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_51cb79b5555effaf7d69ba1cff9")
   //
   pinnedPageId             String?                                     @unique(map: "UQ_6dc44f1ceb65b1e72bacef2ca27") @db.VarChar(32)
-  page                     page?                                       @relation(fields: [pinnedPageId], references: [id], onUpdate: NoAction, map: "FK_6dc44f1ceb65b1e72bacef2ca27")
+  page                     Page?                                       @relation(fields: [pinnedPageId], references: [id], onUpdate: NoAction, map: "FK_6dc44f1ceb65b1e72bacef2ca27")
 
   @@index([enableWordMute], map: "IDX_3befe6f999c86aff06eb0257b4")
   @@index([userHost], map: "IDX_dce530b98e454793dac5ec2f5a")

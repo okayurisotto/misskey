@@ -7,7 +7,7 @@ import { PageContentSchema } from '@/models/zod/PageContentSchema.js';
 import { isNotNull } from '@/misc/is-not-null.js';
 import { DriveFileEntityPackService } from './DriveFileEntityPackService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
-import type { DriveFile, page, user } from '@prisma/client';
+import type { DriveFile, Page, user } from '@prisma/client';
 
 @Injectable()
 export class PageEntityService {
@@ -25,13 +25,13 @@ export class PageEntityService {
 	 * @returns
 	 */
 	public async pack(
-		src: page['id'] | page,
+		src: Page['id'] | Page,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof PageSchema>> {
 		const meId = me ? me.id : null;
 		const page = await this.prismaService.client.page.findUniqueOrThrow({
 			where: { id: typeof src === 'string' ? src : src.id },
-			include: { user: true },
+			include: { user: true, _count: { select: { likes: true } } },
 		});
 
 		const collectFiles = (
@@ -96,7 +96,7 @@ export class PageEntityService {
 			eyeCatchingImageId: page.eyeCatchingImageId,
 			eyeCatchingImage: result.eyeCatchingImage,
 			attachedFiles: result.attachedFiles,
-			likedCount: page.likedCount,
+			likedCount: page._count.likes,
 			isLiked: result.isLiked,
 		};
 	}

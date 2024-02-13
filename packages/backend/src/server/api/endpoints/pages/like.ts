@@ -73,11 +73,6 @@ export default class extends Endpoint<
 					userId: me.id,
 				},
 			});
-
-			this.prismaService.client.page.update({
-				where: { id: page.id },
-				data: { likedCount: { increment: 1 } },
-			});
 		});
 	}
 }

@@ -17,7 +17,7 @@ import type {
 	DriveFile,
 	DriveFolder,
 	Note,
-	page,
+	Page,
 	role,
 	signin,
 	user_list,
@@ -52,7 +52,7 @@ export interface MainStreamTypes {
 	myTokenRegenerated: undefined;
 	notification: z.infer<typeof NotificationSchema>;
 	pageEvent: {
-		pageId: page['id'];
+		pageId: Page['id'];
 		event: string;
 		var: unknown;
 		userId: user['id'];
