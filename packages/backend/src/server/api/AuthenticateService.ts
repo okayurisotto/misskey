@@ -3,7 +3,7 @@ import type { LocalUser } from '@/models/entities/User.js';
 import isNativeToken from '@/misc/is-native-token.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
-import type { access_token } from '@prisma/client';
+import type { AccessToken } from '@prisma/client';
 
 export class AuthenticationError extends Error {
 	constructor(message: string) {
@@ -21,7 +21,7 @@ export class AuthenticateService {
 
 	public async authenticate(
 		token: string | null | undefined,
-	): Promise<[LocalUser | null, access_token | null]> {
+	): Promise<[LocalUser | null, AccessToken | null]> {
 		if (token == null) {
 			return [null, null];
 		}
@@ -42,7 +42,7 @@ export class AuthenticateService {
 			}
 		} else {
 			const accessToken =
-				await this.prismaService.client.access_token.findFirst({
+				await this.prismaService.client.accessToken.findFirst({
 					where: {
 						OR: [
 							{ hash: token.toLowerCase() }, // app
@@ -55,7 +55,7 @@ export class AuthenticateService {
 				throw new AuthenticationError('invalid signature');
 			}
 
-			this.prismaService.client.access_token.update({
+			this.prismaService.client.accessToken.update({
 				where: { id: accessToken.id },
 				data: { lastUsedAt: new Date() },
 			});
@@ -83,7 +83,7 @@ export class AuthenticateService {
 					{
 						id: accessToken.id,
 						permission: app.permission,
-					} as access_token,
+					} as AccessToken,
 				];
 			} else {
 				return [user, accessToken];

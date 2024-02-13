@@ -45,7 +45,7 @@ export default class extends Endpoint<
 
 			// Fetch exist access token
 			const exist =
-				(await this.prismaService.client.access_token.findFirst({
+				(await this.prismaService.client.accessToken.findFirst({
 					where: {
 						appId: session.appId,
 						userId: me.id,
@@ -60,7 +60,7 @@ export default class extends Endpoint<
 
 				const now = new Date();
 
-				await this.prismaService.client.access_token.create({
+				await this.prismaService.client.accessToken.create({
 					data: {
 						id: this.idService.genId(),
 						createdAt: now,

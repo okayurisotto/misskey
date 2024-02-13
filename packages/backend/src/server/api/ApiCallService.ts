@@ -18,7 +18,7 @@ import { AuthenticateService, AuthenticationError } from './AuthenticateService.
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import type { OnApplicationShutdown } from '@nestjs/common';
 import type { IEndpointMeta, IEndpoint } from './endpoints.js';
-import type { access_token } from '@prisma/client';
+import type { AccessToken } from '@prisma/client';
 
 const accessDenied = {
 	message: 'Access denied.',
@@ -214,7 +214,7 @@ export class ApiCallService implements OnApplicationShutdown {
 	private async call(
 		ep: IEndpoint & { exec: any },
 		user: LocalUser | null | undefined,
-		token: access_token | null | undefined,
+		token: AccessToken | null | undefined,
 		data: any,
 		file: {
 			name: string;

@@ -8,7 +8,7 @@ import { channelServiceNames, type ChannelServiceName, type ChannelsService } fr
 import type { EventEmitter } from 'events';
 import type Channel from './channel.js';
 import type { StreamEventEmitter, StreamMessages } from './types.js';
-import type { access_token, user, user_profile } from '@prisma/client';
+import type { AccessToken, user, user_profile } from '@prisma/client';
 
 /**
  * Main stream connection
@@ -16,7 +16,7 @@ import type { access_token, user, user_profile } from '@prisma/client';
 // eslint-disable-next-line import/no-default-export
 export default class Connection {
 	public user?: user;
-	public token?: access_token;
+	public token?: AccessToken;
 	private wsConnection: WebSocket.WebSocket;
 	public subscriber: StreamEventEmitter;
 	private channels: Channel[] = [];
@@ -37,7 +37,7 @@ export default class Connection {
 		private readonly prismaService: PrismaService,
 
 		user: user | null | undefined,
-		token: access_token | null | undefined,
+		token: AccessToken | null | undefined,
 	) {
 		if (user) this.user = user;
 		if (token) this.token = token;

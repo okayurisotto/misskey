@@ -1,8 +1,8 @@
 import * as fs from 'node:fs';
 import { z } from 'zod';
-import { access_token } from '@prisma/client';
 import type { LocalUser } from '@/models/entities/User.js';
 import { ApiError } from './error.js';
+import type { AccessToken } from '@prisma/client';
 import type { IEndpointMeta } from './endpoints.js';
 
 type File = {
@@ -13,7 +13,7 @@ type File = {
 type Executor<T extends Omit<IEndpointMeta, 'res'>, Ps, Res> = (
 	params: Ps,
 	user: T['requireCredential'] extends true ? LocalUser : LocalUser | null,
-	token: access_token | null,
+	token: AccessToken | null,
 	file?: File,
 	cleanup?: () => void,
 	ip?: string | null,
@@ -28,7 +28,7 @@ export abstract class Endpoint<
 	public exec: (
 		params: unknown,
 		user: T['requireCredential'] extends true ? LocalUser : LocalUser | null,
-		token: access_token | null,
+		token: AccessToken | null,
 		file?: File,
 		ip?: string | null,
 		headers?: Record<string, string> | null,
@@ -42,7 +42,7 @@ export abstract class Endpoint<
 		this.exec = (
 			params: unknown,
 			user: T['requireCredential'] extends true ? LocalUser : LocalUser | null,
-			token: access_token | null,
+			token: AccessToken | null,
 			file?: File,
 			ip?: string | null,
 			headers?: Record<string, string> | null,

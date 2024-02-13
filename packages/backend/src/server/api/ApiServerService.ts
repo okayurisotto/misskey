@@ -130,14 +130,14 @@ export class ApiServerService {
 		});
 
 		fastify.post<{ Params: { session: string; } }>('/miauth/:session/check', async (request, reply) => {
-			const token = await this.prismaService.client.access_token.findFirst({
+			const token = await this.prismaService.client.accessToken.findFirst({
 				where: {
 					session: request.params.session,
 				},
 			});
 
 			if (token && token.session != null && !token.fetched) {
-				this.prismaService.client.access_token.update({
+				this.prismaService.client.accessToken.update({
 					where: { id: token.id },
 					data: { fetched: true },
 				});

@@ -10,7 +10,7 @@ import { UserLiteSchema } from '@/models/zod/UserLiteSchema.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import { NoteEntityPackService } from './NoteEntityPackService.js';
 import type { z } from 'zod';
-import type { access_token } from '@prisma/client';
+import type { AccessToken } from '@prisma/client';
 
 const NOTE_REQUIRED_NOTIFICATION_TYPES = new Set<
 	(typeof notificationTypes)[number]
@@ -42,10 +42,10 @@ export class NotificationEntityService  {
 			packedUsers: Map<string, z.infer<typeof UserSchema>>;
 		},
 	): Promise<z.infer<typeof NotificationSchema>> {
-		const getToken = async (): Promise<access_token | null> => {
+		const getToken = async (): Promise<AccessToken | null> => {
 			if (notification.appAccessTokenId == null) return null;
 
-			return await this.prismaService.client.access_token.findUniqueOrThrow({
+			return await this.prismaService.client.accessToken.findUniqueOrThrow({
 				where: { id: notification.appAccessTokenId },
 			});
 		};

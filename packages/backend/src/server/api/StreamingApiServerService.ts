@@ -10,7 +10,7 @@ import { AuthenticateService, AuthenticationError } from './AuthenticateService.
 import MainStreamConnection from './stream/index.js';
 import { ChannelsService } from './stream/ChannelsService.js';
 import type * as http from 'node:http';
-import type { access_token } from '@prisma/client';
+import type { AccessToken } from '@prisma/client';
 
 @Injectable()
 export class StreamingApiServerService {
@@ -42,7 +42,7 @@ export class StreamingApiServerService {
 			const q = new URL(request.url, `http://${request.headers.host}`).searchParams;
 
 			let user: LocalUser | null = null;
-			let app: access_token | null = null;
+			let app: AccessToken | null = null;
 
 			// https://datatracker.ietf.org/doc/html/rfc6750.html#section-2.1
 			// Note that the standard WHATWG WebSocket API does not support setting any headers,
@@ -99,7 +99,7 @@ export class StreamingApiServerService {
 		this.#wss.on('connection', (connection: WebSocket.WebSocket, request: http.IncomingMessage, ctx: {
 			stream: MainStreamConnection,
 			user: LocalUser | null;
-			app: access_token | null
+			app: AccessToken | null
 		}) => {
 			const { stream, user, app } = ctx;
 

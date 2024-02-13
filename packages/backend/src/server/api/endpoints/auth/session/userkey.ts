@@ -71,7 +71,7 @@ export default class extends Endpoint<
 
 			// Lookup access token
 			const accessToken =
-				await this.prismaService.client.access_token.findFirstOrThrow({
+				await this.prismaService.client.accessToken.findFirstOrThrow({
 					where: {
 						appId: app.id,
 						userId: session.user.id,

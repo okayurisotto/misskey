@@ -596,7 +596,7 @@ model AbuseUserReport {
 
 // ユーザーがアプリのために作成したアクセストークン
 // `/api/auth`や`/api/miauth`と関連
-model access_token {
+model AccessToken {
   id          String    @id(map: "PK_f20f028607b2603deabd8182d12") @db.VarChar(32)
   createdAt   DateTime  @db.Timestamptz(6)
   token       String    @db.VarChar(128) // secureRndstr
@@ -619,6 +619,7 @@ model access_token {
   @@index([token], map: "IDX_70ba8f6af34bc924fc9e12adb8")
   @@index([userId], map: "IDX_9949557d0e1b2c19e5344c171e")
   @@index([session], map: "IDX_bf3a053c07d9fb5d87317c56ee")
+	@@map("access_token")
 }
 
 // 広告
@@ -717,7 +718,7 @@ model App {
   userId      String?  @db.VarChar(32)
   user        user?    @relation(fields: [userId], references: [id], onUpdate: NoAction, map: "FK_3f5b0899ef90527a3462d7c2cb3")
 
-  accessTokens access_token[]
+  accessTokens AccessToken[]
   authSessions AuthSession[]
 
   @@index([createdAt], map: "IDX_048a757923ed8b157e9895da53")
@@ -1934,7 +1935,7 @@ model user {
   abuse_user_report_abuse_user_report_reporterIdTouser      AbuseUserReport[]        @relation("abuse_user_report_reporterIdTouser")
   abuse_user_report_abuse_user_report_assigneeIdTouser      AbuseUserReport[]        @relation("abuse_user_report_assigneeIdTouser")
   abuse_user_report_abuse_user_report_targetUserIdTouser    AbuseUserReport[]        @relation("abuse_user_report_targetUserIdTouser")
-  access_token                                              access_token[]
+  access_token                                              AccessToken[]
   announcement_read                                         AnnouncementRead[]
   antenna                                                   Antenna[]
   app                                                       App[]

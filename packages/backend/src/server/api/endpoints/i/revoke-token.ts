@@ -23,13 +23,13 @@ export default class extends Endpoint<
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
 			const tokenExist =
-				(await this.prismaService.client.access_token.count({
+				(await this.prismaService.client.accessToken.count({
 					where: { id: ps.tokenId },
 					take: 1,
 				})) > 0;
 
 			if (tokenExist) {
-				await this.prismaService.client.access_token.delete({
+				await this.prismaService.client.accessToken.delete({
 					where: {
 						id: ps.tokenId,
 						userId: me.id,

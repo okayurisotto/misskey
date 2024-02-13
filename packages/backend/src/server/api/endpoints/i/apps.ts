@@ -35,7 +35,7 @@ export default class extends Endpoint<
 > {
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps, me) => {
-			const orderBy = ((): Prisma.access_tokenOrderByWithRelationInput => {
+			const orderBy = ((): Prisma.AccessTokenOrderByWithRelationInput => {
 				switch (ps.sort) {
 					case '+createdAt':
 						return { createdAt: 'desc' };
@@ -50,7 +50,7 @@ export default class extends Endpoint<
 				}
 			})();
 
-			const tokens = await this.prismaService.client.access_token.findMany({
+			const tokens = await this.prismaService.client.accessToken.findMany({
 				where: { userId: me.id },
 				orderBy,
 				include: { app: true },

@@ -42,7 +42,7 @@ export default class extends Endpoint<
 			const now = new Date();
 
 			// Insert access token doc
-			await this.prismaService.client.access_token.create({
+			await this.prismaService.client.accessToken.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: now,

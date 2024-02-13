@@ -11,7 +11,7 @@ import { secureRndstr } from '@/misc/secure-rndstr.js';
 import { unique } from '@/misc/prelude/array.js';
 import { IdService } from '../IdService.js';
 import type { z } from 'zod';
-import type { Prisma, access_token, App } from '@prisma/client';
+import type { Prisma, AccessToken, App } from '@prisma/client';
 
 @Injectable()
 export class AppEntityService {
@@ -65,7 +65,7 @@ export class AppEntityService {
 	public isAuthorized(
 		appId: string,
 		userId: string,
-		tokens: access_token[],
+		tokens: AccessToken[],
 	): boolean {
 		return tokens.some((token) => {
 			if (token.appId !== appId) return false;
@@ -94,7 +94,7 @@ export class AppEntityService {
 		appId: string,
 		userId: string,
 		data: {
-			access_token: EntityMap<'id', access_token>;
+			access_token: EntityMap<'id', AccessToken>;
 		},
 	): z.infer<typeof AppIsAuthorizedOnlySchema> {
 		return {

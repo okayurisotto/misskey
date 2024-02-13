@@ -35,7 +35,7 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const results = await this.prismaService.client.access_token.findMany({
+			const results = await this.prismaService.client.accessToken.findMany({
 				where: { userId: me.id },
 				include: { app: true },
 				distinct: ['appId'],
