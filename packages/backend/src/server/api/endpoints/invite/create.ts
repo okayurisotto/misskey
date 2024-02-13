@@ -39,7 +39,7 @@ export default class extends Endpoint<
 			const policies = await this.roleService.getUserPolicies(me.id);
 
 			if (policies.inviteLimit) {
-				const count = await this.prismaService.client.registration_ticket.count(
+				const count = await this.prismaService.client.inviteCode.count(
 					{
 						where: {
 							createdAt: {
@@ -57,7 +57,7 @@ export default class extends Endpoint<
 				}
 			}
 
-			const ticket = await this.prismaService.client.registration_ticket.create(
+			const ticket = await this.prismaService.client.inviteCode.create(
 				{
 					data: {
 						id: this.idService.genId(),

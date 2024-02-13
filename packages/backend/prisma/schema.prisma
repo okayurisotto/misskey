@@ -1706,23 +1706,24 @@ model PromoRead {
   @@map("promo_read")
 }
 
-// 招待
-model registration_ticket {
-  id                                         String    @id(map: "PK_f11696b6fafcf3662d4292734f8") @db.VarChar(32)
-  createdAt                                  DateTime  @db.Timestamptz(6)
-  expiresAt                                  DateTime? @db.Timestamptz(6)
-  usedAt                                     DateTime? @db.Timestamptz(6)
-  code                                       String    @unique(map: "IDX_0ff69e8dfa9fe31bb4a4660f59") @db.VarChar(64)
-  pendingUserId                              String?   @db.VarChar(32)
+// 招待コード
+model InviteCode {
+  id            String    @id(map: "PK_f11696b6fafcf3662d4292734f8") @db.VarChar(32)
+  createdAt     DateTime  @db.Timestamptz(6)
+  expiresAt     DateTime? @db.Timestamptz(6)
+  usedAt        DateTime? @db.Timestamptz(6)
+  code          String    @unique(map: "IDX_0ff69e8dfa9fe31bb4a4660f59") @db.VarChar(64)
+  pendingUserId String?   @db.VarChar(32) // 非正規化
   //
-  createdById                                String?   @db.VarChar(32)
-  user_registration_ticket_createdByIdTouser user?     @relation("registration_ticket_createdByIdTouser", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_beba993576db0261a15364ea96e")
+  createdById   String?   @db.VarChar(32)
+  createdBy     user?     @relation("registration_ticket_createdByIdTouser", fields: [createdById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_beba993576db0261a15364ea96e")
   //
-  usedById                                   String?   @unique(map: "UQ_b6f93f2f30bdbb9a5ebdc7c7189") @db.VarChar(32)
-  user_registration_ticket_usedByIdTouser    user?     @relation("registration_ticket_usedByIdTouser", fields: [usedById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b6f93f2f30bdbb9a5ebdc7c7189")
+  usedById      String?   @unique(map: "UQ_b6f93f2f30bdbb9a5ebdc7c7189") @db.VarChar(32)
+  usedBy        user?     @relation("registration_ticket_usedByIdTouser", fields: [usedById], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_b6f93f2f30bdbb9a5ebdc7c7189")
 
   @@index([usedById], map: "IDX_b6f93f2f30bdbb9a5ebdc7c718")
   @@index([createdById], map: "IDX_beba993576db0261a15364ea96")
+  @@map("registration_ticket")
 }
 
 // レジストリ
@@ -1983,8 +1984,8 @@ model user {
   password_reset_request                                    PasswordResetRequest[]
   poll_vote                                                 PollVote[]
   promo_read                                                PromoRead[]
-  registration_ticket_registration_ticket_usedByIdTouser    registration_ticket?   @relation("registration_ticket_usedByIdTouser")
-  registration_ticket_registration_ticket_createdByIdTouser registration_ticket[]  @relation("registration_ticket_createdByIdTouser")
+  registration_ticket_registration_ticket_usedByIdTouser    InviteCode?            @relation("registration_ticket_usedByIdTouser")
+  registration_ticket_registration_ticket_createdByIdTouser InviteCode[]           @relation("registration_ticket_createdByIdTouser")
   registry_item                                             registry_item[]
   role_assignment                                           role_assignment[]
   signin                                                    signin[]

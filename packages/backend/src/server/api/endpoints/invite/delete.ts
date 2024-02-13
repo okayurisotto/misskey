@@ -39,7 +39,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const ticket =
-				await this.prismaService.client.registration_ticket.findUnique({
+				await this.prismaService.client.inviteCode.findUnique({
 					where: { id: ps.inviteId },
 				});
 			const isModerator = await this.roleService.isModerator(me);
@@ -56,7 +56,7 @@ export default class extends Endpoint<
 				throw new ApiError(meta.errors.cantDelete);
 			}
 
-			await this.prismaService.client.registration_ticket.delete({
+			await this.prismaService.client.inviteCode.delete({
 				where: { id: ticket.id },
 			});
 		});

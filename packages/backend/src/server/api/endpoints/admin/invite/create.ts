@@ -47,13 +47,13 @@ export default class extends Endpoint<
 				expiresAt: ps.expiresAt ? new Date(ps.expiresAt) : null,
 				code: generateInviteCode(),
 			}));
-			await this.prismaService.client.registration_ticket.createMany({
+			await this.prismaService.client.inviteCode.createMany({
 				data: ticketdata,
 			});
 
 			// https://github.com/prisma/prisma/issues/8131
 			const tickets =
-				await this.prismaService.client.registration_ticket.findMany({
+				await this.prismaService.client.inviteCode.findMany({
 					where: { id: { in: ticketdata.map((ticket) => ticket.id) } },
 				});
 

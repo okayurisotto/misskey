@@ -31,7 +31,7 @@ export default class extends Endpoint<
 			const policies = await this.roleService.getUserPolicies(me.id);
 
 			const count = policies.inviteLimit
-				? await this.prismaService.client.registration_ticket.count({
+				? await this.prismaService.client.inviteCode.count({
 						where: {
 							createdAt: {
 								gt: new Date(

@@ -4,7 +4,7 @@ import type { InviteCodeSchema } from '@/models/zod/InviteCodeSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { UserEntityPackLiteService } from './UserEntityPackLiteService.js';
 import type { z } from 'zod';
-import type { registration_ticket, user } from '@prisma/client';
+import type { InviteCode, user } from '@prisma/client';
 
 @Injectable()
 export class InviteCodeEntityService {
@@ -14,37 +14,31 @@ export class InviteCodeEntityService {
 	) {}
 
 	/**
-	 * `registration_ticket`をpackする。
+	 * `InviteCode`をpackする。
 	 *
 	 * @param src
 	 * @param me
 	 * @returns
 	 */
 	public async pack(
-		src: registration_ticket['id'] | registration_ticket,
+		src: InviteCode['id'] | InviteCode,
 		me?: { id: user['id'] } | null | undefined,
 	): Promise<z.infer<typeof InviteCodeSchema>> {
-		const target =
-			await this.prismaService.client.registration_ticket.findUniqueOrThrow({
+		const target = await this.prismaService.client.inviteCode.findUniqueOrThrow(
+			{
 				where: { id: typeof src === 'string' ? src : src.id },
-				include: {
-					user_registration_ticket_createdByIdTouser: true,
-					user_registration_ticket_usedByIdTouser: true,
-				},
-			});
+				include: { createdBy: true, usedBy: true },
+			},
+		);
 
 		const result = await awaitAll({
 			createdBy: () =>
-				target.user_registration_ticket_createdByIdTouser
-					? this.userEntityPackLiteService.packLite(
-							target.user_registration_ticket_createdByIdTouser,
-					  )
+				target.createdBy
+					? this.userEntityPackLiteService.packLite(target.createdBy)
 					: Promise.resolve(null),
 			usedBy: () =>
-				target.user_registration_ticket_usedByIdTouser
-					? this.userEntityPackLiteService.packLite(
-							target.user_registration_ticket_usedByIdTouser,
-					  )
+				target.usedBy
+					? this.userEntityPackLiteService.packLite(target.usedBy)
 					: Promise.resolve(null),
 		});
 

@@ -33,39 +33,34 @@ export default class extends Endpoint<
 		private readonly prismaService: PrismaService,
 	) {
 		super(meta, paramDef, async (ps) => {
-			const orderBy =
-				((): Prisma.registration_ticketOrderByWithRelationInput => {
-					switch (ps.sort) {
-						case '+createdAt':
-							return { createdAt: 'desc' };
-						case '-createdAt':
-							return { createdAt: 'asc' };
-						case '+usedAt':
-							return { usedAt: { sort: 'desc', nulls: 'last' } };
-						case '-usedAt':
-							return { usedAt: { sort: 'asc', nulls: 'first' } };
-						default:
-							return { id: 'desc' };
-					}
-				})();
+			const orderBy = ((): Prisma.InviteCodeOrderByWithRelationInput => {
+				switch (ps.sort) {
+					case '+createdAt':
+						return { createdAt: 'desc' };
+					case '-createdAt':
+						return { createdAt: 'asc' };
+					case '+usedAt':
+						return { usedAt: { sort: 'desc', nulls: 'last' } };
+					case '-usedAt':
+						return { usedAt: { sort: 'asc', nulls: 'first' } };
+					default:
+						return { id: 'desc' };
+				}
+			})();
 
-			const tickets =
-				await this.prismaService.client.registration_ticket.findMany({
-					where: {
-						AND: [
-							ps.type === 'unused' ? { usedById: null } : {},
-							ps.type === 'used' ? { usedById: { not: null } } : {},
-							ps.type === 'expired' ? { expiresAt: { lt: new Date() } } : {},
-						],
-					},
-					include: {
-						user_registration_ticket_createdByIdTouser: true,
-						user_registration_ticket_usedByIdTouser: true,
-					},
-					orderBy,
-					take: ps.limit,
-					skip: ps.offset,
-				});
+			const tickets = await this.prismaService.client.inviteCode.findMany({
+				where: {
+					AND: [
+						ps.type === 'unused' ? { usedById: null } : {},
+						ps.type === 'used' ? { usedById: { not: null } } : {},
+						ps.type === 'expired' ? { expiresAt: { lt: new Date() } } : {},
+					],
+				},
+				include: { createdBy: true, usedBy: true },
+				orderBy,
+				take: ps.limit,
+				skip: ps.offset,
+			});
 
 			return await Promise.all(
 				tickets.map((ticket) => this.inviteCodeEntityService.pack(ticket)),

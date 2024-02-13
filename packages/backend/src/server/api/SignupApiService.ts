@@ -16,7 +16,7 @@ import { UserDetailedSchema } from '@/models/zod/UserDetailedSchema.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { SigninService } from './SigninService.js';
 import type { FastifyRequest, FastifyReply } from 'fastify';
-import type { registration_ticket } from '@prisma/client';
+import type { InviteCode } from '@prisma/client';
 
 @Injectable()
 export class SignupApiService {
@@ -93,7 +93,7 @@ export class SignupApiService {
 			}
 		}
 
-		let ticket: registration_ticket | null = null;
+		let inviteCode: InviteCode | null = null;
 
 		if (instance.disableRegistration) {
 			if (invitationCode == null || typeof invitationCode !== 'string') {
@@ -101,23 +101,23 @@ export class SignupApiService {
 				return;
 			}
 
-			ticket = await this.prismaService.client.registration_ticket.findUnique({
+			inviteCode = await this.prismaService.client.inviteCode.findUnique({
 				where: {
 					code: invitationCode,
 				},
 			});
 
-			if (ticket == null) {
+			if (inviteCode == null) {
 				reply.code(400);
 				return;
 			}
 
-			if (ticket.expiresAt && ticket.expiresAt < new Date()) {
+			if (inviteCode.expiresAt && inviteCode.expiresAt < new Date()) {
 				reply.code(400);
 				return;
 			}
 
-			if (ticket.usedAt) {
+			if (inviteCode.usedAt) {
 				reply.code(400);
 				return;
 			}
@@ -161,9 +161,9 @@ export class SignupApiService {
 				`To complete signup, please click this link:<br><a href="${link}">${link}</a>`,
 				`To complete signup, please click this link: ${link}`);
 
-			if (ticket) {
-				await this.prismaService.client.registration_ticket.update({
-					where: { id: ticket.id },
+			if (inviteCode) {
+				await this.prismaService.client.inviteCode.update({
+					where: { id: inviteCode.id },
 					data: {
 						usedAt: new Date(),
 						pendingUserId: pendingUser.id,
@@ -181,9 +181,9 @@ export class SignupApiService {
 
 				const res = await this.userEntityService.packDetailed(account, account, { includeSecrets: true });
 
-				if (ticket) {
-					await this.prismaService.client.registration_ticket.update({
-						where: { id: ticket.id },
+				if (inviteCode) {
+					await this.prismaService.client.inviteCode.update({
+						where: { id: inviteCode.id },
 						data: {
 							usedAt: new Date(),
 							usedById: account.id,
@@ -231,10 +231,10 @@ export class SignupApiService {
 				},
 			});
 
-			const ticket = await this.prismaService.client.registration_ticket.findFirst({ where: { pendingUserId: pendingUser.id } });
-			if (ticket) {
-				await this.prismaService.client.registration_ticket.update({
-					where: { id: ticket.id },
+			const inviteCode = await this.prismaService.client.inviteCode.findFirst({ where: { pendingUserId: pendingUser.id } });
+			if (inviteCode) {
+				await this.prismaService.client.inviteCode.update({
+					where: { id: inviteCode.id },
 					data: {
 						usedById: account.id,
 						pendingUserId: null,

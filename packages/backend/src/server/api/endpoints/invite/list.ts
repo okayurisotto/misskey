@@ -37,7 +37,7 @@ export default class extends Endpoint<
 			});
 
 			const tickets =
-				await this.prismaService.client.registration_ticket.findMany({
+				await this.prismaService.client.inviteCode.findMany({
 					where: {
 						AND: [paginationQuery.where, { createdById: me.id }],
 					},
