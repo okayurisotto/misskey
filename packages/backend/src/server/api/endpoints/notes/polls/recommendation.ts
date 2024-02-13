@@ -38,12 +38,19 @@ export default class extends Endpoint<
 			const polls = await this.prismaService.client.poll.findMany({
 				where: {
 					AND: [
-						{ note: { pollVotes: { none: { userId: { contains: me.id } } } } },
-						{ noteVisibility: 'public' },
+						{
+							note: {
+								visibility: 'public',
+								pollVotes: { none: { userId: me.id } },
+								user: {
+									host: null,
+									id: {
+										notIn: [...mutings.map((muting) => muting.muteeId), me.id],
+									},
+								},
+							},
+						},
 						{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
-						{ userHost: null },
-						{ userId: { notIn: mutings.map((muting) => muting.muteeId) } },
-						{ userId: me.id },
 					],
 				},
 				orderBy: { noteId: 'desc' },

@@ -1443,7 +1443,7 @@ model Note {
   renote               Note?                @relation("renote", fields: [renoteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_52ccc804d7c69037d558bac4c96")
   renotes              Note[]               @relation("renote")
 
-  poll          poll?
+  poll          Poll?
   promoNote     promo_note?
   clipNotes     ClipNote[]
   mutedNotes    MutedNote[]
@@ -1639,22 +1639,24 @@ model PasswordResetRequest {
 }
 
 // ノートに添付されたアンケート
-model poll {
-  expiresAt      DateTime?                @db.Timestamptz(6)
-  multiple       Boolean
-  choices        String[]                 @default([]) @db.VarChar(256) // 正規化したい
-  // 非正規化
-  noteVisibility poll_notevisibility_enum
-  userId         String                   @db.VarChar(32)
-  userHost       String?                  @db.VarChar(128)
+model Poll {
+  expiresAt DateTime? @db.Timestamptz(6)
+  multiple  Boolean
+  choices   String[]  @default([]) @db.VarChar(256) // 正規化したい
   // 集計
-  votes          Int[]
+  votes     Int[] // TODO
   //
-  noteId         String                   @id(map: "PK_da851e06d0dfe2ef397d8b1bf1b") @unique(map: "UQ_da851e06d0dfe2ef397d8b1bf1b") @db.VarChar(32)
-  note           Note                     @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_da851e06d0dfe2ef397d8b1bf1b")
+  noteId    String    @id(map: "PK_da851e06d0dfe2ef397d8b1bf1b") @unique(map: "UQ_da851e06d0dfe2ef397d8b1bf1b") @db.VarChar(32)
+  note      Note      @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_da851e06d0dfe2ef397d8b1bf1b")
+
+  // 非正規化
+  noteVisibility poll_notevisibility_enum @ignore
+  userId         String                   @ignore @db.VarChar(32)
+  userHost       String?                  @ignore @db.VarChar(128)
 
   @@index([userId], map: "IDX_0610ebcfcfb4a18441a9bcdab2")
   @@index([userHost], map: "IDX_7fa20a12319c7f6dc3aed98c0a")
+  @@map("poll")
 }
 
 // アンケートへの投票

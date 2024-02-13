@@ -52,7 +52,7 @@ import type {
 	Blocking,
 	DriveFile,
 	Note,
-	poll,
+	Poll,
 	poll_vote,
 	user,
 	user_keypair,
@@ -434,7 +434,7 @@ export class ApRendererService {
 		const files = await getPromisedFiles(note.fileIds);
 
 		const text = note.text ?? '';
-		let poll: poll | null = null;
+		let poll: Poll | null = null;
 
 		if (note.hasPoll) {
 			poll = await this.prismaService.client.poll.findUnique({
@@ -603,7 +603,7 @@ export class ApRendererService {
 	public renderQuestion(
 		user: { id: user['id'] },
 		note: Note,
-		poll: poll,
+		poll: Poll,
 	): IQuestion {
 		return {
 			type: 'Question',
@@ -689,7 +689,7 @@ export class ApRendererService {
 		user: { id: user['id'] },
 		vote: poll_vote,
 		note: Note,
-		poll: poll,
+		poll: Poll,
 		pollOwner: RemoteUser,
 	): ICreate {
 		return {
