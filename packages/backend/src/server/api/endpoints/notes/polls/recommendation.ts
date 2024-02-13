@@ -5,6 +5,7 @@ import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js'
 import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { limit } from '@/models/zod/misc.js';
+import { PrismaQueryService } from '@/core/PrismaQueryService.js';
 
 const res = z.array(NoteSchema);
 export const meta = {
@@ -28,26 +29,22 @@ export default class extends Endpoint<
 	constructor(
 		private readonly noteEntityService: NoteEntityPackService,
 		private readonly prismaService: PrismaService,
+		private readonly prismaQueryService: PrismaQueryService,
 	) {
 		super(meta, paramDef, async (ps, me) => {
-			const mutings = await this.prismaService.client.userMuting.findMany({
-				where: { muterId: me.id },
-				select: { muteeId: true },
-			});
-
 			const polls = await this.prismaService.client.poll.findMany({
 				where: {
 					AND: [
 						{
 							note: {
-								visibility: 'public',
-								pollVotes: { none: { userId: me.id } },
-								user: {
-									host: null,
-									id: {
-										notIn: [...mutings.map((muting) => muting.muteeId), me.id],
+								AND: [
+									await this.prismaQueryService.getMutingWhereForNote(me.id),
+									{
+										visibility: 'public',
+										pollVotes: { none: { userId: me.id } },
+										user: { host: null, id: { not: me.id } },
 									},
-								},
+								],
 							},
 						},
 						{ OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
