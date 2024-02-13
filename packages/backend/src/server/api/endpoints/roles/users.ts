@@ -59,7 +59,7 @@ export default class extends Endpoint<
 				untilId: ps.untilId,
 			});
 
-			const assigns = await this.prismaService.client.role_assignment.findMany({
+			const assigns = await this.prismaService.client.roleAssignment.findMany({
 				where: {
 					AND: [
 						paginationQuery.where,

@@ -28,7 +28,7 @@ export class RoleEntityService {
 						where: { id: src },
 				  });
 
-		const assignedCount = await this.prismaService.client.role_assignment.count(
+		const assignedCount = await this.prismaService.client.roleAssignment.count(
 			{
 				where: {
 					roleId: role.id,

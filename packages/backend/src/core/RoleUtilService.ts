@@ -35,7 +35,7 @@ export class RoleUtilService {
 			: roles.filter((r) => r.isModerator);
 		const assigns =
 			moderatorRoles.length > 0
-				? await this.prismaService.client.role_assignment.findMany({
+				? await this.prismaService.client.roleAssignment.findMany({
 						where: { roleId: { in: moderatorRoles.map((r) => r.id) } },
 				  })
 				: [];
@@ -59,7 +59,7 @@ export class RoleUtilService {
 		const administratorRoles = roles.filter((r) => r.isAdministrator);
 		const assigns =
 			administratorRoles.length > 0
-				? await this.prismaService.client.role_assignment.findMany({
+				? await this.prismaService.client.roleAssignment.findMany({
 						where: { roleId: { in: administratorRoles.map((r) => r.id) } },
 				  })
 				: [];
@@ -85,7 +85,7 @@ export class RoleUtilService {
 	): Promise<void> {
 		const now = new Date();
 
-		const existing = await this.prismaService.client.role_assignment.findUnique(
+		const existing = await this.prismaService.client.roleAssignment.findUnique(
 			{
 				where: {
 					userId_roleId: {
@@ -98,7 +98,7 @@ export class RoleUtilService {
 
 		if (existing) {
 			if (existing.expiresAt && existing.expiresAt.getTime() < now.getTime()) {
-				await this.prismaService.client.role_assignment.delete({
+				await this.prismaService.client.roleAssignment.delete({
 					where: {
 						userId_roleId: {
 							roleId: roleId,
@@ -111,7 +111,7 @@ export class RoleUtilService {
 			}
 		}
 
-		const created = await this.prismaService.client.role_assignment.create({
+		const created = await this.prismaService.client.roleAssignment.create({
 			data: {
 				id: this.idService.genId(),
 				createdAt: now,
@@ -130,7 +130,7 @@ export class RoleUtilService {
 	public async unassign(userId: string, roleId: Role['id']): Promise<void> {
 		const now = new Date();
 
-		const existing = await this.prismaService.client.role_assignment.findUnique(
+		const existing = await this.prismaService.client.roleAssignment.findUnique(
 			{ where: { userId_roleId: { roleId, userId } } },
 		);
 		if (existing == null) {
@@ -139,7 +139,7 @@ export class RoleUtilService {
 			existing.expiresAt &&
 			existing.expiresAt.getTime() < now.getTime()
 		) {
-			await this.prismaService.client.role_assignment.delete({
+			await this.prismaService.client.roleAssignment.delete({
 				where: {
 					userId_roleId: {
 						roleId: roleId,
@@ -150,7 +150,7 @@ export class RoleUtilService {
 			throw new RoleUtilService.NotAssignedError();
 		}
 
-		await this.prismaService.client.role_assignment.delete({
+		await this.prismaService.client.roleAssignment.delete({
 			where: { id: existing.id },
 		});
 

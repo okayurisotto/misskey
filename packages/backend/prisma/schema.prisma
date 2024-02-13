@@ -1847,13 +1847,13 @@ model Role {
   displayOrder              Int              @default(0)
   isExplorable              Boolean          @default(false)
 
-  assignments role_assignment[]
+  assignments RoleAssignment[]
 
   @@map("role")
 }
 
 // ロールへのユーザーの割り当て
-model role_assignment {
+model RoleAssignment {
   id        String    @id(map: "PK_7e79671a8a5db18936173148cb4") @db.VarChar(32)
   createdAt DateTime  @db.Timestamptz(6)
   expiresAt DateTime? @db.Timestamptz(6)
@@ -1868,6 +1868,7 @@ model role_assignment {
   @@index([expiresAt], map: "IDX_539b6c08c05067599743bb6389")
   @@index([userId], map: "IDX_db5b72c16227c97ca88734d5c2")
   @@index([roleId], map: "IDX_f0de67fd09cd3cd0aabca79994")
+  @@map("role_assignment")
 }
 
 // サインインログ？
@@ -1995,7 +1996,7 @@ model user {
   registration_ticket_registration_ticket_usedByIdTouser    InviteCode?            @relation("registration_ticket_usedByIdTouser")
   registration_ticket_registration_ticket_createdByIdTouser InviteCode[]           @relation("registration_ticket_createdByIdTouser")
   registry_item                                             registry_item[]
-  role_assignment                                           role_assignment[]
+  role_assignment                                           RoleAssignment[]
   signin                                                    signin[]
   sw_subscription                                           sw_subscription[]
   user_keypair                                              user_keypair?

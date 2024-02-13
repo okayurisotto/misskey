@@ -36,7 +36,7 @@ export class CleanProcessorService {
 				where: { isActive: true, lastUsedAt: { lt: untilDate7 } },
 				data: { isActive: false },
 			}),
-			this.prismaService.client.role_assignment.deleteMany({
+			this.prismaService.client.roleAssignment.deleteMany({
 				where: { expiresAt: { not: null, lt: now } },
 			}),
 		]);
