@@ -19,7 +19,7 @@ import type {
 	Note,
 	Page,
 	Role,
-	signin,
+	Signin,
 	user_list,
 	user,
 	webhook,
@@ -66,7 +66,7 @@ export interface MainStreamTypes {
 	registryUpdated: { scope: string[]; key: string; value: unknown };
 	renote: z.infer<typeof NoteSchema>;
 	reply: z.infer<typeof NoteSchema>;
-	signin: signin;
+	signin: Signin;
 	unfollow: z.infer<typeof UserDetailedNotMeSchema>;
 	unreadMention: Note['id'];
 	unreadNotification: z.infer<typeof NotificationSchema>;

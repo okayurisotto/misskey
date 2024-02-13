@@ -1872,7 +1872,7 @@ model RoleAssignment {
 }
 
 // サインインログ？
-model signin {
+model Signin {
   id        String   @id(map: "PK_9e96ddc025712616fc492b3b588") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
   ip        String   @db.VarChar(128)
@@ -1883,6 +1883,7 @@ model signin {
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_2c308dbdc50d94dc625670055f7")
 
   @@index([userId], map: "IDX_2c308dbdc50d94dc625670055f")
+  @@map("signin")
 }
 
 // ServiceWorkerの購読
@@ -1997,7 +1998,7 @@ model user {
   registration_ticket_registration_ticket_createdByIdTouser InviteCode[]           @relation("registration_ticket_createdByIdTouser")
   registry_item                                             registry_item[]
   role_assignment                                           RoleAssignment[]
-  signin                                                    signin[]
+  signin                                                    Signin[]
   sw_subscription                                           sw_subscription[]
   user_keypair                                              user_keypair?
   user_list                                                 user_list[]

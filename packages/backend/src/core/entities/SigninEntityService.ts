@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import type { signin } from '@prisma/client';
+import type { Signin } from '@prisma/client';
 
 @Injectable()
 export class SigninEntityService {
-	public pack(src: signin): signin {
+	public pack(src: Signin): Signin {
 		return src;
 	}
 }
