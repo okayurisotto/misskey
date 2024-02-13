@@ -25,7 +25,7 @@ export default class extends Endpoint<
 	constructor(private readonly prismaService: PrismaService) {
 		super(meta, paramDef, async (ps) => {
 			const req =
-				await this.prismaService.client.password_reset_request.findUniqueOrThrow(
+				await this.prismaService.client.passwordResetRequest.findUniqueOrThrow(
 					{ where: { token: ps.token } },
 				);
 
@@ -43,7 +43,7 @@ export default class extends Endpoint<
 				data: { password: hash },
 			});
 
-			this.prismaService.client.password_reset_request.delete({
+			this.prismaService.client.passwordResetRequest.delete({
 				where: { id: req.id },
 			});
 		});

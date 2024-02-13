@@ -1626,15 +1626,16 @@ model PageLike {
 
 // パスワードリセットリクエスト
 // 記録用？
-model password_reset_request {
+model PasswordResetRequest {
   id        String   @id(map: "PK_fcf4b02eae1403a2edaf87fd074") @db.VarChar(32)
   createdAt DateTime @db.Timestamptz(6)
-  token     String   @unique(map: "IDX_0b575fa9a4cfe638a925949285") @db.VarChar(256)
+  token     String   @unique(map: "IDX_0b575fa9a4cfe638a925949285") @db.VarChar(256) // 非正規化？
   //
   userId    String   @db.VarChar(32)
   user      user     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_4bb7fd4a34492ae0e6cc8d30ac8")
 
   @@index([userId], map: "IDX_4bb7fd4a34492ae0e6cc8d30ac")
+  @@map("password_reset_request")
 }
 
 // ノートに添付されたアンケート
@@ -1936,37 +1937,37 @@ model user {
   bannerId                             String?    @unique(map: "REL_afc64b53f8db3707ceb34eb28e") @db.VarChar(32)
   drive_file_user_bannerIdTodrive_file DriveFile? @relation("user_bannerIdTodrive_file", fields: [bannerId], references: [id], onUpdate: NoAction, map: "FK_afc64b53f8db3707ceb34eb28e2")
 
-  abuse_user_report_abuse_user_report_reporterIdTouser      AbuseUserReport[]        @relation("abuse_user_report_reporterIdTouser")
-  abuse_user_report_abuse_user_report_assigneeIdTouser      AbuseUserReport[]        @relation("abuse_user_report_assigneeIdTouser")
-  abuse_user_report_abuse_user_report_targetUserIdTouser    AbuseUserReport[]        @relation("abuse_user_report_targetUserIdTouser")
+  abuse_user_report_abuse_user_report_reporterIdTouser      AbuseUserReport[]      @relation("abuse_user_report_reporterIdTouser")
+  abuse_user_report_abuse_user_report_assigneeIdTouser      AbuseUserReport[]      @relation("abuse_user_report_assigneeIdTouser")
+  abuse_user_report_abuse_user_report_targetUserIdTouser    AbuseUserReport[]      @relation("abuse_user_report_targetUserIdTouser")
   access_token                                              AccessToken[]
   announcement_read                                         AnnouncementRead[]
   antenna                                                   Antenna[]
   app                                                       App[]
   attestation_challenge                                     AttestationChallenge[]
   auth_session                                              AuthSession[]
-  blocking_blocking_blockerIdTouser                         Blocking[]               @relation("blocking_blockerIdTouser")
-  blocking_blocking_blockeeIdTouser                         Blocking[]               @relation("blocking_blockeeIdTouser")
+  blocking_blocking_blockerIdTouser                         Blocking[]             @relation("blocking_blockerIdTouser")
+  blocking_blocking_blockeeIdTouser                         Blocking[]             @relation("blocking_blockeeIdTouser")
   channel                                                   Channel[]
   channel_favorite                                          ChannelFavorite[]
   channel_following                                         ChannelFollowing[]
   clip                                                      Clip[]
   clip_favorite                                             ClipFavorite[]
-  drive_file_drive_file_userIdTouser                        DriveFile[]              @relation("drive_file_userIdTouser")
+  drive_file_drive_file_userIdTouser                        DriveFile[]            @relation("drive_file_userIdTouser")
   drive_folder                                              DriveFolder[]
   flash                                                     Flash[]
   flash_like                                                FlashLike[]
-  follow_request_follow_request_followeeIdTouser            FollowRequest[]          @relation("follow_request_followeeIdTouser")
-  follow_request_follow_request_followerIdTouser            FollowRequest[]          @relation("follow_request_followerIdTouser")
-  following_following_followeeIdTouser                      Following[]              @relation("following_followeeIdTouser")
-  following_following_followerIdTouser                      Following[]              @relation("following_followerIdTouser")
+  follow_request_follow_request_followeeIdTouser            FollowRequest[]        @relation("follow_request_followeeIdTouser")
+  follow_request_follow_request_followerIdTouser            FollowRequest[]        @relation("follow_request_followerIdTouser")
+  following_following_followeeIdTouser                      Following[]            @relation("following_followeeIdTouser")
+  following_following_followerIdTouser                      Following[]            @relation("following_followerIdTouser")
   gallery_like                                              GalleryLike[]
   gallery_post                                              Gallery[]
   meta                                                      Meta[]
   moderation_log                                            ModerationLog[]
   muted_note                                                MutedNote[]
-  muting_muting_muterIdTouser                               UserMuting[]             @relation("muting_muterIdTouser")
-  muting_muting_muteeIdTouser                               UserMuting[]             @relation("muting_muteeIdTouser")
+  muting_muting_muterIdTouser                               UserMuting[]           @relation("muting_muterIdTouser")
+  muting_muting_muteeIdTouser                               UserMuting[]           @relation("muting_muteeIdTouser")
   note                                                      Note[]
   note_favorite                                             NoteFavorite[]
   note_reaction                                             NoteReaction[]
@@ -1974,11 +1975,11 @@ model user {
   note_unread                                               NoteUnread[]
   page                                                      Page[]
   page_like                                                 PageLike[]
-  password_reset_request                                    password_reset_request[]
+  password_reset_request                                    PasswordResetRequest[]
   poll_vote                                                 poll_vote[]
   promo_read                                                promo_read[]
-  registration_ticket_registration_ticket_usedByIdTouser    registration_ticket?     @relation("registration_ticket_usedByIdTouser")
-  registration_ticket_registration_ticket_createdByIdTouser registration_ticket[]    @relation("registration_ticket_createdByIdTouser")
+  registration_ticket_registration_ticket_usedByIdTouser    registration_ticket?   @relation("registration_ticket_usedByIdTouser")
+  registration_ticket_registration_ticket_createdByIdTouser registration_ticket[]  @relation("registration_ticket_createdByIdTouser")
   registry_item                                             registry_item[]
   role_assignment                                           role_assignment[]
   signin                                                    signin[]
@@ -1987,8 +1988,8 @@ model user {
   user_list                                                 user_list[]
   user_list_favorite                                        user_list_favorite[]
   user_list_joining                                         user_list_joining[]
-  user_memo_user_memo_userIdTouser                          user_memo[]              @relation("user_memo_userIdTouser")
-  user_memo_user_memo_targetUserIdTouser                    user_memo[]              @relation("user_memo_targetUserIdTouser")
+  user_memo_user_memo_userIdTouser                          user_memo[]            @relation("user_memo_userIdTouser")
+  user_memo_user_memo_targetUserIdTouser                    user_memo[]            @relation("user_memo_targetUserIdTouser")
   user_note_pining                                          user_note_pining[]
   user_profile                                              user_profile?
   user_publickey                                            user_publickey?

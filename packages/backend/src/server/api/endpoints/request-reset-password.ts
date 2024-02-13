@@ -67,7 +67,7 @@ export default class extends Endpoint<
 
 			const token = secureRndstr(64, { chars: L_CHARS });
 
-			await this.prismaService.client.password_reset_request.create({
+			await this.prismaService.client.passwordResetRequest.create({
 				data: {
 					id: this.idService.genId(),
 					createdAt: new Date(),
