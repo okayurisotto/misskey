@@ -1746,10 +1746,12 @@ model registry_item {
 }
 
 // リレーサーバー
-model relay {
+model Relay {
   id     String            @id(map: "PK_78ebc9cfddf4292633b7ba57aee") @db.VarChar(32)
   inbox  String            @unique(map: "IDX_0d9a1738f2cf7f3b1c3334dfab") @db.VarChar(512)
   status relay_status_enum
+
+  @@map("relay")
 }
 
 // リノートミュート

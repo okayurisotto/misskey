@@ -6,7 +6,7 @@ import { CreateSystemUserService } from '@/core/CreateSystemUserService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { deepClone } from '@/misc/clone.js';
 import { PrismaService } from '@/core/PrismaService.js';
-import type { relay, user } from '@prisma/client';
+import type { Relay, user } from '@prisma/client';
 
 const ACTOR_USERNAME = 'relay.actor' as const;
 
@@ -35,7 +35,7 @@ export class RelayService {
 		return created as LocalUser;
 	}
 
-	public async addRelay(inbox: string): Promise<relay> {
+	public async addRelay(inbox: string): Promise<Relay> {
 		const relay = await this.prismaService.client.relay.create({
 			data: {
 				id: this.idService.genId(),
@@ -73,7 +73,7 @@ export class RelayService {
 		await this.prismaService.client.relay.delete({ where: { id: relay.id } });
 	}
 
-	public async listRelay(): Promise<relay[]> {
+	public async listRelay(): Promise<Relay[]> {
 		const relays = await this.prismaService.client.relay.findMany();
 		return relays;
 	}

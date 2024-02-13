@@ -46,7 +46,7 @@ import type {
 	IUpdate,
 } from './type.js';
 import type {
-	relay,
+	Relay,
 	NoteReaction,
 	CustomEmoji,
 	Blocking,
@@ -215,7 +215,7 @@ export class ApRendererService {
 		};
 	}
 
-	public renderFollowRelay(relay: relay, relayActor: LocalUser): IFollow {
+	public renderFollowRelay(relay: Relay, relayActor: LocalUser): IFollow {
 		return {
 			id: `${this.configLoaderService.data.url}/activities/follow-relay/${relay.id}`,
 			type: 'Follow',
