@@ -25,7 +25,7 @@ export default class extends Endpoint<
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// Remove documents
-			await this.prismaService.client.note_unread.deleteMany({
+			await this.prismaService.client.noteUnread.deleteMany({
 				where: { userId: me.id },
 			});
 

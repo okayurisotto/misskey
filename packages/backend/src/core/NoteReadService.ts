@@ -53,7 +53,7 @@ export class NoteReadService implements OnApplicationShutdown {
 			noteUserId: note.userId,
 		};
 
-		await this.prismaService.client.note_unread.create({ data: unread });
+		await this.prismaService.client.noteUnread.create({ data: unread });
 
 		// 2秒経っても既読にならなかったら「未読の投稿がありますよ」イベントを発行する
 		setTimeout(2000, 'unread note', {
@@ -61,7 +61,7 @@ export class NoteReadService implements OnApplicationShutdown {
 		}).then(
 			async () => {
 				const exist =
-					(await this.prismaService.client.note_unread.count({
+					(await this.prismaService.client.noteUnread.count({
 						where: { id: unread.id },
 						take: 1,
 					})) > 0;
@@ -106,7 +106,7 @@ export class NoteReadService implements OnApplicationShutdown {
 
 		if (readMentions.length > 0 || readSpecifiedNotes.length > 0) {
 			// Remove the record
-			await this.prismaService.client.note_unread.deleteMany({
+			await this.prismaService.client.noteUnread.deleteMany({
 				where: {
 					userId: userId,
 					noteId: {
@@ -118,7 +118,7 @@ export class NoteReadService implements OnApplicationShutdown {
 				},
 			});
 
-			this.prismaService.client.note_unread
+			this.prismaService.client.noteUnread
 				.count({
 					where: {
 						userId: userId,
@@ -135,7 +135,7 @@ export class NoteReadService implements OnApplicationShutdown {
 					}
 				});
 
-			this.prismaService.client.note_unread
+			this.prismaService.client.noteUnread
 				.count({
 					where: {
 						userId: userId,

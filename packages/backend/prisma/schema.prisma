@@ -619,7 +619,7 @@ model AccessToken {
   @@index([token], map: "IDX_70ba8f6af34bc924fc9e12adb8")
   @@index([userId], map: "IDX_9949557d0e1b2c19e5344c171e")
   @@index([session], map: "IDX_bf3a053c07d9fb5d87317c56ee")
-	@@map("access_token")
+  @@map("access_token")
 }
 
 // 広告
@@ -1449,7 +1449,7 @@ model Note {
   mutedNotes    MutedNote[]
   noteFavorites NoteFavorite[]
   noteReactions NoteReaction[]
-  noteUnreads   note_unread[]
+  noteUnreads   NoteUnread[]
   pollVotes     poll_vote[]
   promoReads    promo_read[]
   pinings       user_note_pining[]
@@ -1527,19 +1527,19 @@ model NoteThreadMuting {
 }
 
 // ノートの未読
-model note_unread {
+model NoteUnread {
   id            String  @id(map: "PK_1904eda61a784f57e6e51fa9c1f") @db.VarChar(32)
   isSpecified   Boolean
   isMentioned   Boolean
-  // 非正規化
-  noteUserId    String  @db.VarChar(32)
-  noteChannelId String? @db.VarChar(32)
   //
   userId        String  @db.VarChar(32)
   user          user    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_56b0166d34ddae49d8ef7610bb9")
   //
   noteId        String  @db.VarChar(32)
   note          Note    @relation(fields: [noteId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "FK_e637cba4dc4410218c4251260e4")
+  // 非正規化
+  noteUserId    String  @ignore @db.VarChar(32)
+  noteChannelId String? @ignore @db.VarChar(32)
 
   @@unique([userId, noteId], map: "IDX_d908433a4953cc13216cd9c274")
   @@index([isMentioned], map: "IDX_25b1dd384bec391b07b74b861c")
@@ -1548,6 +1548,7 @@ model note_unread {
   @@index([noteChannelId], map: "IDX_6a57f051d82c6d4036c141e107")
   @@index([isSpecified], map: "IDX_89a29c9237b8c3b6b3cbb4cb30")
   @@index([noteId], map: "IDX_e637cba4dc4410218c4251260e")
+  @@map("note_unread")
 }
 
 // deprecated
@@ -1967,7 +1968,7 @@ model user {
   note_favorite                                             NoteFavorite[]
   note_reaction                                             NoteReaction[]
   note_thread_muting                                        NoteThreadMuting[]
-  note_unread                                               note_unread[]
+  note_unread                                               NoteUnread[]
   page                                                      page[]
   page_like                                                 page_like[]
   password_reset_request                                    password_reset_request[]

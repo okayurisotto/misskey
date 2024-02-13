@@ -21,7 +21,7 @@ import { PageEntityService } from './PageEntityService.js';
 import type {
 	FollowRequest,
 	Note,
-	note_unread,
+	NoteUnread,
 	user,
 	user_memo,
 	user_note_pining,
@@ -313,7 +313,7 @@ export class UserEntityService {
 		data: {
 			user: user[];
 			user_profile: user_profile[];
-			nore_unread: note_unread[];
+			nore_unread: NoteUnread[];
 			follow_request: FollowRequest[];
 		},
 	): Promise<z.infer<typeof MeDetailedOnlySchema>> {
