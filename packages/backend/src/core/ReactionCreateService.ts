@@ -19,27 +19,12 @@ import { MetaService } from '@/core/MetaService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { FALLBACK_REACTION, LEGACY_REACTIONS } from '@/const.js';
 import { UserBlockingCheckService } from './UserBlockingCheckService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { ReactionDecodeService } from './ReactionDecodeService.js';
 import { ReactionDeleteService } from './ReactionDeleteService.js';
 import { NoteVisibilityService } from './entities/NoteVisibilityService.js';
-
-const FALLBACK = '❤';
-
-const legacies = new Map([
-	['like', '👍'],
-	['love', '❤'], // ここに記述する場合は異体字セレクタを入れない
-	['laugh', '😆'],
-	['hmm', '🤔'],
-	['surprise', '😮'],
-	['congrats', '🎉'],
-	['angry', '💢'],
-	['confused', '😥'],
-	['rip', '😇'],
-	['pudding', '🍮'],
-	['star', '⭐'],
-]);
 
 const isCustomEmojiRegexp = /^:([\w+-]+)(?:@\.)?:$/;
 
@@ -90,7 +75,7 @@ export class ReactionCreateService {
 		//#endregion
 
 		//#region Select reaction
-		let reaction = reaction_ ?? FALLBACK;
+		let reaction = reaction_ ?? FALLBACK_REACTION;
 
 		const ReactionAcceptanceSchema = z
 			.enum([
@@ -131,14 +116,14 @@ export class ReactionCreateService {
 
 						// センシティブ
 						if (acceptance === 'nonSensitiveOnly' && emoji.isSensitive) {
-							reaction = FALLBACK;
+							reaction = FALLBACK_REACTION;
 						}
 					} else {
 						// リアクションとして使う権限がない
-						reaction = FALLBACK;
+						reaction = FALLBACK_REACTION;
 					}
 				} else {
-					reaction = FALLBACK;
+					reaction = FALLBACK_REACTION;
 				}
 			} else {
 				reaction = this.normalize(reaction);
@@ -311,11 +296,11 @@ export class ReactionCreateService {
 	}
 
 	private normalize(reaction: string | null): string {
-		if (reaction === null) return FALLBACK;
+		if (reaction === null) return FALLBACK_REACTION;
 
 		// 文字列タイプのリアクションを絵文字に変換
-		const newLocal = legacies.get(reaction);
-		if (newLocal !== undefined) return newLocal;
+		const migratedReaction = LEGACY_REACTIONS.get(reaction);
+		if (migratedReaction !== undefined) return migratedReaction;
 
 		// Unicode絵文字
 		const match = emojiRegex.exec(reaction);
@@ -327,6 +312,6 @@ export class ReactionCreateService {
 			return unicode.match('\u200d') ? unicode : unicode.replace(/\ufe0f/g, '');
 		}
 
-		return FALLBACK;
+		return FALLBACK_REACTION;
 	}
 }

@@ -31,6 +31,10 @@ export const DB_MAX_IMAGE_COMMENT_LENGTH = 512;
  * ブラウザで直接表示することを許可するファイルの種類のリスト。
  * ここに含まれないものは application/octet-stream としてレスポンスされる。
  * SVGはXSSを生むので許可しない。
+ *
+ * https://github.com/sindresorhus/file-type/blob/main/supported.js
+ * https://github.com/sindresorhus/file-type/blob/main/core.js
+ * https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers
  */
 export const FILE_TYPE_BROWSERSAFE = [
 	// Images
@@ -75,8 +79,18 @@ export const FILE_TYPE_BROWSERSAFE = [
 	'audio/vnd.wave',
 ];
 
-/*
- * https://github.com/sindresorhus/file-type/blob/main/supported.js
- * https://github.com/sindresorhus/file-type/blob/main/core.js
- * https://developer.mozilla.org/en-US/docs/Web/Media/Formats/Containers
- */
+export const LEGACY_REACTIONS = new Map([
+	['like', '👍'],
+	['love', '❤'], // ここに記述する場合は異体字セレクタを入れない
+	['laugh', '😆'],
+	['hmm', '🤔'],
+	['surprise', '😮'],
+	['congrats', '🎉'],
+	['angry', '💢'],
+	['confused', '😥'],
+	['rip', '😇'],
+	['pudding', '🍮'],
+	['star', '⭐'],
+]);
+
+export const FALLBACK_REACTION = '❤';
