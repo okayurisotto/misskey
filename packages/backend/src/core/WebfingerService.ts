@@ -13,8 +13,8 @@ export type IWebFinger = {
 	subject: string;
 };
 
-const urlPattern = /^https?:\/\//;
-const mentionPattern = /^([^@]+)@(.*)/;
+const URL_PATTERN = /^https?:\/\//;
+const MENTION_PATTERN = /^([^@]+)@(.*)/;
 
 @Injectable()
 export class WebfingerService {
@@ -30,7 +30,7 @@ export class WebfingerService {
 	}
 
 	private genUrl(query: string): string {
-		if (urlPattern.test(query)) {
+		if (URL_PATTERN.test(query)) {
 			const parsedUrl = new URL(query);
 			const url = new URL(
 				'/.well-known/webfinger',
@@ -40,7 +40,7 @@ export class WebfingerService {
 			return url.href;
 		}
 
-		const mention = query.match(mentionPattern);
+		const mention = query.match(MENTION_PATTERN);
 		if (mention) {
 			const hostname = mention[2];
 			const useHttp =

@@ -14,6 +14,7 @@ import { MetaService } from '@/core/MetaService.js';
 import { checkHttps } from '@/misc/check-https.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { AP_NAME_MAX_LENGTH, AP_SUMMARY_MAX_LENGTH } from '@/const.js';
 import { getApId, getApType, getOneApHrefNullable } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import { ApMfmService } from '../ApMfmService.js';
@@ -25,9 +26,6 @@ import { ApPersonFeaturedUpdateService } from './ApPersonFeaturedUpdateService.j
 import { ApHostPunycodeService } from './ApHostPunycodeService.js';
 import { ApActorValidateService } from './ApActorValidateService.js';
 import { ApNoteEmojiExtractService } from './ApNoteEmojiExtractService.js';
-
-const nameLength = 128;
-const summaryLength = 2048;
 
 @Injectable()
 export class ApPersonCreateService {
@@ -123,7 +121,7 @@ export class ApPersonCreateService {
 					bannerId: null,
 					createdAt: new Date(),
 					lastFetchedAt: new Date(),
-					name: truncate(person.name, nameLength),
+					name: truncate(person.name, AP_NAME_MAX_LENGTH),
 					isLocked: person.manuallyApprovesFollowers,
 					movedToUri: person.movedTo,
 					movedAt: person.movedTo ? new Date() : null,
@@ -148,7 +146,7 @@ export class ApPersonCreateService {
 						create: {
 							description: person.summary
 								? this.apMfmService.htmlToMfm(
-										truncate(person.summary, summaryLength),
+										truncate(person.summary, AP_SUMMARY_MAX_LENGTH),
 										person.tag,
 								  )
 								: null,

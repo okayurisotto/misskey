@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { truncate } from '@/misc/truncate.js';
+import { AP_NAME_MAX_LENGTH, AP_SUMMARY_MAX_LENGTH } from '@/const.js';
 import { isActor } from '../type.js';
 import { ApHostPunycodeService } from './ApHostPunycodeService.js';
 import type { IActor, IObject } from '../type.js';
-
-const nameLength = 128;
-const summaryLength = 2048;
 
 @Injectable()
 export class ApActorValidateService {
@@ -49,7 +47,7 @@ export class ApActorValidateService {
 			if (!(typeof x.name === 'string' && x.name.length > 0)) {
 				throw new Error('invalid Actor: wrong name');
 			}
-			x.name = truncate(x.name, nameLength);
+			x.name = truncate(x.name, AP_NAME_MAX_LENGTH);
 		} else if (x.name === '') {
 			// Mastodon emits empty string when the name is not set.
 			x.name = undefined;
@@ -58,7 +56,7 @@ export class ApActorValidateService {
 			if (!(typeof x.summary === 'string' && x.summary.length > 0)) {
 				throw new Error('invalid Actor: wrong summary');
 			}
-			x.summary = truncate(x.summary, summaryLength);
+			x.summary = truncate(x.summary, AP_SUMMARY_MAX_LENGTH);
 		}
 
 		const idHost = this.apHostPunycodeService.punyHost(x.id);

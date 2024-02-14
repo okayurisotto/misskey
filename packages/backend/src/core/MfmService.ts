@@ -10,8 +10,8 @@ import type * as mfm from 'mfm-js';
 
 const treeAdapter = TreeAdapter.defaultTreeAdapter;
 
-const urlRegex = /^https?:\/\/[\w/:%#@$&?!()[\]~.,=+-]+/;
-const urlRegexFull = /^https?:\/\/[\w/:%#@$&?!()[\]~.,=+-]+$/;
+const URL_REGEX = /^https?:\/\/[\w/:%#@$&?!()[\]~.,=+-]+/;
+const URL_REGEX_FULL = /^https?:\/\/[\w/:%#@$&?!()[\]~.,=+-]+$/;
 
 @Injectable()
 export class MfmService {
@@ -104,15 +104,15 @@ export class MfmService {
 							}
 							if (!txt || txt === href.value) {
 								// #6383: Missing text node
-								if (href.value.match(urlRegexFull)) {
+								if (href.value.match(URL_REGEX_FULL)) {
 									return href.value;
 								} else {
 									return `<${href.value}>`;
 								}
 							}
 							if (
-								href.value.match(urlRegex) &&
-								!href.value.match(urlRegexFull)
+								href.value.match(URL_REGEX) &&
+								!href.value.match(URL_REGEX_FULL)
 							) {
 								return `[${txt}](<${href.value}>)`; // #6846
 							} else {

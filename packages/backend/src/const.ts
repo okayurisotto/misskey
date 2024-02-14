@@ -6,6 +6,9 @@ export const ID_GENERATION_METHODS = [
 	'objectid',
 ] as const;
 
+export const AP_NAME_MAX_LENGTH = 128;
+export const AP_SUMMARY_MAX_LENGTH = 2048;
+
 export const MAX_NOTE_TEXT_LENGTH = 3000;
 
 export const USER_ONLINE_THRESHOLD = 1000 * 60 * 10; // 10min

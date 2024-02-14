@@ -7,9 +7,10 @@ import { name, schema } from './entities/active-users.js';
 import type { KVs } from '../core.js';
 import type { User } from '@prisma/client';
 
-const week = 1000 * 60 * 60 * 24 * 7;
-const month = 1000 * 60 * 60 * 24 * 30;
-const year = 1000 * 60 * 60 * 24 * 365;
+const DAY = 1000 * 60 * 60 * 24;
+const WEEK = DAY * 7;
+const MONTH = DAY * 30;
+const YEAR = DAY * 365;
 
 /**
  * アクティブユーザーに関するチャート
@@ -47,17 +48,17 @@ export default class ActiveUsersChart extends Chart<typeof schema> {
 		await this.commit({
 			read: [user.id],
 			registeredWithinWeek:
-				Date.now() - user.createdAt.getTime() < week ? [user.id] : [],
+				Date.now() - user.createdAt.getTime() < WEEK ? [user.id] : [],
 			registeredWithinMonth:
-				Date.now() - user.createdAt.getTime() < month ? [user.id] : [],
+				Date.now() - user.createdAt.getTime() < MONTH ? [user.id] : [],
 			registeredWithinYear:
-				Date.now() - user.createdAt.getTime() < year ? [user.id] : [],
+				Date.now() - user.createdAt.getTime() < YEAR ? [user.id] : [],
 			registeredOutsideWeek:
-				Date.now() - user.createdAt.getTime() > week ? [user.id] : [],
+				Date.now() - user.createdAt.getTime() > WEEK ? [user.id] : [],
 			registeredOutsideMonth:
-				Date.now() - user.createdAt.getTime() > month ? [user.id] : [],
+				Date.now() - user.createdAt.getTime() > MONTH ? [user.id] : [],
 			registeredOutsideYear:
-				Date.now() - user.createdAt.getTime() > year ? [user.id] : [],
+				Date.now() - user.createdAt.getTime() > YEAR ? [user.id] : [],
 		});
 	}
 

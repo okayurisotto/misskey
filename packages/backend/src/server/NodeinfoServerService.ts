@@ -11,8 +11,8 @@ import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityPackLiteService } from '@/core/entities/UserEntityPackLiteService.js';
 import type { FastifyInstance, FastifyPluginOptions } from 'fastify';
 
-const nodeinfo2_1path = '/nodeinfo/2.1';
-const nodeinfo2_0path = '/nodeinfo/2.0';
+const NODEINFO2_1PATH = '/nodeinfo/2.1';
+const NODEINFO2_0PATH = '/nodeinfo/2.0';
 
 type NodeInfo2 = {
 	software: {
@@ -78,7 +78,7 @@ export class NodeinfoServerService {
 			href: config.url + nodeinfo2_1path
 		}, */ {
 				rel: 'http://nodeinfo.diaspora.software/ns/schema/2.0',
-				href: this.configLoaderService.data.url + nodeinfo2_0path,
+				href: this.configLoaderService.data.url + NODEINFO2_0PATH,
 			},
 		];
 	}
@@ -177,14 +177,14 @@ export class NodeinfoServerService {
 			};
 		};
 
-		fastify.get(nodeinfo2_1path, async (request, reply) => {
+		fastify.get(NODEINFO2_1PATH, async (request, reply) => {
 			const base = await nodeinfo2();
 
 			reply.header('Cache-Control', 'public, max-age=600');
 			return { version: '2.1', ...base };
 		});
 
-		fastify.get(nodeinfo2_0path, async (request, reply) => {
+		fastify.get(NODEINFO2_0PATH, async (request, reply) => {
 			const base = await nodeinfo2();
 
 			delete (base as any).software.repository;

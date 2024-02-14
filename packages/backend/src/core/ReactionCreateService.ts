@@ -26,7 +26,7 @@ import { ReactionDecodeService } from './ReactionDecodeService.js';
 import { ReactionDeleteService } from './ReactionDeleteService.js';
 import { NoteVisibilityService } from './entities/NoteVisibilityService.js';
 
-const isCustomEmojiRegexp = /^:([\w+-]+)(?:@\.)?:$/;
+const IS_CUSTOM_EMOJI_REGEXP = /^:([\w+-]+)(?:@\.)?:$/;
 
 @Injectable()
 export class ReactionCreateService {
@@ -96,7 +96,7 @@ export class ReactionCreateService {
 		) {
 			reaction = '❤️';
 		} else if (reaction_) {
-			const custom = reaction.match(isCustomEmojiRegexp);
+			const custom = reaction.match(IS_CUSTOM_EMOJI_REGEXP);
 			if (custom) {
 				const reacterHost = this.utilityService.toPunyNullable(user.host);
 

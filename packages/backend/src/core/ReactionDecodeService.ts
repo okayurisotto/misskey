@@ -17,12 +17,12 @@ type DecodedReaction = {
 	host?: string | null;
 };
 
-const decodeCustomEmojiRegexp = /^:([\w+-]+)(?:@([\w.-]+))?:$/;
+const DECODE_CUSTOM_EMOJI_REGEXP = /^:([\w+-]+)(?:@([\w.-]+))?:$/;
 
 @Injectable()
 export class ReactionDecodeService {
 	public decode(str: string): DecodedReaction {
-		const custom = str.match(decodeCustomEmojiRegexp);
+		const custom = str.match(DECODE_CUSTOM_EMOJI_REGEXP);
 
 		if (custom) {
 			const name = custom.at(1);

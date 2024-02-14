@@ -4,7 +4,7 @@ import { format as dateFormat } from 'date-fns';
 import type { KEYWORD } from 'color-convert/conversions.js';
 
 /** ログ種別と接頭辞の対応 */
-const logPrefixes = {
+const LOG_PREFIXES = {
 	error: 'ERR',
 	success: 'DONE',
 	warning: 'WARN',
@@ -13,7 +13,7 @@ const logPrefixes = {
 } as const satisfies Record<string, string>;
 
 /** ログ種別 */
-export type LogLevel = keyof typeof logPrefixes;
+export type LogLevel = keyof typeof LOG_PREFIXES;
 
 /** ログ自体に「どういった文脈で発生したものか」を含めるために使われるデータ */
 export type LoggerContext = {
@@ -75,7 +75,7 @@ export class LogBuilder {
 			}
 		}
 
-		this.levelPrefix = chalkInstance(logPrefixes[level]).padEnd(
+		this.levelPrefix = chalkInstance(LOG_PREFIXES[level]).padEnd(
 			this.LOG_PREFIX_MAX_LENGTH,
 		);
 	}

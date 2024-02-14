@@ -6,7 +6,7 @@ import { RedisService } from '@/core/RedisService.js';
 /**
  * Retry delay (ms) for lock acquisition
  */
-const retryDelay = 100;
+const RETRY_DELAY = 100;
 
 @Injectable()
 export class AppLockService {
@@ -17,7 +17,7 @@ export class AppLockService {
 	) => Promise<() => void>;
 
 	constructor(private readonly redisClient: RedisService) {
-		this.lock = promisify(redisLock(this.redisClient, retryDelay));
+		this.lock = promisify(redisLock(this.redisClient, RETRY_DELAY));
 	}
 
 	/**

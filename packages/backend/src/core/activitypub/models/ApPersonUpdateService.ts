@@ -9,6 +9,7 @@ import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 import { AccountMovingPostProcessService } from '@/core/AccountMovingPostProcessService.js';
+import { AP_NAME_MAX_LENGTH, AP_SUMMARY_MAX_LENGTH } from '@/const.js';
 import { getApId, getApType, getOneApHrefNullable } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import { ApMfmService } from '../ApMfmService.js';
@@ -22,9 +23,6 @@ import { ApActorValidateService } from './ApActorValidateService.js';
 import { ApNoteEmojiExtractService } from './ApNoteEmojiExtractService.js';
 import { ApPersonResolveService } from './ApPersonResolveService.js';
 import type { IObject } from '../type.js';
-
-const nameLength = 128;
-const summaryLength = 2048;
 
 @Injectable()
 export class ApPersonUpdateService {
@@ -121,7 +119,7 @@ export class ApPersonUpdateService {
 			followersUri: person.followers ? getApId(person.followers) : undefined,
 			featured: person.featured,
 			emojis: emojiNames,
-			name: truncate(person.name, nameLength),
+			name: truncate(person.name, AP_NAME_MAX_LENGTH),
 			tags,
 			isBot: getApType(object) === 'Service',
 			isCat: person.isCat === true,
@@ -175,7 +173,7 @@ export class ApPersonUpdateService {
 				fields,
 				description: person.summary
 					? this.apMfmService.htmlToMfm(
-							truncate(person.summary, summaryLength),
+							truncate(person.summary, AP_SUMMARY_MAX_LENGTH),
 							person.tag,
 					  )
 					: null,

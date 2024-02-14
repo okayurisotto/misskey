@@ -20,7 +20,7 @@ import type { OnApplicationShutdown } from '@nestjs/common';
 import type { IEndpointMeta, IEndpoint } from './endpoints.js';
 import type { AccessToken } from '@prisma/client';
 
-const accessDenied = {
+const ACCESS_DENIED = {
 	message: 'Access denied.',
 	code: 'ACCESS_DENIED',
 	id: '56f35758-7dd5-468b-8439-5d6fb8ec9b8e',
@@ -225,7 +225,7 @@ export class ApiCallService implements OnApplicationShutdown {
 		const isSecure = user != null && token == null;
 
 		if (ep.meta.secure && !isSecure) {
-			throw new ApiError(accessDenied);
+			throw new ApiError(ACCESS_DENIED);
 		}
 
 		if (ep.meta.limit) {

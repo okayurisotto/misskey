@@ -41,7 +41,7 @@ const _dirname = dirname(_filename);
  * b75184ec8 によりバグるようになった。
  * 現時点までこのバグが問題になっていないということはデッドコードである可能性が高い。
  */
-const assets = `${_dirname}/../../server/file/assets/`;
+const ASSETS_DIR = `${_dirname}/../../server/file/assets/`;
 
 @Injectable()
 export class FileServerService {
@@ -123,7 +123,7 @@ export class FileServerService {
 		reply.header('Cache-Control', 'max-age=300');
 
 		if (request.query && 'fallback' in request.query) {
-			return reply.sendFile('/dummy.png', assets);
+			return reply.sendFile('/dummy.png', ASSETS_DIR);
 		}
 
 		if (
@@ -148,7 +148,7 @@ export class FileServerService {
 		if (file === '404') {
 			reply.code(404);
 			reply.header('Cache-Control', 'max-age=86400');
-			return reply.sendFile('/dummy.png', assets);
+			return reply.sendFile('/dummy.png', ASSETS_DIR);
 		}
 
 		if (file === '204') {
@@ -321,7 +321,7 @@ export class FileServerService {
 		if (file === '404') {
 			reply.code(404);
 			reply.header('Cache-Control', 'max-age=86400');
-			return reply.sendFile('/dummy.png', assets);
+			return reply.sendFile('/dummy.png', ASSETS_DIR);
 		}
 
 		if (file === '204') {

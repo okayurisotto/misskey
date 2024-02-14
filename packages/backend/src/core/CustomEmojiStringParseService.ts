@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { UtilityService } from '@/core/UtilityService.js';
 
-const parseEmojiStrRegexp = /^(\w+)(?:@([\w.-]+))?$/;
+const PARSE_EMOJI_STR_REGEXP = /^(\w+)(?:@([\w.-]+))?$/;
 
 @Injectable()
 export class CustomEmojiStringParseService {
@@ -34,7 +34,7 @@ export class CustomEmojiStringParseService {
 	):
 		| { name: null; host: null }
 		| { name: string | undefined; host: string | null } {
-		const match = emojiName.match(parseEmojiStrRegexp);
+		const match = emojiName.match(PARSE_EMOJI_STR_REGEXP);
 		if (!match) return { name: null, host: null };
 
 		const name = match.at(1);
