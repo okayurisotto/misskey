@@ -8,42 +8,31 @@ export class CustomEmojiStringParseService {
 	constructor(private readonly utilityService: UtilityService) {}
 
 	private normalizeHost(
-		src: string | undefined,
+		src: string,
 		noteUserHost: string | null,
 	): string | null {
-		const host = ((): string | null => {
-			// .はローカルホスト (ここがマッチするのはリアクションのみ)
-			if (src === '.') return null;
-
-			// ノートなどでホスト省略表記の場合はローカルホスト (ここがリアクションにマッチすることはない)
-			if (src === undefined) return noteUserHost;
-
-			// 自ホスト指定
-			if (this.utilityService.isSelfHost(src)) return null;
-
-			// 指定されたホスト || ノートなどの所有者のホスト (こっちがリアクションにマッチすることはない)
-			return src || noteUserHost;
-		})();
-
-		return this.utilityService.toPunyNullable(host);
+		if (src === '.') return null;
+		if (this.utilityService.isSelfHost(src)) return null;
+		if (noteUserHost === null) return null;
+		return this.utilityService.toPuny(noteUserHost);
 	}
 
 	public parse(
 		emojiName: string,
 		noteUserHost: string | null,
-	):
-		| { name: null; host: null }
-		| { name: string | undefined; host: string | null } {
-		const match = emojiName.match(PARSE_EMOJI_STR_REGEXP);
-		if (!match) return { name: null, host: null };
+	): null | { name: string; host: string | null } {
+		const matchResult = emojiName.match(PARSE_EMOJI_STR_REGEXP);
+		if (matchResult === null) return null;
 
-		const name = match.at(1);
+		const namePart = matchResult.at(1);
+		if (namePart === undefined) throw new Error();
 
-		// ホスト正規化
-		const host = this.utilityService.toPunyNullable(
-			this.normalizeHost(match.at(2), noteUserHost),
-		);
+		const hostPart = matchResult.at(2);
+		if (hostPart === undefined) throw new Error();
 
-		return { name, host };
+		return {
+			name: namePart,
+			host: this.normalizeHost(hostPart, noteUserHost),
+		};
 	}
 }

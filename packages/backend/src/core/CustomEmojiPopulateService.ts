@@ -27,7 +27,7 @@ export class CustomEmojiPopulateService {
 					emojiName,
 					host,
 				);
-				if (result.name == null) return null;
+				if (result === null) return null;
 				if (result.host === null) return null;
 
 				return { value: emojiName, result: result };
