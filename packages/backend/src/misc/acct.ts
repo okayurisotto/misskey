@@ -1,10 +1,19 @@
-export type Acct = {
+export interface Acct {
 	username: string;
 	host: string | null;
-};
-
-export function parse(acct: string): Acct {
-	if (acct.startsWith('@')) acct = acct.substring(1);
-	const split = acct.split('@', 2);
-	return { username: split[0], host: split[1] ?? null };
 }
+
+export const parse = (acct: string): Acct => {
+	if (acct.startsWith('@')) {
+		return parse(acct.substring(1));
+	}
+
+	const split = acct.split('@', 2);
+
+	const username = split[0];
+	if (username === undefined) throw new Error();
+
+	const host = split[1] ?? null;
+
+	return { username, host };
+};
