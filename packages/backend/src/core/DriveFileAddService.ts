@@ -88,14 +88,16 @@ export class DriveFileAddService {
 		user: RemoteUser,
 		driveCapacity: number,
 	): Promise<void> {
-		const fileList = await this.prismaService.client.driveFile.findMany({
+		const files = await this.prismaService.client.driveFile.findMany({
 			where: {
 				userId: user.id,
 				isLink: false,
-				AND: [
-					...(user.avatarId === null ? [] : [{ id: { not: user.avatarId } }]),
-					...(user.bannerId === null ? [] : [{ id: { not: user.bannerId } }]),
-				],
+				id: {
+					notIn: [
+						...(user.avatarId === null ? [] : [user.avatarId]),
+						...(user.bannerId === null ? [] : [user.bannerId]),
+					],
+				},
 			},
 			orderBy: { id: 'desc' },
 		});
@@ -103,22 +105,18 @@ export class DriveFileAddService {
 		let acc_usage = 0;
 		let index = -1;
 
-		for (const file of fileList) {
+		for (const file of files) {
 			if (acc_usage > driveCapacity) break;
 
 			acc_usage += file.size;
 			index++;
 		}
 
-		const exceedFileIds = fileList.slice(index).map((file) => file.id);
-
-		for (const fileId of exceedFileIds) {
-			const file = await this.prismaService.client.driveFile.findUnique({
-				where: { id: fileId },
-			});
-			if (file == null) continue;
-			this.driveFileDeleteService.delete(file, true);
-		}
+		await Promise.all(
+			files.slice(index).map(async (file) => {
+				await this.driveFileDeleteService.delete(file, true);
+			}),
+		);
 	}
 
 	public async add({
