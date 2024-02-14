@@ -114,12 +114,14 @@ export class AccountMovingPostProcessService {
 		}
 
 		// FIXME: expensive?
-		for (const followerId of localFollowerIds) {
-			await this.perUserFollowingChart.update(
-				{ id: followerId, host: null },
-				oldAccount,
-				false,
-			);
-		}
+		await Promise.all(
+			localFollowerIds.map(async (followerId) => {
+				await this.perUserFollowingChart.update(
+					{ id: followerId, host: null },
+					oldAccount,
+					false,
+				);
+			}),
+		);
 	}
 }
