@@ -45,7 +45,7 @@ export default class extends Endpoint<
 				app: new EntityMap('id', results),
 				access_token: new EntityMap(
 					'id',
-					results.map(({ accessTokens }) => accessTokens).flat(),
+					results.flatMap(({ accessTokens }) => accessTokens),
 				),
 			};
 

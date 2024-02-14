@@ -37,7 +37,7 @@ export class ExportUserListsProcessorService {
 		if (user === null) return;
 
 		const content = user.userLists
-			.map((list) => {
+			.flatMap((list) => {
 				return list.user_list_joining
 					.map(({ user }) => {
 						return this.utilityService.getFullApAccount(
@@ -47,7 +47,6 @@ export class ExportUserListsProcessorService {
 					})
 					.map((acct) => [list.name, acct].join(','));
 			})
-			.flat()
 			.map((entry) => entry + '\n')
 			.join('');
 

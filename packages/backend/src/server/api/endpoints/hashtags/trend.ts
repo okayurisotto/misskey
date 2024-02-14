@@ -69,8 +69,9 @@ export default class extends Endpoint<
 
 			const tags = [
 				...tagNotes
-					.map((note) => note.tags.map((tag) => ({ tag, userId: note.userId })))
-					.flat()
+					.flatMap((note) => {
+						return note.tags.map((tag) => ({ tag, userId: note.userId }));
+					})
 					.filter((entry) => !hiddenTags.includes(entry.tag))
 					.reduce<Map<string, string[]>>((acc, entry) => {
 						const prevUserIds = acc.get(entry.tag) ?? [];

@@ -74,13 +74,11 @@ export class AbuseUserReportFetchingService {
 			report: new EntityMap('id', reports),
 			user: new EntityMap(
 				'id',
-				reports
-					.map((report) => [
-						report.assignee,
-						report.reporter,
-						report.targetUser,
-					])
-					.flat(),
+				reports.flatMap((report) => [
+					report.assignee,
+					report.reporter,
+					report.targetUser,
+				]),
 			),
 		};
 

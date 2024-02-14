@@ -65,7 +65,7 @@ export class FeedService {
 
 		const allFiles = await this.prismaService.client.driveFile.findMany({
 			where: {
-				id: { in: unique(user.notes.map(({ fileIds }) => fileIds).flat()) },
+				id: { in: unique(user.notes.flatMap(({ fileIds }) => fileIds)) },
 				type: { startsWith: 'image/' },
 			},
 		});

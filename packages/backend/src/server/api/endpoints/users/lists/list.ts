@@ -65,7 +65,7 @@ export default class extends Endpoint<
 				user_list: new EntityMap('id', userLists),
 				user_list_joining: new EntityMap(
 					'id',
-					userLists.map(({ user_list_joining }) => user_list_joining).flat(),
+					userLists.flatMap(({ user_list_joining }) => user_list_joining),
 				),
 			};
 

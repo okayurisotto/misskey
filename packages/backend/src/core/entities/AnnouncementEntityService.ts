@@ -55,7 +55,7 @@ export class AnnouncementEntityService {
 				announcement: new EntityMap('id', results),
 				announcement_read: new EntityMap(
 					'id',
-					results.map((v) => v.reads).flat(),
+					results.flatMap((v) => v.reads),
 				),
 			},
 		);

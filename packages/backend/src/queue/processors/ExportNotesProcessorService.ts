@@ -34,7 +34,7 @@ export class ExportNotesProcessorService {
 		});
 		if (user === null) return;
 
-		const allFileIds = unique(user.notes.map((note) => note.fileIds).flat());
+		const allFileIds = unique(user.notes.flatMap((note) => note.fileIds));
 		const allFiles =
 			await this.driveFileEntityPackService.packManyByIdsMap(allFileIds);
 		const content = user.notes.map((note) => ({

@@ -38,22 +38,18 @@ export class PageEntityService {
 			xs: z.infer<typeof PageContentSchema>,
 			userId: string,
 		): Promise<DriveFile | null>[] => {
-			return xs
-				.map((x) => {
-					return [
-						...(x.type === 'image' && x.fileId !== undefined
-							? [
-									this.prismaService.client.driveFile.findUnique({
-										where: { id: x.fileId, userId },
-									}),
-							  ]
-							: []),
-						...('children' in x && x.children !== undefined
-							? collectFiles(x.children, userId)
-							: []),
-					];
-				})
-				.flat();
+			return xs.flatMap((x) => [
+				...(x.type === 'image' && x.fileId !== undefined
+					? [
+							this.prismaService.client.driveFile.findUnique({
+								where: { id: x.fileId, userId },
+							}),
+					  ]
+					: []),
+				...('children' in x && x.children !== undefined
+					? collectFiles(x.children, userId)
+					: []),
+			]);
 		};
 
 		const content = PageContentSchema.parse(page.content);
