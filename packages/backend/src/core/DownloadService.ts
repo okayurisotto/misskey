@@ -151,11 +151,16 @@ export class DownloadService {
 	private isPrivateIp(ip: string): boolean {
 		const parsedIp = ipaddr.parse(ip);
 
-		for (const net of this.configLoaderService.data.allowedPrivateNetworks) {
-			if (parsedIp.match(ipaddr.parseCIDR(net))) {
-				return false;
-			}
-		}
+		const allowedPrivateNetworks =
+			this.configLoaderService.data.allowedPrivateNetworks.map((net) => {
+				return ipaddr.parseCIDR(net);
+			});
+
+		const isAllowdedPrivateNetwork = allowedPrivateNetworks.some((net) => {
+			return parsedIp.match(net);
+		});
+
+		if (isAllowdedPrivateNetwork) return false;
 
 		return parsedIp.range() !== 'unicast';
 	}
