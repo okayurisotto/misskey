@@ -13,7 +13,10 @@ export class CustomEmojiAliasService {
 		private readonly prismaService: PrismaService,
 	) {}
 
-	public async setBulk(ids: CustomEmoji['id'][], aliases: string[]): Promise<void> {
+	public async setBulk(
+		ids: CustomEmoji['id'][],
+		aliases: string[],
+	): Promise<void> {
 		await this.prismaService.client.customEmoji.updateMany({
 			where: { id: { in: ids } },
 			data: {
@@ -25,16 +28,21 @@ export class CustomEmojiAliasService {
 		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { id: { in: ids } },
 		});
-		const data = { emoji: new EntityMap('id', emojis) };
+		const data = {
+			emoji: new EntityMap('id', emojis),
+		};
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: emojis.map((emoji) =>
-				this.emojiEntityService.packDetailed(emoji.id, data),
-			),
+			emojis: emojis.map((emoji) => {
+				return this.emojiEntityService.packDetailed(emoji.id, data);
+			}),
 		});
 	}
 
-	public async addBulk(ids: CustomEmoji['id'][], aliases: string[]): Promise<void> {
+	public async addBulk(
+		ids: CustomEmoji['id'][],
+		aliases: string[],
+	): Promise<void> {
 		const emojis = await this.prismaService.client.customEmoji.findMany({
 			where: { id: { in: ids } },
 		});
@@ -54,9 +62,9 @@ export class CustomEmojiAliasService {
 		};
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
-			emojis: emojis.map((emoji) =>
-				this.emojiEntityService.packDetailed(emoji.id, data),
-			),
+			emojis: emojis.map((emoji) => {
+				return this.emojiEntityService.packDetailed(emoji.id, data);
+			}),
 		});
 	}
 
@@ -78,7 +86,9 @@ export class CustomEmojiAliasService {
 			});
 		}
 
-		const data = { emoji: new EntityMap('id', emojis) };
+		const data = {
+			emoji: new EntityMap('id', emojis),
+		};
 
 		this.globalEventService.publishBroadcastStream('emojiUpdated', {
 			emojis: emojis.map((emoji) =>
