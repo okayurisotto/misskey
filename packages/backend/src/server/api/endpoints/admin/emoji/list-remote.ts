@@ -1,11 +1,11 @@
 import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { EmojiEntityService } from '@/core/entities/EmojiEntityService.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { EntityMap } from '@/misc/EntityMap.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 
 const res = z.array(
 	z.object({
@@ -47,9 +47,9 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly utilityService: UtilityService,
 		private readonly emojiEntityService: EmojiEntityService,
 		private readonly prismaService: PrismaService,
+		private readonly hostFactory: HostFactory,
 	) {
 		super(meta, paramDef, async (ps) => {
 			const emojis = await this.prismaService.client.customEmoji.findMany({
@@ -59,7 +59,7 @@ export default class extends Endpoint<
 						{ id: { lt: ps.untilId } },
 						ps.host == null
 							? { host: { not: null } }
-							: { host: this.utilityService.toPuny(ps.host) },
+							: { host: this.hostFactory.create(ps.host).toASCII() },
 						ps.query ? { name: { contains: ps.query } } : {},
 					],
 				},

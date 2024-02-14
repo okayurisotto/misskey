@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { InstanceActorService } from '@/core/InstanceActorService.js';
 import type { Config } from '@/ConfigLoaderService.js';
-import { MetaService } from '@/core/MetaService.js';
 import { HttpRequestService } from '@/core/HttpRequestService.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import { isCollectionOrOrderedCollection } from './type.js';
 import { ApRendererService } from './ApRendererService.js';
 import { ApRequestService } from './ApRequestService.js';
@@ -22,12 +22,13 @@ export class Resolver {
 
 		private readonly utilityService: UtilityService,
 		private readonly instanceActorService: InstanceActorService,
-		private readonly metaService: MetaService,
 		private readonly apRequestService: ApRequestService,
 		private readonly httpRequestService: HttpRequestService,
 		private readonly apRendererService: ApRendererService,
 		private readonly prismaService: PrismaService,
 		private readonly apUriParseService: ApUriParseService,
+		private readonly hostFactory: HostFactory,
+
 		private readonly recursionLimit = 100,
 	) {
 		this.history = new Set();
@@ -74,13 +75,14 @@ export class Resolver {
 
 		this.history.add(value);
 
-		const host = this.utilityService.extractDbHost(value);
-		if (this.utilityService.isSelfHost(host)) {
+		const host = this.hostFactory.create(
+			this.utilityService.extractDbHost(value),
+		);
+		if (host.isSelf()) {
 			return await this.resolveLocal(value);
 		}
 
-		const meta = await this.metaService.fetch();
-		if (this.utilityService.isBlockedHost(meta.blockedHosts, host)) {
+		if (await host.isBlocked()) {
 			throw new Error('Instance is blocked');
 		}
 
@@ -194,9 +196,9 @@ export class ApResolverService {
 		private readonly configLoaderService: ConfigLoaderService,
 		private readonly httpRequestService: HttpRequestService,
 		private readonly instanceActorService: InstanceActorService,
-		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
 		private readonly utilityService: UtilityService,
+		private readonly hostFactory: HostFactory,
 	) {}
 
 	public createResolver(): Resolver {
@@ -204,12 +206,13 @@ export class ApResolverService {
 			this.configLoaderService.data,
 			this.utilityService,
 			this.instanceActorService,
-			this.metaService,
 			this.apRequestService,
 			this.httpRequestService,
 			this.apRendererService,
 			this.prismaService,
 			this.apUriParseService,
+			this.hostFactory,
+			undefined,
 		);
 	}
 }

@@ -2,9 +2,9 @@ import * as fs from 'node:fs';
 import { Injectable } from '@nestjs/common';
 import { format as dateFormat } from 'date-fns';
 import { createTemp } from '@/misc/create-temp.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { DriveFileAddService } from '@/core/DriveFileAddService.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
 import type { DbJobDataWithUser } from '../types.js';
@@ -14,10 +14,10 @@ export class ExportBlockingProcessorService {
 	private readonly logger;
 
 	constructor(
-		private readonly utilityService: UtilityService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
 		private readonly driveFileAddService: DriveFileAddService,
+		private readonly acctFactory: AcctFactory,
 	) {
 		this.logger =
 			this.queueLoggerService.logger.createSubLogger('export-blocking');
@@ -43,7 +43,7 @@ export class ExportBlockingProcessorService {
 			const content = user.blockings_blocker
 				.map((blocking) => {
 					const user = blocking.blockee;
-					return this.utilityService.getFullApAccount(user.username, user.host);
+					return this.acctFactory.create(user.username, user.host).formatLong();
 				})
 				.map((entry) => entry + '\n')
 				.join('');

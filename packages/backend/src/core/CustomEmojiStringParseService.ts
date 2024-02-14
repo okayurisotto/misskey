@@ -1,20 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { UtilityService } from '@/core/UtilityService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 
 const PARSE_EMOJI_STR_REGEXP = /^(\w+)(?:@([\w.-]+))?$/;
 
 @Injectable()
 export class CustomEmojiStringParseService {
-	constructor(private readonly utilityService: UtilityService) {}
+	constructor(private readonly hostFactory: HostFactory) {}
 
 	private normalizeHost(
 		src: string,
 		noteUserHost: string | null,
 	): string | null {
 		if (src === '.') return null;
-		if (this.utilityService.isSelfHost(src)) return null;
+		const host = this.hostFactory.create(src);
+		if (host.isSelf()) return null;
 		if (noteUserHost === null) return null;
-		return this.utilityService.toPuny(noteUserHost);
+		return host.toASCII();
 	}
 
 	public parse(

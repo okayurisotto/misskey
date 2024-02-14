@@ -11,6 +11,7 @@ import { UtilityService } from '@/core/UtilityService.js';
 import { checkHttps } from '@/misc/check-https.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import {
 	getOneApId,
 	getApId,
@@ -55,6 +56,7 @@ export class ApNoteService {
 		private readonly pollService: PollService,
 		private readonly prismaService: PrismaService,
 		private readonly utilityService: UtilityService,
+		private readonly hostFactory: HostFactory,
 	) {
 		this.logger = this.apLoggerService.logger;
 	}
@@ -345,13 +347,7 @@ export class ApNoteService {
 		const uri = getApId(value);
 
 		// ブロックしていたら中断
-		const meta = await this.metaService.fetch();
-		if (
-			this.utilityService.isBlockedHost(
-				meta.blockedHosts,
-				this.utilityService.extractDbHost(uri),
-			)
-		) {
+		if (await this.hostFactory.create(uri).isBlocked()) {
 			throw new StatusError('blocked host', 451);
 		}
 

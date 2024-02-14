@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import * as Acct from '@/misc/acct.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { DownloadService } from '@/core/DownloadService.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { QueueService } from '@/core/QueueService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
@@ -15,11 +14,11 @@ export class ImportFollowingProcessorService {
 
 	constructor(
 		private readonly queueService: QueueService,
-		private readonly utilityService: UtilityService,
 		private readonly remoteUserResolveService: RemoteUserResolveService,
 		private readonly downloadService: DownloadService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
+		private readonly acctFactory: AcctFactory,
 	) {
 		this.logger =
 			this.queueLoggerService.logger.createSubLogger('import-following');
@@ -55,33 +54,21 @@ export class ImportFollowingProcessorService {
 		const user = job.data.user;
 
 		try {
-			const acct = line.split(',')[0].trim();
-			const { username, host } = Acct.parse(acct);
+			const acctStr = line.split(',')[0]?.trim();
+			if (acctStr === undefined) throw new Error();
 
-			if (!host) return;
+			const acct = this.acctFactory.parse(acctStr);
 
-			let target = this.utilityService.isSelfHost(host)
-				? await this.prismaService.client.user.findFirst({
-						where: {
-							host: null,
-							usernameLower: username.toLowerCase(),
-						},
-				  })
-				: await this.prismaService.client.user.findUnique({
-						where: {
-							usernameLower_host: {
-								host: this.utilityService.toPuny(host),
-								usernameLower: username.toLowerCase(),
-							},
-						},
-				  });
+			if (acct.host.isOmitted()) return;
 
-			if (target == null) {
-				target = await this.remoteUserResolveService.resolveUser(
-					username,
-					host,
-				);
-			}
+			const target =
+				(await this.prismaService.client.user.findFirst({
+					where: acct.whereUser(),
+				})) ??
+				(await this.remoteUserResolveService.resolveUser(
+					acct.username,
+					acct.host.toASCII(),
+				));
 
 			if (target.id === job.data.user.id) return;
 

@@ -15,10 +15,11 @@ import { StatusError } from '@/misc/status-error.js';
 import { UtilityService } from '@/core/UtilityService.js';
 import { LdSignatureService } from '@/core/activitypub/LdSignatureService.js';
 import { ApInboxService } from '@/core/activitypub/ApInboxService.js';
+import { ApPersonResolveService } from '@/core/activitypub/models/ApPersonResolveService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { InboxJobData } from '../types.js';
 import type { user_publickey } from '@prisma/client';
-import { ApPersonResolveService } from '@/core/activitypub/models/ApPersonResolveService.js';
 
 @Injectable()
 export class InboxProcessorService {
@@ -37,6 +38,7 @@ export class InboxProcessorService {
 		private readonly federationChart: FederationChart,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly apPersonResolveService: ApPersonResolveService,
+		private readonly hostFactory: HostFactory,
 	) {
 		this.logger = this.queueLoggerService.logger.createSubLogger('inbox');
 	}
@@ -51,11 +53,13 @@ export class InboxProcessorService {
 		this.logger.debug(JSON.stringify(info, null, 2));
 		//#endregion
 
-		const host = this.utilityService.toPuny(new URL(signature.keyId).hostname);
+		const host = this.hostFactory
+			.create(new URL(signature.keyId).hostname)
+			.toASCII();
 
 		// ブロックしてたら中断
 		const meta = await this.metaService.fetch();
-		if (this.utilityService.isBlockedHost(meta.blockedHosts, host)) {
+		if (await this.hostFactory.create(host).isBlocked()) {
 			return `Blocked request: ${host}`;
 		}
 
@@ -166,7 +170,7 @@ export class InboxProcessorService {
 
 				// ブロックしてたら中断
 				const ldHost = this.utilityService.extractDbHost(authUser.user.uri);
-				if (this.utilityService.isBlockedHost(meta.blockedHosts, ldHost)) {
+				if (await this.hostFactory.create(ldHost).isBlocked()) {
 					throw new Bull.UnrecoverableError(`Blocked request: ${ldHost}`);
 				}
 			} else {

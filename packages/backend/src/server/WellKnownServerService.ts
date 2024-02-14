@@ -2,7 +2,8 @@ import { Injectable } from '@nestjs/common';
 import vary from 'vary';
 import fastifyAccepts from '@fastify/accepts';
 import { escapeAttribute, escapeValue } from '@/misc/prelude/xml.js';
-import * as Acct from '@/misc/acct.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
+import { AcctEntity } from '@/entities/AcctEntity.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
@@ -17,6 +18,7 @@ export class WellKnownServerService {
 		private readonly nodeinfoServerService: NodeinfoServerService,
 		private readonly prismaService: PrismaService,
 		private readonly userEntityUtilService: UserEntityUtilService,
+		private readonly acctFactory: AcctFactory,
 	) {}
 
 	public createServer(
@@ -117,7 +119,7 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 					)
 						? fromId(resource.split('/').pop()!)
 						: fromAcct(
-								Acct.parse(
+								this.acctFactory.parse(
 									resource.startsWith(
 										`${this.configLoaderService.data.url.toLowerCase()}/@`,
 									)
@@ -128,15 +130,10 @@ fastify.get('/.well-known/change-password', async (request, reply) => {
 								),
 						  );
 
-				const fromAcct = (acct: Acct.Acct): Prisma.UserWhereInput | number =>
-					!acct.host ||
-					acct.host === this.configLoaderService.data.host.toLowerCase()
-						? {
-								usernameLower: acct.username,
-								host: null,
-								isSuspended: false,
-						  }
-						: 422;
+				const fromAcct = (acct: AcctEntity): Prisma.UserWhereInput | number => {
+					if (acct.isRemote()) return 422;
+					return { AND: [acct.whereUser(), { isSuspended: false }] };
+				};
 
 				if (typeof request.query.resource !== 'string') {
 					reply.code(400);

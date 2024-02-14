@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { toArray, toSingle } from '@/misc/prelude/array.js';
 import { IdService } from '@/core/IdService.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import { isEmoji } from '../type.js';
 import { ApLoggerService } from '../ApLoggerService.js';
 import type { IObject } from '../type.js';
@@ -16,7 +16,7 @@ export class ApNoteEmojiExtractService {
 		private readonly apLoggerService: ApLoggerService,
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
-		private readonly utilityService: UtilityService,
+		private readonly hostFactory: HostFactory,
 	) {
 		this.logger = this.apLoggerService.logger;
 	}
@@ -25,8 +25,7 @@ export class ApNoteEmojiExtractService {
 		tags: IObject | IObject[],
 		host: string,
 	): Promise<CustomEmoji[]> {
-		// eslint-disable-next-line no-param-reassign
-		host = this.utilityService.toPuny(host);
+		host = this.hostFactory.create(host).toASCII();
 
 		const eomjiTags = toArray(tags).filter(isEmoji);
 

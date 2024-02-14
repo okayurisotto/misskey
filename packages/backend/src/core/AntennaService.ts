@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
-import * as Acct from '@/misc/acct.js';
-import { UtilityService } from '@/core/UtilityService.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
 import { StreamMessages } from '@/server/api/stream/types.js';
 import type { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { PrismaService } from '@/core/PrismaService.js';
@@ -22,7 +21,7 @@ export class AntennaService implements OnApplicationShutdown {
 		private readonly prismaService: PrismaService,
 		private readonly redisClient: RedisService,
 		private readonly redisForSub: RedisSubService,
-		private readonly utilityService: UtilityService,
+		private readonly acctFactory: AcctFactory,
 	) {
 		// eslint-disable-next-line @typescript-eslint/unbound-method
 		this.redisForSub.on('message', this.onRedisMessage);
@@ -120,19 +119,17 @@ export class AntennaService implements OnApplicationShutdown {
 			if (!listUsers.includes(note.userId)) return false;
 		} else if (antenna.src === 'users') {
 			const accts = antenna.users.map((x) => {
-				const { username, host } = Acct.parse(x);
-				return this.utilityService
-					.getFullApAccount(username, host)
-					.toLowerCase();
+				return this.acctFactory.parse(x);
 			});
-			if (
-				!accts.includes(
-					this.utilityService
-						.getFullApAccount(noteUser.username, noteUser.host)
-						.toLowerCase(),
-				)
-			)
+
+			const noteAcct = this.acctFactory.create(
+				noteUser.username,
+				noteUser.host,
+			);
+
+			if (accts.every((acct) => !acct.is(noteAcct))) {
 				return false;
+			}
 		}
 
 		const keywords = z

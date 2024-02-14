@@ -6,7 +6,6 @@ import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import type { LocalUser } from '@/models/entities/User.js';
 import { isActor, isPost, getApId } from '@/core/activitypub/type.js';
 import { ApResolverService } from '@/core/activitypub/ApResolverService.js';
-import { MetaService } from '@/core/MetaService.js';
 import { ApNoteService } from '@/core/activitypub/models/ApNoteService.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
@@ -16,6 +15,7 @@ import { NoteSchema } from '@/models/zod/NoteSchema.js';
 import { ApPersonCreateService } from '@/core/activitypub/models/ApPersonCreateService.js';
 import { ApUserIdResolverService } from '@/core/activitypub/ApUserIdResolverService.js';
 import { ApNoteIdResolverService } from '@/core/activitypub/ApNoteIdResolverService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import { ApiError } from '../../error.js';
 import type { Note, User } from '@prisma/client';
 
@@ -53,10 +53,10 @@ export default class extends Endpoint<
 		private readonly apPersonCreateService: ApPersonCreateService,
 		private readonly apResolverService: ApResolverService,
 		private readonly apUserIdResolverService: ApUserIdResolverService,
-		private readonly metaService: MetaService,
 		private readonly noteEntityService: NoteEntityPackService,
 		private readonly userEntityService: UserEntityService,
 		private readonly utilityService: UtilityService,
+		private readonly hostFactory: HostFactory,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const object = await this.fetchAny(ps.uri, me);
@@ -76,12 +76,10 @@ export default class extends Endpoint<
 		me: LocalUser | null | undefined,
 	): Promise<z.infer<typeof res> | null> {
 		// ブロックしてたら中断
-		const fetchedMeta = await this.metaService.fetch();
 		if (
-			this.utilityService.isBlockedHost(
-				fetchedMeta.blockedHosts,
-				this.utilityService.extractDbHost(uri),
-			)
+			await this.hostFactory
+				.create(this.utilityService.extractDbHost(uri))
+				.isBlocked()
 		) {
 			return null;
 		}

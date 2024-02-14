@@ -17,7 +17,7 @@ import {
 } from '@/server/api/errors.js';
 import { extractCustomEmojisFromMfm } from '@/misc/extract-custom-emojis-from-mfm.js';
 import { extractHashtags } from '@/misc/extract-hashtags.js';
-import * as Acct from '@/misc/acct.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
 import { notificationTypes } from '@/types.js';
 import { normalizeForSearch } from '@/misc/normalize-for-search.js';
 import { langmap } from '@/misc/langmap.js';
@@ -131,6 +131,7 @@ export default class extends Endpoint<
 		private readonly userFollowRequestAcceptAllService: UserFollowRequestAcceptAllService,
 		private readonly driveFilePublicUrlGenerationService: DriveFilePublicUrlGenerationService,
 		private readonly userEntityUtilService: UserEntityUtilService,
+		private readonly acctFactory: AcctFactory,
 	) {
 		super(meta, paramDef, async (ps, _user, token) => {
 			const user = await this.prismaService.client.user.findUniqueOrThrow({
@@ -320,11 +321,11 @@ export default class extends Endpoint<
 				const newAlsoKnownAs = new Set<string>();
 				for (const line of ps.alsoKnownAs) {
 					if (!line) throw new ApiError(meta.errors.noSuchUser);
-					const { username, host } = Acct.parse(line);
+					const acct = this.acctFactory.parse(line);
 
 					// Retrieve the old account
 					const knownAs = await this.remoteUserResolveService
-						.resolveUser(username, host)
+						.resolveUser(acct.username, acct.host.toASCII())
 						.catch((e) => {
 							this.apiLoggerService.logger.warn(
 								`failed to resolve dstination user: ${e}`,

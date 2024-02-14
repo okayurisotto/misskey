@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { IdService } from '@/core/IdService.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import type { Instance } from '@prisma/client';
 
 @Injectable()
@@ -9,11 +9,11 @@ export class FederatedInstanceService {
 	constructor(
 		private readonly idService: IdService,
 		private readonly prismaService: PrismaService,
-		private readonly utilityService: UtilityService,
+		private readonly hostFactory: HostFactory,
 	) {}
 
 	public async fetch(host_: string): Promise<Instance> {
-		const host = this.utilityService.toPuny(host_);
+		const host = this.hostFactory.create(host_).toASCII();
 
 		const index = await this.prismaService.client.instance.findUnique({
 			where: { host },

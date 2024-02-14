@@ -8,13 +8,14 @@ import { z } from 'zod';
 import { NODE_ENV } from '@/env.js';
 import { GlobalEventService } from '@/core/GlobalEventService.js';
 import Logger from '@/misc/logger.js';
-import * as Acct from '@/misc/acct.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
 import { genIdenticon } from '@/misc/gen-identicon.js';
 import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ProcessMessage } from '@/boot/ProcessMessage.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 import { ActivityPubServerService } from './ActivityPubServerService.js';
 import { NodeinfoServerService } from './NodeinfoServerService.js';
 import { ApiServerService } from './api/ApiServerService.js';
@@ -23,7 +24,6 @@ import { WellKnownServerService } from './WellKnownServerService.js';
 import { FileServerService } from './FileServerService.js';
 import { ClientServerService } from './web/ClientServerService.js';
 import { OpenApiServerService } from './api/openapi/OpenApiServerService.js';
-import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 
 const _dirname = fileURLToPath(new URL('.', import.meta.url));
 
@@ -47,6 +47,7 @@ export class ServerService implements OnApplicationShutdown {
 		private readonly userEntityService: UserEntityService,
 		private readonly userEntityUtilService: UserEntityUtilService,
 		private readonly wellKnownServerService: WellKnownServerService,
+		private readonly acctFactory: AcctFactory,
 	) {}
 
 	public async launch(): Promise<void> {
@@ -202,16 +203,9 @@ export class ServerService implements OnApplicationShutdown {
 		fastify.get('/avatar/@:acct', async (request, reply) => {
 			const params = z.object({ acct: z.string() }).parse(request.params);
 
-			const { username, host } = Acct.parse(params.acct);
+			const acct = this.acctFactory.parse(params.acct);
 			const user = await this.prismaService.client.user.findFirst({
-				where: {
-					usernameLower: username.toLowerCase(),
-					host:
-						host == null || host === this.configLoaderService.data.host
-							? null
-							: host,
-					isSuspended: false,
-				},
+				where: { AND: [acct.whereUser(), { isSuspended: false }] },
 			});
 
 			reply.header('Cache-Control', 'public, max-age=86400');

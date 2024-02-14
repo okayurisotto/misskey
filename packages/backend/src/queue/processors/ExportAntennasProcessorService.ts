@@ -4,10 +4,10 @@ import { format as DateFormat } from 'date-fns';
 import { z } from 'zod';
 import { pick } from 'omick';
 import { createTemp } from '@/misc/create-temp.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import type { ExportedAntennaSchema } from '@/models/zod/ExportedAntennaSchema.js';
 import { DriveFileAddService } from '@/core/DriveFileAddService.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type { DBExportAntennasData } from '../types.js';
 import type * as Bull from 'bullmq';
@@ -17,10 +17,10 @@ export class ExportAntennasProcessorService {
 	private readonly logger;
 
 	constructor(
-		private readonly utilityService: UtilityService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
 		private readonly driveFileAddService: DriveFileAddService,
+		private readonly acctFactory: AcctFactory,
 	) {
 		this.logger =
 			this.queueLoggerService.logger.createSubLogger('export-antennas');
@@ -48,10 +48,9 @@ export class ExportAntennasProcessorService {
 				(antenna) => {
 					const userListAccts =
 						antenna.userList?.user_list_joining.map(({ user }) => {
-							return this.utilityService.getFullApAccount(
-								user.username,
-								user.host,
-							);
+							return this.acctFactory
+								.create(user.username, user.host)
+								.formatLong();
 						}) ?? null;
 
 					return {

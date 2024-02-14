@@ -13,7 +13,7 @@ import fastifyProxy from '@fastify/http-proxy';
 import vary from 'vary';
 import { z } from 'zod';
 import { getNoteSummary } from '@/misc/get-note-summary.js';
-import * as Acct from '@/misc/acct.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
 import { MetaService } from '@/core/MetaService.js';
 import type {
 	DbQueue,
@@ -24,7 +24,6 @@ import type {
 	SystemQueue,
 	WebhookDeliverQueue,
 } from '@/core/QueueModule.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 import { NoteEntityPackService } from '@/core/entities/NoteEntityPackService.js';
 import { PageEntityService } from '@/core/entities/PageEntityService.js';
 import { GalleryPostEntityService } from '@/core/entities/GalleryPostEntityService.js';
@@ -45,6 +44,7 @@ import {
 	VIEW_DIR,
 	VITE_DIR,
 } from '@/paths.js';
+import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 import manifest from './manifest.json' assert { type: 'json' };
 import { FeedService } from './FeedService.js';
 import { UrlPreviewService } from './UrlPreviewService.js';
@@ -55,7 +55,6 @@ import type {
 	FastifyReply,
 } from 'fastify';
 import type { Meta } from '@prisma/client';
-import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
 
 type Manifest = {
 	short_name: string;
@@ -97,7 +96,6 @@ export class ClientServerService {
 		private readonly configLoaderService: ConfigLoaderService,
 
 		private readonly flashEntityService: FlashEntityService,
-		private readonly userEntityService: UserEntityService,
 		private readonly noteEntityService: NoteEntityPackService,
 		private readonly pageEntityService: PageEntityService,
 		private readonly galleryPostEntityService: GalleryPostEntityService,
@@ -110,6 +108,7 @@ export class ClientServerService {
 		private readonly clientLoggerService: ClientLoggerService,
 		private readonly prismaService: PrismaService,
 		private readonly userEntityUtilService: UserEntityUtilService,
+		private readonly acctFactory: AcctFactory,
 
 		@Inject('queue:system')
 		public systemQueue: SystemQueue,
@@ -432,7 +431,7 @@ export class ClientServerService {
 			'/@:user.atom',
 			async (request, reply) => {
 				const feed = await this.feedService.packFeed(
-					Acct.parse(request.params.user),
+					this.acctFactory.parse(request.params.user),
 				);
 
 				if (feed) {
@@ -450,7 +449,7 @@ export class ClientServerService {
 			'/@:user.rss',
 			async (request, reply) => {
 				const feed = await this.feedService.packFeed(
-					Acct.parse(request.params.user),
+					this.acctFactory.parse(request.params.user),
 				);
 
 				if (feed) {
@@ -468,7 +467,7 @@ export class ClientServerService {
 			'/@:user.json',
 			async (request, reply) => {
 				const feed = await this.feedService.packFeed(
-					Acct.parse(request.params.user),
+					this.acctFactory.parse(request.params.user),
 				);
 
 				if (feed) {
@@ -486,13 +485,9 @@ export class ClientServerService {
 		fastify.get<{ Params: { user: string; sub?: string } }>(
 			'/@:user/:sub?',
 			async (request, reply) => {
-				const { username, host } = Acct.parse(request.params.user);
+				const acct = this.acctFactory.parse(request.params.user);
 				const user = await this.prismaService.client.user.findFirst({
-					where: {
-						usernameLower: username.toLowerCase(),
-						host: host ?? null,
-						isSuspended: false,
-					},
+					where: { AND: [acct.whereUser(), { isSuspended: false }] },
 				});
 
 				if (user != null) {
@@ -600,12 +595,9 @@ export class ClientServerService {
 		fastify.get<{ Params: { user: string; page: string } }>(
 			'/@:user/pages/:page',
 			async (request, reply) => {
-				const { username, host } = Acct.parse(request.params.user);
+				const acct = this.acctFactory.parse(request.params.user);
 				const user = await this.prismaService.client.user.findFirst({
-					where: {
-						usernameLower: username.toLowerCase(),
-						host: host ?? null,
-					},
+					where: acct.whereUser(),
 				});
 
 				if (user == null) return;

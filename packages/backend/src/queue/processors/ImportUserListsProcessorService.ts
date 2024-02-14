@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { z } from 'zod';
-import { Prisma, User, user_list } from '@prisma/client';
-import * as Acct from '@/misc/acct.js';
+import { User, user_list } from '@prisma/client';
+import { AcctFactory } from '@/factories/AcctFactory.js';
+import { AcctEntity } from '@/entities/AcctEntity.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { UserListService } from '@/core/UserListService.js';
 import { IdService } from '@/core/IdService.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { unique } from '@/misc/prelude/array.js';
 import { isNotNull } from '@/misc/is-not-null.js';
@@ -23,32 +23,28 @@ export class ImportUserListsProcessorService {
 	private readonly logger;
 
 	constructor(
-		private readonly utilityService: UtilityService,
 		private readonly idService: IdService,
 		private readonly userListService: UserListService,
 		private readonly remoteUserResolveService: RemoteUserResolveService,
 		private readonly downloadService: DownloadService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
+		private readonly acctFactory: AcctFactory,
 	) {
 		this.logger =
 			this.queueLoggerService.logger.createSubLogger('import-user-lists');
 	}
 
-	private isLocalUserAcct(acct: Acct.Acct): boolean {
-		return acct.host === null || this.utilityService.isSelfHost(acct.host);
-	}
-
-	private getUserFromAcct(users: User[], acct: Acct.Acct): User | undefined {
+	private getUserFromAcct(users: User[], acct: AcctEntity): User | undefined {
 		return users.find((user) => {
 			if (user.usernameLower !== acct.username.toLowerCase()) {
 				return false;
 			}
 
-			if (this.isLocalUserAcct(acct)) {
+			if (acct.isLocal()) {
 				if (user.host !== null) return false;
 			} else {
-				if (user.host !== acct.host) return false;
+				if (user.host !== acct.host.toASCII()) return false;
 			}
 
 			return true;
@@ -77,7 +73,7 @@ export class ImportUserListsProcessorService {
 
 		// CSVをパースする //
 
-		const data = ((): Map<string, Set<Acct.Acct>> => {
+		const data = ((): Map<string, Set<AcctEntity>> => {
 			const lines = csv
 				.trim()
 				.split('\n')
@@ -87,11 +83,11 @@ export class ImportUserListsProcessorService {
 
 			return entries.reduce((acc, [listName, acct]) => {
 				const prevItems = acc.get(listName);
-				const defaultItems = new Set<Acct.Acct>();
-				const item = Acct.parse(acct);
+				const defaultItems = new Set<AcctEntity>();
+				const item = this.acctFactory.parse(acct);
 
 				return acc.set(listName, (prevItems ?? defaultItems).add(item));
-			}, new Map<string, Set<Acct.Acct>>());
+			}, new Map<string, Set<AcctEntity>>());
 		})();
 
 		// 足りないユーザーリストを新規に作成する //
@@ -125,25 +121,8 @@ export class ImportUserListsProcessorService {
 
 			// すべてのユーザーについてダメ元でデータベースに一括で問い合わせる //
 
-			const userWhereInputs = allAccts.map((acct): Prisma.UserWhereInput => {
-				if (this.isLocalUserAcct(acct)) {
-					return {
-						host: null,
-						usernameLower: acct.username.toLowerCase(),
-					};
-				} else {
-					if (acct.host === null) throw new Error();
-
-					return {
-						host: this.utilityService.toPuny(acct.host),
-						usernameLower: acct.username.toLowerCase(),
-					};
-				}
-			});
-
-			/** データベースから一括取得したユーザー情報 */
 			const dbUsers = await this.prismaService.client.user.findMany({
-				where: { OR: userWhereInputs },
+				where: { OR: allAccts.map((acct) => acct.whereUser()) },
 			});
 
 			// すべてのユーザーを取得・解決する //
@@ -158,7 +137,7 @@ export class ImportUserListsProcessorService {
 						// データベースにないということは未解決のリモートユーザーということなので解決する
 						return await this.remoteUserResolveService.resolveUser(
 							acct.username,
-							acct.host,
+							acct.host.toASCII(),
 						);
 					}
 				}),

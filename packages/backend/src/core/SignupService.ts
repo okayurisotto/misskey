@@ -4,10 +4,10 @@ import bcrypt from 'bcryptjs';
 import { IdService } from '@/core/IdService.js';
 import generateUserToken from '@/misc/generate-native-user-token.js';
 import UsersChart from '@/core/chart/charts/users.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { MetaService } from '@/core/MetaService.js';
 import { LocalUsernameSchema, PasswordSchema } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import type { User, user_profile } from '@prisma/client';
 
 @Injectable()
@@ -17,7 +17,7 @@ export class SignupService {
 		private readonly metaService: MetaService,
 		private readonly prismaService: PrismaService,
 		private readonly usersChart: UsersChart,
-		private readonly utilityService: UtilityService,
+		private readonly hostFactory: HostFactory,
 	) {}
 
 	public async signup(opts: {
@@ -122,7 +122,7 @@ export class SignupService {
 						createdAt: new Date(),
 						username: username,
 						usernameLower: username.toLowerCase(),
-						host: host == null ? null : this.utilityService.toPuny(host),
+						host: host == null ? null : this.hostFactory.create(host).toASCII(),
 						token: secret,
 						isRoot: isTheFirstUser,
 

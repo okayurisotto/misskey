@@ -1,4 +1,7 @@
 import { Module } from '@nestjs/common';
+import { AcctFactory } from '@/factories/AcctFactory.js';
+import { HostFactory } from '@/factories/HostFactory.js';
+import { HostFilterFactory } from '@/factories/HostFilterFactory.js';
 import { AbuseUserReportFetchingService } from './entities/AbuseUserReportFetchingService.js';
 import { AccountMovingPostProcessService } from './AccountMovingPostProcessService.js';
 import { AccountUpdateService } from './AccountUpdateService.js';
@@ -159,14 +162,13 @@ import { CustomEmojiDeleteService } from './CustomEmojiDeleteService.js';
 import { CustomEmojiLicenseService } from './CustomEmojiLicenseService.js';
 import { CustomEmojiStringParseService } from './CustomEmojiStringParseService.js';
 import { CustomEmojiUpdateService } from './CustomEmojiUpdateService.js';
-import type { Provider } from '@nestjs/common';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { BadgeRoleService } from './BadgeRoleService.js';
 import { RoleConditionEvalService } from './RoleConditionEvalService.js';
-import { RoleUtilService } from './RoleUtilService.js';
 import { ApImageCreateService } from './activitypub/models/ApImageCreateService.js';
-import { ApNoteEmojiExtractService } from './activitypub/models/ApNoteEmojiExtractService.js';
 import { ApNoteFetchService } from './activitypub/models/ApNoteFetchService.js';
+import { RoleUtilService } from './RoleUtilService.js';
+import { ApNoteEmojiExtractService } from './activitypub/models/ApNoteEmojiExtractService.js';
 import { ReactionDeleteService } from './ReactionDeleteService.js';
 import { ReactionDecodeService } from './ReactionDecodeService.js';
 import { LegacyReactionConvertService } from './LegacyReactionConvertService.js';
@@ -180,6 +182,7 @@ import { UserEntityPackLiteService } from './entities/UserEntityPackLiteService.
 import { AbuseUserReportResolutionService } from './entities/AbuseUserReportResolutionService.js';
 import { AbuseUserReportCreationNotificationService } from './entities/AbuseUserReportCreationNotificationService.js';
 import { AbuseUserReportCreationService } from './entities/AbuseUserReportCreationService.js';
+import type { Provider } from '@nestjs/common';
 
 //#region 文字列ベースでのinjection用（循環参照対応のため）
 const $ApNoteService: Provider = {
@@ -371,6 +374,10 @@ const $ApNoteService: Provider = {
 		WebfingerService,
 		WebhookService,
 
+		AcctFactory,
+		HostFactory,
+		HostFilterFactory,
+
 		//#region 文字列ベースでのinjection用（循環参照対応のため）
 		$ApNoteService,
 		//#endregion
@@ -554,6 +561,10 @@ const $ApNoteService: Provider = {
 		VideoProcessingService,
 		WebfingerService,
 		WebhookService,
+
+		AcctFactory,
+		HostFactory,
+		HostFilterFactory,
 	],
 })
 export class CoreModule {}

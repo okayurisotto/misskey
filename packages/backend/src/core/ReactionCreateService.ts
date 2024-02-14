@@ -16,10 +16,10 @@ import { emojiRegex } from '@/misc/emoji-regex.js';
 import { ApDeliverManagerService } from '@/core/activitypub/ApDeliverManagerService.js';
 import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { MetaService } from '@/core/MetaService.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { RoleService } from '@/core/RoleService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { FALLBACK_REACTION, LEGACY_REACTIONS } from '@/const.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import { UserBlockingCheckService } from './UserBlockingCheckService.js';
 import { UserEntityUtilService } from './entities/UserEntityUtilService.js';
 import { ReactionDecodeService } from './ReactionDecodeService.js';
@@ -45,7 +45,7 @@ export class ReactionCreateService {
 		private readonly roleService: RoleService,
 		private readonly userBlockingCheckService: UserBlockingCheckService,
 		private readonly userEntityUtilService: UserEntityUtilService,
-		private readonly utilityService: UtilityService,
+		private readonly hostFactory: HostFactory,
 	) {}
 
 	public async create(
@@ -99,7 +99,9 @@ export class ReactionCreateService {
 			const custom = reaction.match(IS_CUSTOM_EMOJI_REGEXP);
 			if (custom) {
 				const reacterHost =
-					user.host === null ? null : this.utilityService.toPuny(user.host);
+					user.host === null
+						? null
+						: this.hostFactory.create(user.host).toASCII();
 
 				const name = custom[1];
 				const emoji = await this.prismaService.client.customEmoji.findFirst({

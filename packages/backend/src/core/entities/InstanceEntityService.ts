@@ -1,18 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { pick } from 'omick';
-import { MetaService } from '@/core/MetaService.js';
 import type { FederationInstanceSchema } from '@/models/zod/FederationInstanceSchema.js';
 import type { FederationInstanceLiteSchema } from '@/models/zod/FederationInstanceLiteSchema.js';
-import { UtilityService } from '../UtilityService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import type { z } from 'zod';
 import type { Instance } from '@prisma/client';
 
 @Injectable()
 export class InstanceEntityService {
-	constructor(
-		private readonly metaService: MetaService,
-		private readonly utilityService: UtilityService,
-	) {}
+	constructor(private readonly hostFactory: HostFactory) {}
 
 	public packLite(
 		instance: Instance,
@@ -30,7 +26,6 @@ export class InstanceEntityService {
 	public async pack(
 		instance: Instance,
 	): Promise<z.infer<typeof FederationInstanceSchema>> {
-		const meta = await this.metaService.fetch();
 		return {
 			id: instance.id,
 			firstRetrievedAt: instance.firstRetrievedAt.toISOString(),
@@ -41,10 +36,7 @@ export class InstanceEntityService {
 			followersCount: instance.followersCount,
 			isNotResponding: instance.isNotResponding,
 			isSuspended: instance.isSuspended,
-			isBlocked: this.utilityService.isBlockedHost(
-				meta.blockedHosts,
-				instance.host,
-			),
+			isBlocked: await this.hostFactory.create(instance.host).isBlocked(),
 			softwareName: instance.softwareName,
 			softwareVersion: instance.softwareVersion,
 			openRegistrations: instance.openRegistrations,

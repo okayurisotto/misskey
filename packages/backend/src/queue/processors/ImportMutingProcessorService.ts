@@ -1,9 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import * as Acct from '@/misc/acct.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
 import { DownloadService } from '@/core/DownloadService.js';
 import { UserMutingService } from '@/core/UserMutingService.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { QueueLoggerService } from '../QueueLoggerService.js';
 import type * as Bull from 'bullmq';
@@ -14,12 +13,12 @@ export class ImportMutingProcessorService {
 	private readonly logger;
 
 	constructor(
-		private readonly utilityService: UtilityService,
 		private readonly userMutingService: UserMutingService,
 		private readonly remoteUserResolveService: RemoteUserResolveService,
 		private readonly downloadService: DownloadService,
 		private readonly queueLoggerService: QueueLoggerService,
 		private readonly prismaService: PrismaService,
+		private readonly acctFactory: AcctFactory,
 	) {
 		this.logger =
 			this.queueLoggerService.logger.createSubLogger('import-muting');
@@ -46,21 +45,21 @@ export class ImportMutingProcessorService {
 			linenum++;
 
 			try {
-				const acct = line.split(',')[0].trim();
-				const { username, host } = Acct.parse(acct);
+				const acctStr = line.split(',')[0]?.trim();
+				if (acctStr === undefined) throw new Error();
 
-				if (!host) continue;
+				const acct = this.acctFactory.parse(acctStr);
+
+				if (acct.host.isOmitted()) continue;
 
 				const target =
 					(await this.prismaService.client.user.findFirst({
-						where: {
-							host: this.utilityService.isSelfHost(host)
-								? null
-								: this.utilityService.toPuny(host),
-							usernameLower: username.toLowerCase(),
-						},
+						where: acct.whereUser(),
 					})) ??
-					(await this.remoteUserResolveService.resolveUser(username, host));
+					(await this.remoteUserResolveService.resolveUser(
+						acct.username,
+						acct.host.toASCII(),
+					));
 
 				// skip myself
 				if (target.id === job.data.user.id) continue;

@@ -14,6 +14,7 @@ import type { RemoteUser } from '@/models/entities/User.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { isNotNull } from '@/misc/is-not-null.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import { UserFollowingCreateService } from '../UserFollowingCreateService.js';
 import { UserFollowingDeleteService } from '../UserFollowingDeleteService.js';
 import { UserFollowRequestCancelService } from '../UserFollowRequestCancelService.js';
@@ -24,6 +25,7 @@ import { UserBlockingDeleteService } from '../UserBlockingDeleteService.js';
 import { UserEntityUtilService } from '../entities/UserEntityUtilService.js';
 import { ReactionDeleteService } from '../ReactionDeleteService.js';
 import { NoteVisibilityService } from '../entities/NoteVisibilityService.js';
+import { AbuseUserReportCreationService } from '../entities/AbuseUserReportCreationService.js';
 import { ApPersonUpdateService } from './models/ApPersonUpdateService.js';
 import { ApNoteEmojiExtractService } from './models/ApNoteEmojiExtractService.js';
 import { ApNoteFetchService } from './models/ApNoteFetchService.js';
@@ -58,6 +60,9 @@ import {
 	validActor,
 	validPost,
 } from './type.js';
+import { ApQuestionUpdateService } from './models/ApQuestionUpdateService.js';
+import { ApUserIdResolverService } from './ApUserIdResolverService.js';
+import { ApNoteIdResolverService } from './ApNoteIdResolverService.js';
 import type {
 	IAccept,
 	IAdd,
@@ -76,10 +81,6 @@ import type {
 	IMove,
 } from './type.js';
 import type { Resolver } from './ApResolverService.js';
-import { ApQuestionUpdateService } from './models/ApQuestionUpdateService.js';
-import { ApUserIdResolverService } from './ApUserIdResolverService.js';
-import { ApNoteIdResolverService } from './ApNoteIdResolverService.js';
-import { AbuseUserReportCreationService } from '../entities/AbuseUserReportCreationService.js';
 
 @Injectable()
 export class ApInboxService {
@@ -118,6 +119,7 @@ export class ApInboxService {
 		private readonly userFollowRequestAcceptService: UserFollowRequestAcceptService,
 		private readonly userFollowRequestCancelService: UserFollowRequestCancelService,
 		private readonly utilityService: UtilityService,
+		private readonly hostFactory: HostFactory,
 	) {
 		this.logger = this.apLoggerService.logger;
 	}
@@ -341,14 +343,13 @@ export class ApInboxService {
 		}
 
 		// アナウンス先をブロックしてたら中断
-		const meta = await this.metaService.fetch();
 		if (
-			this.utilityService.isBlockedHost(
-				meta.blockedHosts,
-				this.utilityService.extractDbHost(uri),
-			)
-		)
+			await this.hostFactory
+				.create(this.utilityService.extractDbHost(uri))
+				.isBlocked()
+		) {
 			return;
+		}
 
 		const unlock = await this.appLockService.getApLock(uri);
 

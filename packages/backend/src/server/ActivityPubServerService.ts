@@ -8,7 +8,6 @@ import { ApRendererService } from '@/core/activitypub/ApRendererService.js';
 import { QueueService } from '@/core/QueueService.js';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
 import { UserKeypairService } from '@/core/UserKeypairService.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { IActivity } from '@/core/activitypub/type.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
@@ -21,6 +20,7 @@ import type {
 	FastifyPluginOptions,
 } from 'fastify';
 import type { Prisma, Note, User } from '@prisma/client';
+import { HostFactory } from '@/factories/HostFactory.js';
 
 const ACTIVITY_JSON = 'application/activity+json; charset=utf-8';
 const LD_JSON =
@@ -30,13 +30,13 @@ const LD_JSON =
 export class ActivityPubServerService {
 	constructor(
 		private readonly configLoaderService: ConfigLoaderService,
-		private readonly utilityService: UtilityService,
 		private readonly apRendererService: ApRendererService,
 		private readonly queueService: QueueService,
 		private readonly userKeypairService: UserKeypairService,
 		private readonly prismaService: PrismaService,
 		private readonly prismaQueryService: PrismaQueryService,
 		private readonly userEntityUtilService: UserEntityUtilService,
+		private readonly hostFactory: HostFactory,
 	) {}
 
 	private setResponseType(request: FastifyRequest, reply: FastifyReply): void {
@@ -584,7 +584,7 @@ export class ActivityPubServerService {
 				if (note.userHost != null) {
 					if (
 						note.uri == null ||
-						this.utilityService.isSelfHost(note.userHost)
+						this.hostFactory.create(note.userHost).isSelf()
 					) {
 						reply.code(500);
 						return;

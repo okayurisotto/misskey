@@ -2,11 +2,11 @@ import { URL } from 'node:url';
 import { Injectable } from '@nestjs/common';
 import chalk from 'chalk';
 import type { LocalUser, RemoteUser } from '@/models/entities/User.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { ILink, WebfingerService } from '@/core/WebfingerService.js';
 import { RemoteLoggerService } from '@/core/RemoteLoggerService.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import { ApPersonCreateService } from './activitypub/models/ApPersonCreateService.js';
 import { ApPersonUpdateService } from './activitypub/models/ApPersonUpdateService.js';
 import { ApUriParseService } from './activitypub/ApUriParseService.js';
@@ -24,8 +24,8 @@ export class RemoteUserResolveService {
 		private readonly configLoaderService: ConfigLoaderService,
 		private readonly prismaService: PrismaService,
 		private readonly remoteLoggerService: RemoteLoggerService,
-		private readonly utilityService: UtilityService,
 		private readonly webfingerService: WebfingerService,
+		private readonly hostFactory: HostFactory,
 	) {
 		this.logger =
 			this.remoteLoggerService.logger.createSubLogger('resolve-user');
@@ -46,7 +46,7 @@ export class RemoteUserResolveService {
 			return user as LocalUser;
 		}
 
-		const host = this.utilityService.toPuny(host_);
+		const host = this.hostFactory.create(host_).toASCII();
 
 		if (this.configLoaderService.data.host === host) {
 			this.logger.info(`return local user: ${usernameLower}`);

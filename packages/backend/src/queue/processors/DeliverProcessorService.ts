@@ -8,15 +8,14 @@ import InstanceChart from '@/core/chart/charts/instance.js';
 import ApRequestChart from '@/core/chart/charts/ap-request.js';
 import FederationChart from '@/core/chart/charts/federation.js';
 import { StatusError } from '@/misc/status-error.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { PrismaService } from '@/core/PrismaService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 import type { DeliverJobData } from '../types.js';
 
 @Injectable()
 export class DeliverProcessorService {
 	constructor(
 		private readonly metaService: MetaService,
-		private readonly utilityService: UtilityService,
 		private readonly federatedInstanceService: FederatedInstanceService,
 		private readonly fetchInstanceMetadataService: FetchInstanceMetadataService,
 		private readonly apRequestService: ApRequestService,
@@ -24,6 +23,7 @@ export class DeliverProcessorService {
 		private readonly apRequestChart: ApRequestChart,
 		private readonly federationChart: FederationChart,
 		private readonly prismaService: PrismaService,
+		private readonly hostFactory: HostFactory,
 	) {}
 
 	public async process(job: Bull.Job<DeliverJobData>): Promise<string> {
@@ -31,12 +31,7 @@ export class DeliverProcessorService {
 
 		// ブロックしてたら中断
 		const meta = await this.metaService.fetch();
-		if (
-			this.utilityService.isBlockedHost(
-				meta.blockedHosts,
-				this.utilityService.toPuny(host),
-			)
-		) {
+		if (await this.hostFactory.create(host).isBlocked()) {
 			return 'skip (blocked)';
 		}
 
@@ -47,7 +42,7 @@ export class DeliverProcessorService {
 		if (
 			suspendedHosts
 				.map((x) => x.host)
-				.includes(this.utilityService.toPuny(host))
+				.includes(this.hostFactory.create(host).toASCII())
 		) {
 			return 'skip (suspended)';
 		}

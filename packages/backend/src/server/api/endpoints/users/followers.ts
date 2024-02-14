@@ -2,11 +2,11 @@ import { z } from 'zod';
 import { Injectable } from '@nestjs/common';
 import { Endpoint } from '@/server/api/abstract-endpoint.js';
 import { FollowingEntityService } from '@/core/entities/FollowingEntityService.js';
-import { UtilityService } from '@/core/UtilityService.js';
 import { FollowingSchema } from '@/models/zod/FollowingSchema.js';
 import { MisskeyIdSchema, PaginationSchema, limit } from '@/models/zod/misc.js';
 import { PrismaService } from '@/core/PrismaService.js';
 import { PrismaQueryService } from '@/core/PrismaQueryService.js';
+import { HostFactory } from '@/factories/HostFactory.js';
 
 const res = z.array(FollowingSchema);
 export const meta = {
@@ -40,10 +40,10 @@ export default class extends Endpoint<
 	typeof res
 > {
 	constructor(
-		private readonly utilityService: UtilityService,
 		private readonly followingEntityService: FollowingEntityService,
 		private readonly prismaService: PrismaService,
 		private readonly prismaQueryService: PrismaQueryService,
+		private readonly hostFactory: HostFactory,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			const paginationQuery = this.prismaQueryService.getPaginationQuery({
@@ -65,7 +65,7 @@ export default class extends Endpoint<
 											host:
 												ps.host === null
 													? null
-													: this.utilityService.toPuny(ps.host),
+													: this.hostFactory.create(ps.host).toASCII(),
 									  },
 						},
 						{

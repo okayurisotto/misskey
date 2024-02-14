@@ -3,7 +3,7 @@ import { Feed } from 'feed';
 import { PrismaService } from '@/core/PrismaService.js';
 import { unique } from '@/misc/prelude/array.js';
 import { isNotNull } from '@/misc/is-not-null.js';
-import type { Acct } from '@/misc/acct.js';
+import type { AcctEntity } from '@/entities/AcctEntity.js';
 import { ConfigLoaderService } from '@/ConfigLoaderService.js';
 import { DriveFilePublicUrlGenerationService } from '@/core/entities/DriveFilePublicUrlGenerationService.js';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
@@ -17,13 +17,9 @@ export class FeedService {
 		private readonly userEntityUtilService: UserEntityUtilService,
 	) {}
 
-	public async packFeed(acct: Acct): Promise<Feed | null> {
+	public async packFeed(acct: AcctEntity): Promise<Feed | null> {
 		const user = await this.prismaService.client.user.findFirst({
-			where: {
-				usernameLower: acct.username.toLowerCase(),
-				host: acct.host,
-				isSuspended: false,
-			},
+			where: { AND: [acct.whereUser(), { isSuspended: false }] },
 			include: {
 				userProfile: true,
 				notes: {

@@ -17,9 +17,8 @@ import { ApiLoggerService } from '@/server/api/ApiLoggerService.js';
 import { GetterService } from '@/server/api/GetterService.js';
 import { LocalAccountMovingService } from '@/core/LocalAccountMovingService.js';
 import { RemoteUserResolveService } from '@/core/RemoteUserResolveService.js';
-import { UserEntityService } from '@/core/entities/UserEntityService.js';
 
-import * as Acct from '@/misc/acct.js';
+import { AcctFactory } from '@/factories/AcctFactory.js';
 import { ApPersonResolveService } from '@/core/activitypub/models/ApPersonResolveService.js';
 import { ApPersonUpdateService } from '@/core/activitypub/models/ApPersonUpdateService.js';
 import { UserEntityUtilService } from '@/core/entities/UserEntityUtilService.js';
@@ -60,11 +59,11 @@ export default class extends Endpoint<
 		private readonly remoteUserResolveService: RemoteUserResolveService,
 		private readonly apiLoggerService: ApiLoggerService,
 		private readonly getterService: GetterService,
-		private readonly userEntityService: UserEntityService,
 		private readonly localAccountMovingService: LocalAccountMovingService,
 		private readonly apPersonResolveService: ApPersonResolveService,
 		private readonly apPersonUpdateService: ApPersonUpdateService,
 		private readonly userEntityUtilService: UserEntityUtilService,
+		private readonly acctFactory: AcctFactory,
 	) {
 		super(meta, paramDef, async (ps, me) => {
 			// check parameter
@@ -75,10 +74,10 @@ export default class extends Endpoint<
 			if (me.movedToUri) throw new ApiError(meta.errors.alreadyMoved);
 
 			// parse user's input into the destination account
-			const { username, host } = Acct.parse(ps.moveToAccount);
+			const acct = this.acctFactory.parse(ps.moveToAccount);
 			// retrieve the destination account
 			let moveTo = await this.remoteUserResolveService
-				.resolveUser(username, host)
+				.resolveUser(acct.username, acct.host.toASCII())
 				.catch((e) => {
 					this.apiLoggerService.logger.warn(
 						`failed to resolve remote user: ${e}`,
