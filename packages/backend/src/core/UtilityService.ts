@@ -13,15 +13,13 @@ export class UtilityService {
 			: `${username}@${this.toPuny(this.configLoaderService.data.host)}`;
 	}
 
-	public isSelfHost(host: string | null): boolean {
-		if (host == null) return true;
+	public isSelfHost(host: string): boolean {
 		return (
 			this.toPuny(this.configLoaderService.data.host) === this.toPuny(host)
 		);
 	}
 
-	public isBlockedHost(blockedHosts: string[], host: string | null): boolean {
-		if (host == null) return false;
+	public isBlockedHost(blockedHosts: string[], host: string): boolean {
 		return blockedHosts.some((x) => `.${host.toLowerCase()}`.endsWith(`.${x}`));
 	}
 
