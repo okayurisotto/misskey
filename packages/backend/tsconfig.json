@@ -8,7 +8,6 @@
 		"isolatedModules": true,
 		"lib": ["esnext"],
 		"noLib": false,
-		"noUncheckedIndexedAccess": false, // TODO
 		"noUnusedLocals": false, // TODO
 		"noUnusedParameters": false, // TODO
 		"paths": {
