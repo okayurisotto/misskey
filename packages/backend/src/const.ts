@@ -1,4 +1,10 @@
-export const ID_GENERATION_METHODS = ['aid', 'meid', 'meidg', 'ulid', 'objectid'] as const;
+export const ID_GENERATION_METHODS = [
+	'aid',
+	'meid',
+	'meidg',
+	'ulid',
+	'objectid',
+] as const;
 
 export const MAX_NOTE_TEXT_LENGTH = 3000;
 
