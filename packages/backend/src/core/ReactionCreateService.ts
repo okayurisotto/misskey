@@ -98,7 +98,8 @@ export class ReactionCreateService {
 		} else if (reaction_) {
 			const custom = reaction.match(IS_CUSTOM_EMOJI_REGEXP);
 			if (custom) {
-				const reacterHost = this.utilityService.toPunyNullable(user.host);
+				const reacterHost =
+					user.host === null ? null : this.utilityService.toPuny(user.host);
 
 				const name = custom[1];
 				const emoji = await this.prismaService.client.customEmoji.findFirst({

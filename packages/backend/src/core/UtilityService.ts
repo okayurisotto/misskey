@@ -33,9 +33,4 @@ export class UtilityService {
 	public toPuny(host: string): string {
 		return toASCII(host.toLowerCase());
 	}
-
-	public toPunyNullable(host: string | null | undefined): string | null {
-		if (host == null) return null;
-		return toASCII(host.toLowerCase());
-	}
 }

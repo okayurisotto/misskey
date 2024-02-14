@@ -62,7 +62,10 @@ export default class extends Endpoint<
 									? { id: ps.userId }
 									: {
 											usernameLower: ps.username.toLowerCase(),
-											host: this.utilityService.toPunyNullable(ps.host) ?? null,
+											host:
+												ps.host === null
+													? null
+													: this.utilityService.toPuny(ps.host),
 									  },
 						},
 						{

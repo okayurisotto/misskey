@@ -122,7 +122,7 @@ export class SignupService {
 						createdAt: new Date(),
 						username: username,
 						usernameLower: username.toLowerCase(),
-						host: this.utilityService.toPunyNullable(host),
+						host: host == null ? null : this.utilityService.toPuny(host),
 						token: secret,
 						isRoot: isTheFirstUser,
 
