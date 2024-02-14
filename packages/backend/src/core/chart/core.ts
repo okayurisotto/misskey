@@ -70,8 +70,6 @@ const camelToSnake = (str: string): string => {
 	return str.replace(/([A-Z])/g, (s) => '_' + s.charAt(0).toLowerCase());
 };
 
-const removeDuplicates = unique;
-
 type Commit<S extends Schema> = {
 	[K in keyof S]?: S[K]['uniqueIncrement'] extends true ? string[] : number;
 };
@@ -677,7 +675,7 @@ export default abstract class Chart<T extends Schema> {
 			);
 		};
 
-		const groups = removeDuplicates(this.buffer.map((log) => log.group));
+		const groups = unique(this.buffer.map((log) => log.group));
 
 		await Promise.all(
 			groups.map((group) =>
